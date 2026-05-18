@@ -37166,8 +37166,8 @@ app.post("/get-openingBalance-MasterEntry", (req, res) => {
 
 // Start the server
 const PORT = 80;
-const HOST = "192.168.1.76"
 
-app.listen(PORT, HOST, () => {
-  console.log(`Server is running on http://${HOST}:${PORT}`);
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
