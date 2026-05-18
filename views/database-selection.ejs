@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Database - Sajilo Cooperative</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        #toast {
+            visibility: hidden;
+            min-width: 260px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 10px 20px;
+            position: fixed;
+            z-index: 9999;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 15px;
+            opacity: 0;
+            transition: opacity 0.4s, visibility 0.4s;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        .selection-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .org-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .org-table thead {
+            background-color: #f0f0f0;
+        }
+        .org-table th {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #ddd;
+            font-weight: bold;
+        }
+        .org-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .org-table tbody tr:hover {
+            background-color: #f9f9f9;
+            cursor: pointer;
+        }
+        .org-table tbody tr.selected {
+            background-color: #e3f2fd;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .button-group button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .btn-continue {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-continue:hover {
+            background-color: #45a049;
+        }
+        .btn-logout {
+            background-color: #f44336;
+            color: white;
+        }
+        .btn-logout:hover {
+            background-color: #da190b;
+        }
+        .welcome-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .welcome-header h1 {
+            margin: 0 0 10px 0;
+        }
+        .welcome-header p {
+            margin: 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="selection-container">
+        <div class="welcome-header">
+            <h1>Select Database</h1>
+            <p>Welcome, <strong><%= username %></strong>. Please select an organization and fiscal year to continue.</p>
+        </div>
+
+        <table class="org-table">
+            <thead>
+                <tr>
+                    <th>Organization</th>
+                    <th>Fiscal Year</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                </tr>
+            </thead>
+            <tbody id="orgTableBody">
+                <!-- Will be populated by JavaScript -->
+            </tbody>
+        </table>
+
+        <div class="button-group">
+            <button type="button" class="btn-continue" id="continueBtn">Continue</button>
+            <button type="button" class="btn-logout" id="logoutBtn">Logout</button>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        let selectedOrgData = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadOrganizations();
+            setupEventListeners();
+        });
+
+        async function loadOrganizations() {
+            try {
+                const response = await fetch('/fetch-fiscal-data');
+                if (!response.ok) throw new Error('Failed to fetch organizations');
+                
+                const data = await response.json();
+                populateTable(data);
+            } catch (error) {
+                console.error('Error loading organizations:', error);
+                showToast('❌ Failed to load organizations. Please refresh the page.');
+            }
+        }
+
+        function populateTable(data) {
+            const tableBody = document.getElementById('orgTableBody');
+            tableBody.innerHTML = '';
+
+            data.forEach((org) => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-orgid', org.orgid);
+                row.setAttribute('data-dbname', org.orgDb);
+                row.setAttribute('data-startdate', org.startDate);
+                row.setAttribute('data-enddate', org.endDate);
+                row.setAttribute('data-orgname', org.orgName);
+
+                const startYear = org.startDate.includes('-') ? org.startDate.split('-')[0] : 'Unknown';
+                const endYear = org.endDate.includes('-') ? org.endDate.split('-')[0] : 'Unknown';
+                const fiscalYear = `${startYear}-${endYear}`;
+
+                row.innerHTML = `
+                    <td>${org.orgName || 'N/A'}</td>
+                    <td>${fiscalYear}</td>
+                    <td>${org.startDate}</td>
+                    <td>${org.endDate}</td>
+                `;
+
+                row.addEventListener('click', () => selectRow(row, org));
+                tableBody.appendChild(row);
+            });
+        }
+
+        function selectRow(row, orgData) {
+            // Remove previous selection
+            document.querySelectorAll('.org-table tbody tr').forEach(r => r.classList.remove('selected'));
+            
+            // Add selection to clicked row
+            row.classList.add('selected');
+            selectedOrgData = orgData;
+        }
+
+        function setupEventListeners() {
+            document.getElementById('continueBtn').addEventListener('click', () => {
+                if (!selectedOrgData) {
+                    showToast('⚠️ Please select an organization first.');
+                    return;
+                }
+                submitSelection();
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                logout();
+            });
+        }
+
+        function submitSelection() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/select-database';
+
+            const fields = {
+                dbName: selectedOrgData.orgDb,
+                startDateInput: selectedOrgData.startDate,
+                endDateInput: selectedOrgData.endDate
+            };
+
+            Object.keys(fields).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = fields[key];
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        async function logout() {
+            try {
+                await fetch('/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/login';
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'show';
+            setTimeout(() => (toast.className = toast.className.replace('show', '')), 3000);
+        }
+    </script>
+</body>
+</html>

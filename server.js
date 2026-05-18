@@ -51,7 +51,7 @@ app.use(
   })
 );
 app.use((req, res, next) => {
-  const excludedRoutes = ['/login', '/update-db', '/clone-database-set-fiscal', '/fetch-fiscal-data', '/check-setup', '/setup', '/api/prevalidate-login', '/favicon.ico'];
+  const excludedRoutes = ['/login', '/select-database', '/update-db', '/clone-database-set-fiscal', '/fetch-fiscal-data', '/check-setup', '/setup', '/api/prevalidate-login', '/favicon.ico'];
 
   if (excludedRoutes.includes(req.path)) {
     return next(); // Skip session DB check for these routes
@@ -265,120 +265,125 @@ const formatDate = (date) => {
   return "No date found";
 };
 
-// Login route
+// Login route - only validates credentials, then redirects to database selection
 app.post("/login", (req, res) => {
-  const { username, password, dbName, startDateInput, endDateInput } = req.body;
-  const computerName = os.hostname(); // PC name
-  const winUserName = os.userInfo().username; // Windows username
+  const { username, password } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ 
+      message: "Username is required.", 
+      success: false 
+    });
+  }
+
+  // Query to check if user exists and is admin (for now, only checking admin status)
+  const query = `
+    SELECT UserID FROM tbUserMaster
+    WHERE UserName = ? 
+  `;
+
+  sql.query(connectionString, query, [username], (err, rows) => {
+    if (err) {
+      console.error("Login failed:", err);
+      return res.status(500).json({ 
+        message: "Internal server error. Please try again later.", 
+        success: false 
+      });
+    }
+
+    if (!rows || rows.length === 0) {
+      console.log("Invalid login attempt for username:", username);
+      return res.status(401).json({ 
+        message: "Invalid username or password.", 
+        success: false 
+      });
+    }
+
+    // User is admin - store in session and redirect to database selection
+    const userID = rows[0].UserID;
+    req.session.username = username;
+    req.session.userID = userID;
+    req.session.loggedIn = true;
+    
+    console.log('Login successful for admin user:', username);
+    // Render the database-selection view and send as HTML
+    return res.render('database-selection', { username });
+  });
+});
+
+
+// New route to handle database selection
+app.post("/select-database", (req, res) => {
+  const { dbName, startDateInput, endDateInput } = req.body;
+  const username = req.session.username;
+  const userID = req.session.userID;
+  const computerName = os.hostname();
+  const winUserName = os.userInfo().username;
   const deviceType = req.useragent.isMobile ? 'Mobile' :
     req.useragent.isTablet ? 'Tablet' :
       req.useragent.isDesktop ? 'pc' : 'Unknown';
-  if (!dbName) {
-    return res
-      .status(400)
-      .json({ message: "Database is required.Please select one.", success: false });
+
+  if (!dbName || !startDateInput || !endDateInput) {
+    return res.status(400).json({ 
+      message: "Database and dates are required.", 
+      success: false 
+    });
   }
 
-  if (
-    !startDateInput ||
-    !endDateInput ||
-    startDateInput === "No date found" ||
-    endDateInput === "No date found"
-  ) {
-    return res
-      .status(400)
-      .json({
-        message: "Start date and end date are required.Please insert dates to the database first.",
+  if (startDateInput === "No date found" || endDateInput === "No date found") {
+    return res.status(400).json({
+      message: "Please select valid start and end dates.",
+      success: false,
+    });
+  }
+
+  // Get OrgID for the selected database
+  const queryOrgID = `
+    SELECT OrgID FROM tbOrgMaster WHERE DBName = ?
+  `;
+
+  sql.query(connectionString, queryOrgID, [dbName], (err, rows) => {
+    if (err) {
+      console.error("Database selection failed:", err);
+      return res.status(500).json({ 
+        message: "Internal server error", 
+        success: false 
+      });
+    }
+
+    if (!rows || rows.length === 0) {
+      console.log("No organization found for:", dbName);
+      return res.status(400).json({
+        message: `No organization found with the name '${dbName}'.`,
         success: false,
       });
-  }
-
-  const queryUserID = `
-        SELECT UserID FROM tbUserMaster WHERE UserName = ?
-  `;
-  sql.query(connectionString, queryUserID, [username], (err1, rows1) => {
-    if (err1) {
-      console.error("Login failed:", err1);
-      return res.status(500).json({ message: "Internal server error.", success: false });
     }
 
-    if (!rows1 || rows1.length === 0) {
-      console.log("Invalid login attempt, user not found:", username);
-      return res.status(401).json({ message: "Invalid username or password.", success: false });
-    }
+    const orgID = rows[0].OrgID;
 
-    const userID = rows1[0].UserID;
-    console.log('ggs', userID)
-
-    const queryOrgID = `
-        SELECT OrgID FROM tbOrgMaster WHERE DBName = ?
-  `;
-    sql.query(connectionString, queryOrgID, [dbName], (err2, rows2) => {
-      if (err2) {
-        console.error("Login failed:", err2);
-        return res.status(500).json({ message: "Internal server error", success: false });
-      }
-
-      if (!rows2 || rows2.length === 0) {
-        console.log("No organization found for:", dbName);
-        return res.status(400).json({
-          message: `No organization found with the name '${dbName}'.`,
-          success: false,
-        });
-      }
-
-      const orgID = rows2[0].OrgID;
-
-
-      const query = `
-        INSERT INTO tbUserLog (UserID, OrgID, ComputerName, WinUserName, LoginDateTime)
-        VALUES (?, ?, ?, ?, GETDATE())
+    // Insert login log entry
+    const logQuery = `
+      INSERT INTO tbUserLog (UserID, OrgID, ComputerName, WinUserName, LoginDateTime)
+      VALUES (?, ?, ?, ?, GETDATE())
     `;
 
-      sql.query(connectionString, query,
-        [userID, orgID, computerName, deviceType],
-        (err3) => {
-          if (err3) {
-            console.error(err3);
-            return res.status(500).send('Error saving login data');
-          }
-
-          const query = `
-      SELECT * FROM tbUserMaster
-      WHERE UserName = ? AND Password = ?
-  `;
-
-          sql.query(connectionString, query, [username, password], (err, rows) => {
-            if (err) {
-              console.error("Login failed:", err);
-              return res
-                .status(500)
-                .json({
-                  message: "Internal server error. Please try again later.",
-                  success: false,
-                });
-            }
-
-            if (rows.length > 0) {
-              console.log("Login successful for user:", username);
-              req.session.username = username;
-              req.session.dbName = dbName;
-              req.session.userID = userID;
-              req.session.conn = `Server=localhost;Database=${dbName};user=sa;password=123;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}`;
-
-              req.session.loggedIn = true;
-              console.log('osted')
-              // Include redirect key only for login
-              return res.redirect('/docclass.html');
-
-            } else {
-              console.log("Invalid login attempt for username:", username);
-              return res
-                .status(401)
-                .json({ message: "Invalid username or password.", success: false });
-            }
-          });
+    sql.query(connectionString, logQuery, [userID, orgID, computerName, winUserName], (err) => {
+      if (err) {
+        console.error("Error saving login log:", err);
+        return res.status(500).json({ 
+          message: "Error saving login data", 
+          success: false 
         });
+      }
+
+      // Store database info in session
+      req.session.dbName = dbName;
+      req.session.conn = `Server=localhost;Database=${dbName};UID=sa;PWD=123;Driver={ODBC Driver 17 for SQL Server};`;
+      req.session.selectedStartDateLocal = startDateInput;
+      req.session.selectedEndDateLocal = endDateInput;
+
+      console.log('Database selection successful for user:', username, 'Database:', dbName);
+      return res.redirect('/docclass.html');
     });
   });
 });
@@ -420,7 +425,7 @@ app.post("/update-db", (req, res) => {
   }
 
   req.session.dbName = newDbName;
-  req.session.conn = `Server=localhost;Database=${newDbName};user=sa;password=123;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}`;
+  req.session.conn = `Server=localhost;Database=${newDbName};UID=sa;PWD=123;Driver={ODBC Driver 17 for SQL Server};`;
   console.log("Session updated:", req.session);
 
   res.render("index", { data: [], searchedMemberId: [] });
