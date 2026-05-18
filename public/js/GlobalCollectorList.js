@@ -127,5 +127,5 @@
 
                 // Attach events for all fields (single fetch for all)
                 collectorFields.forEach(field => {
-                    attachCollectorAutocomplete(field.inputId, field.listId, '/fetchCollectorListsForDEJVMsearch');
+                    attachCollectorAutocomplete(field.inputId, field.listId, '/fetchCollectors');
                 });
