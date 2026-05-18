@@ -1,0 +1,133 @@
+
+#movableDiv2{
+    width: 855px;
+}
+
+.al-container {
+    padding: 8px;
+    max-width: 470px;
+  }
+  
+.al-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+  }
+  
+.al-legend {
+    font-size: 12px; /* Smaller font for a more compact look */
+    font-weight: bold;
+    color: #0b62e4;
+  }
+
+  /* Form row layout styles */
+.al-form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.al-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+  
+  /* Form input styles */
+  .al-text,
+  .al-select {
+    width: 100%;    
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    background-color: #dedada;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+  .al-text:focus,
+  .al-select:focus {
+    border-color: #0b62e4;
+    outline: none;
+  }
+
+  .al-table-container {
+    max-height: 450px;
+    overflow-y: auto;
+    width: 800px;
+    max-width: 952px;
+    margin: 0 auto;
+    overflow-x: auto;
+  }
+  
+  .al-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  text-align: left;
+  font-weight: normal;
+  }
+  .al-table-container th {
+  position: sticky;
+  top: -2px;
+  z-index:2; /* Ensure header stays above body content */
+  text-align: center; /* Optional: Center the header text */
+  font-weight: normal; /* Remove the bold font-weight */
+  background-color:#2f7ebd;
+  }
+  
+  .al-table-container th,
+  .al-table-container td {
+    border: 1px solid #000000; /* Bolder border */
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .al-table-container td {
+    text-align: center; /* Optional: centers text in cells */
+  }
+
+.al-button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    display: flex;
+    flex-direction:row;
+    gap:15px;
+    margin-bottom: 5px;
+}
+
+  /* Button styles */
+.al-button {
+    background-color: #0b62e4;
+    color: white;
+    border: none;
+    padding: 4px 10px; /* Reduced padding for smaller buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px; /* Smaller font size for compact buttons */
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .al-button:hover {
+    background-color: #094bba;
+  }
+  
+  .al-button:active {
+    background-color: #073a8e;
+    transform: scale(0.95);
+  }
+  
+.al-button[type="submit"] {
+    background-color: #28a745;
+    max-width: 80px;
+}
+
+.al-button[type="button"] {
+    background-color: #dc3545;
+    max-width: 80px;
+}

@@ -1,0 +1,97 @@
+#movableDiv125{
+    max-width: 857px;
+}
+
+.ast-container {
+    padding: 8px;
+    width: 510px;
+}
+
+.ast-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+}
+
+.ast-legend {
+  font-size: 12px; /* Smaller font for a more compact look */
+  font-weight: bold;
+  color: #0b62e4;
+}
+
+  /* Form row layout styles */
+  .ast-form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.ast-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+  
+  /* Form input styles */
+  .ast-text,
+  .ast-date,
+  .ast-select {
+    width: 100%;    
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    background-color: #dedada;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+  .ast-text:focus,
+  .ast-date:focus,
+  .ast-select:focus {
+    border-color: #0b62e4;
+    outline: none;
+  }
+  
+.ast-button-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  display: flex;
+  flex-direction:row;
+  gap:15px;
+  margin-bottom: 10px;
+}
+
+/* Button styles */
+.ast-button {
+  background-color: #0b62e4;
+  color: white;
+  border: none;
+  padding: 4px 10px; /* Reduced padding for smaller buttons */
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px; /* Smaller font size for compact buttons */
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.ast-button:hover {
+  background-color: #094bba;
+}
+
+.ast-button:active {
+  background-color: #073a8e;
+  transform: scale(0.95);
+}
+
+.ast-button[type="submit"] {
+  background-color: #28a745;
+  max-width: 80px;
+}
+
+.ast-button[type="button"] {
+  background-color: #dc3545;
+  max-width: 80px;
+}

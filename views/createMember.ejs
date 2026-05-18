@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toggle Content</title>
+    <link href="https://nepalidatepicker.sajanmaharjan.com.np/nepali.datepicker/css/nepali.datepicker.v4.0.4.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/css/createmem.css">
+</head>
+<body>
+    <div class="container">
+        <form action="/submit/createMem" method="POST"  enctype="multipart/form-data">
+            <h1 style="margin-bottom: 10px; text-align: center; color: #f9e800;">CREATE A NEW MEMBER</h1>
+                <div class="anchor">
+                    <a href="#" class="toggle-link" data-target="generalInformation">
+                        General Information</a>
+                    <a href="#" class="toggle-link" data-target="accounts">
+                        Accounts</a>
+                </div>
+
+            <div id="generalInformation" class="contents">
+                <!-- General Information -->
+                <fieldset>
+                        <div class="cem-form-style-horizontal3">
+                            <div>
+                                <label class="wir">Member ID </label>
+                                <input type="number" id="MemberId" name="MemberId">
+                            </div>
+                            <div>
+                                <label class="wir">Name</label>
+                                <input type="text" id="Name" name="Name">
+                            </div>
+                            <div class="autocomplete-container">
+                                <label for="Profession">Profession:</label>
+                                <input type="text" id="Profession" name="Profession"
+                                    oninput="fetchProfessionOptions(this.value)" autocomplete="off" required>
+                                <div id="profession-list" class="autocomplete-list"></div>
+                            </div>
+
+                            <div class="autocomplete-container">
+                                <label for="Qualification">Qualification:</label>
+                                <input type="text" id="Qualification" name="Qualification"
+                                    oninput="fetchQualificationOptions(this.value)" autocomplete="off" required>
+                                <div id="qualification-list" class="autocomplete-list"></div>
+                            </div>
+                            <div>
+                                <label for="gender">Gender</label>
+                                <select name="Sex" id="Sex">
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="cem-form-style-horizontal3">
+                            <div>
+                                <label>Mobile </label>
+                                <input type="number" name="Mobile">
+                            </div>
+                            <div>
+                                <label>Name(English)</label>
+                                <input type="text" name="EngName">
+                            </div>
+                        <div>
+                            <label>Reg Date</label>
+                            <input type="date" class="date" id="nepali-date2" name="DOR">
+                        </div>
+                        <div><label>Birth Date </label>
+                            <input type="date" class="date" id="nepali-date" name="DOB">
+                        </div>
+                        <div>
+                            <label>Issue Date </label>
+                            <input type="date" class="date" id="nepali-date1" name="IssueDate">
+                        </div>
+                        </div>
+
+                        <div class="cem-form-style-horizontal3">
+                        <div>
+                            <label for="status">Status</label>
+                            <select name="Status" id="Status">
+                                <option value="suchira">Suchira</option>
+                                <option value="bichira">Bichira</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Document Type</label>
+                            <select name="DocumentType" id="DocumentType">
+                                <option value="Citizenship">Citizenship</option>
+                                <option value="NID">NID</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="">No.</label>
+                            <input type="text" name="DocNo" id="">
+
+                        </div>
+                        <div>
+                            <label>Issue Address </label>
+                            <input type="text" name="IssueAddress">
+                        </div>
+                        <div>
+                            <label for="">Doc Class</label>
+                            <input type="text" name="DocClassName" id="">
+                        </div>
+                    </div>
+
+                        <fieldset>
+                            <legend class="heading"> Temporary Address</legend>
+                            <div class="cem-form-style-horizontal3">
+                                <div>
+                                    <label for="districtInput">District*</label>
+                                    <input type="text" id="districtInput" class="asg-text" name="District" 
+                                           onfocus="fetchDistricts1(true)" oninput="filterDistricts1()" 
+                                           placeholder="Type to get District List">
+                                    <div id="districtsList" class="suggestions-list2"></div>
+                                </div>
+                                
+                                
+                                <div>
+                                    <label for="VDCInput1">VDC*</label>
+                                    <input type="text" id="VDCInput1" class="asg-text" name="TMunicipality" 
+                                           onfocus="fetchVDC1(true)" oninput="filterVDCs1()" 
+                                           placeholder="Type to get VDC List">
+                                    <div id="VDCList1" class="suggestions-list2"></div>
+                                </div>
+                                <div>
+                                    <label for="Ward.No">Ward.No</label>
+                                    <input type="number" id="Ward" class="address-number" name="TWardno" value="">
+                                </div>
+                                <div>
+                                    <label for="Tel">Tel</label>
+                                    <input type="tel" id="tele" class="address-tel" name="TTelephone" value="">
+                                </div>
+                                <div>
+                                    <label for="Tole">Tole</label>
+                                    <input type="text" id="tole" class="address-text" name="TTole" value="">
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend class="heading"> Permanent Address</legend>
+                            <div class="cem-form-style-horizontal3">
+                                <div>
+                                    <label for="PDistrict">District*</label>
+                                    <input type="text" id="PDistrict" class="asg-text" name="PDistrict" 
+                                           onfocus="fetchDistricts2(true)" oninput="filterDistricts2()" 
+                                           placeholder="Type to get District List">
+                                    <div id="PDistrictsList" class="suggestions-list2"></div>
+                                </div>
+                                
+                                
+                                <div>
+                                    <label for="VDCInput2">VDC*</label>
+                                    <input type="text" id="VDCInput2" class="asg-text" name="PMunicipality" 
+                                           onfocus="fetchVDC2(true)" oninput="filterVDCs2()" 
+                                           placeholder="Type to get VDC List">
+                                    <div id="VDCList2" class="suggestions-list2"></div>
+                                </div>
+                                <div>
+                                    <label for="Ward.No">Ward.No</label>
+                                    <input type="number" id="Ward" class="address-number" name="PWardno" value="">
+                                </div>
+                                <div>
+                                    <label for="Tel">Tel</label>
+                                    <input type="tel" id="tele" class="address-tel" name="PTelephone" value="">
+                                </div>
+                                <div>
+                                    <label for="Tole">Tole</label>
+                                    <input type="text" id="tole" class="address-text" name="PTole" value="">
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Photo</legend>
+                            <div class="uploads">
+
+                                <div class="form-style-horizontal">
+                                    <div>
+                                        <img alt="Member Photo" style="width:100px;height:100px;" id="account-photo">
+                                        <input type="file" id="photo-input" name="MemPhoto" accept="image/*" onchange="previewImage1('photo-input', 'account-photo')">
+                                    </div>
+                                    <div>
+                                        <img alt="Sign1 Not Available" style="width:100px;height:100px;" id="account-sign1">
+                                        <input type="file" id="sign1-input" name="MemSign1" accept="image/*" onchange="previewImage1('sign1-input', 'account-sign1')">
+                                    </div>
+                                    <div>
+                                        <img alt="Sign2 Not Available" style="width:100px;height:100px;" id="account-sign2">
+                                        <input type="file" id="sign2-input" name="MemSign2" accept="image/*" onchange="previewImage1('sign2-input', 'account-sign2')">
+                                    </div>
+                                    <div>
+                                        <img alt="Sign3 Not Available" style="width:100px;height:100px;" id="account-sign3">
+                                        <input type="file" id="sign3-input" name="MemSign3" accept="image/*" onchange="previewImage1('sign3-input', 'account-sign3')">
+                                    </div>
+                                    <div>
+                                        <img alt="Sign4 Not Available" style="width:100px;height:100px;" id="account-sign4">
+                                        <input type="file" id="sign4-input" name="MemSign4" accept="image/*" onchange="previewImage1('sign4-input', 'account-sign4')">
+                                    </div>
+                                </div>
+                              
+                                
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend class="heading">Father/Mother/Husband Information(select)</legend>
+                            <div class="cem-form-style-horizontal3">
+                                <div>
+                                    <label for="">Select One:</label>
+                                    <select name="GuardianRel" id="GuardianRel">
+                                        <option value="Father">Father</option>
+                                        <option value="Mother">Mother</option>
+                                        <option value="Husband">Husband</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="">Name</label>
+                                    <input type="text" name="RelName" id="">
+                                </div>
+                                <div>
+                                    <label for="">Address</label> <input type="text" name="RelAddress" id="">
+                                </div>
+                                <div>
+                                    <label for="">Contact No.</label> <input type="number" name="RelContact" id="">
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="kin-details">
+                            <legend class="heading">Next Kin Details</legend>
+                            <div class="cem-form-style-horizontal3">
+                                <div>
+                                    <label for="">Name</label>
+                                    <input type="text" id="NextofKinName" name="KinName">
+                                </div>
+                                <div>
+                                    <label for="">Contact-No</label>
+                                    <input type="tel" id="NextofKinContactNumber" name="KinContact" maxlength="10"
+                                        oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                </div>
+                                <div>
+                                    <label for="">Address</label>
+                                    <input type="text" id="NextofKinAddress" name="KinAddress">
+                                </div>
+                                <div>
+                                    <label for="">Relation</label>
+                                    <input type="text" id="Relation" name="KinRelation">
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend class="heading">Introduced By</legend>
+                            <div class="cem-form-style-horizontal3">
+                                <div>
+                                    <input type="text" id="intronum1" name="IntroID1" placeholder="Ref1 Id1">
+                                </div>
+                                <div>
+                                    <input type="text" id="introname1" name="introname1" placeholder="Ref1 Name1">
+                                </div>
+                                <div>
+                                    <input type="text" id="intronum2" name="IntroID2" placeholder="Ref2 Id2">
+                                </div>
+                                <div>
+                                    <input type="text" id="introname2" name="introname2" placeholder="Ref2 Name2">
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend class="heading">Remarks </legend>
+                            <div>
+                                <textarea name="Remarks" id="textarea"></textarea>
+                                <input type="hidden" name="CMCreatedBy" id="CM-org-name"><!--Keep it hidden-->
+                            </div>
+                        </fieldset>
+                </fieldset>
+            </div>
+
+                <div id="accounts" class="contents">
+                    <!-- Accounts Content -->
+                    <p>This is the Accounts section.</p>
+                    <!-- Add your Accounts form fields here -->
+                </div>
+
+            <div class="cem-button-row">
+                <button type="submit" class="cem-button">Save</button>
+                <button type="button" class="cem-button">Cancel</button>
+            </div>
+        </form>
+        </div>
+
+        <script>
+
+            document.addEventListener('DOMContentLoaded', () => {
+              const username = localStorage.getItem('selectedusername');
+              if (username) {
+                document.getElementById('CM-org-name').value = `${username}`;
+              }
+            });
+          </script>
+        <script>
+            // Preview the uploaded image and store its Base64 value in sessionStorage
+        function previewImage1(inputId, imgId) {
+            const fileInput = document.getElementById(inputId);
+            const image = document.getElementById(imgId);
+        
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+        
+                reader.onload = function (e) {
+                    image.src = e.target.result; // Set the image preview
+                    sessionStorage.setItem(inputId + 'Base64', e.target.result); // Store Base64 in sessionStorage
+                };
+        
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+        
+        // Send data to the server
+        function updatePhotoAPI() {
+            const MemberID = document.getElementById('member-id').value; // Retrieve MemberID
+            const photoBase64 = sessionStorage.getItem('photo-inputBase64');
+            const sign1Base64 = sessionStorage.getItem('sign1-inputBase64');
+            const sign2Base64 = sessionStorage.getItem('sign2-inputBase64');
+            const sign3Base64 = sessionStorage.getItem('sign3-inputBase64');
+            const sign4Base64 = sessionStorage.getItem('sign4-inputBase64');
+        
+            if (!MemberID) {
+                showCustomAlert('Please enter a Member ID.');
+                return;
+            }
+        
+            fetch('/update-photo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    MemberID,
+                    photoBase64,
+                    sign1Base64,
+                    sign2Base64,
+                    sign3Base64,
+                    sign4Base64
+                })
+            })
+            .then(response => response.text())
+            .then(data => {
+                showCustomAlert(data); // Show success message
+                sessionStorage.clear(); // Clear sessionStorage after successful update
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        </script>
+
+        <script>
+            document.getElementById('intronum1').addEventListener('blur', function () {
+              const alias = this.value;
+              if (alias.trim() === '') {
+                document.getElementById('introname1').value = '';
+                return;
+              }
+          
+              fetch('/get-member-name-1', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ alias }),
+              })
+                .then((response) => response.json())
+                .then((data) => {
+                  if (data.success) {
+                    document.getElementById('introname1').value = data.memberName || '';
+                  } else {
+                    showCustomAlert(data.message || 'Member not found');
+                  }
+                })
+                .catch((error) => {
+                  console.error('Error:', error);
+                });
+            });
+          </script>
+                  <script>
+                    document.getElementById('intronum2').addEventListener('blur', function () {
+                      const alias = this.value;
+                      if (alias.trim() === '') {
+                        document.getElementById('introname2').value = '';
+                        return;
+                      }
+                  
+                      fetch('/get-member-name-2', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ alias }),
+                      })
+                        .then((response) => response.json())
+                        .then((data) => {
+                          if (data.success) {
+                            document.getElementById('introname2').value = data.memberName || '';
+                          } else {
+                            showCustomAlert(data.message || 'Member not found');
+                          }
+                        })
+                        .catch((error) => {
+                          console.error('Error:', error);
+                        });
+                    });
+                  </script>
+
+    <script>
+        // Fetch and display profession options
+        function fetchProfessionOptions(searchTerm) {
+            const professionList = document.getElementById('profession-list');
+            if (!searchTerm.trim()) {
+                professionList.innerHTML = '';
+                return;
+            }
+            fetch(`/searchProfession?term=${searchTerm}`)
+                .then(response => response.json())
+                .then(data => {
+                    professionList.innerHTML = '';
+                    data.forEach(item => {
+                        const option = document.createElement('div');
+                        option.textContent = item.Profession;
+                        option.onclick = () => {
+                            document.getElementById('Profession').value = item.Profession;
+                            professionList.innerHTML = '';
+                        };
+                        professionList.appendChild(option);
+                    });
+                })
+                .catch(err => console.error(err));
+        }
+
+        // Fetch and display qualification options
+        function fetchQualificationOptions(searchTerm) {
+            const qualificationList = document.getElementById('qualification-list');
+            if (!searchTerm.trim()) {
+                qualificationList.innerHTML = '';
+                return;
+            }
+            fetch(`/searchQualification?term=${searchTerm}`)
+                .then(response => response.json())
+                .then(data => {
+                    qualificationList.innerHTML = '';
+                    data.forEach(item => {
+                        const option = document.createElement('div');
+                        option.textContent = item.Qualification;
+                        option.onclick = () => {
+                            document.getElementById('Qualification').value = item.Qualification;
+                            qualificationList.innerHTML = '';
+                        };
+                        qualificationList.appendChild(option);
+                    });
+                })
+                .catch(err => console.error(err));
+        }
+    </script>
+    <script>
+        // Add event listeners to toggle links
+        document.addEventListener('DOMContentLoaded', () => {
+            const links = document.querySelectorAll('.toggle-link');
+            const sections = document.querySelectorAll('#generalInformation, #accounts');
+    
+            // Initially, show only the first section
+            sections.forEach(section => section.style.display = 'none');
+            if (sections[0]) sections[0].style.display = 'block';
+    
+            links.forEach(link => {
+                link.addEventListener('click', event => {
+                    event.preventDefault();
+                    const targetId = link.getAttribute('data-target');
+                    const targetSection = document.getElementById(targetId);
+    
+                    if (targetSection) {
+                        // Hide all sections
+                        sections.forEach(section => section.style.display = 'none');
+                        // Show the targeted section
+                        targetSection.style.display = 'block';
+    
+                        // Update active class
+                        links.forEach(link => link.classList.remove('active'));
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+  
+<script>
+    let allDistricts1 = [];  // Array to store all district data for the first input
+let filteredDistricts1 = [];  // Array to store filtered district data for the first input
+
+// Fetch district data and show suggestions for districtInput
+function fetchDistricts1(isInitialFocus) {
+    const districtsList = document.getElementById('districtsList');  // List container for districtInput
+    const inputField = document.getElementById('districtInput');  // Input field for districtInput
+    districtsList.innerHTML = '';  // Clear previous suggestions
+    districtsList.style.display = 'none';  // Hide the list initially
+
+    if (allDistricts1.length === 0 || isInitialFocus) {
+        fetch('/fetchDistricts1')  // Fetch from the '/fetchDistricts1' endpoint
+            .then(response => response.json())
+            .then(data => {
+                if (data.districts && data.districts.length > 0) {
+                    allDistricts1 = data.districts;  // Store all districts in allDistricts1
+                    filteredDistricts1 = [...allDistricts1];  // Copy to filteredDistricts1
+                    displayDistricts1();
+                } else {
+                    const noResult = document.createElement('div');
+                    noResult.textContent = 'No districts found';
+                    noResult.style.color = 'gray';
+                    districtsList.appendChild(noResult);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching districts:', error);
+                const errorMessage = document.createElement('div');
+                errorMessage.textContent = 'Error fetching districts';
+                errorMessage.style.color = 'red';
+                districtsList.appendChild(errorMessage);
+            });
+    } else {
+        displayDistricts1();  // Use filteredDistricts1 when available
+    }
+}
+
+// Filter districts based on user input for districtInput
+function filterDistricts1() {
+    const input = document.getElementById('districtInput').value.toLowerCase();
+    if (input === '') {
+        filteredDistricts1 = [...allDistricts1];  // Reset filteredDistricts1 to allDistricts1
+    } else {
+        filteredDistricts1 = allDistricts1.filter(item =>
+            item.District.toLowerCase().includes(input) || item.Alias.toLowerCase().includes(input)
+        );
+    }
+    displayDistricts1();
+}
+
+// Display the filtered districts in the suggestions list for districtInput
+function displayDistricts1() {
+    const districtsList = document.getElementById('districtsList');
+    districtsList.innerHTML = '';  // Clear previous suggestions
+
+    // Sort the districts alphabetically by District name
+    filteredDistricts1.sort((a, b) => a.District.localeCompare(b.District));
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'X';
+    closeButton.className = 'close-button';
+
+    closeButton.onclick = function (event) {
+        event.preventDefault();
+        districtsList.style.display = 'none';  // Hide the suggestions list
+    };
+
+    districtsList.appendChild(closeButton);  // Append the close button
+
+    if (filteredDistricts1.length > 0) {
+        districtsList.style.display = 'block';  // Show the suggestions list
+        filteredDistricts1.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.textContent = `${item.District} - ${item.Alias}`;
+            div.title = `${item.District} - ${item.Alias}`;
+
+            div.onclick = function () {
+                document.getElementById('districtInput').value = item.District;  // Populate the input field
+                districtsList.style.display = 'none';  // Hide the suggestions list
+            };
+            districtsList.appendChild(div);
+        });
+    } else {
+        const noResult = document.createElement('div');
+        noResult.textContent = 'No matching districts found';
+        noResult.style.color = 'gray';
+        districtsList.appendChild(noResult);
+    }
+}
+
+</script>
+<script>
+    let allDistricts2 = [];  // Array to store all district data for the second input
+let filteredDistricts2 = [];  // Array to store filtered district data for the second input
+
+// Fetch district data and show suggestions for PDistrict
+function fetchDistricts2(isInitialFocus) {
+    const districtsList = document.getElementById('PDistrictsList');  // List container for PDistrict
+    const inputField = document.getElementById('PDistrict');  // Input field for PDistrict
+    districtsList.innerHTML = '';  // Clear previous suggestions
+    districtsList.style.display = 'none';  // Hide the list initially
+
+    if (allDistricts2.length === 0 || isInitialFocus) {
+        fetch('/fetchDistricts2')  // Fetch from the '/fetchDistricts2' endpoint
+            .then(response => response.json())
+            .then(data => {
+                if (data.districts && data.districts.length > 0) {
+                    allDistricts2 = data.districts;  // Store all districts in allDistricts2
+                    filteredDistricts2 = [...allDistricts2];  // Copy to filteredDistricts2
+                    displayDistricts2();
+                } else {
+                    const noResult = document.createElement('div');
+                    noResult.textContent = 'No districts found';
+                    noResult.style.color = 'gray';
+                    districtsList.appendChild(noResult);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching districts:', error);
+                const errorMessage = document.createElement('div');
+                errorMessage.textContent = 'Error fetching districts';
+                errorMessage.style.color = 'red';
+                districtsList.appendChild(errorMessage);
+            });
+    } else {
+        displayDistricts2();  // Use filteredDistricts2 when available
+    }
+}
+
+// Filter districts based on user input for PDistrict
+function filterDistricts2() {
+    const input = document.getElementById('PDistrict').value.toLowerCase();
+    if (input === '') {
+        filteredDistricts2 = [...allDistricts2];  // Reset filteredDistricts2 to allDistricts2
+    } else {
+        filteredDistricts2 = allDistricts2.filter(item =>
+            item.District.toLowerCase().includes(input) || item.Alias.toLowerCase().includes(input)
+        );
+    }
+    displayDistricts2();
+}
+
+// Display the filtered districts in the suggestions list for PDistrict
+function displayDistricts2() {
+    const districtsList = document.getElementById('PDistrictsList');
+    districtsList.innerHTML = '';  // Clear previous suggestions
+
+    // Sort the districts alphabetically by District name
+    filteredDistricts2.sort((a, b) => a.District.localeCompare(b.District));
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'X';
+    closeButton.className = 'close-button';
+
+    closeButton.onclick = function (event) {
+        event.preventDefault();
+        districtsList.style.display = 'none';  // Hide the suggestions list
+    };
+
+    districtsList.appendChild(closeButton);  // Append the close button
+
+    if (filteredDistricts2.length > 0) {
+        districtsList.style.display = 'block';  // Show the suggestions list
+        filteredDistricts2.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.textContent = `${item.District} - ${item.Alias}`;
+            div.title = `${item.District} - ${item.Alias}`;
+
+            div.onclick = function () {
+                document.getElementById('PDistrict').value = item.District;  // Populate the input field
+                districtsList.style.display = 'none';  // Hide the suggestions list
+            };
+            districtsList.appendChild(div);
+        });
+    } else {
+        const noResult = document.createElement('div');
+        noResult.textContent = 'No matching districts found';
+        noResult.style.color = 'gray';
+        districtsList.appendChild(noResult);
+    }
+}
+
+</script>
+<script>
+    let allVDCs1 = [];  // Array to store all VDC data
+let filteredVDCs1 = [];  // Array to store filtered VDC data
+
+// Fetch VDC data and show suggestions
+function fetchVDC1(isInitialFocus) {
+    const vdcList = document.getElementById('VDCList1');  // Corrected to VDCList1
+    const inputField = document.getElementById('VDCInput1');
+    vdcList.innerHTML = '';  // Clear previous suggestions
+    vdcList.style.display = 'none';  // Hide the list initially
+
+    if (allVDCs1.length === 0 || isInitialFocus) {
+        fetch('/fetchVDC1')  // Fetch from the '/fetchVDC1' endpoint
+            .then(response => response.json())
+            .then(data => {
+                if (data.vdc && data.vdc.length > 0) {
+                    allVDCs1 = data.vdc;  // Store all VDCs in allVDCs1
+                    filteredVDCs1 = [...allVDCs1];  // Copy to filteredVDCs1
+                    displayVDCs1(filteredVDCs1);
+                } else {
+                    const noResult = document.createElement('div');
+                    noResult.textContent = 'No VDCs found';
+                    noResult.style.color = 'gray';
+                    vdcList.appendChild(noResult);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching VDC data:', error);
+                const errorMessage = document.createElement('div');
+                errorMessage.textContent = 'Error fetching VDC data';
+                errorMessage.style.color = 'red';
+                vdcList.appendChild(errorMessage);
+            });
+    } else {
+        displayVDCs1(filteredVDCs1);  // Use filteredVDCs1 when available
+    }
+}
+
+// Filter VDCs based on user input
+function filterVDCs1() {
+    const input = document.getElementById('VDCInput1').value.toLowerCase();  // Corrected to VDCInput1
+    if (input === '') {
+        filteredVDCs1 = [...allVDCs1];  // Reset filteredVDCs1 to allVDCs1
+    } else {
+        filteredVDCs1 = allVDCs1.filter(item =>
+            item.VDC.toLowerCase().includes(input) || item.Alias.toLowerCase().includes(input)
+        );
+    }
+    displayVDCs1(filteredVDCs1);
+}
+
+// Display the filtered VDCs in the suggestions list
+function displayVDCs1(vdcList) {
+    const listElement = document.getElementById('VDCList1');  // Corrected to VDCList1
+    listElement.innerHTML = '';  // Clear previous suggestions
+
+    // Sort the VDCs alphabetically by VDC name
+    vdcList.sort((a, b) => a.VDC.localeCompare(b.VDC));
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'X';
+    closeButton.className = 'close-button';
+
+    closeButton.onclick = function (event) {
+        event.preventDefault();
+        listElement.style.display = 'none';  // Hide the suggestions list
+    };
+
+    listElement.appendChild(closeButton);  // Append the close button
+
+    if (vdcList.length > 0) {
+        listElement.style.display = 'block';  // Show the suggestions list
+        vdcList.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.textContent = `${item.VDC} - ${item.Alias}`;
+            div.title = `${item.VDC} - ${item.Alias}`;
+
+            div.onclick = function () {
+                document.getElementById('VDCInput1').value = item.VDC;  // Corrected to VDCInput1
+                listElement.style.display = 'none';  // Hide the suggestions list
+            };
+            listElement.appendChild(div);
+        });
+    } else {
+        const noResult = document.createElement('div');
+        noResult.textContent = 'No matching VDCs found';
+        noResult.style.color = 'gray';
+        listElement.appendChild(noResult);
+    }
+}
+
+</script>
+<script>
+    let allVDCs2 = [];  // Array to store all VDC data
+let filteredVDCs2 = [];  // Array to store filtered VDC data
+
+// Fetch VDC data and show suggestions
+function fetchVDC2(isInitialFocus) {
+    const vdcList = document.getElementById('VDCList2');  // Corrected to VDCList2
+    const inputField = document.getElementById('VDCInput2');
+    vdcList.innerHTML = '';  // Clear previous suggestions
+    vdcList.style.display = 'none';  // Hide the list initially
+
+    if (allVDCs2.length === 0 || isInitialFocus) {
+        fetch('/fetchVDC2')  // Fetch from the '/fetchVDC2' endpoint
+            .then(response => response.json())
+            .then(data => {
+                if (data.vdc && data.vdc.length > 0) {
+                    allVDCs2 = data.vdc;  // Store all VDCs in allVDCs2
+                    filteredVDCs2 = [...allVDCs2];  // Copy to filteredVDCs2
+                    displayVDCs2(filteredVDCs2);
+                } else {
+                    const noResult = document.createElement('div');
+                    noResult.textContent = 'No VDCs found';
+                    noResult.style.color = 'gray';
+                    vdcList.appendChild(noResult);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching VDC data:', error);
+                const errorMessage = document.createElement('div');
+                errorMessage.textContent = 'Error fetching VDC data';
+                errorMessage.style.color = 'red';
+                vdcList.appendChild(errorMessage);
+            });
+    } else {
+        displayVDCs2(filteredVDCs2);  // Use filteredVDCs2 when available
+    }
+}
+
+// Filter VDCs based on user input
+function filterVDCs2() {
+    const input = document.getElementById('VDCInput2').value.toLowerCase();  // Corrected to VDCInput2
+    if (input === '') {
+        filteredVDCs2 = [...allVDCs2];  // Reset filteredVDCs2 to allVDCs2
+    } else {
+        filteredVDCs2 = allVDCs2.filter(item =>
+            item.VDC.toLowerCase().includes(input) || item.Alias.toLowerCase().includes(input)
+        );
+    }
+    displayVDCs2(filteredVDCs2);
+}
+
+// Display the filtered VDCs in the suggestions list
+function displayVDCs2(vdcList) {
+    const listElement = document.getElementById('VDCList2');  // Corrected to VDCList2
+    listElement.innerHTML = '';  // Clear previous suggestions
+
+    // Sort the VDCs alphabetically by VDC name
+    vdcList.sort((a, b) => a.VDC.localeCompare(b.VDC));
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'X';
+    closeButton.className = 'close-button';
+
+    closeButton.onclick = function (event) {
+        event.preventDefault();
+        listElement.style.display = 'none';  // Hide the suggestions list
+    };
+
+    listElement.appendChild(closeButton);  // Append the close button
+
+    if (vdcList.length > 0) {
+        listElement.style.display = 'block';  // Show the suggestions list
+        vdcList.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.textContent = `${item.VDC} - ${item.Alias}`;
+            div.title = `${item.VDC} - ${item.Alias}`;
+
+            div.onclick = function () {
+                document.getElementById('VDCInput2').value = item.VDC;  // Corrected to VDCInput2
+                listElement.style.display = 'none';  // Hide the suggestions list
+            };
+            listElement.appendChild(div);
+        });
+    } else {
+        const noResult = document.createElement('div');
+        noResult.textContent = 'No matching VDCs found';
+        noResult.style.color = 'gray';
+        listElement.appendChild(noResult);
+    }
+}
+
+</script>
+<script src="/js/div.js"></script>
+  <script src="/js/alertsmessages.js"></script>
+    
+</body>
+</html>

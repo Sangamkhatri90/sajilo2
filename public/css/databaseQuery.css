@@ -1,0 +1,138 @@
+#movableDiv132{
+  width: 470px;
+}
+
+.dqa-container {
+  padding: 8px;
+  max-width: 445px;
+}
+
+.dqa-fieldset {
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 8px; /* Reduced padding for compact fieldset */
+  margin: 5px 0;
+}
+
+.dqa-legend {
+font-size: 12px; /* Smaller font for a more compact look */
+font-weight: bold;
+color: #0b62e4;
+}
+
+/* Form row layout styles */
+.dqa-form-style-horizontal3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px; /* Reduced gap for tighter layout */
+  margin-bottom: 6px;
+}
+
+.dqa-form-style-horizontal3 div {
+flex: 1;
+min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+.dqa-l {
+  margin-top: -76px;
+}
+
+/* Form input styles */
+.dqa-text,
+.dqa-select,
+.dqa-select1 {
+  width: 100%;    
+  padding: 3px; /* Reduced padding for smaller input fields */
+  margin: 2px 0;
+  background-color: #dedada;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 11px; /* Smaller font size */
+}
+
+.dqa-text:focus,
+.dqa-select:focus,
+.dqa-select1:focus {
+  border-color: #0b62e4;
+  outline: none;
+}
+
+.dqa-select {
+  max-width: 182px;
+}
+
+.dqa-select1 {
+  max-width: 182px;
+}
+
+.dqa-text{
+  resize: none;
+  height: 102px;
+  max-width: 182px;
+  margin-top: -25px;
+  margin-left: 230px;
+}
+
+
+.dqa-table-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.dqa-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  text-align: left;
+}
+
+.dqa-table-container th,
+.dqa-table-container td {
+padding: 12px 15px;
+border: 1px solid #000000; /* Bolder border */
+}
+
+.dqa-button-row {
+display: flex;
+justify-content: space-between;
+margin-top: 10px;
+display: flex;
+flex-direction:row;
+gap:15px;
+margin-bottom: 10px;
+}
+
+/* Button styles */
+.dqa-button {
+background-color: #0b62e4;
+color: white;
+border: none;
+padding: 4px 10px; /* Reduced padding for smaller buttons */
+border-radius: 3px;
+cursor: pointer;
+font-size: 11px; /* Smaller font size for compact buttons */
+font-weight: bold;
+transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.dqa-button:hover {
+background-color: #094bba;
+}
+
+.dqa-button:active {
+background-color: #073a8e;
+transform: scale(0.95);
+}
+
+.dqa-button[type="submit"] {
+background-color: #28a745;
+max-width: 80px;
+}
+
+.dqa-button[type="button"] {
+background-color: #dc3545;
+max-width: 80px;
+}

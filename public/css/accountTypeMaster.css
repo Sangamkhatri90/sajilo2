@@ -1,0 +1,154 @@
+/* Movable Div Styling */
+#movableDiv76{
+    width: 820px;
+}
+
+#atm-search {
+  display: none; /* Hidden by default */
+  position: absolute;
+  right: -122px;
+  top: -25px;
+  width: 450px;
+  background: #f4f4f4;
+  padding: 20px;
+  opacity: 0; /* Invisible by default */
+  transform: translateX(100%);
+  transition: all 0.3s ease-in-out;
+}
+
+#atm-search[style*="display: block"] {
+  opacity: 1; /* Fully visible */
+  transform: translateX(0);
+}
+
+.atm-container {
+    padding: 8px;
+    max-width: 730px;
+}
+
+.atm-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+}
+
+.atm-legend {
+  font-size: 12px; /* Smaller font for a more compact look */
+  font-weight: bold;
+  color: #0b62e4;
+}
+
+.atm-form-style-horizontal3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px; /* Reduced gap for tighter layout */
+  margin-bottom: 6px;
+}
+  
+.atm-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+.atm-text,
+.atm-select {
+  width: 100%;
+  padding: 3px; /* Reduced padding for smaller input fields */
+  margin: 2px 0;
+  background-color: #dedada;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 11px; /* Smaller font size */
+}
+
+.atm-text:focus,
+.atm-select:focus {
+  border-color: #0b62e4;
+  outline: none;
+}
+
+.atm-form-style-horizontal3 input[id="atm-lajita"]{
+  margin-top: 27px;
+  margin-left: 30px;
+}
+
+.atm-table-container {
+  max-height: 295px;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 952px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.atm-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  text-align: left;
+  font-weight: normal;
+}
+
+.atm-table-container th {
+  position: sticky;
+  top: -2px; /* Keep the header at the top */
+  z-index:2; /* Ensure header stays above body content */
+  text-align: center; /* Optional: Center the header text */
+  font-weight: normal; /* Remove the bold font-weight */
+  background-color:#2f7ebd;
+}
+
+.atm-table-container th,
+.atm-table-container td {
+  border: 1px solid #000000; /* Bolder border */
+  padding: 8px;
+  text-align: left;
+}
+
+.atm-table-container td {
+  text-align: center; /* Optional: centers text in cells */
+}
+
+.atm-button-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  display: flex;
+  flex-direction:row;
+  gap:15px;
+  margin-bottom: 10px;
+}
+
+/* Button styles */
+.atm-button {
+  background-color: #0b62e4;
+  color: white;
+  border: none;
+  padding: 4px 10px; /* Reduced padding for smaller buttons */
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px; /* Smaller font size for compact buttons */
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.atm-button:hover {
+  background-color: #094bba;
+}
+
+.atm-button:active {
+  background-color: #073a8e;
+  transform: scale(0.95);
+}
+
+.atm-button[type="submit"] {
+  background-color: #28a745;
+  max-width: 80px;
+}
+
+.atm-button[type="button"] {
+  background-color: #dc3545;
+  max-width: 80px;
+}

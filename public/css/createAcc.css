@@ -1,0 +1,253 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+    padding: 20px;
+    font-size: 0.75em; /* Set font size to 0.75em */
+}
+
+.container {
+    max-width: 80%; /* Adjust the width for centering */
+    margin: 0 auto; /* Center the container */
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+  }
+  
+legend {
+    font-size: 12px; /* Smaller font for a more compact look */
+    font-weight: bold;
+    color: #0b62e4;
+  }
+
+h1 {
+    text-align: center;
+    color: #4CAF50;
+}
+
+.navigation {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.toggle-link {
+    text-decoration: none;
+    padding: 4px 8px;
+    text-decoration: none;
+    color: #555;
+    background-color: #e0e0e0;
+    margin: 0 2px;
+    font-size: 0.8em;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.toggle-link.active, .toggle-link:hover {
+    background-color: #45a049;
+    color: white;
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+    
+  /* Form row layout styles */
+  .form-style-horizontal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.form-style-horizontal div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+/* Content Sections */
+
+
+input, select, textarea {
+    width: 100%;    
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+    border: 1px solid #ccc;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+.ca-checkbox{
+  margin-left: -99px;
+  margin-right: -99px;
+}
+.ca-checkbox1{
+  margin-left: -130px;
+  margin-right: -130px;
+  gap: 0;
+}
+
+.table-container {
+    width: 100%;
+    max-width: 970px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+.table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-align: left;
+}
+.table-container th,
+.table-container td {
+  padding: 12px 15px;
+  border: 1px solid #000000; /* Bolder border */
+}
+
+#installment:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    display: flex;
+    flex-direction:row;
+    gap:15px;
+    margin-bottom: 10px;
+  }
+  
+  /* Button styles */
+  .button {
+    background-color: #0b62e4;
+    color: white;
+    border: none;
+    padding: 4px 10px; /* Reduced padding for smaller buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px; /* Smaller font size for compact buttons */
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .button:hover {
+    background-color: #094bba;
+  }
+  
+  .button:active {
+    background-color: #073a8e;
+    transform: scale(0.95);
+  }
+  
+  .button[type="submit"] {
+    background-color: #28a745;
+    max-width: 80px;
+  }
+  
+  .button[type="button"] {
+    background-color: #dc3545;
+    max-width: 80px;
+  }
+  
+/* Style the suggestions list container */
+.suggestions-list {
+  position: absolute;
+  background-color: #ffffff;
+  width: 80%;
+  max-height: 200px; /* Limiting the height */
+  overflow-y: auto; /* Scrollbar when the list exceeds max-height */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ddd;
+  z-index: 1000;
+  border-radius: 5px;
+  padding: 5px 0;
+}
+/* Initially hide the suggestions list */
+.suggestions-list1,.suggestions-list2,.suggestions-list3 {
+  display: none;
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ddd;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000; /* Ensure it appears above other content */
+  width: 40%; /* Match the width of the input */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+/* For the suggestion list container (Updated class to .collectorlist) */
+.collectorlist {
+  position: absolute;  /* Ensures the list is positioned relative to the input */
+  max-height: 250px;
+  overflow-y: auto;  /* Scroll if list exceeds max height */
+  background-color: white;
+  border: 1px solid #ddd;
+  z-index: 9999;  /* Ensure it is displayed above other elements */
+  width: 100%;  /* Match the width of the input field */
+  top: 100%;  /* Place it directly below the input field */
+  border-radius: 5px;  /* Slightly rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Add shadow for better visibility */
+}
+
+/* For each suggestion item */
+.suggestion-item {
+  padding: 10px;
+  cursor: pointer;  /* Pointer cursor to indicate clickable item */
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #ddd;
+  font-size: 14px;
+  color: #333;
+  transition: background-color 0.3s;  /* Smooth background color transition */
+}
+
+/* On hover, change background color for suggestion item */
+.suggestion-item:hover {
+  background-color: #e0e0e0;  /* Darker background on hover */
+}
+
+/* Close button styles */
+.close-button {
+  position: sticky;
+  top: 5px;
+  right: 10px;
+  background-color: transparent;
+  border: none;
+  font-size: 18px;
+  color: #333;
+  cursor: pointer;
+  padding: 0;
+  z-index: 10000;  /* Keep above other elements */
+}
+
+/* Optional: Change close button color when hovered */
+.close-button:hover {
+  color: red;  /* Red color on hover to show interactivity */
+}
+

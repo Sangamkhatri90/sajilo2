@@ -1,0 +1,105 @@
+
+.calculator {
+    background-color: #333;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+    
+}
+
+#equation-display, #result-display {
+    width: 95%;
+    padding: 15px;
+    font-size: 24px;
+    text-align: right;
+    margin-bottom: 5px;
+    border: none;
+    border-radius: 4px;
+    background-color: #222;
+    color: #fff;
+}
+
+#equation-display {
+    font-size: 18px;
+    color: #888;
+}
+
+.cal-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.cal-btn {
+    padding: 20px;
+    font-size: 18px;
+    border: none;
+    border-radius: 4px;
+    background-color: #444;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.cal-btn:hover {
+    background-color: #555;
+}
+
+
+
+.ac {
+    background-color: #e74c3c; 
+    color: #fff;
+}
+
+.ac:hover {
+    background-color: #c0392b; 
+}
+
+
+.operator {
+    background-color: #f08c35;
+}
+
+.operator:hover {
+    background-color: #e67e22;
+}
+
+.equal {
+    grid-column: span 1;
+    background-color: #2980b9;
+}
+
+.equal:hover {
+    background-color: #3498db;
+}
+
+/* Styles for the history section */
+#history {
+    margin-top: 20px;
+    background-color: #222;
+    padding: 10px;
+    border-radius: 8px;
+    color: #fff;
+}
+
+/* Hide history by default */
+.hidden {
+    display: none;
+}
+
+#history h3 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+}
+
+#history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#history-list li {
+    margin-bottom: 5px;
+    font-size: 16px;
+}

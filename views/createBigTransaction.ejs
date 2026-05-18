@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple Transaction Voucher</title>
+    <link rel="stylesheet" href="/css/multi-transaction.css">
+    <script src="/js/realTime.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <form action="/account/bigTransaction" method="POST" class="transaction-form">
+        <fieldset class="fieldset">
+            <legend class="legend"></legend>
+            <div class="form-row2">
+            <div class="ulimit">
+                <label for="withdraw-limit">User Withdraw Limit</label>
+                <input type="number" id="withdraw-limit" name="withdraw-limit">
+            </div>
+            <div class="header">
+                <h3>MULTI-TRANSACTION</h3>
+            </div>
+            <div class="tdate">
+                <label for="transaction-date">Transaction Date</label>
+                <input type="date" id="transaction-date" name="transaction-date" class="date">
+            </div>
+            </div>
+                <div class="cem-form-style-horizontal">
+                    <div>
+                        <label for="member">Member</label>
+                        <input type="text" id="member" name="member">
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <input type="text" id="member" name="member">
+                    </div>
+                    <div>
+                        <label for="doc-class">Doc. Class</label>
+                        <input type="text" id="doc-class" name="doc-class">
+                    </div>
+
+                    <div>
+                        <label for="voucher-number">Voucher Number</label>
+                        <input type="number" id="voucher-number" name="voucher-number">
+                    </div>
+                </div>
+                <div>
+                <div>
+                <fieldset class="fieldset1">
+                    <legend class="legend">Member</legend>
+                    <!-- Toggle Button -->
+                    <button type="button" class="toggle-button" onclick="toggleView()">View Table</button>
+  
+                    <!-- Section m1 -->
+                    <div class="do-contents active" id="m1">
+                        <div class="do-table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Total</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                </fieldset>
+                </div>
+                <div class="cem-form-style-horizontal2" style=" margin-top: -107px;">
+                <div style="width: 160px;">
+                    <label for="account-number">Cash/Bank</label>
+                    <input type="text" class="cem-text" id="" name="" value="">
+                </div>
+                <div></div>
+                <div>
+                    <label for="transactionType">Trans. Type</label>
+                    <select id="transactionType" name="transactionType">
+                        <option value="" hidden>Select Transaction Type</option>
+                        <option value="withdraw">Withdrawal</option>
+                        <option value="deposit">Deposit</option>
+                    </select>
+                </div>
+                </div>
+                <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
+                <div>
+                    <label for="account-number">Account Number</label>
+                    <input type="text" id="id" name="id" value="<%= SlAlias %>" readonly>
+                </div>
+                <div>
+                    <div class="image-preview" id="image-preview1"></div>
+                    <a href="/account/createAccount?SlAlias=<%= SlAlias %>&GLName=<%= GLName %>
+                        &SLName=<%= SLName %>&Balance=<%= Balance %>&Address1=<%= Address1 %>
+                        &Phone1=<%= Phone1 %>&Mobile=<%= Mobile %>&firstPhotoBase64=<%= firstPhotoBase64 %>
+                        &AccountOpenDate=<%= AccountOpenDate %>&Gender=<%= Gender %>&NextofKinName=<%= NextofKinName %>
+                        &NextofKinAddress=<%= NextofKinAddress %>
+                        &NextofKinContactNumber=<%= NextofKinContactNumber %>&Relation=<%= Relation %>">View Account Details</a> </div>
+                <div>
+                    <label for="cheque-number">Cheque Number</label>
+                    <input type="number" id="cheque-number" name="cheque-number">
+                </div>
+                </div>
+                <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
+                <div>
+                    <label for="principal-balance">Principal Balance</label>
+                    <input type="text" id="id" name="id" value="" >
+                </div>
+                <div>
+                    <label for="account-name">Account Name</label>
+                    <input type="text" id="account-name" name="account-name" value="<%= SLName %>" readonly>
+                </div>
+                <div>
+                    <label for="cheque-date">Cheque Date</label>
+                    <input type="date" id="cheque-date" name="cheque-date" class="date">
+                </div>
+                </div>
+                <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
+                    <div>
+                        <label for="interest-balance">Interest Balance</label>
+                        <input type="number" id="interest-balance" name="interest-balance">
+                    </div>
+                    <div class="cem-button-row">
+                        <button for="file-upload" class="custom-file-upload" id="sign">
+                            <span>Sign & Photo</span>
+                            <input id="file-upload" type="file" name="photo" accept="image/*" multiple
+                                onchange="previewImages(event)">
+                        </button>
+                        <button class="action-button renew">Renew</button>
+                    </div>
+                    <div>
+                        <label for="bearer">Bearer</label>
+                        <input type="number" id="bearer" name="bearer">
+                    </div>
+                </div>
+                <div class="cem-form-style-horizontal1" style="margin-top: 10px;">
+                    <div style="margin-right: 60px;">
+                        <label for="account-type-ledger">A/C Type/Ledger</label>
+                        <input type="text" class="cem-text" id="account-name" name="account-name" value="<%= GLName %>" readonly>
+                    </div>
+                    <div class="cem-button-row">
+                    <button class="action-button bill" id="cem-bill">Bill</button>
+                    <button class="action-button renew" id="cem-renew">Renew</button>
+                    <button class="action-button post-interest" id="cem-post">Post Interest</button>
+                    </div>
+                </div>
+                <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
+                    <div>
+                        <label for="amount">Amount</label>
+                        <input type="number" id="amount" name="amount"  oninput="updateTotal()" required>
+                    </div>
+                    <div>
+                        <label for="interest-amount">Interest Amount</label>
+                        <input type="number" id="interest-amount" name="interest-amount">
+                    </div>
+                    <div>
+                        <label for="prin-receive-date">Prin. Receive Till Date</label>
+                        <input type="date" id="prin-receive-date" name="prin-receive-date" class="date">
+                    </div>
+                </div>
+                <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
+                    <div>
+                        <label for="penalty">Penalty</label>
+                        <input type="number" id="penalty" name="penalty" oninput="updateTotal()">
+
+                    </div>
+                    <div>
+                        <label for="rebate">Rebate</label>
+                        <input type="number" id="rebate" name="rebate" oninput="updateTotal()">
+                    </div>
+                    <div>
+                        <label for="int-receive-date">Int. Receive Till Date</label>
+                        <input type="date" id="int-receive-date" name="int-receive-date" class="date">
+                    </div>
+                </div>
+
+                <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
+                    <div>
+                        <label for="Source-Fund">Source of Fund</label>
+                        <select id="sf" name="Source of Fund">
+                            <option value="" hidden>Source of Fund</option>
+                            <option value="">a</option>
+                            <option value="">b</option>
+                            <option value="">c</option>
+                            <option value="">d</option>
+                            <option value="">e</option>
+                            <option value="">f</option>
+                            <option value="">g</option>
+                            <option value="">h</option>
+                            <option value="">i</option>
+                            <option value="">j</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button class="add"><img src="/PNG/add.png" alt="">Add</button>
+                    </div>
+                    <div>
+                        <label for="accrued-interest">Accrued Interest</label>
+                        <input type="number" id="accrued-interest" name="accrued-interest">
+                    </div>
+                </div>
+                <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
+                    <div>
+                        <label for="collateral-amount">Collateral Amt for Others</label>
+                        <input type="number" id="collateral-amount" name="collateral-amount">
+                    </div>
+                    <div></div>
+                    <div>
+                        <label for="total-amount">Total Amount</label>
+                        <input type="number" id="total" name="total" readonly>
+                    </div>
+                </div>
+                </div>
+
+
+                <div class="form-row">
+
+                </div>
+
+                <div class="form-row">
+                </div>
+
+                <div class="form-row">   
+                </div>
+                <div class="createbigtrans-table" id="do-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+
+                                <th>S.NO</th>
+                                <th>Ledger/Account Type</th>
+                                <th>A/C.No,SlAlias</th>
+                                <th>Account Name,SL Name</th>
+                                <th>Dr Amount/Withdraw</th>
+                                <th>Cr Amount/Deposite</th>
+                                <th>Interest Withdraw</th>
+                                <th>Interest Deposite</th>
+                                <th>Rebate</th>
+                                <th>Penalty</th>
+                                <th>Cheque NO</th>
+                                <th>Cheque Date</th>
+                                <th>Bearer</th>
+                                <th>Principal Received Till Date</th>
+                                <th>Interest Received Till Date</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                          
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="cem-form-style-horizontal3" style="margin-top: 10px;">
+                <div>
+                    <label for="deposit-by">Deposited By</label>
+                    <input type="text" id="deposit-by" name="deposit-by">
+                </div>
+                <div>
+                    <label for="contact-number">Contact Number</label>
+                    <input type="number" id="contact-number" name="contact-number">
+                </div>
+                </div>
+                <div class="remarks">
+                    <label for="remark">Remark</label>
+                    <textarea  id="remark" name="remark" placeholder="Remark"></textarea>
+                </div>
+                <div class="cem-form-style-horizontal3" style="margin-top: 10px;">
+                    <div>
+                        <label for="total-cash">Total Cash</label>
+                        <input type="number" id="total-cash" name="total-cash">
+                    </div>
+                    <div class="inword">
+                        <input type="text"id="totalInWords" rows="2" cols="20" placeholder="Amount in Words" style="width: 500px; margin-left: 10px;
+                        margin-top: -2px;" readonly>
+                    </div>
+                    <div class="checkbox">
+                        <input type="checkbox" id="suspicious-trans" name="suspicious-trans" style="margin-right: 5px;">
+                        <label for="suspicious-trans">Suspicious Transaction</label>
+                    </div>
+                </div>
+                <div class="form-row buttons">
+                    <div style="margin-left: 10px;">
+                        <label for="refund-amount">Refund Amount</label>
+                        <input type="number" id="refund-amount" name="refund-amount">
+
+                    </div>
+                    <button class="save" type="submit"><img src="PNG/save.png" alt="Save">Save</button>
+                    <button class="cancel"><img src="PNG/cancel.png" alt="Cancel">Cancel</button>
+                </div>
+        </fieldset>
+        </form>
+    </div>
+
+    <script src="/js/div.js"></script>
+    <script>
+        let allDocClassForMultiTrans = [];  // Store both DocClassName and DocClassAlias fetched from the server for MultiTrans
+        let filteredDocClassForMultiTrans = [];  // Store filtered DocClassNames and DocClassAliases based on user input for MultiTrans
+    
+        // Function to fetch DocClassNames and DocClassAliases for MultiTrans from the server and display them as suggestions
+        function fetchDocClassesForMultiTrans(isInitialFocus) {
+            const docClassesList = document.getElementById('docClassesListforMultiTrans');
+            docClassesList.innerHTML = '';  // Clear any existing suggestions
+            docClassesList.style.display = 'none';  // Hide suggestions list initially
+    
+            if (allDocClassForMultiTrans.length === 0 || isInitialFocus) {
+                // Fetch DocClassNames and DocClassAliases for MultiTrans from the backend if not already fetched
+                fetch('/fetchDocClassesForMultiTrans')  // Updated route to reflect the new path
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.docClasses && data.docClasses.length > 0) {
+                            allDocClassForMultiTrans = data.docClasses;  // Store fetched DocClassNames and DocClassAliases for MultiTrans
+                            filteredDocClassForMultiTrans = [...allDocClassForMultiTrans];  // Initially show all DocClassNames
+                            displayDocClassesForMultiTrans(filteredDocClassForMultiTrans);  // Display the full list on initial focus
+                        } else {
+                            const noResult = document.createElement('div');
+                            noResult.textContent = 'No DocClassNames found';
+                            docClassesList.appendChild(noResult);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching DocClassNames:', error);
+                        const errorMessage = document.createElement('div');
+                        errorMessage.textContent = 'Error fetching DocClassNames';
+                        docClassesList.appendChild(errorMessage);
+                    });
+            } else {
+                displayDocClassesForMultiTrans(filteredDocClassForMultiTrans);  // Display the filtered list
+            }
+        }
+    
+        // Function to filter DocClassNames and DocClassAliases based on user input for MultiTrans
+        function filterDocClassesForMultiTrans() {
+            const input = document.getElementById('doc-class-multi-trans').value.toLowerCase();
+            if (input === '') {
+                filteredDocClassForMultiTrans = [...allDocClassForMultiTrans];  // Show the full list when input is empty
+            } else {
+                filteredDocClassForMultiTrans = allDocClassForMultiTrans.filter(item =>
+                    item.DocClassName.toLowerCase().includes(input) || item.DocClassAlias.toLowerCase().includes(input)
+                );
+            }
+            displayDocClassesForMultiTrans(filteredDocClassForMultiTrans);
+        }
+    
+        // Function to display DocClassNames and DocClassAliases in the suggestion list for MultiTrans
+        function displayDocClassesForMultiTrans(names) {
+            const docClassesList = document.getElementById('docClassesListforMultiTrans');
+            docClassesList.innerHTML = '';  // Clear previous suggestions
+    
+            // Create and append the close button
+            const closeButton = document.createElement('button');
+            closeButton.textContent = 'X';
+            closeButton.onclick = function (event) {
+                event.preventDefault();
+                docClassesList.style.display = 'none';  // Hide the suggestions list when the close button is clicked
+            };
+            docClassesList.appendChild(closeButton);  // Append the close button to the list
+    
+            if (names.length > 0) {
+                docClassesList.style.display = 'block';  // Show the suggestions list
+                names.forEach(item => {
+                    const div = document.createElement('div');
+                    div.textContent = `${item.DocClassName} - ${item.DocClassAlias}`;  // Show both values
+                    div.onclick = function () {
+                        document.getElementById('doc-class-multi-trans').value = item.DocClassName;  // Set the input value to DocClassName
+                        docClassesList.style.display = 'none';  // Hide the suggestions list
+                    };
+                    docClassesList.appendChild(div);
+                });
+            } else {
+                const noResult = document.createElement('div');
+                noResult.textContent = 'No matching DocClassNames found';
+                docClassesList.appendChild(noResult);
+            }
+        }
+    </script>
+      <script src="/js/alertsmessages.js"></script>
+    
+</body>
+
+</html>

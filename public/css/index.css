@@ -1,0 +1,586 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+
+:root {
+  --primary-color: #2015ea;
+  --primary-color-light: #6861f1;
+  --secondary-color: #c0dbea;
+  --text-dark: #020617;
+  --text-light: #94a3b8;
+  --white: #ffffff;
+  --max-width: 1200px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 100vh;
+  background: url("../PNG/backgrd.jpg") no-repeat center/cover;
+ 
+  padding-right: 50px;
+}
+
+#locationDisplay {
+  position: absolute;
+  top: 100px;
+  left: 30px;
+  color: var(--white);
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.ajax-form {
+  background-color: rgba(0, 0, 0, 0.7);
+  max-width: 350px;
+  color: var(--white);
+  border-radius: 12px;
+  padding: 30px 40px;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.title h2 {
+  position: absolute;
+  top: -30px;
+  left: 15px;
+  color: rgb(245, 9, 9);
+  font-size: 30px;
+  font-weight: bold;
+}
+
+#organization-name1{
+  margin-top: 10px;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 2.5em;
+  color: inherit;
+  width: 100%;
+  text-shadow: 
+    4px 4px 6px rgba(0, 0, 0, 0.3),
+    6px 6px 10px rgba(0, 0, 0, 0.2),
+    8px 8px 12px rgba(0, 0, 0, 0.1);
+}
+
+#Version{
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.7em;
+  color: inherit;
+  width: 100%;
+  text-shadow: 
+    4px 4px 6px rgba(0, 0, 0, 0.3),
+    6px 6px 10px rgba(0, 0, 0, 0.2),
+    8px 8px 12px rgba(0, 0, 0, 0.1);
+}
+
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  z-index: 1000;
+  width: 300px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+.wrapper h1 {
+  font-size: 45px;
+  text-align: center;
+}
+
+.input-box {
+  position: relative;
+  width: 100%;
+  height: 50px;
+  margin: 30px 0;
+}
+
+.input-box input,
+.input-box select {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 40px;
+  font-size: 16px;
+  color: var(--white);
+  padding: 10px 20px 10px 45px;
+  outline: none;
+}
+
+.input-box input:focus {
+  border-color: #42a5f5;
+  box-shadow: 0 4px 8px rgba(66, 165, 245, 0.2);
+}
+
+.input-box input::placeholder {
+  color: var(--white);
+}
+
+.input-box select {
+  padding-right: 40px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.input-box select option {
+  background-color: #333;
+  color: var(--white);
+}
+
+.input-box select option:hover,
+.input-box select option:checked {
+  background-color: #4CAF50;
+}
+
+.input-box i {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: var(--white);
+}
+
+#eye {
+  left: 225px;
+  font-size: 20px;
+  color: var(--white);
+}
+
+.wrapper .btn {
+  width: 100%;
+  height: 45px;
+  background: #c33838;
+  border: none;
+  border-radius: 40px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--white);
+  font-weight: 600;
+  margin-top: 35px;
+  transition: background 0.3s ease-in-out;
+}
+
+.wrapper .btn:hover {
+  background: #e04949;
+}
+
+
+#createdatabasebtn {
+  width: 100%;
+  height: 40px;
+  background: #07802f;
+  border: none;
+  border-radius: 40px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--white);
+  font-weight: 400;
+  margin-top: 25px;
+  transition: background 0.3s ease-in-out;
+}
+
+#createdatabasebtn:hover {
+  background: #023b15;
+}
+.show-password-btn {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  background-color: transparent;
+  border: none;
+  color: var(--white);
+  font-size: 20px;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.movable-div {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: var(--white);
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 702px;
+  animation: fadeIn 0.5s ease-in-out;
+  
+}
+
+
+
+#movableDiv {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875em;
+  color: #333;
+}
+
+#movableDiv thead th {
+  background-color: #4CAF50;
+  color: var(--white);
+  padding: 5px;
+  text-align: left;
+  border-bottom: 2px solid #ddd;
+}
+
+#movableDiv td, #movableDiv th {
+  padding: 4px 6px;
+  border-bottom: 1px solid #ddd;
+}
+
+.highlight {
+  background-color: #4b8cd9;
+}
+
+.highlight:focus {
+  background-color: #d6601b;
+  outline: none;
+}
+
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+}
+
+.styled-table th,
+.styled-table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.styled-table th {
+  background-color: #4b8cd9;
+  color: var(--white);
+  text-transform: uppercase;
+}
+
+.styled-table tbody tr td {
+  color: var(--white);
+}
+
+.movable-div button {
+  margin: 6px 3px 0;
+  padding: 6px 10px;
+  background: #4b8cd9;
+  color: var(--white);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.movable-div button:hover {
+  background-color: #5c9ded;
+  transform: scale(1.03);
+}
+#okyaaa{
+  background-color: #28a745;
+  width: 50px;
+}
+#cancelButton1454{
+  background-color: red;
+  width: 70px;
+  margin-left: 546px;
+}
+
+@media (max-width: 600px) {
+  .ajax-form {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .title h2 {
+    font-size: 50px;
+    left: 10px;
+  }
+
+  .wrapper h1 {
+    font-size: 35px;
+  }
+
+  .input-box input,
+  .input-box select {
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+
+  .wrapper .btn {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .ajax-form {
+    width: 400px;
+    padding: 25px;
+  }
+
+  .title h2 {
+    font-size: 60px;
+    left: 20px;
+  }
+
+  .wrapper h1 {
+    font-size: 40px;
+  }
+
+  .input-box input,
+  .input-box select {
+    font-size: 15px;
+  }
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.movablediv{
+  display: none;
+}
+
+.movablediv.active {
+  display: block; /* Show only active div */
+}
+
+/*Fiscal Year*/
+
+.fy-fieldset {
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 8px; 
+  margin: 5px 0;
+}
+
+.fy-legend {
+font-size: 12px; 
+font-weight: bold;
+color: #0b62e4;
+}
+
+.fy-form-style-horizontal3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.fy-form-style-horizontal3 div {
+flex: 1;
+min-width: 120px;
+}
+
+.fy-text,
+.fy-date,
+.fy-select {
+  width: 100%;    
+  padding: 3px; 
+  margin: 2px 0;
+  background-color: #dedada;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 11px; 
+}
+
+.fy-text:focus,
+.fy-date:focus,
+.fy-select:focus {
+  border-color: #0b62e4;
+  outline: none;
+}
+
+.fy-button-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  display: flex;
+  flex-direction:row;
+  gap:15px;
+  margin-bottom: 10px;
+}
+
+.fy-button {
+  background-color: #0b62e4;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px; 
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.fy-button:hover {
+  background-color: #094bba;
+}
+
+.fy-button:active {
+  background-color: #073a8e;
+  transform: scale(0.95);
+}
+
+.fy-button[type="submit"] {
+  background-color: #28a745;
+  max-width: 80px;
+}
+
+.fy-button[type="button"] {
+  background-color: #dc3545;
+  max-width: 80px;
+}
+/* ======= MODAL BACKDROP ======= */
+#customAlert
+ {
+  display: none; /* hidden by default */
+  position: fixed;
+  color: white;
+  z-index: 9999;
+  left: 650PX;
+  top: 300PX;
+  width: 30%;
+  height: 20%;
+  background-color: rgba(0, 0, 0, 0.45); /* semi-transparent backdrop */
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+#customConfirm {
+  display: none; /* hidden by default */
+  position: fixed;
+  color: white;
+  z-index: 9999;
+  left: 650PX;
+  top: 300PX;
+  width: 38%;
+  height: 41%;
+  background-color: rgba(0, 0, 0, 0.45); /* semi-transparent backdrop */
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+
+
+/* ======= CLOSE BUTTON (Alert only) ======= */
+#customAlert #closeAlert  {
+  position: absolute;
+  right: 12px;
+  top: 8px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #eb0404;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+#customAlert #closeAlert:hover {
+  color: #a01304;
+}
+
+/* ======= MESSAGE TEXT ======= */
+#customAlert #alertMessage,
+#customConfirm #confirmMessage {
+  
+  font-size: 15px;
+  color: whitesmoke;
+  margin: 27px 2px 19px 16px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+/* ======= BUTTON STYLES ======= */
+#customAlert #alertOkButton,
+#customConfirm #confirmOkButton,
+#customConfirm #confirmCancelButton {
+  padding: 8px 18px;
+  margin: 5px;
+  margin-top: -5px;
+  margin-left: 170px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 400;
+  transition: all 0.2s ease;
+}
+
+
+
+
+/* OK BUTTON (Primary) */
+#customAlert #alertOkButton,
+#customConfirm #confirmOkButton {
+  background-color: #4CAF50;
+  color: white;
+}
+
+#customAlert #alertOkButton:hover,
+#customConfirm #confirmOkButton:hover {
+  background-color: #43a047;
+}
+
+/* CANCEL BUTTON (Secondary) */
+#customConfirm #confirmCancelButton {
+
+ background-color: #eb0404;
+  color: white;
+  
+}
+
+#customConfirm #confirmCancelButton:hover {
+   background-color: #a01304;
+}
+
+/* ======= FLEX BUTTON ROW ======= */
+#customConfirm .modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ======= ANIMATIONS ======= */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+

@@ -1,0 +1,157 @@
+#movableDiv14{
+    width: 475px;
+}
+
+.cr-container {
+    padding: 8px;
+    max-width: 470px;
+  }
+  
+.cr-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+  }
+  
+.cr-legend {
+    font-size: 12px; /* Smaller font for a more compact look */
+    font-weight: bold;
+    color: #0b62e4;
+  }
+
+  /* Form row layout styles */
+.cr-form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.cr-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+  
+  /* Form input styles */
+  .cr-date{
+    width: 100%;    
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    background-color: #dedada;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+  .cr-date:focus {
+    border-color: #0b62e4;
+    outline: none;
+  }
+
+.cr-checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top:15px ;
+    margin-bottom: 15px;
+    margin-left: 5px;
+}
+
+.cr-checkbox-grid div {
+    display: flex;
+    align-items: center;
+}
+
+.cr-checkbox {
+    margin-right: 5px;
+}
+
+.cr-button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    display: flex;
+    flex-direction:row;
+    gap:15px;
+    margin-bottom: 5px;
+}
+
+  /* Button styles */
+.cr-button {
+    background-color: #0b62e4;
+    color: white;
+    border: none;
+    padding: 4px 10px; /* Reduced padding for smaller buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px; /* Smaller font size for compact buttons */
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .cr-button:hover {
+    background-color: #094bba;
+  }
+  
+  .cr-button:active {
+    background-color: #073a8e;
+    transform: scale(0.95);
+  }
+  
+.cr-button[type="submit"] {
+    background-color: #28a745;
+    max-width: 80px;
+}
+
+.cr-button[type="button"] {
+    background-color: #dc3545;
+    max-width: 80px;
+}
+
+#mainCashNNonCashDiv{
+  width: 1020px;
+  height: 500px;
+  background-color: #f4f4f4;
+}
+#mainCashNNonCashForm{
+  width: 980px;
+  height: 450px;
+  margin-left: 20px;
+  margin-top: 15px;
+}
+.closeallCashNNonCashTabDiv{
+  height: 400px;
+  overflow-x: auto;
+}
+#closeallCashNNonCashDiv
+{
+position: absolute;
+    margin-left: 1002px;
+    margin-top: 5px;
+    font-size: 17px;
+    font-weight: bold;
+    color: #eb0404;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.crr-button {
+    background-color: #0b62e4;
+    color: white;
+    border: none;
+    padding: 4px 10px; /* Reduced padding for smaller buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px; /* Smaller font size for compact buttons */
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  #okCashNNonCashDiv{
+     background-color: #28a745;
+    max-width: 80px;
+  }
+  #cancelallCashNNonCashDiv{
+     background-color: #dc3545;
+    max-width: 80px;
+  }

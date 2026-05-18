@@ -1,0 +1,170 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+  }
+  
+  body {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    min-height: 100vh;
+      background: url("../PNG/backgrd.jpg") no-repeat center/cover;
+  }
+  
+#lajita{
+  background-color: rgba(0, 0, 0, 0.7);
+  max-width: 450px;
+  color: var(--white);
+  border-radius: 12px;
+  padding: 30px 40px;
+  transition: background-color 0.10s ease, transform 0.1s ease;
+  animation: fadeIn 0.9s ease-in-out;
+}
+
+h2{
+    display: block;
+    font-size: 1.5em;
+    margin-block-start: 0.83em;
+    margin-block-end: 0.83em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    font-weight: bold;
+    unicode-bidi: isolate;
+    color: #ccc;
+}
+
+  input[type="text"]{
+    width: 100%;
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    background-color: #dedada;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+  input:focus[type="text"] {
+    border-color: #0b62e4;
+    outline: none;
+  }
+
+  .table-container {
+    overflow-y: auto;
+    width: 281px;
+    max-width: 952px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+.table-container table {
+  width: 100%;
+  max-height: 80%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  text-align: left;
+  font-weight: normal;
+}
+.table-container th {
+  position: sticky;
+  top: -2px; /* Keep the header at the top */
+  z-index:2; /* Ensure header stays above body content */
+  text-align: center; /* Optional: Center the header text */
+  font-weight: normal; /* Remove the bold font-weight */
+  background-color:#2f7ebd;
+}
+
+.table-container th,
+.table-container td {
+  border: 1px solid #ffffff; /* Bolder border */
+  padding: 8px;
+  text-align: left;
+  color: #ccc;
+}
+
+.table-container td {
+    text-align: center; /* Optional: centers text in cells */
+  }
+
+/* Styling for the selected Document Class input */
+.selected-doc-class-container {
+  margin-top: 20px;
+}
+
+.selected-doc-class-container input {
+  padding: 10px;
+  width: 100%;
+  font-size: 16px;
+}
+
+
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    display: flex;
+    flex-direction:row;
+    gap:15px;
+    
+}
+
+  /* Button styles */
+.button {
+    background-color: #0b62e4;
+    color: white;
+    border: none;
+    padding: 4px 10px; /* Reduced padding for smaller buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px; /* Smaller font size for compact buttons */
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .button:hover {
+    background-color: #094bba;
+  }
+  
+  .button:active {
+    background-color: #073a8e;
+    transform: scale(0.95);
+  }
+
+  /* Button styles */
+.buttons {
+    background-color: #0b62e4;
+    color: white;
+    border: none;
+    padding: 4px 10px; /* Reduced padding for smaller buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px; /* Smaller font size for compact buttons */
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .buttons:hover {
+    background-color: #094bba;
+  }
+  
+  .buttons:active {
+    background-color: #073a8e;
+    transform: scale(0.95);
+  }
+  
+.buttons {
+    background-color: #28a745;
+    max-width: 80px;
+}
+
+.button[type="button"] {
+    background-color: #dc3545;
+    max-width: 80px;
+}
+
+.selected{
+    background-color: #4b8cd9;
+}

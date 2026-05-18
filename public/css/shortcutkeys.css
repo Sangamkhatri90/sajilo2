@@ -1,0 +1,56 @@
+
+.sk-table-container {
+    width: 100%;
+    max-height:500px;  /* Fixed height for scrolling */
+    overflow-y: auto; /* Enables vertical scrolling */
+    border: 1px solid #ccc;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.sk-table {
+    width: 100%;
+    border-collapse: collapse;
+    position: relative;
+}
+
+.sk-table th, .sk-table td {
+    color: black;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    position: relative; /* Ensures each table cell is part of the stacking context */
+    z-index: 5; /* Lower than the sticky header but above other potential overlaps */
+}
+
+.sk-table th {
+    background-color: #f2f2f2;
+    position:sticky; /* Make header sticky */
+    top: 0; /* Stick to the top */
+    z-index: 10; /* Ensure the header is above other elements */
+}
+
+.sk-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+.sk-crey{
+    text-align: center;
+    color: red;
+}
+.sk-h2{
+
+    text-align: center;
+    color: rgb(18, 201, 79);
+}
+
+/* Ensure that movable divs have lower z-index, so they don't cover the table */
+.movableDiv5 {
+    position: absolute; /* or fixed if you want it to stay on the screen */
+    z-index: 1000; /* Ensure movable div is above the content but behind the sticky header */
+    background-color: #fff; /* White background */
+    border: 1px solid #ccc; /* Border for the movable div */
+    padding: 15px;
+  }

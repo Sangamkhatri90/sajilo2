@@ -1,0 +1,146 @@
+#movableDiv123 {
+    width: 1027px;
+}
+
+#movableDiv124 {
+    width: 650px;
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+  
+#obm-search {
+  display: none; /* Hidden by default */
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 450px; /* Adjust width as needed */
+  background: #f9f9f9;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  opacity: 0; /* Invisible by default */
+  transform: translateX(100%);
+  transition: all 0.3s ease-in-out;
+}
+
+#obm-search[style*="display: block"] {
+  opacity: 1; /* Fully visible */
+  transform: translateX(0);
+}
+
+.obm-container {
+    padding: 8px;
+    max-width: 1008px;
+}
+
+.obm-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+}
+
+.obm-legend {
+  font-size: 12px; /* Smaller font for a more compact look */
+  font-weight: bold;
+  color: #0b62e4;
+}
+
+.obm-form-style-horizontal3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px; /* Reduced gap for tighter layout */
+  margin-bottom: 6px;
+}
+  
+.obm-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+/* Form input styles */
+.obm-text,
+.obm-select,
+.obm-date  {
+  width: 100%;
+  padding: 3px; /* Reduced padding for smaller input fields */
+  margin: 2px 0;
+  background-color: #dedada;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 11px; /* Smaller font size */
+}
+
+.obm-text:focus,
+.obm-select:focus,
+.obm-date:focus {
+  border-color: #0b62e4;
+  outline: none;
+}
+
+  .obm-checkbox {
+    margin-left: 10px;
+    margin-top: 20px;
+  }
+
+
+.obm-table-container {
+    width: 100%;
+    max-width: 970px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+.obm-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-align: left;
+}
+.obm-table-container th,
+.obm-table-container td {
+  padding: 12px 15px;
+  border: 1px solid #000000; /* Bolder border */
+}
+
+.obm-button-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  display: flex;
+  flex-direction:row;
+  gap:15px;
+  margin-bottom: 10px;
+}
+
+/* Button styles */
+.obm-button {
+  background-color: #0b62e4;
+  color: white;
+  border: none;
+  padding: 4px 10px; /* Reduced padding for smaller buttons */
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px; /* Smaller font size for compact buttons */
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.obm-button:hover {
+  background-color: #094bba;
+}
+
+.obm-button:active {
+  background-color: #073a8e;
+  transform: scale(0.95);
+}
+
+.obm-button[type="submit"] {
+  background-color: #28a745;
+  max-width: 80px;
+}
+
+.obm-button[type="button"] {
+  background-color: #dc3545;
+  max-width: 80px;
+}
+

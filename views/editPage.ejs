@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="movableDiv" id="movableDiv80">
+        <form action="/update-doc-class" method="POST" id="myForm80">
+            <button id="closeButton">&times;</button>
+            <input type="hidden" name="id" value="<%= selectedData.id %>"> <!-- Include ID if necessary -->
+        
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" value="<%= selectedData.DocClassName %>"> <!-- Updated here -->
+        
+            <label for="alias">Alias:</label>
+            <input type="text" id="alias" name="alias" value="<%= selectedData.DocClassAlias %>"> <!-- Updated here -->
+        
+            <label for="address1">Address 1:</label>
+            <input type="text" id="address1" name="address1" value="<%= selectedData.Address1 %>"> <!-- Updated here -->
+        
+            <label for="address2">Address 2:</label>
+            <input type="text" id="address2" name="address2" value="<%= selectedData.Address2 %>"> <!-- Updated here -->
+        
+            <label for="phone1">Phone 1:</label>
+            <input type="text" id="phone1" name="phone1" value="<%= selectedData.Phone1 %>"> <!-- Updated here -->
+        
+            <label for="phone2">Phone 2:</label>
+            <input type="text" id="phone2" name="phone2" value="<%= selectedData.Phone2 %>"> <!-- Updated here -->
+        
+            <label for="fax">Fax:</label>
+            <input type="text" id="fax" name="fax" value="<%= selectedData.Fax %>"> <!-- Updated here -->
+        
+            <label for="email">Email:</label>
+            <input type="text" id="email" name="email" value="<%= selectedData.Email %>"> <!-- Updated here -->
+        
+            <label for="pan">PAN:</label>
+            <input type="text" id="pan" name="pan" value="<%= selectedData.Pan %>"> <!-- Updated here -->
+        
+            <label for="incomeTaxNo">Income Tax No:</label>
+            <input type="text" id="incomeTaxNo" name="incomeTaxNo" value="<%= selectedData.IncomeTaxNo %>"> <!-- Updated here -->
+        
+            <button type="submit">Save Changes</button>
+            <button id="cancelButton">can</button>
+        </form>
+    </div>
+    
+    
+</body>
+</html>

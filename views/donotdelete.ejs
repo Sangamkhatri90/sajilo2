@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+  
+
+    <% if (data.length> 0) { %>
+        <table>
+            <thead>
+                <tr>
+                    <th>SLID</th>
+                    <th>SlAlias</th>
+                    <th>SLName</th>
+                    <th>DrAmount</th>
+                    <th>CrAmount</th>
+                    <th>Balance</th>
+                    <th>GLName</th>
+                    <th>JV_Miti</th>
+                    <th>VoucherNo</th>
+                    <th>VoucherPrefix</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% data.forEach(item=> { %>
+                    <tr>
+                        <td>
+                            <%= item.SLID %>
+                        </td>
+                        <td>
+                            <%= item.SlAlias %>
+                        </td>
+                        <td>
+                            <%= item.SLName %>
+                        </td>
+                        <td>
+                            <%= item.DrAmount %>
+                        </td>
+                        <td>
+                            <%= item.CrAmount %>
+                        </td>
+                        <td>
+                            <%= item.Balance %>
+                        </td>
+                        <td>
+                            <%= item.GLName %>
+                        </td>
+                        <td>
+                            <%= item.JV_Miti %>
+                        </td>
+                        <td>
+                            <%= item.VoucherNo %>
+                        </td>
+                        <td>
+                            <%=item.VoucherPrefix%>
+                        </td>
+                        <td>
+                            <%= item.MenuName%>
+                        </td>
+                        <td>
+                            <%= item.AutoNumberPrefix%>
+                        </td>
+                        <td>
+
+                        </td>
+                    </tr>
+                    <% })%>
+            </tbody>
+        </table>
+        <% } %>
+
+
+
+        <% if (data.length> 0) { %>
+
+            <h1 class="search-result">Searched Results</h1>
+            <div class="choose-transaction">
+                <label for="actionSelect">Choose an action:</label>
+                <select id="actionSelect">
+                    <option value="transaction">Transaction</option>
+                    <option value="bigTransaction">Big Transaction</option>
+                    <option value="openingBalance">Opening Balance</option>
+                </select>
+            </div>
+            <div class="display-table">
+                <table border="1" id="selectedTable" class="table-nav">
+                    <thead>
+                        <tr>
+                            <th class="display-table-th">Account Id</th>
+                            <th class="display-table-th">Account Type</th>
+                            <th class="display-table-th">Account Name</th>
+                            <th class="display-table-th">Balance</th>
+                            <th class="display-table-th">Accrued Interest</th>
+                            <th class="display-table-th">DrAmount</th>
+                            <th class="display-table-th">CrAmount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (memberName) { %>
+                            <h2 id="membervalue">Member Name: <%= memberName %>
+                            </h2> <!-- Display the Member Name -->
+                            <% } else { %>
+                                <h2>No member found.</h2>
+                                <% } %>
+
+                                    <% data.forEach(item=> { %>
+                                        <tr ondblclick="handleRowClick(
+                    '<%= item.SlAlias %>', 
+                    '<%= item.GLName %>', 
+                    '<%= item.SLName %>', 
+                    '<%= item.Balance %>', 
+                    '<%= item.Address1 %>', 
+                    '<%= item.Phone1 %>', 
+                    '<%= item.Mobile %>', 
+                    '<%= item.Photo %>', 
+                    '<%= item.Sign1 %>', 
+                    '<%= item.Sign2 %>', 
+                    '<%= item.Sign3 %>', 
+                    '<%= item.Sign4 %>', 
+                    '<%= item.AccountOpenDate %>', 
+                    '<%= item.Gender %>', 
+                    '<%= item.NextofKinName %>', 
+                    '<%= item.NextofKinAddress %>', 
+                    '<%= item.NextofKinContactNumber %>', 
+                    '<%= item.Relation %>', 
+                    '<%= item.DOB %>', 
+                    '<%= item.JV_Miti %>', 
+                    '<%= item.VoucherNo %>', 
+                    '<%= JSON.stringify(item.JournalEntries) %>' 
+                )">
+
+                                            <td class="display-table-td">
+                                                <%= item.SlAlias %>
+                                            </td>
+                                            <td class="display-table-td">
+                                                <%= item.GLName %>
+                                            </td>
+                                            <td class="display-table-td">
+                                                <%= item.SLName %>
+                                            </td>
+                                            <td class="balance" data-balance="<%= item.Balance %>">
+                                                <%= item.Balance %>
+                                            </td>
+                                            <td class="display-table-td"></td>
+                                            <td class="display-table-td">
+                                                <ul>
+                                                    <% item.JournalEntries.forEach(function(journalEntry) { %>
+                                                        <li>
+                                                            <%= journalEntry.DrAmount %>
+                                                        </li>
+                                                        <% }) %>
+                                                </ul>
+                                            </td>
+                                            <td class="display-table-td">
+                                                <ul>
+                                                    <% item.JournalEntries.forEach(function(journalEntry) { %>
+                                                        <li>
+                                                            <%= journalEntry.CrAmount %>
+                                                        </li>
+                                                        <% }) %>
+                                                </ul>
+                                            </td>
+                                        </tr>
+                                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+            <% } %>
+
+</body>
+</html>

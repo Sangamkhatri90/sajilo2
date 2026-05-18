@@ -1,0 +1,167 @@
+#movableDiv101{
+    width: 600px;
+}
+
+.nat-container {
+    padding: 8px;
+    max-width: 590px;
+  }
+  
+.nat-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+  }
+  
+.nat-legend {
+    font-size: 12px; /* Smaller font for a more compact look */
+    font-weight: bold;
+    color: #0b62e4;
+  }
+
+.nat-anchor a {
+    padding: 4px 8px;
+    text-decoration: none;
+    color: #555;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    margin: 0 2px;
+    font-size: 0.8em;
+    transition: background-color 0.3s;
+}
+
+.nat-anchor a.active, .nat-anchor a:hover {
+    background-color: #4CAF50;
+    color: white;
+}
+
+
+  /* Form row layout styles */
+.nat-form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.nat-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+
+/* Form row layout styles */
+.nat-form-style-horizontal2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: -5px; /* Reduced gap for tighter layout */
+  margin-bottom: 6px;
+}
+
+.nat-form-style-horizontal2 div {
+flex: 1;
+min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+  
+  /* Form input styles */
+  .nat-text,
+  .nat-number,
+  .nat-email,
+  .nat-date,
+  .nat-select {
+    width: 100%;    
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    background-color: #dedada;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+  .nat-text:focus,
+  .nat-number:focus,
+  .nat-email:focus,
+  .nat-date:focus,
+  .nat-select:focus {
+    border-color: #0b62e4;
+    outline: none;
+  }
+  
+  .nat-text1{
+  width: 50px;    
+  padding: 3px; /* Reduced padding for smaller input fields */
+  margin: 2px 0;
+  background-color: #dedada;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 11px; /* Smaller font size */
+}
+
+  
+.nat-text1:focus {
+  border-color: #0b62e4;
+  outline: none;
+}
+
+.nat-checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.nat-checkbox-grid div {
+    display: flex;
+    align-items:center;
+    justify-items:center;
+}
+
+.nat-checkbox {
+    margin-right: 10px;
+}
+
+  .nat-button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    display: flex;
+    flex-direction:row;
+    gap:15px;
+    margin-bottom: 10px;
+  }
+  
+  /* Button styles */
+  .nat-button {
+    background-color: #0b62e4;
+    color: white;
+    border: none;
+    padding: 4px 10px; /* Reduced padding for smaller buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px; /* Smaller font size for compact buttons */
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .nat-button:hover {
+    background-color: #094bba;
+  }
+  
+  .nat-button:active {
+    background-color: #073a8e;
+    transform: scale(0.95);
+  }
+  
+  .nat-button[type="submit"] {
+    background-color: #28a745;
+    max-width: 80px;
+  }
+  
+  .nat-button[type="button"] {
+    background-color: #dc3545;
+    max-width: 80px;
+  }
+  
+  

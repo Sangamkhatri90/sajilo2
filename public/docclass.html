@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/docClass.css">
+  <title>Document Class Selection</title>
+</head>
+<body>
+<form action="">
+<div id="lajita">
+  <h2>Select a Document Class</h2>
+
+<!-- Search box (optional for filtering) -->
+<input type="text" id="docClassForLogin" oninput="filterDocClassesForLogin()" placeholder="Search for DocClass...">
+<!-- Table to display DocClasses -->
+ 
+<div style="display: flex;">
+<fieldset class="aa-fieldset">
+<div  class="table-container">
+<table id="docClassesTable">
+  <thead>
+    <tr>
+      <th>Document Class</th>
+      <th>Alias</th>
+    </tr>
+  </thead>
+  <tbody id="docClassesTableBody">
+    <!-- Rows will be inserted dynamically -->
+  </tbody>
+</table>
+</div>
+</fieldset>
+</div>
+<!-- Add more fields as needed -->
+
+<!-- Buttons to confirm or cancel selection -->
+<div id="selectionButtons" class="button-row">
+  <button type="button" class="buttons" id="okButton" onclick="selectRow()">OK</button>
+  <button type="button" class="button" id="cancelButton" onclick="cancelSelection()">Cancel</button>
+</div>
+</div>
+
+</form>
+
+<script src="js/fetchdocclass.js"></script>
+
+</body>
+</html>

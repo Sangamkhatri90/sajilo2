@@ -1,0 +1,115 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+    padding: 20px;
+    font-size: 0.75em; /* Set font size to 0.75em */
+}
+
+.ob-container {
+    max-width: 80%; /* Adjust the width for centering */
+    margin: 0 auto; /* Center the container */
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center; /* Center text within the container */
+   
+}
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 30px;
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.ob-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+}
+
+.form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+ /* Form input styles */
+ .ob-text,
+ .ob-number,
+ .ob-email,
+ .ob-date,
+ .ob-select {
+   width: 100%;
+   padding: 3px; /* Reduced padding for smaller input fields */
+   margin: 2px 0;
+   background-color: #dedada;
+   border: 1px solid #ccc;
+   border-radius: 3px;
+   font-size: 11px; /* Smaller font size */
+ }
+ 
+ .ob-text:focus,
+ .ob-number:focus,
+ .ob-email:focus,
+ .ob-date:focus,
+ .ob-select:focus {
+   border-color: #0b62e4;
+   outline: none;
+ }
+
+.ob-button-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  display: flex;
+  flex-direction:row;
+  gap:15px;
+  margin-bottom: 5px;
+}
+
+.ob-button {
+  background-color: #0b62e4;
+  color: white;
+  border: none;
+  padding: 4px 10px; /* Reduced padding for smaller buttons */
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px; /* Smaller font size for compact buttons */
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.ob-button:hover {
+  background-color: #094bba;
+}
+
+.ob-button:active {
+  background-color: #073a8e;
+  transform: scale(0.95);
+}
+
+.sobbutton[type="submit"] {
+  background-color: #28a745;
+  max-width: 80px;
+}
+
+.ob-button[type="button"] {
+  background-color: #dc3545;
+  max-width: 80px;
+}

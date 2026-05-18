@@ -1,0 +1,138 @@
+#movableDiv96{
+    width: 947px;
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+#mm-search {
+  display: none; /* Hidden by default */
+  position: absolute;
+  right: 15px;
+  top: -25px;
+  width: 450px;
+  background: #f4f4f4;
+  padding: 20px;
+  opacity: 0; /* Invisible by default */
+  transform: translateX(100%);
+  transition: all 0.3s ease-in-out;
+  max-height: 623px;
+  overflow-y: auto;
+}
+
+#mm-search[style*="display: block"] {
+  opacity: 1; /* Fully visible */
+  transform: translateX(0);
+}
+
+.mm-container {
+    padding: 8px;
+    max-width: 780px;
+}
+
+.mm-fieldset {
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 8px; /* Reduced padding for compact fieldset */
+  margin: 5px 0;
+}
+
+.mm-legend {
+  font-size: 12px; /* Smaller font for a more compact look */
+  font-weight: bold;
+  color: #0b62e4;
+}
+
+.mm-form-style-horizontal3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px; /* Reduced gap for tighter layout */
+  margin-bottom: 6px;
+}
+  
+.mm-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+/* Form input styles */
+.mm-text,
+.mm-select,
+.mm-date  {
+  width: 100%;
+  padding: 3px; /* Reduced padding for smaller input fields */
+  margin: 2px 0;
+  background-color: #dedada;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 11px; /* Smaller font size */
+}
+
+.mm-text:focus,
+.mm-select:focus,
+.mm-date:focus {
+  border-color: #0b62e4;
+  outline: none;
+}
+
+.mm-table-container {
+    width: 100%;
+    max-width: 870px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+.mm-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-align: left;
+}
+.mm-table-container th,
+.mm-table-container td {
+  padding: 12px 15px;
+  border: 1px solid #000000; /* Bolder border */
+}
+
+.mm-button-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  display: flex;
+  flex-direction:row;
+  gap:15px;
+  margin-bottom: 5px;
+}
+
+/* Button styles */
+.mm-button {
+  background-color: #c15121;
+  color: white;
+  border: none;
+  padding: 4px 10px; /* Reduced padding for smaller buttons */
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px; /* Smaller font size for compact buttons */
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.mm-button:hover {
+  background-color: #c15121;
+}
+
+.mm-button:active {
+  background-color: #c15121;
+  transform: scale(0.95);
+}
+
+.mm-button[type="submit"] {
+  background-color: #3fa532;
+  max-width: 80px;
+  margin-top: 20px;
+  margin-left: 10px;
+}
+
+.mm-button[type="reset"] {
+  background-color: #66161f;
+  max-width: 80px;
+}

@@ -1,0 +1,207 @@
+/* -----------------------------
+   Transaction Modal Container
+------------------------------*/
+#mainCreatTransDiv {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(to bottom, #e6f2f8, #cde1ed);
+  width: 950px;
+  height: 900px;
+  max-height: 95vh;
+  overflow-y: auto;
+  border: 1px solid #7aa7c7;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  padding: 12px 18px;
+}
+
+/* Close Button */
+#mainCreatTransDiv #mainCreatTransDcloseButton {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+  color: #444;
+}
+#mainCreatTransDiv #mainCreatTransDcloseButton:hover {
+  color: #d00;
+}
+
+/* Header */
+#mainCreatTransDiv .header h3 {
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #004d80;
+  margin: 0;
+  padding: 4px;
+}
+
+/* Labels and Inputs */
+#mainCreatTransDiv label {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 3px;
+  display: block;
+  color: #000;
+}
+
+#mainCreatTransDiv input,
+#mainCreatTransDiv select,
+#mainCreatTransDiv textarea {
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid #7aa7c7;
+  border-radius: 2px;
+  background: #fff;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#mainCreatTransDiv input:focus,
+#mainCreatTransDiv select:focus,
+#mainCreatTransDiv textarea:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 2px rgba(25,118,210,0.6);
+}
+#mainCreatTransDiv #accnumCbforaccedit{
+  margin-left: 5px;
+   margin-bottom: -10px;
+   border: none;
+}
+
+
+/* Fieldsets */
+#mainCreatTransDiv fieldset {
+  border: 1px solid #7aa7c7;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  padding: 8px;
+}
+#mainCreatTransDiv legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: #004d80;
+}
+
+/* Row Layout */
+#mainCreatTransDiv .form-row,
+#mainCreatTransDiv .cem-form-style-horizontal2,
+#mainCreatTransDiv .tc-form-style,
+#mainCreatTransDiv .tc-form-style-btn,
+#mainCreatTransDiv .tc-form-style1,
+#mainCreatTransDiv .tc-remark {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+#mainCreatTransDiv .form-row > div,
+#mainCreatTransDiv .cem-form-style-horizontal2 > div,
+#mainCreatTransDiv .tc-form-style > div,
+#mainCreatTransDiv .tc-form-style-btn > div,
+#mainCreatTransDiv .tc-form-style1 > div {
+  flex: 1;
+}
+.Maintransmembertableforaccedit{
+  margin-top: 20px;
+      margin-bottom: 110px;
+}
+/* Table Styling */
+#mainCreatTransDiv .do-table-containerforeditacc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 5px;
+}
+#mainCreatTransDiv .do-table-containerforeditacc th,
+#mainCreatTransDiv .do-table-containerforeditacc td {
+  border: 1px solid #7aa7c7;
+  padding: 4px;
+  text-align: center;
+  font-size: 12px;
+}
+#mainCreatTransDiv .do-table-containerforeditacc th {
+  background: #d8ebf7;
+  font-weight: bold;
+}
+
+/* Suggestion dropdown */
+#mainCreatTransDiv .suggestions-list {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #7aa7c7;
+  border-radius: 3px;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+#mainCreatTransDiv .suggestions-list div {
+  padding: 5px 8px;
+  cursor: pointer;
+}
+#mainCreatTransDiv .suggestions-list div:hover {
+  background: #e6f2f8;
+}
+
+/* Remark box */
+#mainCreatTransDiv .tc-remark textarea {
+  width: 100%;
+  height: 40px;
+}
+
+/* Refund Amount special */
+#mainCreatTransDiv #refund-amount {
+  font-size: 16px;
+  font-weight: bold;
+  background: #fdfdfd;
+  text-align: right;
+  color: #000;
+  width: 120px;
+}
+
+/* Buttons */
+#mainCreatTransDiv button {
+  font-size: 13px;
+  padding: 5px 10px;
+  border: 1px solid #7aa7c7;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#mainCreatTransDiv button.save {
+  background: #28a745;
+  color: white;
+  border-color: #218838;
+}
+#mainCreatTransDiv button.save:hover {
+  background: #218838;
+}
+
+#mainCreatTransDiv button.cancel {
+  background: #dc3545;
+  color: white;
+  border-color: #c82333;
+}
+#mainCreatTransDiv button.cancel:hover {
+  background: #c82333;
+}
+
+#mainCreatTransDiv button.action-button {
+  background: #f0f0f0;
+  border: 1px solid #7aa7c7;
+}
+#mainCreatTransDiv button.action-button:hover {
+  background: #e6f2f8;
+}

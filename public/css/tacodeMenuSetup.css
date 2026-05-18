@@ -1,0 +1,118 @@
+#movableDiv65{
+    width: 600px;
+}
+
+.tcm-container {
+    padding: 8px;
+    max-width: 595px;
+  }
+  
+.tcm-fieldset {  
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+  }
+  
+.tcm-legend {
+    font-size: 12px; /* Smaller font for a more compact look */
+    font-weight: bold;
+    color: #0b62e4;
+  }
+
+  /* Form row layout styles */
+.tcm-form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.tcm-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+  /* Form input styles */
+.tcm-date,
+.tcm-text {
+    width: 100%;    
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    background-color: #dedada;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+.tcm-date:focus,
+.tcm-text:focus {
+    border-color: #0b62e4;
+    outline: none;
+  }
+
+.tcm-form-style-horizontal3 input[id="tcm-lajita"] {
+    margin-top: 23px;
+    margin-left: 73px;
+  }
+
+.tcm-buttons-wrapper {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.tcm-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    flex: 1;
+    margin-top: 10px
+}
+
+.tcm-butttonslef,
+.tcm-buttonsrig {
+    display: flex;
+    gap: 10px;
+}
+
+button.bs-btn {
+    padding: 5px 10px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+#cancelButton65 {
+    align-self: flex-start; /* Adjust if needed */
+    margin-left: 8px;
+}
+
+/* Ensure all buttons are part of the same alignment row */
+.tcm-container > button,
+.tcm-container .tcm-buttons-wrapper {
+    display: inline-flex;
+    align-items: center;
+    flex-direction:row;
+    gap: 10px;
+}
+
+  .tcm-button:hover {
+    background-color: #094bba;
+  }
+  
+  .tcm-button:active {
+    background-color: #073a8e;
+    transform: scale(0.95);
+  }
+  
+.tcm-button[type="submit"] {
+    background-color: #28a745;
+    max-width: 80px;
+}
+
+.tcm-button[type="button"] {
+    background-color: #dc3545;
+    max-width: 80px;
+}
+
+

@@ -1,0 +1,127 @@
+#movableDiv130{
+    width: 520px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.clr-container {
+    padding: 8px;
+    max-width: 500px;
+}
+
+.clr-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+}
+
+.clr-legend {
+  font-size: 12px; /* Smaller font for a more compact look */
+  font-weight: bold;
+  color: #0b62e4;
+}
+
+  .clr-checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top:15px ;
+    margin-bottom: 15px;
+}
+
+.clr-checkbox-grid div {
+    display: flex;
+    align-items: center;
+}
+
+.clr-checkbox {
+    margin-right: 5px;
+}
+
+.clr-button-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  display: flex;
+  flex-direction:row;
+  gap:15px;
+  margin-bottom: 10px;
+}
+
+/* Button styles */
+.clr-button {
+  background-color: #0b62e4;
+  color: white;
+  border: none;
+  padding: 4px 10px; /* Reduced padding for smaller buttons */
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px; /* Smaller font size for compact buttons */
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.clr-button:hover {
+  background-color: #094bba;
+}
+
+.clr-button:active {
+  background-color: #073a8e;
+  transform: scale(0.95);
+}
+
+.clr-button[type="submit"] {
+  background-color: #28a745;
+  max-width: 80px;
+}
+
+.clr-button[type="button"] {
+  background-color: #dc3545;
+  max-width: 80px;
+}
+#loanLedgerDiv
+{background-color: whitesmoke;
+    width: 525px;
+    height: 475px;
+}
+#loanLedgerForm{
+    width: 450px;
+    margin-left: 12px;
+    margin-top: 25px;
+}
+#CollatorallistcloseButton{
+position: absolute;
+    margin-left: 495px;
+    font-size: 17px;
+    font-weight: bold;
+    color: #eb0404;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+#CollatorallistcloseButton:hover {
+    color: #a01304;
+}
+#loanNaccNameMainDiv{
+  background-color: whitesmoke;
+      width: 1185px;
+      height: 500px;
+      overflow-x: auto;
+}
+#loanNaccNameMainform{
+    width: 1150px;
+    margin-left: 15px;
+     height: 500px;
+     margin-top: 18px;
+
+
+}
+#closeButtonLoanAacc{
+  position: absolute;
+  font-size: 17px;
+    font-weight: bold;
+    color: #eb0404;
+    cursor: pointer;
+    transition: color 0.2s;
+    margin-left: 1168px;
+}

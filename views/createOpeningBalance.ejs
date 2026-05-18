@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opening Balance</title>
+  <link rel="stylesheet" href="/css/openBalance.css">
+</head>
+
+<body>
+  <div class="ob-container">
+    <form action="/account/openingBalance" method="post" class="ajax-form">
+      <fieldset class="ob-fieldset">
+        <h1>Opening Balance</h1>
+        <div class="form-style-horizontal3">
+          <div>
+            <label for="ac-type">A/C Type/Ledger</label>
+            <input type="text" class="ob-text" id="acctype" name="GLName" value="<%= GLName %>" readonly>
+          </div>
+          <div>
+            <label for="account-number">Account#</label>
+            <input type="text" class="ob-text" id="balanceAcc" name="SlAlias" value="<%= SlAlias %>" readonly>
+          </div>
+        </div>
+
+        <div class="form-style-horizontal3">
+          <div>
+            <label for="dr-cr">Dr/Cr</label>
+            <select name="transaction" class="ob-select" id="select">
+              <option value="Dr">Debit</option>
+              <option value="Cr">Credit</option>
+            </select>
+          </div>
+          <div>
+            <label for="amount">Amount</label>
+            <input type="number" class="ob-number" id="amount" name="amount" required>
+          </div>
+          <div>
+            <label for="ac-name">A/C Name</label>
+            <input type="text" class="ob-text" id="balanceName" name="accName" readonly>
+          </div>
+        </div>
+
+        <div class="form-style-horizontal3">
+          <div>
+            <label for="doc-class">Doc class</label>
+            <input type="text" class="ob-text" id="doc-class" name="docClass">
+          </div>
+          <div>
+            <label for="interest-amount">Interest Amount</label>
+            <input type="text" class="ob-text" id="interest-amount" name="intAmount" style="pointer-events: none;">
+          </div>
+        </div>
+        <div class="form-style-horizontal3">
+          <div>
+            <label><input type="checkbox" name="checkbox"> Continue to next A/C.</label>
+            <input type="hidden" name="OBCreatedBy" id="username-pr"><!--Keep it hidden-->
+          </div>
+          <div>
+            <label for="Remark">Remarks</label>
+            <input type="text" class="ob-text" name="remarks" id="">
+          </div>
+        </div>
+
+
+        <div class="ob-button-row">
+          <button type="submit" class="ob-button">Save</button>
+          <button type="button" class="ob-button"> Cancel</button>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+
+  <script>
+    // Function to fetch member name
+    function fetchSubName(alias) {
+      fetch('/get-member-alias-3', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alias }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          const memberNameDisplay = document.getElementById('balanceName');
+          if (data.success) {
+            memberNameDisplay.value = data.memberName;
+          } else {
+            memberNameDisplay.value = data.message || 'Error fetching data';
+          }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+    }
+
+    // On page load, fetch initial value
+    document.addEventListener('DOMContentLoaded', () => {
+      const initialAlias = document.getElementById('balanceAcc').value || 'defaultAlias'; // Set a default alias or handle it dynamically
+      fetchSubName(initialAlias);
+    });
+
+    // Handle blur event on input
+    document.getElementById('balanceAcc').addEventListener('blur', (event) => {
+      const alias = event.target.value;
+      if (alias) {
+        fetchSubName(alias);
+      }
+    });
+  </script>
+  <script>
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const username = localStorage.getItem('selectedusername');
+      if (username) {
+
+        document.getElementById('username-pr').value = `${username}`;
+      }
+
+    });
+
+  </script>
+  <script src="/js/alertsmessages.js"></script>
+</body>
+
+</html>

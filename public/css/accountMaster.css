@@ -1,0 +1,79 @@
+#movableDiv3{
+    max-width: 1800px;
+}
+
+.am-container {
+    padding: 8px;
+    max-width: 1410px;
+}
+
+.am-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+}
+
+.am-legend {
+  font-size: 12px; /* Smaller font for a more compact look */
+  font-weight: bold;
+  color: #0b62e4;
+}
+
+.am-text,
+.am-select {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.am-table-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+.am-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-align: left;
+}
+
+.am-table-container th,
+.am-table-container td {
+  padding: 12px 15px;
+  border: 1px solid #000000; /* Bolder border */
+}
+
+.am-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  
+  /* Button styles */
+  .am-button {
+    background-color: #0b62e4;
+    color: white;
+    border: none;
+    padding: 4px 10px; /* Reduced padding for smaller buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px; /* Smaller font size for compact buttons */
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .am-button:hover {
+    background-color: #094bba;
+  }
+  
+  .am-button:active {
+    background-color: #073a8e;
+    transform: scale(0.95);
+  }

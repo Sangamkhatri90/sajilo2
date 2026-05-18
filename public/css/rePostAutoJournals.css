@@ -1,0 +1,77 @@
+#movableDiv137{
+    max-width: 475px;
+  }
+  
+  .rpaj-container {
+    padding: 8px;
+    max-width: 465px;
+  }
+  
+  .rpaj-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+  }
+  
+  .rpaj-legend {
+  font-size: 12px; /* Smaller font for a more compact look */
+  font-weight: bold;
+  color: #0b62e4;
+  }
+  
+  /* Form row layout styles */
+.rpaj-form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  /* Form input styles */
+  .rpaj-select{
+    width: 100%;
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    background-color: #dedada;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+  .rpaj-select:focus{
+    border-color: #0b62e4;
+    outline: none;
+  }
+  
+  /* Button styles */
+  .rpaj-button {
+    background-color: #0b62e4;
+    color: white;
+    border: none;
+    padding: 4px 10px; /* Reduced padding for smaller buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    width: 80px;
+    font-size: 11px; /* Smaller font size for compact buttons */
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    margin-top: 20px;
+  }
+  
+  .rpaj-button:hover {
+    background-color: #094bba;
+  }
+  
+  .rpaj-button:active {
+    background-color: #073a8e;
+    transform: scale(0.95);
+  }
+
+.rpaj-button[type="submit"] {
+    background-color: #28a745;
+    }
+    
+.rpaj-button[type="button"] {
+    background-color: #dc3545;
+}

@@ -1,0 +1,11 @@
+#dependencies
+node_modules/
+*/node_modules/
+
+# Environment
+.env
+*.env.local
+*.env.production
+
+# Uploads
+uploads/*

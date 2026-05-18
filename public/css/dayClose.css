@@ -1,0 +1,139 @@
+#movableDiv154 {
+    max-width:  650px;
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+
+  .dcl-container {
+      padding: 8px;
+      max-width: 990px;
+  }
+  
+  .dcl-fieldset {
+      border: 1px solid black;
+      border-radius: 5px;
+      padding: 8px; /* Reduced padding for compact fieldset */
+      margin: 5px 0;
+  }
+  
+  .dcl-legend {
+    font-size: 12px; /* Smaller font for a more compact look */
+    font-weight: bold;
+    color: #0b62e4;
+  }
+  
+    /* Form row layout styles */
+    .dcl-form-style-horizontal3 {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px; /* Reduced gap for tighter layout */
+      margin-bottom: 6px;
+    }
+    
+  .dcl-form-style-horizontal3 div {
+    flex: 1;
+    min-width: 120px; /* Reduced min-width for narrower fields */
+  }
+  
+    
+    /* Form input styles */
+    .dcl-text,
+    .dcl-date,
+    .dcl-select {
+      width: 100%;    
+      padding: 3px; /* Reduced padding for smaller input fields */
+      margin: 2px 0;
+      background-color: #dedada;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 11px; /* Smaller font size */
+    }
+    
+    .dcl-text:focus,
+    .dcl-date:focus,
+    .dcl-select:focus {
+      border-color: #0b62e4;
+      outline: none;
+    }
+  
+  .dcl-table-container {
+    max-height: 295px;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 952px;
+    margin: 0 auto;
+    overflow-x: auto;
+  }
+  
+  .dcl-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    text-align: left;
+    font-weight: normal;
+  }
+
+  .dcl-table-container th {
+    position: sticky;
+    top: -2px; /* Keep the header at the top */
+    z-index:2; /* Ensure header stays above body content */
+    text-align: center; /* Optional: Center the header text */
+    font-weight: normal; /* Remove the bold font-weight */
+    background-color:#2f7ebd;
+  }
+
+  .dcl-table-container th,
+  .dcl-table-container td {
+    border: 1px solid #000000; /* Bolder border */
+    padding: 8px;
+    text-align: left;
+  }
+
+  .dcl-table-container td {
+    text-align: center; /* Optional: centers text in cells */
+  }
+
+  .dcl-button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    display: flex;
+    flex-direction:row;
+    gap:15px;
+    margin-bottom: 5px;
+  }
+  
+  /* Button styles */
+  .dcl-button {
+    background-color: #0b62e4;
+    color: white;
+    border: none;
+    padding: 4px 10px; /* Reduced padding for smaller buttons */
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px; /* Smaller font size for compact buttons */
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    max-height: 25px;
+  }
+  
+  .dcl-button:hover {
+    background-color: #094bba;
+  }
+  
+  .dcl-button:active {
+    background-color: #073a8e;
+    transform: scale(0.95);
+  }
+  
+  .dcl-button[type="submit"] {
+    background-color: #52bd15;
+    max-width: 80px;
+    margin-left: 10px;
+  }
+  
+  .dcl-button[type="button"] {
+    background-color: #dc3545;
+    max-width: 80px;
+  }
+  

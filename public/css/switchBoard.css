@@ -1,0 +1,93 @@
+#movableDiv64{
+  width: 503px;
+}
+
+.sb-container {
+  padding: 8px;
+  max-width: 470px;
+}
+
+.sb-fieldset {
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 8px; /* Reduced padding for compact fieldset */
+  margin: 5px 0;
+}
+
+.sb-legend {
+  font-size: 12px; /* Smaller font for a more compact look */
+  font-weight: bold;
+  color: #0b62e4;
+}
+
+
+  /* Form row layout styles */
+  .sb-form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.sb-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+  
+  /* Form input styles */
+  .sb-text {
+    width: 100%;    
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    background-color: #dedada;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+  .sb-text:focus {
+    border-color: #0b62e4;
+    outline: none;
+  }
+
+
+  .sb-buttons-wrapper {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+  }
+  
+  .sb-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      flex: 1;
+      margin-top: 10px
+  }
+  
+  .sb-butttonslef,
+  .sb-buttonsrig {
+      display: flex;
+      gap: 10px;
+  }
+  
+  button.bs-btn {
+      padding: 5px 10px;
+      font-size: 0.9em;
+      cursor: pointer;
+  }
+  
+  #cancelButton64 {
+      align-self: flex-start; /* Adjust if needed */
+      margin-left: 8px;
+  }
+  
+  /* Ensure all buttons are part of the same alignment row */
+  .sb-container > button,
+  .sb-container .sb-buttons-wrapper {
+      display: inline-flex;
+      align-items: center;
+      flex-direction:row;
+      gap: 10px;
+  }

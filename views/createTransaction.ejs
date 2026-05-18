@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Voucher</title>
+  <link href="https://nepalidatepicker.sajanmaharjan.com.np/nepali.datepicker/css/nepali.datepicker.v4.0.4.min.css"
+    rel="stylesheet" type="text/css" />
+  <script src="https://cdn.jsdelivr.net/npm/nepali-date@1.0.5/dist/nepali-date.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/nepali.datepicker@4.0.4/dist/nepali.datepicker.min.js"></script>
+  <link rel="stylesheet" href="/css/createTransaction.css">
+  <script src="/js/realTime.js"></script>
+  <style>
+   
+    /* Style the suggestion dropdown */
+    #docClassesList {
+      margin-top: 70px;
+    }
+
+    .suggestions-list {
+      border: 1px solid #ccc;
+      max-height: 200px;
+      overflow-y: auto;
+      width: 20%;
+      position: absolute;
+      background-color: white;
+      z-index: 999;
+      margin-top: 2px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .suggestion-item {
+      padding: 8px;
+      cursor: pointer;
+    }
+
+    .suggestion-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    /* Style the suggestion dropdown */
+    .suggestions-list {
+      border: 1px solid #ccc;
+      max-height: 200px;
+      overflow-y: auto;
+      width: 20%;
+      position: absolute;
+      background-color: white;
+      z-index: 999;
+      margin-top: 2px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .suggestion-item {
+      padding: 8px;
+      cursor: pointer;
+    }
+
+    .suggestion-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    /* Style for error message */
+    .error {
+      color: red;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <form action="/account/Transaction" method="POST"  class="ajax-form">
+    <fieldset class="fieldset">
+    <div class="form-row">
+    <div>
+        <label for="">Member</label>
+    </div>
+    <div class="header">
+      <h3>TRANSACTION</h3>
+    </div>
+    <div>
+      <label for="date">Trans Date</label>
+      <input type="text" name="transDate" id="dateInput" placeholder="Enter Nepali Date (YYYY/MM/DD)">
+    </div>
+    </div>
+    <div class="form-row">
+    <div style="margin-left: 83%;">
+        <label for="user withdraw limit">User Withdraw Limit</label>
+        <input type="text">
+    </div>
+    </div>
+      <div class="form-row">
+          <label for="voucher-number">Voucher Number</label>
+          <input type="text" id="voucherNo" name="voucherid">
+            <label for="doc-class">Doc. Class</label>
+            <input type="text" id="docClass" name="docClassTrans" placeholder="Start typing to select a Doc Class"
+            onfocus="fetchDocClasses(true)" oninput="filterDocClasses()" autocomplete="off" required>
+            <div id="docClassesList" class="suggestions-list" style="display: none; margin-top: 16.5%; margin-left: 57.5%; max-width: 205px;"></div> <!-- Suggestions List -->
+              <label for="transactionType">Transaction Type</label>
+              <select id="transactionType" name="transactionType" onchange="handlechange()">
+                <option value="Deposit">Deposit</option>
+                <option value="Withdraw">Withdraw</option>
+              </select>
+          </div>
+    <div>
+    <!-- Using input tags to display the start date -->
+   
+    <input type="hidden" id="startDateInput" class="start-date-local" />
+
+    <!-- Using input tags to display the end date -->
+
+    <input type="hidden" id="endDateInput" class="end-date-local" />
+  </div>
+
+  <div class="form-row">
+            <label for="cash/cheque">Cash/Cheque:</label>
+            <input type="text" id="GLName" name="GLName" placeholder="Type to select a GLName"
+              onfocus="fetchGLNames(true)" oninput="filterGLNames()" autocomplete="off" required>
+            <div id="glNamesList" class="suggestions-list" style="display: none; margin-top: 16.5%; margin-left: 33.5%; max-width: 205px;"></div> <!-- Suggestions List -->
+  </div>
+
+        <div class="form-row">
+          <label for="cheque-number">Cheque Number</label>
+          <input type="text" id="chequeNumber" class="cheque-number">
+          <div id="error-message" class="error"></div>
+          <label for="cheque-date">Cheque Date</label>
+          <input type="date" class="date" id="chequeDate">
+          <label for="bearer">Bearer</label>
+          <input type="number" id="bearer" name="bearer">
+        </div>
+        <div>
+        <fieldset class="fieldset1">
+          <legend class="legend">Member</legend>
+          <!-- Toggle Button -->
+          <button type="button" class="" onclick="">View Table</button>
+
+          <!-- Section m1 -->
+          <div class="" id="">
+              <div class="do-table-container">
+                  <table>
+                      <thead>
+                          <tr>
+                              <th></th>
+                              <th>Total</th>
+                              <th>Amount</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          <tr>
+                              <td></td>
+                              <td></td>
+                              <td></td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div>
+      </fieldset>
+      </div>
+
+        <div class="cem-form-style-horizontal2" style=" margin-top: -107px;">
+          <div style="width: 160px;">
+            <label for="account-number">Account Number
+            <input type="checkbox" name="" id="" style="margin-left: 5px; margin-bottom: -10px;">
+            </label>
+            <input type="text" id="SlAlias" name="SlAlias" value="<%= SlAlias %>" >
+          </div>
+          <div></div>
+          <div>
+            <label for="source of fund">Source of Fund</label>
+            <input type="text" name="sourceofFund" id="srcofFund">
+          </div>
+        </div>
+          
+        
+        <div class="cem-form-style-horizontal2" style=" margin-top: 10px;">
+          <div>
+            <label for="account-name">Account Name</label>
+            <input type="text" id="SLName" name="SLName" value="" readonly>
+          </div>
+          <div></div>
+          <div style="margin-right: -20px ;">
+            <a href="/account/createAccount?SlAlias=<%= SlAlias %>&MemberAlias=<%= MemberAlias %>&GLName=<%= GLName %>&SLName= <%= SLName %>&Address1=<%= Address1 %>
+                          &Phone1=<%= Phone1 %>&Mobile=<%= Mobile %>&AccountOpenDate=<%= AccountOpenDate %>&firstPhotoBase64=<%= firstPhotoBase64 %>
+                          &Gender=<%= Gender %>&NextofKinName=<%= NextofKinName %>
+                          &NextofKinAddress=<%= NextofKinAddress %>
+                          &NextofKinContactNumber=<%= NextofKinContactNumber %>&Relation=<%= Relation %>&DOB=<%= DOB %>&JV_Miti=<%= JV_Miti %>&VoucherNo=<%= VoucherNo %>
+                          &DrAmount=<%= DrAmount %>&JournalEntries=<%= JournalEntries %>&CrAmount=<%= CrAmount %>"
+              class="decoration"> <button type="button"> View A/c Details </button></a>
+          </div>
+          <div style="margin-left: 10px ; margin-right: -54px;">
+            <a href="#" id="toggleButton4" class="decoration"><button type="button" class="action-button post-interest">Post Interest</button></a>
+          </div>
+        </div>
+
+        <div class="tc-form-style">
+          <div style="width: 184px;">
+            <label for="account-type-ledger">A/C Type</label>
+            <input type="text" name="Glname" id="GLNamess">
+          </div>
+          <div style="width: 184px;">
+            <label for="interest-balance">Interest Balance</label>
+            <input type="text" id="interestBal" name="account-name" value="">
+          </div>
+        </div>
+
+        <div class="tc-form-style">
+          <div style="width: 184px;">
+            <label for="balance"> Balance</label>
+            <input type="text" id="Balance" name="account-name" name="id" value="" readonly>
+          </div>
+          <div style="width: 184px;">
+            <label for="amount">Interest Amount</label>
+            <input type="number" id="intAmount" name="amount">
+          </div>
+        </div>
+
+        <div class="tc-form-style-btn">
+          <div style="width: 184px;">
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" name="amount" oninput="updateTotal()" placeholder="Amount">
+          </div>
+          <div style="margin-top: 10px;">
+            <a href="#" id="toggleButton1" class="decoration"> <button type="button"
+              class="action-button bill">Bill</button></a></div>
+          <div style="width: 184px; margin-left: 202px;">
+            <label for="rebate">Rebate</label>
+            <input type="number" id="rebate" name="rebate" oninput="updateTotal()" placeholder="rebate">
+          </div>
+        </div>
+        
+        <div class="tc-form-style-btn">
+          <div style="width: 184px;">
+            <label for="interest-amount">Penalty</label>
+            <input type="number" id="penalty" name="penalty" oninput="updateTotal()" placeholder="Penalty">
+          </div>
+          <div style="margin-top: 10px;">
+            <a href="#" id="toggleButton2" class="decoration"><button type="button" class="action-button renew">Renew</button></a>
+            <a href="#" id="toggleButton3" style="display: none;"></a>
+          </div>
+          <div style="width: 184px; margin-left: 175px;">
+            <label for="int-receive-date">Int. Receive Till Date</label>
+            <input type="date" class="date" id="intTillDate">
+          </div>
+        </div>
+        
+       
+        <div class="tc-form-style">
+          <div style="width: 184px;">
+            <label for="Total-Amount">Total-Amount</label>
+            <input type="number" id="total" name="total" readonly placeholder="Total">
+          </div>
+          <div style="width: 184px;">
+            <label for="principal receive-date">Principal Receive Till Date</label>
+            <input type="date" class="date" id="prinTillDate">
+          </div>
+        </div>
+
+        <div class="tc-form-style1">
+          <div style="width: 184px;">
+            <textarea id="totalInWords" placeholder="Amount in words" rows="4" cols="50" readonly></textarea>
+          </div>
+          <div style="width: 184px;">
+            <label for="accrued-interest">Accrued Interest</label>
+            <input type="number" id="accruedInterest" name="accrued-interest">
+          </div>
+          <div style="display: flex;">
+            <input type="checkbox" id="suspicious-trans" name="suspicious-trans">
+            <label for="suspicious-trans" style="margin-top: 15px;">Suspicious Transaction</label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="Collateral amount for others">Collateral Amount For Others</label>
+          <input type="number" name="" id="collateralAmt">
+          <label for="deposit-by">Deposited By</label>
+          <input type="text" id="depositBy" name="deposit-by">
+          <label for="contact-number">Contact Number</label>
+          <input type="number" id="contactNumber" name="contact-number">
+        </div>
+
+        <div class="tc-remark"> 
+          <label for="remark">Remark</label>
+          <textarea id="remark" name="remark" placeholder="Remark"></textarea>
+        </div>
+        
+        <div class="form-row buttons">
+          <label for="refund-amount">Refund Amount</label>
+          <input type="number" id="refund-amount" name="refund-amount">
+          <button id="transsaveBtn" class="save" type="submit"><img src="PNG/save.png" alt="Save">Save</button>
+          <button class="cancel"><img src="PNG/cancel.png" alt="Cancel">Cancel</button>
+        </div>
+    </form>
+  </div>
+
+
+  <!--Receipt Voucher-->
+
+  <div class="movableDiv" id="movableDiv1" style="display: none;">
+    <button id="closeButton1">&times;</button>
+    <div class="rv-container">
+      <form action="" id="myForm1">
+        <fieldset class="rv-fieldset">
+          <legend class="rv-legend">Receipt Voucher</legend>
+          <div class="rv-form-style-horizontal3">
+            <div style="margin-left:10px; margin-top: 20px;">
+              <input type="checkbox" name="" id="">
+              <label for="">Journal Voucher</label>
+            </div>
+            <div  style="margin-left: 20px; max-width: 40px;">
+            <label for="">Voucher Date</label>
+            <input type="text" id="voucher-Date" name="voucher-Date" placeholder="Enter Voucher Date">
+            <div id="error-message" class="error"></div>
+            </div>
+          </div>
+          <div class="rv-form-style-horizontal3">
+            <div>
+              <label for="">Voucher No.</label>
+              <input type="text" class="rv-text" name="RVoucherNo" id="RVoucherNo">
+            </div>
+            <div>
+              <label for="Ledger">Ledger:</label>
+              <input type="text" id="Ledger" name="Ledger" placeholder="Type to select a Ledger"
+                onfocus="fetchLedgerNames(true)" oninput="filterLedgerNames()" autocomplete="off">
+              <div id="ledgerNamesList" class="suggestions-list1" style="display: none;"></div> <!-- Suggestions List -->
+            </div>
+            <div>
+              <label for="">Doc Class</label>
+              <input type="text" id="docClassInput" placeholder="Type to get Doc Class" onfocus="fetchDocClassesForBills(true)" oninput="filterDocClassesForBills()" />
+          </div>
+          <div id="docClassList" class="suggestions-list1" style="display: none;"></div>
+          </div>
+          
+    <div class="rv-form-style-horizontal3">
+      <div>
+        <label for="">Member ID</label>
+        <input type="text" name="MemberAlias" id="MemberAlias" value="<%= MemberAlias %>">
+        <input type="text" name="" id="MemberName" value="">
+      </div>
+      <div>
+        <label for="">Collector</label>
+        <input type="text" id="PCollector" onfocus="fetchCollectorsBills(true)" oninput="filterCollectors()" class="rv-text" placeholder="Type to get Collectors">
+
+      </div>
+      <div id="PCollectorsList" class="suggestions-list1" style="display: none;"></div>
+
+      <div>
+        <label for="">Sub Ledger Alias</label>
+        <input type="text" class="rv-text" name="" id="">
+      </div>
+    </div>
+    <div class="rv-table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Account Head</th>
+            <th>Sub Head</th>
+            <th>Dr.Amount</th>
+            <th>Cr.Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rv-button-row">
+      <button type="submit" class="rv-button">Re-New</button>
+      <button type="button" class="rv-button" id="cancelButton1">Cancel</button>
+    </div>
+    </fieldset>
+    </form>
+  </div>
+  </div>
+
+    <!--Re-New A/C-->
+    <div class="movableDiv" id="movableDiv2" style="display: none;">
+      <button id="closeButton2">&times;</button>
+      <div class="ra-container">
+          <form action="" id="myForm2">
+              <fieldset class="ra-fieldset">
+                  <legend class="ra-legend">Re-New A/c</legend>
+                  <div class="ra-form-style-horizontal3">
+                      <div>
+                          <label for="">Transaction Date</label>
+                          <input type="date" class="ra-date" id="nepali-date">
+                      </div>
+                      <div>
+                          <label for="">A/c Type</label>
+                          <input type="text" class="ra-text" name="" id="" value="<%= GLName %>">
+                      </div>
+                      <div>
+                          <label for="">Amount</label>
+                          <input type="text" class="ra-text" name="" id="Amount">
+                      </div>
+                  </div>
+                  <div class="ra-form-style-horizontal3">
+                      <div>
+                          <label for="">Member ID</label>
+                      </div>
+                      <div>
+                          <input type="text" class="ra-text" name="" id="MemberAlias-1" value="<%= MemberAlias %>">
+                      </div>
+                      <div>
+                          <input type="text" class="ra-text" name="" id="MemberName-1" value="" readonly>
+                      </div>
+                  </div>
+      <div class="ra-form-style-horizontal3">
+          <div>
+              <label for="">A/C No.</label>
+          </div>
+          <div>
+              <input type="text" class="ra-text" name="" id="SubAlias-1" value="<%= SlAlias %>">
+          </div>
+          <div>
+              <input type="text" class="ra-text" name="" id="SubName-1" readonly>
+          </div>
+      </div>
+      <div class="ra-form-style-horizontal3">
+          <div>
+              <label for="">New A/C No.</label>
+
+          </div>
+          <div>
+              <input type="text" class="ra-text" name="" id="SubAlias-2">
+          </div>
+          <div>
+              <input type="text" class="ra-text" name="" id="SubName-2" readonly>
+          </div>
+      </div>
+      <div class="ra-button-row">
+          <button type="submit" class="ra-button">Re-New</button>
+          <button type="button" class="ra-button" id="cancelButton2">Cancel</button>
+      </div>
+      </fieldset>
+      </form>
+  </div>
+  </div>
+
+    <!--Transaction Table-->
+    <div class="movableDiv" id="movableDiv3" style="display: none;">
+      <button id="closeButton3">&times;</button>
+      <div class="do-container">
+          <form action="" id="myForm3">
+              <fieldset class="do-fieldset">
+                  <legend class="do-legend">Member</legend>
+                  <!-- Toggle Button -->
+                  <button type="button" class="toggle-button" onclick="toggleView()">View Table</button>
+
+                  <!-- Section m1 -->
+                  <div class="do-contents active" id="m1">
+                      <div class="do-table-container">
+                          <table>
+                              <thead>
+                                  <tr>
+                                      <th></th>
+                                      <th>Total</th>
+                                      <th>Amount</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  <tr>
+                                      <td></td>
+                                      <td></td>
+                                      <td></td>
+                                  </tr>
+                              </tbody>
+                          </table>
+                      </div>
+              </fieldset>
+      </div>
+
+    <!--Interest Calculation-->
+    <div class="movableDiv" id="movableDiv4" style="display: none;">
+      <button id="closeButton4">&times;</button>
+      <div class="nic-container">
+        <form action="" id="myForm4">
+          <fieldset class="nic-fieldset">
+              <legend class="nic-legend">Interest Calculation</legend>
+              <fieldset class="nic-fieldset">
+                  <div class="nic-form-style-horizontal3">
+                      <div>
+                          <label for="">Calculate Interest Till Date</label>
+                          <input type="date" class="nic-date" name="" id="">
+                      </div>
+                      <div>
+                          <label for="">Voucher Date</label>
+                          <input type="date" class="nic-date" name="" id="">
+                      </div>
+                  </div>
+                  <div class="nic-form-style-horizontal3">
+                      <div>
+                          <label for="">Last Interest Calculated Till</label>
+                          <input type="date" class="nic-date" name="" id="">
+                      </div>
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Carry to Transacation</label>
+                      </div>
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Day Closing</label>
+                      </div>
+                  </div>
+              </fieldset>
+              <fieldset class="nic-fieldset">
+                  <div class="checkbox-grid">
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Select All A/c Type</label>
+                      </div>
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Select All A/c</label>
+                      </div>
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Show Projection Report</label>
+                      </div>
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Calculation Only</label>
+                      </div>
+                  </div>
+              </fieldset>
+              <div class="nic-form-style-horizontal3">
+                  <div>
+                      <label for="">Interest Amount</label>
+                      <input type="text" class="nic-text" name="" id="">
+                  </div>
+                  <div>
+                      <label for="">Doc Class</label>
+                      <input type="text" class="nic-text" name="" id="">
+                  </div>
+              </div>
+              <div class="nic-button-row">
+                  <button type="submit" class="nic-button">Ok</button>
+                  <button type="button" class="nic-button" id="cancelButton4">Cancel</button>
+              </div>
+          </fieldset>
+      </form>
+      </div>
+    </div>
+      <!-- Section m2 -->
+      <div class="do-contents" id="m2" style="display: none;">
+          <div class="do-table-container">
+              <table>
+                  <thead>
+                      <tr>
+                          <th>Date</th>
+                          <th>Dr Amount</th>
+                          <th>Cr Amount</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr>
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                      </tr>
+                  </tbody>
+              </table>
+          </div>
+          </fieldset>
+      </div>
+  </div>
+
+
+        <!--Indicators for Capslock NumLocks etc-->
+
+        <div class="indicators">
+          <div class="indicator">
+
+              <div id="username-p"></div>
+          </div>
+          <div id="current-bs-date" class="indicator"></div>
+          <div id="currentTime" class="indicator"></div>
+
+          <div id="startDateInputss" class="indicator"></div>
+          <div id="endDateInputss" class="indicator"></div>
+          <div id="capsIndicator" class="indicator">CAPS</div>
+          <div id="numLockIndicator" class="indicator">NUM</div>
+          <div id="insertIndicator" class="indicator">INS</div>
+          <div id="scrollLockIndicator" class="indicator">SCRL</div>
+          <div id="scrollLockIndicator" class="indicator">KANA</div>
+
+
+      </div>
+  
+  <script>
+    // Function to fetch member name
+    function fetchMemberName(alias) {
+      fetch('/get-member-name-3', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alias }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          const memberNameDisplay = document.getElementById('MemberName');
+          if (data.success) {
+            memberNameDisplay.value= data.memberName;
+          } else {
+            memberNameDisplay.value = data.message || 'Error fetching data';
+          }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+    }
+  
+    // On page load, fetch initial value
+    document.addEventListener('DOMContentLoaded', () => {
+      const initialAlias = document.getElementById('MemberAlias').value || 'defaultAlias'; // Set a default alias or handle it dynamically
+      fetchMemberName(initialAlias);
+    });
+  
+    // Handle blur event on input
+    document.getElementById('MemberAlias').addEventListener('blur', (event) => {
+      const alias = event.target.value;
+      if (alias) {
+        fetchMemberName(alias);
+      }
+    });
+  
+
+  </script>
+  
+  <script>
+    // Function to fetch member name
+    function fetchMemberName1(alias) {
+      fetch('/get-member-name-4', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alias }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          const memberNameDisplay = document.getElementById('MemberName-1');
+          if (data.success) {
+            memberNameDisplay.value= data.memberName;
+          } else {
+            memberNameDisplay.value = data.message || 'Error fetching data';
+          }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+    }
+  
+    // On page load, fetch initial value
+    document.addEventListener('DOMContentLoaded', () => {
+      const initialAlias = document.getElementById('MemberAlias-1').value || 'defaultAlias'; // Set a default alias or handle it dynamically
+      fetchMemberName1(initialAlias);
+    });
+  
+    // Handle blur event on input
+    document.getElementById('MemberAlias-1').addEventListener('blur', (event) => {
+      const alias = event.target.value;
+      if (alias) {
+        fetchMemberName1(alias);
+      }
+    });
+  
+
+  </script>
+
+<script>
+  // Function to fetch member name
+  function fetchSubName(alias) {
+    fetch('/get-member-alias-3', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alias }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        const memberNameDisplay = document.getElementById('SubName-1');
+        if (data.success) {
+          memberNameDisplay.value= data.memberName;
+        } else {
+          memberNameDisplay.value = data.message || 'Error fetching data';
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }
+
+  // On page load, fetch initial value
+  document.addEventListener('DOMContentLoaded', () => {
+    const initialAlias = document.getElementById('SubAlias-1').value || 'defaultAlias'; // Set a default alias or handle it dynamically
+    fetchSubName(initialAlias);
+  });
+
+  // Handle blur event on input
+  document.getElementById('SubAlias-1').addEventListener('blur', (event) => {
+    const alias = event.target.value;
+    if (alias) {
+      fetchSubName(alias);
+    }
+  });
+
+
+</script>
+  
+<script>
+  // Function to fetch member name
+  function fetchSubName1(alias) {
+    fetch('/get-member-alias-4', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alias }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        const memberNameDisplay = document.getElementById('SubName-2');
+        if (data.success) {
+          memberNameDisplay.value= data.memberName;
+        } else {
+          memberNameDisplay.value = data.message || 'Error fetching data';
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }
+
+  // On page load, fetch initial value
+  document.addEventListener('DOMContentLoaded', () => {
+    const initialAlias = document.getElementById('SubAlias-2').value || 'defaultAlias'; // Set a default alias or handle it dynamically
+    fetchSubName1(initialAlias);
+  });
+
+  // Handle blur event on input
+  document.getElementById('SubAlias-2').addEventListener('blur', (event) => {
+    const alias = event.target.value;
+    if (alias) {
+      fetchSubName1(alias);
+    }
+  });
+
+
+</script>
+
+  <script>
+    const transactionType = document.getElementById('transactionType');
+    const paymentMethod = document.getElementById('paymentMethod');
+    const deposit = [
+        'chequeNumber', 'chequeDate', 'bearer', 'interestBal', 
+        'intAmount', 'prinTillDate', 'intTillDate', 'accruedAmount', 
+        'collateralAmt'
+    ];
+    const withdraw = ['depositBy', 'contactNumber', 'srcofFund'];
+
+    const toggleElements = (elements, isDisabled) => {
+        elements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.pointerEvents = isDisabled ? 'none' : '';
+                element.style.color = isDisabled ? 'gray' : '';
+            }
+        });
+    };
+
+    const applyToggleBasedOnSelection = () => {
+        const selectedValue = transactionType.value;
+        if (selectedValue === 'Deposit') {
+            toggleElements(deposit, true); // Enable deposit-related fields
+            toggleElements(withdraw, false); // Disable withdraw-related fields
+            paymentMethod.value = 'cash'; // Set payment method to 'cash'
+          } else if (selectedValue === 'Withdraw') {
+            toggleElements(deposit, false); // Disable deposit-related fields
+            toggleElements(withdraw, true); // Enable withdraw-related fields
+            paymentMethod.value = 'cheque'; // Set payment method to 'cash'
+          }
+    };
+
+    // Apply behavior when the page loads
+    applyToggleBasedOnSelection();
+
+    // Add event listener for dropdown changes
+    transactionType.addEventListener('change', applyToggleBasedOnSelection);
+</script>
+
+ 
+<script>
+   document.getElementById('AliasNo').addEventListener('blur', function () {
+          const alias = this.value;
+          if (alias.trim() === '') {
+            document.getElementById('AliasName').value = '';
+            return;
+          }
+      
+          fetch('/get-member-alias-1', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ alias }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                document.getElementById('AliasName').value = data.memberName || '';
+              } else {
+                showCustomAlert(data.message || 'Alias not found');
+              }
+            })
+            .catch((error) => {
+              console.error('Error:', error);
+            });
+        });
+</script>
+
+<script>
+  document.getElementById('SlAlias').addEventListener('blur', function (event) {
+    const slAliasValue = event.target.value.trim();
+
+    if (slAliasValue) {
+        fetch(`/getSubLedgerDetails?SlAlias=${encodeURIComponent(slAliasValue)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error(data.error);
+                    showCustomAlert('Error retrieving details. Please try again.');
+                    return;
+                }
+
+                // Fill the inputs with retrieved data
+                document.getElementById('SLName').value = data.SLName || '';
+                document.getElementById('GLNamess').value = data.GLName || '';
+                document.getElementById('Balance').value = data.Balance || 0;
+                document.getElementById('Amount').value = data.Balance || 0;
+            })
+            .catch(err => {
+                console.error('Error fetching data:', err);
+                showCustomAlert('Failed to retrieve details.');
+            });
+    }
+});
+
+</script>
+
+  <script>
+    // This function updates the payment method based on the transaction type
+    function updatePaymentMethod() {
+      const transactionType = document.getElementById("transactionType").value;
+      const paymentMethod = document.getElementById("paymentMethod");
+      const chequeNumberInput = document.getElementById("chequeNumber");
+
+      // If Deposit is selected, set payment method to "Cash" and disable Cheque input
+      if (transactionType === "deposit") {
+        paymentMethod.value = "cash"; // Sets the value of the select dropdown
+        chequeNumberInput.disabled = true; // Disables the cheque number input
+      }
+      // If Withdraw is selected, set payment method to "Cheque" and enable Cheque input
+      else if (transactionType === "withdraw") {
+        paymentMethod.value = "cheque"; // Sets the value of the select dropdown
+        chequeNumberInput.disabled = false; // Enables the cheque number input
+      }
+    }
+
+    // Call updatePaymentMethod on page load to initialize the correct state
+    window.onload = updatePaymentMethod;
+  </script>
+<script>
+  let allGLNames = [];  // Store all GLNames and GlAliases fetched from the server
+  let filteredGLNames = [];  // Store filtered GLNames based on user input
+
+  // Function to fetch GLNames and GlAliases for Categories 'B' and 'C' and display them as suggestions
+  function fetchGLNames(isInitialFocus) {
+    const glNamesList = document.getElementById('glNamesList');
+    glNamesList.innerHTML = '';  // Clear any existing suggestions
+    glNamesList.style.display = 'none';  // Hide suggestions list initially
+
+    if (allGLNames.length === 0 || isInitialFocus) {
+      // Fetch GLNames and GlAliases from the backend if not already fetched
+      fetch('/fetchGLNames')
+        .then(response => response.json())
+        .then(data => {
+          if (data.glNames && data.glNames.length > 0) {
+            allGLNames = data.glNames;  // Store fetched GLNames and GlAliases
+            filteredGLNames = [...allGLNames];  // Initially show all GLNames
+            displayGLNames(filteredGLNames);  // Display the full list on initial focus
+          } else {
+            const noResult = document.createElement('div');
+            noResult.textContent = 'No GLNames found for Categories B and C';
+            noResult.style.color = 'gray';
+            glNamesList.appendChild(noResult);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching GLNames:', error);
+          const errorMessage = document.createElement('div');
+          errorMessage.textContent = 'Error fetching GLNames';
+          errorMessage.style.color = 'red';
+          glNamesList.appendChild(errorMessage);
+        });
+    } else {
+      displayGLNames(filteredGLNames);  // Display the filtered list
+    }
+  }
+
+  // Function to filter GLNames based on user input
+  function filterGLNames() {
+    const input = document.getElementById('GLName').value.toLowerCase();
+    if (input === '') {
+      filteredGLNames = [...allGLNames];  // Show the full list when input is empty
+    } else {
+      filteredGLNames = allGLNames.filter(item =>
+        item.GLName.toLowerCase().includes(input) || item.GlAlias.toLowerCase().includes(input)
+      );
+    }
+    displayGLNames(filteredGLNames);
+  }
+
+  // Function to display GLNames and GlAliases in the suggestion list
+  function displayGLNames(names) {
+    const glNamesList = document.getElementById('glNamesList');
+    glNamesList.innerHTML = '';  // Clear previous suggestions
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'X';
+    closeButton.className = 'close-button';
+
+    closeButton.onclick = function (event) {
+      event.preventDefault();
+      glNamesList.style.display = 'none';  // Hide the suggestions list when the close button is clicked
+    };
+
+    glNamesList.appendChild(closeButton);  // Append the close button to the list
+
+    if (names.length > 0) {
+      glNamesList.style.display = 'block';  // Show the suggestions list
+      names.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+
+        // Display GLName along with GlAlias
+        div.textContent = `${item.GLName} - ${item.GlAlias}`;  // Show GLName and GlAlias together
+        div.onclick = function () {
+          document.getElementById('GLName').value = item.GLName;  // Set the input value to GLName
+          glNamesList.style.display = 'none';  // Hide the suggestions list
+        };
+        glNamesList.appendChild(div);
+      });
+    } else {
+      // If no matches, show a "No results" message
+      const noResult = document.createElement('div');
+      noResult.textContent = 'No matching GLNames found';
+      noResult.style.color = 'gray';
+      glNamesList.appendChild(noResult);
+    }
+  }
+</script>
+
+
+<script>
+  let allDocClasses = [];  // Store both DocClassName and DocClassAlias fetched from the server
+  let filteredDocClasses = [];  // Store filtered DocClassNames and DocClassAliases based on user input
+
+  // Function to fetch DocClassNames and DocClassAliases from the server and display them as suggestions
+  function fetchDocClasses(isInitialFocus) {
+    const docClassesList = document.getElementById('docClassesList');
+    docClassesList.innerHTML = '';  // Clear any existing suggestions
+    docClassesList.style.display = 'none';  // Hide suggestions list initially
+
+    if (allDocClasses.length === 0 || isInitialFocus) {
+      // Fetch DocClassNames and DocClassAliases from the backend if not already fetched
+      fetch('/fetchDocClasses')
+        .then(response => response.json())
+        .then(data => {
+          if (data.docClasses && data.docClasses.length > 0) {
+            allDocClasses = data.docClasses;  // Store fetched DocClassNames and DocClassAliases
+            filteredDocClasses = [...allDocClasses];  // Initially show all DocClassNames
+            displayDocClasses(filteredDocClasses);  // Display the full list on initial focus
+          } else {
+            const noResult = document.createElement('div');
+            noResult.textContent = 'No DocClassNames found';
+            noResult.style.color = 'gray';
+            docClassesList.appendChild(noResult);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching DocClassNames:', error);
+          const errorMessage = document.createElement('div');
+          errorMessage.textContent = 'Error fetching DocClassNames';
+          errorMessage.style.color = 'red';
+          docClassesList.appendChild(errorMessage);
+        });
+    } else {
+      displayDocClasses(filteredDocClasses);  // Display the filtered list
+    }
+  }
+
+  // Function to filter DocClassNames and DocClassAliases based on user input
+  function filterDocClasses() {
+    const input = document.getElementById('docClass').value.toLowerCase();
+    if (input === '') {
+      filteredDocClasses = [...allDocClasses];  // Show the full list when input is empty
+    } else {
+      filteredDocClasses = allDocClasses.filter(item =>
+        item.DocClassName.toLowerCase().includes(input) || item.DocClassAlias.toLowerCase().includes(input)
+      );
+    }
+    displayDocClasses(filteredDocClasses);
+  }
+
+  // Function to display DocClassNames and DocClassAliases in the suggestion list
+  function displayDocClasses(names) {
+    const docClassesList = document.getElementById('docClassesList');
+    docClassesList.innerHTML = '';  // Clear previous suggestions
+
+    // Create and append the close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'X';
+    closeButton.className = 'close-button';
+
+    closeButton.onclick = function (event) {
+      event.preventDefault();
+      docClassesList.style.display = 'none';  // Hide the suggestions list when the close button is clicked
+    };
+
+    docClassesList.appendChild(closeButton);  // Append the close button to the list
+
+    if (names.length > 0) {
+      docClassesList.style.display = 'block';  // Show the suggestions list
+      names.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+
+        // Display DocClassName and DocClassAlias
+        div.textContent = `${item.DocClassName} - ${item.DocClassAlias}`;  // Show both values
+        div.onclick = function () {
+          document.getElementById('docClass').value = item.DocClassName;  // Set the input value to DocClassName
+          docClassesList.style.display = 'none';  // Hide the suggestions list
+        };
+        docClassesList.appendChild(div);
+      });
+    } else {
+      // If no matches, show a "No results" message
+      const noResult = document.createElement('div');
+      noResult.textContent = 'No matching DocClassNames found';
+      noResult.style.color = 'gray';
+      docClassesList.appendChild(noResult);
+    }
+  }
+</script>
+
+<script>
+  let allLedgerNames = [];  // Store all Ledger names (GLNames and GlAliases)
+  let filteredLedgerNames = [];  // Store filtered Ledger names based on user input
+
+  // Function to fetch Ledger names from the backend
+  function fetchLedgerNames(isInitialFocus) {
+    const ledgerNamesList = document.getElementById('ledgerNamesList');  // Suggestions list for Ledger
+    const inputField = document.getElementById('Ledger');  // Ledger input field
+    ledgerNamesList.innerHTML = '';  // Clear any existing suggestions
+    ledgerNamesList.style.display = 'none';  // Hide suggestions list initially
+
+    // Fetch Ledger data from the backend if it hasn't been fetched yet or if it's the initial focus
+    if (allLedgerNames.length === 0 || isInitialFocus) {
+      fetch('/fetchLedgerNames')  // Use the new route for Ledger
+        .then(response => response.json())
+        .then(data => {
+          if (data.ledgerNames && data.ledgerNames.length > 0) {
+            allLedgerNames = data.ledgerNames;  // Store Ledger names (GLName and GlAlias)
+            filteredLedgerNames = [...allLedgerNames];  // Initially show all Ledger names
+            displayLedgerNames(filteredLedgerNames);  // Display the full list of Ledger names
+          } else {
+            const noResult = document.createElement('div');
+            noResult.textContent = 'No Ledger names found';
+            noResult.style.color = 'gray';
+            ledgerNamesList.appendChild(noResult);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching Ledger names:', error);
+          const errorMessage = document.createElement('div');
+          errorMessage.textContent = 'Error fetching Ledger names';
+          errorMessage.style.color = 'red';
+          ledgerNamesList.appendChild(errorMessage);
+        });
+    } else {
+      // For non-initial focus, just display filtered results
+      displayLedgerNames(filteredLedgerNames);
+    }
+  }
+
+  // Function to filter Ledger names based on user input
+  function filterLedgerNames() {
+    const input = document.getElementById('Ledger').value.toLowerCase();  // Get user input
+    if (input === '') {
+      filteredLedgerNames = [...allLedgerNames];  // Show the full list when input is empty
+    } else {
+      filteredLedgerNames = allLedgerNames.filter(item =>
+        item.GLName.toLowerCase().includes(input) || item.GlAlias.toLowerCase().includes(input)
+      );
+    }
+    displayLedgerNames(filteredLedgerNames);  // Display filtered Ledger names
+  }
+
+  // Function to display Ledger names in the suggestion list
+  function displayLedgerNames(names) {
+    const ledgerNamesList = document.getElementById('ledgerNamesList');
+    ledgerNamesList.innerHTML = '';  // Clear previous suggestions
+
+    // Create the "X" close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'X';
+    closeButton.className = 'close-button';  // Add a class for styling the button
+    closeButton.onclick = function (event) {
+      event.preventDefault();
+      ledgerNamesList.style.display = 'none';  // Hide the suggestions list
+    };
+
+    ledgerNamesList.appendChild(closeButton);  // Add the close button to the list
+
+    if (names.length > 0) {
+      ledgerNamesList.style.display = 'block';  // Show the suggestions list
+      names.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+
+        // Display GLName along with GlAlias for Ledger
+        div.textContent = `${item.GLName} - ${item.GlAlias}`;
+        div.title = `${item.GLName} - ${item.GlAlias}`;
+
+        // When the user clicks on a suggestion
+        div.onclick = function () {
+          document.getElementById('Ledger').value = item.GLName;  // Set the input value to GLName
+          ledgerNamesList.style.display = 'none';  // Hide the suggestions list
+        };
+        ledgerNamesList.appendChild(div);
+      });
+    } else {
+      // If no matches, show a "No results" message
+      const noResult = document.createElement('div');
+      noResult.textContent = 'No matching Ledger names found';
+      noResult.style.color = 'gray';
+      ledgerNamesList.appendChild(noResult);
+    }
+  }
+</script>
+<script>
+  let allDocClassesForBills = [];  // Array to store all Document Classes for Bills (DocClassName and DocClassAlias)
+  let filteredDocClassesForBills = [];  // Array to store filtered Document Classes for Bills based on user input
+
+  // Function to fetch Document Class names for Bills from the backend
+  function fetchDocClassesForBills(isInitialFocus) {
+    const docClassList = document.getElementById('docClassList');  // Suggestions list for Document Classes
+    const inputField = document.getElementById('docClassInput');  // Document Class input field
+    docClassList.innerHTML = '';  // Clear any existing suggestions
+    docClassList.style.display = 'none';  // Hide suggestions list initially
+
+    // Fetch Document Class data from the backend if it hasn't been fetched yet or if it's the initial focus
+    if (allDocClassesForBills.length === 0 || isInitialFocus) {
+      fetch('/fetchDocClassesForBills')  // Use the route to fetch document classes
+        .then(response => response.json())
+        .then(data => {
+          if (data.docClassesForBills && data.docClassesForBills.length > 0) {
+            allDocClassesForBills = data.docClassesForBills;  // Store Document Classes
+            filteredDocClassesForBills = [...allDocClassesForBills];  // Initially show all Document Classes
+            displayDocClassesForBills(filteredDocClassesForBills);  // Display the full list of Document Classes
+          } else {
+            const noResult = document.createElement('div');
+            noResult.textContent = 'No Document Classes found';
+            noResult.style.color = 'gray';
+            docClassList.appendChild(noResult);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching Document Classes for Bills:', error);
+          const errorMessage = document.createElement('div');
+          errorMessage.textContent = 'Error fetching Document Classes';
+          errorMessage.style.color = 'red';
+          docClassList.appendChild(errorMessage);
+        });
+    } else {
+      // For non-initial focus, just display filtered results
+      displayDocClassesForBills(filteredDocClassesForBills);
+    }
+  }
+
+  // Function to filter Document Classes for Bills based on user input
+  function filterDocClassesForBills() {
+    const input = document.getElementById('docClassInput').value.toLowerCase();  // Get user input
+    if (input === '') {
+      filteredDocClassesForBills = [...allDocClassesForBills];  // Show the full list when input is empty
+    } else {
+      filteredDocClassesForBills = allDocClassesForBills.filter(item =>
+        item.DocClassName.toLowerCase().includes(input) || item.DocClassAlias.toLowerCase().includes(input)
+      );
+    }
+    displayDocClassesForBills(filteredDocClassesForBills);  // Display filtered Document Classes
+  }
+
+  // Function to display Document Class names in the suggestion list
+  function displayDocClassesForBills(names) {
+    const docClassList = document.getElementById('docClassList');
+    docClassList.innerHTML = '';  // Clear previous suggestions
+
+    if (names.length > 0) {
+      docClassList.style.display = 'block';  // Show the suggestions list
+
+      // Create and append the "X" close button
+      const closeButton = document.createElement('button');
+      closeButton.textContent = 'X';
+      closeButton.className = 'close-button';  // Add a class for styling the button
+      closeButton.onclick = function (event) {
+        event.preventDefault();
+        docClassList.style.display = 'none';  // Hide the suggestions list
+      };
+
+      docClassList.appendChild(closeButton);  // Add the close button to the list
+
+      // Create the suggestion items
+      names.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+
+        // Display DocClassName along with DocClassAlias
+        div.textContent = `${item.DocClassName} - ${item.DocClassAlias}`;
+        div.title = `${item.DocClassName} - ${item.DocClassAlias}`;
+
+        // When the user clicks on a suggestion
+        div.onclick = function () {
+          document.getElementById('docClassInput').value = item.DocClassName;  // Set the input value to DocClassName
+          docClassList.style.display = 'none';  // Hide the suggestions list
+        };
+        docClassList.appendChild(div);
+      });
+    } else {
+      // If no matches, show a "No results" message
+      const noResult = document.createElement('div');
+      noResult.textContent = 'No matching Document Classes found';
+      noResult.style.color = 'gray';
+      docClassList.appendChild(noResult);
+    }
+  }
+</script>
+
+
+
+<script>
+  const voucherNoInput = document.getElementById('voucherNo');
+
+  // Hardcoded menuName
+  const menuName = "Transaction";
+
+  // Function to fetch configuration and last voucher number
+  async function fetchVoucherConfigAndGenerate() {
+    try {
+        // Fetch configuration
+        const configResponse = await fetch(`/getVoucherConfig?menuName=${menuName}`);
+        if (!configResponse.ok) throw new Error(`Failed to fetch configuration: ${configResponse.statusText}`);
+        const configData = await configResponse.json();
+        const { Prefix, Suffix, BodyLength } = configData;
+
+        if (!Prefix || BodyLength === undefined || BodyLength === null) {
+            throw new Error('Invalid configuration response');
+        }
+
+        // Handle empty Suffix
+        const actualSuffix = Suffix || ''; // Default to empty string if Suffix is null/empty
+        const numericLength = BodyLength - Prefix.length - actualSuffix.length;
+
+        if (numericLength <= 0) {
+            throw new Error('BodyLength must be greater than the sum of Prefix and Suffix lengths');
+        }
+
+        // Fetch last VoucherNo
+        const lastVoucherResponse = await fetch(`/getLastVoucherNo?prefix=${Prefix}`);
+        if (!lastVoucherResponse.ok) throw new Error(`Failed to fetch last voucher number: ${lastVoucherResponse.statusText}`);
+        const lastVoucherData = await lastVoucherResponse.json();
+        const lastVoucherNo = lastVoucherData.lastVoucherNo;
+
+        // Determine next VoucherNo
+        let nextNumber = 1;
+        if (lastVoucherNo) {
+            const lastNumber = parseInt(lastVoucherNo.slice(Prefix.length, lastVoucherNo.length - actualSuffix.length), 10);
+            nextNumber = lastNumber + 1;
+        }
+
+        // Pad the number to the calculated length
+        const paddedNumber = nextNumber.toString().padStart(numericLength, '0');
+        const newVoucherNo = Prefix + paddedNumber + actualSuffix;
+
+        // Update input
+        voucherNoInput.value = newVoucherNo;
+    } catch (error) {
+        console.error('Error generating VoucherNo:', error.message);
+        voucherNoInput.value = ''; // Clear field on error
+    }
+  }
+
+  // Call the function immediately on page load
+  fetchVoucherConfigAndGenerate();
+</script>
+
+
+<script>
+  const voucherNoInput1 = document.getElementById('RVoucherNo');
+
+  // Hardcoded menuName
+  const menuName1 = "Receipt Voucher";
+
+  // Function to fetch configuration and last voucher number
+  async function fetchVoucherConfigAndGenerate() {
+    try {
+        // Fetch configuration
+        const configResponse = await fetch(`/getVoucherConfig1?menuName=${menuName1}`);
+        if (!configResponse.ok) throw new Error(`Failed to fetch configuration: ${configResponse.statusText}`);
+        const configData = await configResponse.json();
+        const { Prefix, Suffix, BodyLength } = configData;
+
+        if (!Prefix || BodyLength === undefined || BodyLength === null) {
+            throw new Error('Invalid configuration response');
+        }
+
+        // Handle empty Suffix
+        const actualSuffix = Suffix || ''; // Default to empty string if Suffix is null/empty
+        const numericLength = BodyLength - Prefix.length - actualSuffix.length;
+
+        if (numericLength <= 0) {
+            throw new Error('BodyLength must be greater than the sum of Prefix and Suffix lengths');
+        }
+
+        // Fetch last VoucherNo
+        const lastVoucherResponse = await fetch(`/getLastVoucherNo?prefix=${Prefix}`);
+        if (!lastVoucherResponse.ok) throw new Error(`Failed to fetch last voucher number: ${lastVoucherResponse.statusText}`);
+        const lastVoucherData = await lastVoucherResponse.json();
+        const lastVoucherNo = lastVoucherData.lastVoucherNo;
+
+        // Determine next VoucherNo
+        let nextNumber = 1;
+        if (lastVoucherNo) {
+            const lastNumber = parseInt(lastVoucherNo.slice(Prefix.length, lastVoucherNo.length - actualSuffix.length), 10);
+            nextNumber = lastNumber + 1;
+        }
+
+        // Pad the number to the calculated length
+        const paddedNumber = nextNumber.toString().padStart(numericLength, '0');
+        const newVoucherNo = Prefix + paddedNumber + actualSuffix;
+
+        // Update input
+        voucherNoInput1.value = newVoucherNo;
+    } catch (error) {
+        console.error('Error generating VoucherNo:', error.message);
+        voucherNoInput1.value = ''; // Clear field on error
+    }
+  }
+
+  // Call the function immediately on page load
+  fetchVoucherConfigAndGenerate();
+</script>
+<script>
+  let allCollectors = [];  // Array to store all collector data
+  let filteredCollectors = [];  // Array to store filtered collector data
+
+  // Fetch collector data for bills and show suggestions
+  function fetchCollectorsBills(isInitialFocus) {
+      const collectorsList = document.getElementById('PCollectorsList');  // Corrected to PCollectorsList
+      const inputField = document.getElementById('PCollector');  // Corrected to PCollector
+      collectorsList.innerHTML = '';  // Clear previous suggestions
+      collectorsList.style.display = 'none';  // Hide the list initially
+
+      // Fetch data only if it hasn't been fetched before or it's the initial focus
+      if (allCollectors.length === 0 || isInitialFocus) {
+          fetch('/fetchcollectorsBills')  // Fetch from the '/fetchcollectorsBills' endpoint
+              .then(response => response.json())
+              .then(data => {
+                  if (data.collectors && data.collectors.length > 0) {
+                      allCollectors = data.collectors;  // Store all collectors in allCollectors
+                      filteredCollectors = [...allCollectors];  // Copy to filteredCollectors
+                      displayCollectors(filteredCollectors);
+                  } else {
+                      const noResult = document.createElement('div');
+                      noResult.textContent = 'No collectors found';
+                      noResult.style.color = 'gray';
+                      collectorsList.appendChild(noResult);
+                  }
+              })
+              .catch(error => {
+                  console.error('Error fetching collectors for bills:', error);
+                  const errorMessage = document.createElement('div');
+                  errorMessage.textContent = 'Error fetching collectors for bills';
+                  errorMessage.style.color = 'red';
+                  collectorsList.appendChild(errorMessage);
+              });
+      } else {
+          displayCollectors(filteredCollectors);  // Use filteredCollectors when available
+      }
+  }
+
+  // Filter collectors based on user input
+  function filterCollectors() {
+      const input = document.getElementById('PCollector').value.toLowerCase();  // Corrected to PCollector
+      if (input === '') {
+          filteredCollectors = [...allCollectors];  // Reset filteredCollectors to allCollectors
+      } else {
+          filteredCollectors = allCollectors.filter(item =>
+              item.CollectorName.toLowerCase().includes(input) || item.CollectorAlias.toLowerCase().includes(input)
+          );
+      }
+      displayCollectors(filteredCollectors);
+  }
+
+  // Display the filtered collectors in the suggestions list
+  function displayCollectors(collectors) {
+      const collectorsList = document.getElementById('PCollectorsList');  // Corrected to PCollectorsList
+      collectorsList.innerHTML = '';  // Clear previous suggestions
+
+      // Sort the collectors alphabetically by CollectorName
+      collectors.sort((a, b) => a.CollectorName.localeCompare(b.CollectorName));
+
+      // Create and append the close button to hide the suggestions list
+      const closeButton = document.createElement('button');
+      closeButton.textContent = 'X';
+      closeButton.className = 'close-button';
+
+      closeButton.onclick = function (event) {
+          event.preventDefault();
+          collectorsList.style.display = 'none';  // Hide the suggestions list
+      };
+
+      collectorsList.appendChild(closeButton);  // Append the close button
+
+      if (collectors.length > 0) {
+          collectorsList.style.display = 'block';  // Show the suggestions list
+          collectors.forEach(item => {
+              const div = document.createElement('div');
+              div.className = 'suggestion-item';
+              div.textContent = `${item.CollectorName} - ${item.CollectorAlias}`;
+              div.title = `${item.CollectorName} - ${item.CollectorAlias}`;
+
+              div.onclick = function () {
+                  document.getElementById('PCollector').value = item.CollectorName;  // Corrected to PCollector
+                  collectorsList.style.display = 'none';  // Hide the suggestions list
+              };
+              collectorsList.appendChild(div);
+          });
+      } else {
+          const noResult = document.createElement('div');
+          noResult.textContent = 'No matching collectors found';
+          noResult.style.color = 'gray';
+          collectorsList.appendChild(noResult);
+      }
+  }
+
+</script>
+
+
+
+  <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+  <script src="https://nepalidatepicker.sajanmaharjan.com.np/nepali.datepicker/js/nepali.datepicker.v4.0.4.min.js"
+    type="text/javascript"></script>
+  <script src="/js/date.js"></script>
+  <script src="/js/voucherDate.js"></script>
+  <script src="/js/movable.js"></script>
+  <script src="/js/div.js"></script>
+  <script src="/js/result.js"></script>
+ <script src="/js/joucherDate.js"></script>
+  <script src="/js/fiscalsdates.js"></script>
+  <script>
+    document.getElementById('transsaveBtn').addEventListener('click', function(event) {
+      event.preventDefault();  // Prevent any default action (like form submission or reloading)
+  
+      // Get the parent form element (assuming the button is inside a <form> tag)
+      const form = event.target.closest('form');
+  
+      // Get values from input fields
+      const startDate = document.querySelector('.start-date-local').value;
+      const endDate = document.querySelector('.end-date-local').value;
+      const transDate = document.getElementById('dateInput').value;
+      const amount = document.getElementById('amount').value;
+  
+      // Flag to track if there's any error
+      let isError = false;
+  
+      // Check if the Transaction Date is between Start Date and End Date
+      if (transDate < startDate || transDate > endDate) {
+        showCustomAlert('Transaction Date must be between the Start Date and End Date!');
+        document.getElementById('dateInput').style.border = '2px solid red'; // Highlight the date input field
+        document.getElementById('dateInput').focus(); // Focus the field
+        isError = true; // Set error flag
+      } else {
+        document.getElementById('dateInput').style.border = ''; // Reset the border style if no error
+      }
+  
+      // Check if the Amount is greater than 0
+      if (amount <= 0) {
+        if (!isError) { // Only show alert if no previous errors
+          showCustomAlert('0 Amount Voucher cannot be posted!');
+          document.getElementById('amount').style.border = '2px solid red'; // Highlight the amount input field
+          document.getElementById('amount').focus(); // Focus the field
+          isError = true; // Set error flag
+        }
+      } else {
+        document.getElementById('amount').style.border = ''; // Reset the border style if no error
+      }
+  
+      // If no errors, manually submit the form
+      if (!isError) {
+        console.log('Valid input! Proceed with submitting the form...');
+        form.submit();  // Trigger form submission
+      }
+    });
+  </script>
+  
+<script>
+  // Example function to show the suggestion list
+function showSuggestions(listId) {
+  document.getElementById(listId).classList.add('show');
+}
+
+// Example function to hide the suggestion list
+function hideSuggestions(listId) {
+  document.getElementById(listId).classList.remove('show');
+}
+
+</script>
+<script src="/js/indicator1.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+      const username = localStorage.getItem('selectedusername');
+      if (username) {
+          document.getElementById('username-p').innerText = `User: ${username}`;
+          
+      }
+
+      // Retrieve the latest selected values from localStorage
+      const orgName = localStorage.getItem('selectedOrgName') || 'N/A';
+      const startDateLocal = localStorage.getItem('selectedStartDateLocal') || 'No date found';
+      const endDateLocal = localStorage.getItem('selectedEndDateLocal') || 'No date found';
+      const address1 = localStorage.getItem('selectedAddress1') || 'N/A';
+      const phone1 = localStorage.getItem('selectedPhone1') || 'N/A';
+      const dbName = localStorage.getItem('selectedDBName') || 'N/A';
+
+      // Display values in indicators
+      document.getElementById('startDateInputss').innerText = `Fiscal Start Date: ${startDateLocal}`;
+      document.getElementById('endDateInputss').innerText = `Fiscal End Date: ${endDateLocal}`;
+     
+     
+
+      // Update all elements with the class "start-date-local"
+      document.querySelectorAll('.start-date-local').forEach(element => {
+          if (element.tagName === 'INPUT') {
+              element.value = `${startDateLocal}`;
+          } else {
+              element.innerText = `${startDateLocal}`;
+          }
+      });
+
+      // Update all elements with the class "end-date-local"
+      document.querySelectorAll('.end-date-local').forEach(element => {
+          if (element.tagName === 'INPUT') {
+              element.value = `${endDateLocal}`;
+          } else {
+              element.innerText = `${endDateLocal}`;
+          }
+      });
+
+      // Update all elements with the class "start-date-local"
+      document.querySelectorAll('.org-user-master').forEach(element => {
+          if (element.tagName === 'INPUT') {
+              element.value = `${username}`;
+          } else {
+              element.innerText = `${username}`;
+          }
+      });
+  });
+</script>
+  <script src="/js/alertsmessages.js"></script>
+</body>
+
+</html>

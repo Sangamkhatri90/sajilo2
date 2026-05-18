@@ -1,0 +1,90 @@
+#movableDiv28{
+    width: 600px;
+}
+
+.dm-container {
+    padding: 8px;
+    max-width: 590px;
+  }
+  
+.dm-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+  }
+  
+.dm-legend {
+    font-size: 12px; /* Smaller font for a more compact look */
+    font-weight: bold;
+    color: #0b62e4;
+  }
+
+  /* Form row layout styles */
+.dm-form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.dm-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+  
+  /* Form input styles */
+  .dm-text {
+    width: 100%;    
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    background-color: #dedada;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+  .dm-text:focus {
+    border-color: #0b62e4;
+    outline: none;
+  }
+
+
+.dm-buttons-wrapper {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.dm-buttons {
+    display: flex;
+    gap: 30px;
+    justify-content: space-between;
+    flex: 1;
+    margin-right: 35px;
+}
+
+.dm-butttonslef,
+.dm-buttonsrig {
+    display: flex;
+    gap: 10px;
+}
+
+button.bs-btn {
+    padding: 5px 10px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+#cancelButton28 {
+    align-self: flex-start; /* Adjust if needed */
+}
+
+/* Ensure all buttons are part of the same alignment row */
+.dm-container > button,
+.dm-container .dm-buttons-wrapper {
+    display: inline-flex;
+    align-items: center;
+}
+

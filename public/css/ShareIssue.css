@@ -1,0 +1,98 @@
+#movableDiv61{
+    width: 500px;
+}
+
+.si-container {
+    padding: 8px;
+    max-width: 470px;
+  }
+  
+.si-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+  }
+  
+.si-legend {
+    font-size: 12px; /* Smaller font for a more compact look */
+    font-weight: bold;
+    color: #0b62e4;
+  }
+  
+  /* Form row layout styles */
+  .si-form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.si-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+  
+  /* Form input styles */
+  .si-text,
+  .si-number,
+  .si-email,
+  .si-date,
+  .si-select {
+    width: 100%;    
+    padding: 3px; /* Reduced padding for smaller input fields */
+    margin: 2px 0;
+    background-color: #dedada;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+  .si-text:focus,
+  .si-number:focus,
+  .si-email:focus,
+  .si-date:focus,
+  .si-select:focus {
+    border-color: #0b62e4;
+    outline: none;
+  }
+
+  .si-table-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+.si-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-align: left;
+}
+
+
+
+.si-table-container th,
+.si-table-container td {
+  padding: 12px 15px;
+  border: 1px solid #000000; /* Bolder border */
+}
+
+
+/* Buttons Container Styling */
+.si-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+}
+
+/* Left Buttons Styling */
+.si-butttonslef, .si-buttonsrig {
+    display: flex;
+    flex-direction:row;
+    gap:5px;
+}
+

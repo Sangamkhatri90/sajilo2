@@ -1,0 +1,146 @@
+/* General styles for the Organization Master container */
+#movableDiv47 {
+  background-color: #f8f8f8;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 8px;
+  max-width: 600px; /* Reduced max width */
+  margin: 0 auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.orgm-container {
+  padding: 8px;
+}
+
+.orgm-fieldset {
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 8px; /* Reduced padding for compact fieldset */
+  margin: 5px 0;
+}
+
+.orgm-legend {
+  font-size: 12px; /* Smaller font for a more compact look */
+  font-weight: bold;
+  color: #0b62e4;
+}
+
+/* Form row layout styles */
+.orgm-form-style-horizontal3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px; /* Reduced gap for tighter layout */
+  margin-bottom: 6px;
+}
+
+.orgm-form-style-horizontal3 div {
+  flex: 1;
+  min-width: 120px; /* Reduced min-width for narrower fields */
+}
+
+/* Form input styles */
+.orgm-text,
+.orgm-number,
+.orgm-email,
+.orgm-date,
+.orgm-select {
+  width: 100%;
+  padding: 3px; /* Reduced padding for smaller input fields */
+  margin: 2px 0;
+  background-color: #dedada;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 11px; /* Smaller font size */
+}
+
+.orgm-text:focus,
+.orgm-number:focus,
+.orgm-email:focus,
+.orgm-date:focus,
+.orgm-select:focus {
+  border-color: #0b62e4;
+  outline: none;
+}
+
+/* Checkbox label alignment */
+.orgm-form-style-horizontal3 input[type="checkbox"] {
+  margin-right: 3px;
+}
+
+/* Styles for the text area */
+.orgm-textarea1 {
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.orgm-textarea1 legend{
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.orgm-textareain {
+  width: 100%;
+  border: none;
+  padding: 5px; /* Reduced padding for a smaller area */
+  border-radius: 3px;
+  font-size: 11px; /* Smaller font size */
+}
+
+/* Button styles */
+.bs-btn {
+  background-color: #0b62e4;
+  color: white;
+  border: none;
+  padding: 4px 10px; /* Reduced padding for smaller buttons */
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px; /* Smaller font size for compact buttons */
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.bs-btn:hover {
+  background-color: #094bba;
+}
+
+.bs-btn:active {
+  background-color: #073a8e;
+  transform: scale(0.95);
+}
+
+/* Buttons alignment */
+.orgm-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  gap: 10px;
+}
+.orgm-buttons button{
+ cursor: pointer;
+}
+.orgm-butttonslef,
+.orgm-buttonsrig {
+  display: flex;
+  gap: 5px;
+ 
+}
+
+/* Close button styles */
+#closeButton47 {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+
+/* Grid layout adjustments */
+.form-row, .form-style-horizontal2, .form-style-address, .kin-details-horizontal, .form-style-horizontal-introduced, .form-style-horizontal13 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 4px;
+  margin: 3px 0;
+}

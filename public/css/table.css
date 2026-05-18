@@ -1,0 +1,35 @@
+
+.t-table-container {
+    max-height: 450px;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 952px;
+    margin: 0 auto;
+    overflow-x: auto;
+  }
+  
+  .t-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-align: left;
+    font-weight: normal;
+  }
+  
+  .t-table-container th {
+    position: sticky;
+    top: -2px; /* Keep the header at the top */
+    z-index:2; /* Ensure header stays above body content */
+    text-align: center; /* Optional: Center the header text */
+    font-weight: normal; /* Remove the bold font-weight */
+    background-color:#2f7ebd;
+  }
+  
+  .t-table-container th,
+  .t-table-container td {
+    border: 1px solid #000000; /* Bolder border */
+    padding: 8px;
+    text-align: left;
+  }
+  

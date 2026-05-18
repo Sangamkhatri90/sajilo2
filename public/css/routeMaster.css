@@ -1,0 +1,87 @@
+#movableDiv92{
+    max-width: 575px;
+}
+
+.rm-container {
+    padding: 8px;
+    max-width: 570px;
+}
+
+.rm-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+}
+
+.rm-legend {
+  font-size: 12px; /* Smaller font for a more compact look */
+  font-weight: bold;
+  color: #0b62e4;
+}
+
+  /* Form row layout styles */
+  .rm-form-style-horizontal3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduced gap for tighter layout */
+    margin-bottom: 6px;
+  }
+  
+.rm-form-style-horizontal3 div {
+    flex: 1;
+    min-width: 120px; /* Reduced min-width for narrower fields */
+  }
+
+ /* Form input styles */
+ .rm-text {
+   width: 100%;
+   padding: 3px; /* Reduced padding for smaller input fields */
+   margin: 2px 0;
+   background-color: #dedada;
+   border: 1px solid #ccc;
+   border-radius: 3px;
+   font-size: 11px; /* Smaller font size */
+ }
+ 
+ .rm-text:focus {
+   border-color: #0b62e4;
+   outline: none;
+ }
+
+ .rm-buttons-wrapper {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.rm-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    flex: 1;
+    margin-right: 2px;
+}
+
+.rm-butttonslef,
+.rm-buttonsrig {
+    display: flex;
+    gap: 10px;
+}
+
+button.rm-btn {
+    padding: 5px 10px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+#cancelButton92 {
+    align-self: flex-start; /* Adjust if needed */
+}
+
+/* Ensure all buttons are part of the same alignment row */
+.rm-container > button,
+.rm-container .rm-buttons-wrapper {
+    display: inline-flex;
+    align-items: center;
+}

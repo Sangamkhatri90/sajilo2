@@ -1,0 +1,65 @@
+.do-container {
+    padding: 8px;
+    max-width: 500px;
+  }
+  
+.do-fieldset {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px; /* Reduced padding for compact fieldset */
+    margin: 5px 0;
+  }
+  
+.do-legend {
+    font-size: 12px; /* Smaller font for a more compact look */
+    font-weight: bold;
+    color: #0b62e4;
+  }
+  .do-form-style-horizontal3 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Table Styling */
+.do-table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th, td {
+    padding: 8px;
+    border: 2px solid #888;
+    text-align: left;
+}
+
+/* Toggle Button Styling */
+.toggle-button {
+    margin: 16px;
+    padding: 8px 16px;
+    font-size: 1em;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+}
+
+.toggle-button:hover {
+    background-color: #45a049;
+}
+
+/* Toggle Content Visibility */
+.do-contents {
+    display: none;
+}
+
+.do-contents.active {
+    display: block;
+}
