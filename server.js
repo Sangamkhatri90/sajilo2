@@ -51,7 +51,7 @@ app.use(
   })
 );
 app.use((req, res, next) => {
-  const excludedRoutes = ['/login', '/update-db', '/clone-database-set-fiscal', '/fetch-fiscal-data', '/check-setup', '/setup', '/api/prevalidate-login'];
+  const excludedRoutes = ['/login', '/update-db', '/clone-database-set-fiscal', '/fetch-fiscal-data', '/check-setup', '/setup', '/api/prevalidate-login', '/favicon.ico'];
 
   if (excludedRoutes.includes(req.path)) {
     return next(); // Skip session DB check for these routes
