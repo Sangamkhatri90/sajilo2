@@ -1,0 +1,36 @@
+<div id="movableDivfiscalyear" style="display: none; position: absolute; border-radius: 8px; padding: 10px; background: lightgrey; ">
+    
+    <form action="/clone-database-set-fiscal" class="ajax-form" method="post">
+        <fieldset class="fy-fieldset">
+            <legend class="fy-legend">Fiscal Year</legend>
+            <div class="fy-form-style-horizontal3">
+                <div>
+                    <label for="">Start Date</label>
+                    <input type="date" class="fy-date" name="fiscalYearStart" id="fiscalYearStart" onchange="setFiscalYearEnd()">
+                    <input type="hidden" id="orgID" name="orgID" value="">
+                    
+                </div>
+                <div>
+                    <label for="">End Date</label>
+                    <input type="date" class="fy-date" name="fiscalYearEnd" id="fiscalYearEnd">
+                </div>
+            </div>
+            <div>
+                <label for="">Transaction Start Date</label>
+                <input type="date" class="fy-date" name="transactionStartDate" id="">
+            </div>
+            <div>
+                <label for="">Remarks</label>
+                <input type="text" class="fy-text" name="remarks" id="">
+            </div>
+            <div>
+                <input type="checkbox" name="currentFiscalYear" id="" checked style="pointer-events: none;">
+                <label for="">Current Fiscal Year</label>
+            </div>
+            <div class="fy-button-row">
+                <button type="submit" class="fy-button">Ok</button>
+                <button type="button" class="fy-button" id="cancelButton">Cancel</button>
+            </div>
+        </fieldset>
+    </form>
+  </div>
