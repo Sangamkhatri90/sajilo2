@@ -330,13 +330,6 @@ app.post("/select-database", (req, res) => {
     });
   }
 
-  if (startDateInput === "No date found" || endDateInput === "No date found") {
-    return res.status(400).json({
-      message: "Please select valid start and end dates.",
-      success: false,
-    });
-  }
-
   // Get OrgID for the selected database
   const queryOrgID = `
     SELECT OrgID FROM tbOrgMaster WHERE DBName = ?
@@ -360,6 +353,17 @@ app.post("/select-database", (req, res) => {
     }
 
     const orgID = rows[0].OrgID;
+
+    // If no dates found, show FiscalYearInsert form instead of error
+    if (startDateInput === "No date found" || endDateInput === "No date found") {
+      return res.render('FiscalYearInsert', { 
+        orgID: orgID, 
+        dbName: dbName,
+        username: username,
+        userID: userID,
+        message: 'Please set up fiscal year dates for this organization.'
+      });
+    }
 
     // Insert login log entry
     const logQuery = `
@@ -10658,6 +10662,7 @@ app.post("/clone-database-set-fiscal", async (req, res) => {
     fiscalYearEnd,
     remarks,
     orgID,
+    dbName,
     currentFiscalYear,
   } = req.body;
 
@@ -10696,146 +10701,193 @@ app.post("/clone-database-set-fiscal", async (req, res) => {
     const orgDBResult = await runQuery(connectionString, `SELECT DBName FROM tbOrgMaster WHERE OrgId = ?`, [orgID]);
     const CDBName = orgDBResult[0].DBName;
 
-    // 3️⃣ Create new database
-    await runQuery(connectionString1, `CREATE DATABASE [${CDBName}]`);
+    // 3️⃣ Check if the org database already exists
+    const dbExistsResult = await runQuery(connectionString1,
+      `SELECT name FROM master.sys.databases WHERE name = ?`,
+      [CDBName]
+    );
+    const databaseExists = Array.isArray(dbExistsResult) && dbExistsResult.length > 0;
+    const targetConnString = createConnectionString(CDBName);
 
-    // 4️⃣ Clone Tables
-    const sqlFilePath = './sqlscriptFlongIN/cloneTables.sql';
-    let cloneTablesSQL = fs.readFileSync(sqlFilePath, 'utf-8');
-    cloneTablesSQL = `USE [${CDBName}];\n` +
-      cloneTablesSQL.replace(/\$\{CDBName\}/g, CDBName).replace(/\$\{existingDatabase\}/g, existingDatabase);
-    await runQuery(connectionString1, cloneTablesSQL);
+    if (!databaseExists) {
+      // Create database and clone tables only when the org DB is missing
+      await runQuery(connectionString1, `CREATE DATABASE [${CDBName}]`);
 
-    // 5️⃣ Insert Local Dates into MainDB
-    await runQuery(connectionString, `
-      INSERT INTO tbLocalDate (M_date, M_Miti) VALUES(?,?), (?,?)
-    `, [fiscalYearStart, fiscalYearStartNep, fiscalYearEnd, fiscalYearEndNep]);
+      const sqlFilePath = './sqlscriptFlongIN/cloneTables.sql';
+      let cloneTablesSQL = fs.readFileSync(sqlFilePath, 'utf-8');
+      cloneTablesSQL = `USE [${CDBName}];\n` +
+        cloneTablesSQL.replace(/\$\{CDBName\}/g, CDBName).replace(/\$\{existingDatabase\}/g, existingDatabase);
+      await runQuery(connectionString1, cloneTablesSQL);
+    } else {
+      console.log(`Database ${CDBName} already exists. Skipping create/clone steps.`);
+    }
 
-    // 6️⃣ Insert Fiscal Year into Cloned DB
-    await runQuery(connectionString1, `
+    // 5️⃣ Insert Local Dates into MainDB if missing
+    const insertLocalDateIfMissing = async (dateValue, mitiValue) => {
+      const query = `
+        IF NOT EXISTS (SELECT 1 FROM tbLocalDate WHERE M_date = ?)
+        INSERT INTO tbLocalDate (M_date, M_Miti) VALUES (?, ?);
+      `;
+      await runQuery(connectionString, query, [dateValue, dateValue, mitiValue]);
+    };
+
+    await insertLocalDateIfMissing(fiscalYearStart, fiscalYearStartNep);
+    await insertLocalDateIfMissing(fiscalYearEnd, fiscalYearEndNep);
+
+    // 6️⃣ Insert Fiscal Year into org DB
+    const fiscalYearInsertQuery = `
       INSERT INTO [${CDBName}].dbo.tbFiscalYearMaster (TransactionStartDate, CurrentFiscal, StartDate, EndDate,
         LastSavedBy, LastSavedDateTime, Remarks)
       VALUES (?, ?, ?, ?, ?, GETDATE(), ?);
-    `, [transactionStartDate, currentFiscal, fiscalYearStart, fiscalYearEnd, null, remarks]);
+    `;
 
-    // 7️⃣ Insert Ledger Group
-    await runQuery(connectionString1, `
-      INSERT INTO [${CDBName}].dbo.tbLedgerGroup
-      (GrpName, GrpAlias, AltAlias, MGrpID, Remarks, IEAL, GrpCategory)
-      VALUES
-      ('Liabilities', '', ?, 1, ?, 'L','O'),
-      ('Assets', '', ?, 2, ?, 'A', 'O'),
-      ('Expenditure', '', ?, 3, ?, 'E','O'),
-      ('Income', '', ?, 4, ?, 'I', 'O');
-    `, [null, remark, null, remark, null, remark, null, remark]);
+    const fiscalYearExistsResult = await runQuery(targetConnString, `
+      SELECT 1 FROM [${CDBName}].dbo.tbFiscalYearMaster
+      WHERE StartDate = ? AND EndDate = ?
+    `, [fiscalYearStart, fiscalYearEnd]);
 
-    // 8️⃣ Insert User Defined Voucher
-    await runQuery(connectionString1, `
-      INSERT INTO [${CDBName}].dbo.tbUserDefinedVoucher
-      (  MenuName, Alias, DebitSide, CreditSide, MenuOrder, AllowAdjustment, ShowTACode, Remarks, Entrytype,
-SingleSide, DefaultPrintDesign, EnglishMenuName, PrintReceipt , DebitSideSL, CreditSideSL)
-     VALUES
-('Journal Voucher', 'JV', 'All', 'All', 1, ?, ?, ?, 'Journal', 'All', ?, 'Journal Voucher', ?, ?, ?),
-('Receipt Voucher', 'RV', 'All', 'All', 3, ?, ?, ?, 'Cash Bank', 'Cash Bank', ?, 'Receipt Voucher', ?, ?, ?),
-('Payment Voucher', 'PV', 'All', 'All', 4, ?, ?, ?, 'Cash Bank', 'Cash BanK', ?, 'Payment Voucher', ?, ?, ?),
-('Opening Balance', 'OB', 'All', 'All', 0, ?, ?, ?, 'Journal', 'All', ?, 'Opening Balance', ?, ?, ?),
-('Auto Journal ', 'AJ', 'All', 'All', 0, ?, ?, ?, 'Journal', 'All', ?, 'Auto Journal', ?, ?, ?),
-('Transaction', 'TR', 'All', 'All', 2, ?, ?, ?, 'Cash Transaction', 'Cash Bank', ?, 'Transaction', ?, ?, ?),
-('Collection', 'CS', 'All', 'All', 5, ?, ?, ?, 'Collection Sheet', 'Cash Bank', ?, 'Collection', ?, ?, ?),
-('Distribution', 'WS', 'All', 'All', 6, ?, ?, ?, 'Withdraw Sheet', 'Cash Bank', ?, 'Distribution', ?, ?, ?),
-('Interest Posting', 'CS', 'All', 'All', 7, ?, ?, ?, 'Journal', 'All', ?, 'Interest Posting', ?, ?, ?);
-    `, [
-      null,
-      null,
-      remark2,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      remark2,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      remark2,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      remark2,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      remark2,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      remark2,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      remark2,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      remark2,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      remark2,
-      null,
-      null,
-      null,
-      null
-    ]);
+    if (Array.isArray(fiscalYearExistsResult) && fiscalYearExistsResult.length === 0) {
+      await runQuery(targetConnString, fiscalYearInsertQuery, [transactionStartDate, currentFiscal, fiscalYearStart, fiscalYearEnd, null, remarks]);
+    } else {
+      console.log(`Fiscal year already exists for ${CDBName}. Skipping duplicate insert.`);
+    }
 
-    // 9️⃣ Insert Auto Number Settings
-    await runQuery(connectionString1, `
-      INSERT INTO [${CDBName}].dbo.tbAutoNumberSetting
-      (VoucherId, Category, StartDate, EndDate, Prefix, Suffix, StartFrom, EndTo, BodyLength, FillChar)
-      VALUES
-      (1,'Default',?,?,'JV','',0,9999999,6,0),
-      (3,'Default',?,?,'PV','',0,9999999,6,0),
-      (2,'Default',?,?,'RV','',0,9999999,6,0),
-      (?,'Default',?,?,'CB','',0,9999999,6,0),
-      (7,'Default',?,?,'CL','',0,9999999,6,0),
-      (6,'Default',?,?,'DR','',0,9999999,6,0),
-      (8,'Default',?,?,'TR','',0,9999999,6,0);
-    `, [
-      fiscalYearStart, fiscalYearEnd,
-      fiscalYearStart, fiscalYearEnd,
-      fiscalYearStart, fiscalYearEnd,
-      5, fiscalYearStart, fiscalYearEnd,
-      fiscalYearStart, fiscalYearEnd,
-      fiscalYearStart, fiscalYearEnd,
-      fiscalYearStart, fiscalYearEnd,
-    ]);
+    if (!databaseExists) {
+      // 7️⃣ Insert Ledger Group
+      await runQuery(connectionString1, `
+        INSERT INTO [${CDBName}].dbo.tbLedgerGroup
+        (GrpName, GrpAlias, AltAlias, MGrpID, Remarks, IEAL, GrpCategory)
+        VALUES
+        ('Liabilities', '', ?, 1, ?, 'L','O'),
+        ('Assets', '', ?, 2, ?, 'A', 'O'),
+        ('Expenditure', '', ?, 3, ?, 'E','O'),
+        ('Income', '', ?, 4, ?, 'I', 'O');
+      `, [null, remark, null, remark, null, remark, null, remark]);
+
+      // 8️⃣ Insert User Defined Voucher
+      await runQuery(connectionString1, `
+        INSERT INTO [${CDBName}].dbo.tbUserDefinedVoucher
+        (  MenuName, Alias, DebitSide, CreditSide, MenuOrder, AllowAdjustment, ShowTACode, Remarks, Entrytype,
+    SingleSide, DefaultPrintDesign, EnglishMenuName, PrintReceipt , DebitSideSL, CreditSideSL)
+       VALUES
+    ('Journal Voucher', 'JV', 'All', 'All', 1, ?, ?, ?, 'Journal', 'All', ?, 'Journal Voucher', ?, ?, ?),
+    ('Receipt Voucher', 'RV', 'All', 'All', 3, ?, ?, ?, 'Cash Bank', 'Cash Bank', ?, 'Receipt Voucher', ?, ?, ?),
+    ('Payment Voucher', 'PV', 'All', 'All', 4, ?, ?, ?, 'Cash Bank', 'Cash BanK', ?, 'Payment Voucher', ?, ?, ?),
+    ('Opening Balance', 'OB', 'All', 'All', 0, ?, ?, ?, 'Journal', 'All', ?, 'Opening Balance', ?, ?, ?),
+    ('Auto Journal ', 'AJ', 'All', 'All', 0, ?, ?, ?, 'Journal', 'All', ?, 'Auto Journal', ?, ?, ?),
+    ('Transaction', 'TR', 'All', 'All', 2, ?, ?, ?, 'Cash Transaction', 'Cash Bank', ?, 'Transaction', ?, ?, ?),
+    ('Collection', 'CS', 'All', 'All', 5, ?, ?, ?, 'Collection Sheet', 'Cash Bank', ?, 'Collection', ?, ?, ?),
+    ('Distribution', 'WS', 'All', 'All', 6, ?, ?, ?, 'Withdraw Sheet', 'Cash Bank', ?, 'Distribution', ?, ?, ?),
+    ('Interest Posting', 'CS', 'All', 'All', 7, ?, ?, ?, 'Journal', 'All', ?, 'Interest Posting', ?, ?, ?);
+      `, [
+        null,
+        null,
+        remark2,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        remark2,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        remark2,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        remark2,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        remark2,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        remark2,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        remark2,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        remark2,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        remark2,
+        null,
+        null,
+        null,
+        null
+      ]);
+
+      // 9️⃣ Insert Auto Number Settings
+      await runQuery(connectionString1, `
+        INSERT INTO [${CDBName}].dbo.tbAutoNumberSetting
+        (VoucherId, Category, StartDate, EndDate, Prefix, Suffix, StartFrom, EndTo, BodyLength, FillChar)
+        VALUES
+        (1,'Default',?,?,'JV','',0,9999999,6,0),
+        (3,'Default',?,?,'PV','',0,9999999,6,0),
+        (2,'Default',?,?,'RV','',0,9999999,6,0),
+        (?,'Default',?,?,'CB','',0,9999999,6,0),
+        (7,'Default',?,?,'CL','',0,9999999,6,0),
+        (6,'Default',?,?,'DR','',0,9999999,6,0),
+        (8,'Default',?,?,'TR','',0,9999999,6,0);
+      `, [
+        fiscalYearStart, fiscalYearEnd,
+        fiscalYearStart, fiscalYearEnd,
+        fiscalYearStart, fiscalYearEnd,
+        5, fiscalYearStart, fiscalYearEnd,
+        fiscalYearStart, fiscalYearEnd,
+        fiscalYearStart, fiscalYearEnd,
+        fiscalYearStart, fiscalYearEnd,
+      ]);
+    }
 
     // ✅ Final Success Response
     if (!responseSent) {
       responseSent = true;
-      res.status(200).send({ message: "Fiscal Year Setup Success", success: true });
+      
+      // Set up session variables for the selected database
+      if (dbName) {
+        req.session.dbName = dbName;
+        req.session.conn = `Server=localhost;Database=${dbName};UID=sa;PWD=123;Driver={ODBC Driver 17 for SQL Server};`;
+        req.session.selectedStartDateLocal = fiscalYearStart;
+        req.session.selectedEndDateLocal = fiscalYearEnd;
+        req.session.orgID = orgID;
+      }
+      
+      // If AJAX request, return JSON
+      if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+        res.status(200).send({ message: "Fiscal Year Setup Success", success: true });
+      } else {
+        // Form submission - redirect to main page
+        res.redirect('/docclass.html');
+      }
     }
 
   } catch (err) {

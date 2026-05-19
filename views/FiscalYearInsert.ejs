@@ -1,36 +1,253 @@
-<div id="movableDivfiscalyear" style="display: none; position: absolute; border-radius: 8px; padding: 10px; background: lightgrey; ">
-    
-    <form action="/clone-database-set-fiscal" class="ajax-form" method="post">
-        <fieldset class="fy-fieldset">
-            <legend class="fy-legend">Fiscal Year</legend>
-            <div class="fy-form-style-horizontal3">
-                <div>
-                    <label for="">Start Date</label>
-                    <input type="date" class="fy-date" name="fiscalYearStart" id="fiscalYearStart" onchange="setFiscalYearEnd()">
-                    <input type="hidden" id="orgID" name="orgID" value="">
-                    
-                </div>
-                <div>
-                    <label for="">End Date</label>
-                    <input type="date" class="fy-date" name="fiscalYearEnd" id="fiscalYearEnd">
-                </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Fiscal Year - Sajilo Cooperative</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .message {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .form-group input[type="date"],
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .form-group input[type="date"]:focus,
+        .form-group input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .button-group button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background-color: #da190b;
+            transform: translateY(-2px);
+        }
+
+        #toast {
+            visibility: hidden;
+            min-width: 260px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 10px 20px;
+            position: fixed;
+            z-index: 9999;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 15px;
+            opacity: 0;
+            transition: opacity 0.4s, visibility 0.4s;
+        }
+
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Setup Fiscal Year</h1>
+            <p>Set up the fiscal year dates for your organization</p>
+        </div>
+
+        <% if (message) { %>
+            <div class="message"><%= message %></div>
+        <% } %>
+
+        <form id="fiscalYearForm" method="post" action="/clone-database-set-fiscal">
+            <div class="form-group">
+                <label for="fiscalYearStart">Fiscal Year Start Date <span style="color: red;">*</span></label>
+                <input type="date" name="fiscalYearStart" id="fiscalYearStart" required onchange="setFiscalYearEnd()">
             </div>
-            <div>
-                <label for="">Transaction Start Date</label>
-                <input type="date" class="fy-date" name="transactionStartDate" id="">
+
+            <div class="form-group">
+                <label for="fiscalYearEnd">Fiscal Year End Date <span style="color: red;">*</span></label>
+                <input type="date" name="fiscalYearEnd" id="fiscalYearEnd" required>
             </div>
-            <div>
-                <label for="">Remarks</label>
-                <input type="text" class="fy-text" name="remarks" id="">
+
+            <div class="form-group">
+                <label for="transactionStartDate">Transaction Start Date <span style="color: red;">*</span></label>
+                <input type="date" name="transactionStartDate" id="transactionStartDate" required>
             </div>
-            <div>
-                <input type="checkbox" name="currentFiscalYear" id="" checked style="pointer-events: none;">
-                <label for="">Current Fiscal Year</label>
+
+            <div class="form-group">
+                <label for="remarks">Remarks</label>
+                <input type="text" name="remarks" id="remarks" placeholder="Optional remarks">
             </div>
-            <div class="fy-button-row">
-                <button type="submit" class="fy-button">Ok</button>
-                <button type="button" class="fy-button" id="cancelButton">Cancel</button>
+
+            <div class="checkbox-group">
+                <input type="checkbox" name="currentFiscalYear" id="currentFiscalYear" checked>
+                <label for="currentFiscalYear">Mark as Current Fiscal Year</label>
             </div>
-        </fieldset>
-    </form>
-  </div>
+
+            <input type="hidden" name="orgID" id="orgID" value="<%= orgID %>">
+            <input type="hidden" name="dbName" id="dbName" value="<%= dbName %>">
+
+            <div class="button-group">
+                <button type="submit" class="btn-submit">Setup Fiscal Year</button>
+                <button type="button" class="btn-cancel" id="cancelButton">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        // Set fiscal year end date to 1 year after start date
+        function setFiscalYearEnd() {
+            const startDateInput = document.getElementById('fiscalYearStart');
+            if (startDateInput.value) {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(startDate);
+                endDate.setFullYear(endDate.getFullYear() + 1);
+                endDate.setDate(endDate.getDate() - 1); // One day before the next year
+
+                const endDateFormatted = endDate.toISOString().split('T')[0];
+                document.getElementById('fiscalYearEnd').value = endDateFormatted;
+            }
+        }
+
+        // Set up submit button to disable during submission
+        document.getElementById('fiscalYearForm').addEventListener('submit', async (e) => {
+            const submitBtn = document.querySelector('.btn-submit');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Setting up...';
+        });
+
+        document.getElementById('cancelButton').addEventListener('click', () => {
+            // Go back to previous page
+            window.history.back();
+        });
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'show';
+            setTimeout(() => (toast.className = toast.className.replace('show', '')), 3000);
+        }
+    </script>
+</body>
+</html>
