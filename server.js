@@ -33,9 +33,15 @@ app.use(useragent.express());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.json()); // for parsing application/json
-// Set static files directory
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+
+// Prevent browser caching of protected pages so the back button cannot show a logged-in page after logout.
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private, max-age=0");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
@@ -51,10 +57,25 @@ app.use(
   })
 );
 app.use((req, res, next) => {
-  const excludedRoutes = ['/login', '/select-database', '/update-db', '/clone-database-set-fiscal', '/fetch-fiscal-data', '/check-setup', '/setup', '/api/prevalidate-login', '/favicon.ico'];
+  const excludedRoutes = [
+    '/',
+    '/index.html',
+    '/login',
+    '/select-database',
+    '/update-db',
+    '/clone-database-set-fiscal',
+    '/fetch-fiscal-data',
+    '/check-setup',
+    '/setup',
+    '/api/prevalidate-login',
+    '/favicon.ico'
+  ];
 
-  if (excludedRoutes.includes(req.path)) {
-    return next(); // Skip session DB check for these routes
+  const staticPrefixes = ['/css/', '/js/', '/PNG/', '/uploads/', '/uploadsMem/'];
+  const isStaticAsset = staticPrefixes.some(prefix => req.path.startsWith(prefix));
+
+  if (excludedRoutes.includes(req.path) || isStaticAsset) {
+    return next(); // Skip session DB check for public/static routes
   }
 
   return checkSessionDB(req, res, next); // Apply check for everything else
@@ -279,10 +300,10 @@ app.post("/login", (req, res) => {
   // Query to check if user exists no password verification for simplicityand testing
   const query = `
     SELECT UserID FROM tbUserMaster
-    WHERE UserName = ? 
+    WHERE UserName = ? AND Password = ?
   `;
 
-  sql.query(connectionString, query, [username], (err, rows) => {
+  sql.query(connectionString, query, [username, password], (err, rows) => {
     if (err) {
       console.error("Login failed:", err);
       return res.status(500).json({ 
@@ -292,7 +313,7 @@ app.post("/login", (req, res) => {
     }
 
     if (!rows || rows.length === 0) {
-      console.log("Invalid login attempt for username:", username);
+      console.log("Invalid login attempt for username or password:", username);
       return res.status(401).json({ 
         message: "Invalid username or password.", 
         success: false 
@@ -395,7 +416,6 @@ app.post("/select-database", (req, res) => {
 app.post("/logout", (req, res) => {
   const userId = req.session.userID;
 
-
   const query = `
     UPDATE tbUserLog
     SET LogoutDateTime = GETDATE()
@@ -410,9 +430,18 @@ app.post("/logout", (req, res) => {
   sql.query(connectionString, query, [userId], (err) => {
     if (err) {
       console.error("Logout update failed:", err);
-      return res.status(500).send("Error saving logout time");
     }
-    res.send("Logout recorded successfully");
+
+    req.session.destroy((destroyErr) => {
+      if (destroyErr) {
+        console.error("Session destroy failed:", destroyErr);
+        res.clearCookie("connect.sid");
+        return res.status(500).json({ success: false, message: "Error destroying session" });
+      }
+
+      res.clearCookie("connect.sid");
+      return res.json({ success: true, message: "Logout successful" });
+    });
   });
 });
 
@@ -1804,15 +1833,19 @@ app.get("/fetchLedgerNames", (req, res) => {
   });
 });
 
-// Set cache control headers to prevent browser caching
-app.use((req, res, next) => {
-  res.setHeader(
-    "Cache-Control",
-    "no-store, no-cache, must-revalidate, private"
-  );
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
-  next();
+// Return list of removable drives (Windows) to the client
+app.get('/api/drives', (req, res) => {
+  exec('wmic logicaldisk where drivetype=2 get caption', (err, stdout) => {
+    if (err) {
+      console.error('Error detecting drives:', err);
+      return res.json({ drives: [] });
+    }
+
+    const lines = stdout.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    // WMIC typically includes a header like 'Caption' — filter for lines like 'F:'
+    const drives = lines.filter(l => /^[A-Za-z]:$/.test(l)).map(l => l[0]);
+    return res.json({ drives });
+  });
 });
 
 // Serve static files (e.g., login.html)

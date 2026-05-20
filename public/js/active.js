@@ -1,102 +1,86 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle primary dropdowns
+    // Toggle primary dropdown on clicking menu item
     document.querySelectorAll('.menu-item > div > .uls').forEach(menuLink => {
         menuLink.addEventListener('click', function(event) {
-            event.stopPropagation(); // Prevent bubbling
-
-            // Toggle the primary dropdown menu
-            const dropdown = this.nextElementSibling; // Gets the dropdown-menu
-            if (dropdown) {
-                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-            }
-
-            // Close other primary dropdowns
-            document.querySelectorAll('.dropdown-menu').forEach(item => {
-                if (item !== dropdown) {
-                    item.style.display = 'none';
-                }
-            });
-        });
-    });
-
-
-    // Handle nested dropdowns
-    document.querySelectorAll('.dropdown-menu > ul > li > a').forEach(menuLink => {
-        menuLink.addEventListener('click', function(event) {
-            // Prevent the default anchor behavior
             event.preventDefault();
-            event.stopPropagation(); // Prevent bubbling
-
-            // Check if the clicked item has a nested dropdown
-            const nestedDropdown = this.nextElementSibling; // Gets the dropdown-menu-1
-            if (nestedDropdown) {
-                // Toggle nested dropdown
-                nestedDropdown.style.display = nestedDropdown.style.display === 'block' ? 'none' : 'block';
+            event.stopPropagation();
+            
+            const dropdown = this.nextElementSibling; // Gets the .dropdown-menu
+            if (dropdown && dropdown.classList.contains('dropdown-menu')) {
+                // Toggle this dropdown
+                const isVisible = dropdown.style.display === 'block';
+                
+                // Hide all other dropdowns first
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+                
+                // Toggle current dropdown
+                dropdown.style.display = isVisible ? 'none' : 'block';
             }
-
-            // Close other nested dropdowns
-            document.querySelectorAll('.dropdown-menu-1').forEach(item => {
-                if (item !== nestedDropdown) {
-                    item.style.display = 'none';
-                }
-            });
         });
     });
 
-    // Prevent nested dropdown clicks from closing the dropdown
-    document.querySelectorAll('.dropdown-menu-1').forEach(nestedDropdown => {
-        nestedDropdown.addEventListener('click', function(event) {
+    // Toggle nested dropdown-menu-1 on clicking anchor tag
+    document.querySelectorAll('.dropdown-menu ul li > a').forEach(link => {
+        link.addEventListener('click', function(event) {
+            const submenu = this.nextElementSibling;
+            if (submenu && submenu.classList.contains('dropdown-menu-1')) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Toggle this submenu
+                const isVisible = submenu.style.display === 'block';
+                
+                // Hide all other level-1 submenus
+                document.querySelectorAll('.dropdown-menu-1').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+                
+                // Toggle current submenu
+                submenu.style.display = isVisible ? 'none' : 'block';
+            }
+        });
+    });
+
+    // Toggle dropdown-menu-2 on clicking nested anchor tag
+    document.querySelectorAll('.dropdown-menu-1 ul li > a').forEach(link => {
+        link.addEventListener('click', function(event) {
+            const submenu = this.nextElementSibling;
+            if (submenu && submenu.classList.contains('dropdown-menu-2')) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Toggle this submenu
+                const isVisible = submenu.style.display === 'block';
+                
+                // Hide all other level-2 submenus
+                document.querySelectorAll('.dropdown-menu-2').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+                
+                // Toggle current submenu
+                submenu.style.display = isVisible ? 'none' : 'block';
+            }
+        });
+    });
+
+    // Prevent clicks inside dropdown menus from propagating outside
+    document.querySelectorAll('.dropdown-menu, .dropdown-menu-1, .dropdown-menu-2').forEach(menu => {
+        menu.addEventListener('click', function(event) {
             event.stopPropagation();
         });
     });
 
-    // Handle third-level nested dropdowns
-    document.querySelectorAll('.dropdown-menu-1 > ul > li > a').forEach(menuLink => {
-        menuLink.addEventListener('click', function(event) {
-            // Prevent the default anchor behavior
-            event.preventDefault();
-            event.stopPropagation(); // Prevent bubbling
-
-            // Check if the clicked item has a third-level dropdown
-            const thirdLevelDropdown = this.nextElementSibling; // Gets the dropdown-menu-2
-            if (thirdLevelDropdown) {
-                // Toggle third-level dropdown
-                thirdLevelDropdown.style.display = thirdLevelDropdown.style.display === 'block' ? 'none' : 'block';
-            }
-
-            // Close other third-level dropdowns
-            document.querySelectorAll('.dropdown-menu-2').forEach(item => {
-                if (item !== thirdLevelDropdown) {
-                    item.style.display = 'none';
-                }
-            });
-        });
+    // Hide menus when clicking outside the navbar
+    document.addEventListener('click', function(event) {
+        const navbar = document.querySelector('.navbar-menu');
+        if (navbar && !navbar.contains(event.target)) {
+            document.querySelectorAll('.dropdown-menu, .dropdown-menu-1, .dropdown-menu-2')
+                .forEach(menu => menu.style.display = 'none');
+        }
     });
-
-        // ✅ Hide all dropdowns when clicking outside
-    document.addEventListener('click', function() {
-        document.querySelectorAll('.dropdown-menu, .dropdown-menu-1, .dropdown-menu-2')
-            .forEach(menu => menu.style.display = 'none');
-    });
-
-    document.addEventListener('.dropdown-menu submenu').addEventListener('click', function() {
-        document.querySelectorAll('.dropdown-menu, .dropdown-menu-1, .dropdown-menu-2')
-            .forEach(menu => menu.style.display = 'none');
-    });
-
-    // Prevent third-level dropdown clicks from closing the dropdown
-    document.querySelectorAll('.dropdown-menu-2').forEach(thirdLevelDropdown => {
-        thirdLevelDropdown.addEventListener('click', function(event) {
-            event.stopPropagation();
-        });
-    });
-    let parent = this.closest("ul").closest("li")?.querySelector("a");
-    while (parent) {
-        parent.classList.add("active-parent");
-        parent = parent.closest("ul").closest("li")?.querySelector("a");
-    }
 });
-
 
 
 // Function to synchronize input values
