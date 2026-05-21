@@ -115,6 +115,84 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
     };
 }
 
+function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
+    const draggable = document.getElementById(movableDivId);
+    const toggleButton = document.getElementById(toggleButtonId);
+
+    if (!draggable || !toggleButton) {
+        return;
+    }
+
+    toggleButton.addEventListener('click', function () {
+        const EditCollChequemasAccIDforaccpostingVD = document.getElementById('Maintransaccountnumberofaccpostedit').value;
+       
+        const currentDisplay = window.getComputedStyle(draggable).display;
+        draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
+        if (currentDisplay === 'none') {
+            highestZIndex++;
+            draggable.style.zIndex = highestZIndex;
+        }
+
+        
+                        // Inside the fetch call for necessary data 
+                        fetch('/fetchCollectionChequemasaccpostviewDetailsForEdit', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ EditCollChequemasAccIDforaccpostingVD })  // Send the EditAccTypePenaltySelectedName to the backend
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+
+                                if (data.success) {
+                                    document.getElementById('accopendate-viewaccdeteditaccposting').value = data.AccountOpenDate || '';
+                                    document.getElementById('acc-name-viewaccdeteditaccposting').value = data.SLName || '';
+                                    document.getElementById('acc-address-viewaccdeteditaccposting').value = data.Address1 || '';
+                                    document.getElementById('acc-address2-viewaccdeteditaccposting').value = data.Address2 || '';
+                                    document.getElementById('acc-phone-viewaccdeteditaccposting').value = data.Phone1 || '';
+                                    document.getElementById('acc-email-viewaccdeteditaccposting').value = data.Email || '';
+                                    document.getElementById('acc-mobile-viewaccdeteditaccposting').value = data.Mobile || '';
+                                    document.getElementById('acc-DOB-viewaccdeteditaccposting').value = data.DateOfBirth || '';
+                                    document.getElementById('NextofKinName-viewaccdeteditaccposting').value = data.NextofKinName || '';
+                                    document.getElementById('NextofKinAddress-viewaccdeteditaccposting').value = data.NextofKinAddress || '';
+                                    document.getElementById('NextofKinReln-viewaccdeteditaccposting').value = data.Relation || '';
+                                    document.getElementById('NextofKinContactNumber-viewaccdeteditaccposting').value = data.NextofKinContactNumber || '';
+                                    document.getElementById('acc-remarks-viewaccdeteditaccposting').value = data.Remarks || '';
+                                    document.getElementById('acc-fax-viewaccdeteditaccposting').value = data.Fax || '';
+                                    document.getElementById('acc-MemberId-viewaccdeteditaccposting').value = data.MemberAlias || '';
+                                    document.getElementById('acc-MemberName-viewaccdeteditaccposting').value = data.MemberName || '';
+
+
+                                    document.getElementById("accounteidtcolcheque-photo").src = data.Photo || "";
+                                    document.getElementById("accounteidtcolcheque-sign1").src = data.Sign1 || "";
+                                    document.getElementById("accounteidtcolcheque-sign2").src = data.Sign2 || "";
+                                    document.getElementById("accounteidtcolcheque-sign3").src = data.Sign3 || "";
+                                    document.getElementById("accounteidtcolcheque-sign4").src = data.Sign4 || "";
+
+                                    const gendertype = data.Gender;
+                                    // Select the appropriate option in the dropdown based on the TransactionType
+                                    const genderTypeSelect = document.getElementById('EditGenderTrans-optionforaccpost');
+                                    const options = genderTypeSelect.options;
+                                    //Loop through the options to find the matching value and set it as selected
+                                    for (let i = 0; i < options.length; i++) {
+                                        if (options[i].value === gendertype) {
+                                            options[i].selected = true;
+                                            break; // Stop the loop once the correct option is selected
+                                        }
+                                    }
+
+
+                                } else {
+                                    showCustomAlert(data.message || 'Member not found');
+                                }
+
+                      
+                            });
+
+
+    });
+}
 
 // Initialize movable divs (example initialization)
 makeMovable('movableDiv1', 'closeButton1', 'cancelButton1', 'toggleButton1');
