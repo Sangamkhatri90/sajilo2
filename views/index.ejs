@@ -631,7 +631,7 @@
                                 </label>
                                 <input type="number" id="alias" name="alias" class="main-search"
                                     placeholder="Search Account">
-                                <button type="submit" id="search"><img src="/PNG/search.png" alt="">GO</button>
+                                <button type="submit" id="search" style="margin-right: 8px;"><img src="/PNG/search.png" alt="">GO</button>
                             </div>
                         </form>
                         <!-- 4️⃣ Suggestion result area -->
@@ -656,7 +656,7 @@
                 <li class="menu-item">
                     <div class="link">
 
-                        <a href="/createMem"><button class="Crebtn">New Member</button></a>
+                        <button type="button" class="Crebtn" onclick="window.location='/createMem'">New Member</button>
                         <form action="/account/createAccount" method="GET" id="createMemberForm">
                             <input type="hidden" id="searchedMemberId" name="MemberId" value="<%= searchedMemberId %>">
                             <button type="submit" id="createMemberBtn" class="Crebtn" disabled>New Account</button>
@@ -26840,14 +26840,31 @@ async function loadEarningsData() {
                 });
             </script>
 
-            <!-- Loader HTML -->
-            <div id="page-loader" class="loader hidden">
+            <!-- Improved Loader: overlay, spinner, and smooth progress -->
+            <style>
+                .loader-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 220ms ease, visibility 220ms ease; }
+                .loader-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 99999; opacity: 1; visibility: visible; }
+                .loader-box { background: #fff; padding: 18px 22px; border-radius: 10px; display: flex; gap: 14px; align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,0.25); min-width: 220px; }
+                .spinner { width: 40px; height: 40px; animation: spin 1s linear infinite; }
+                @keyframes spin { to { transform: rotate(360deg); } }
+                .loader-content { min-width: 140px; }
+                .progress { width: 100%; height: 8px; background: #eee; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+                .bar-fill { height: 100%; background: linear-gradient(90deg,#4caf50,#00bcd4); width: 0%; transition: width 220ms linear; }
+                .loader-text { font-size: 14px; color: #222; }
+                .loader-num { font-weight: 600; margin-left: 8px; }
+                @media (max-width:480px){ .loader-box{ min-width:160px; padding:12px; gap:10px } .spinner{width:30px;height:30px} }
+            </style>
+
+            <div id="page-loader" class="loader-overlay hidden" aria-hidden="true" role="status" aria-live="polite">
                 <div class="loader-box">
-                    <span id="loader-num">1%</span>
-                    <div class="bar">
-                        <div id="loader-bar" class="bar-fill"></div>
+                    <svg class="spinner" viewBox="0 0 50 50" aria-hidden="true">
+                        <circle cx="25" cy="25" r="20" fill="none" stroke="#ddd" stroke-width="5"></circle>
+                        <path d="M45 25a20 20 0 0 1-20 20" stroke="#4caf50" stroke-width="5" fill="none" stroke-linecap="round"></path>
+                    </svg>
+                    <div class="loader-content">
+                        <div class="progress"><div id="loader-bar" class="bar-fill" style="width:0%"></div></div>
+                        <div class="loader-text"><span id="loader-num" class="loader-num">0%</span> Loading…</div>
                     </div>
-                    <p>Loading…</p>
                 </div>
             </div>
             <div id="print-container" style="display: none;">
@@ -26858,80 +26875,115 @@ async function loadEarningsData() {
             </div>
 
             <script>
-                // Get references to the loader elements
-                const loaderOverlay = document.getElementById('page-loader');
-                const loaderBar = document.getElementById('loader-bar');
-                const loaderNum = document.getElementById('loader-num');
-
-                let loadingTimer;
-                let currentProgress = 1;
-
-                // Function to update the loader progress
-                function setProgress(value) {
-                    currentProgress = Math.min(value, 100);
-                    loaderNum.textContent = currentProgress + '%';
-                    loaderBar.style.width = currentProgress + '%';
-                }
-
-                // Start a fake progress for loading
-                function startFakeProgress() {
-                    setProgress(1);
-                    loadingTimer = setInterval(() => {
-                        const increment = currentProgress < 60 ? 2 : currentProgress < 85 ? 1 : 0.5;
-                        if (currentProgress + increment < 99) {
-                            setProgress(currentProgress + increment);
-                        }
-                    }, 60);
-                }
-
-                // Stop loading and finalize progress
-                function stopLoading() {
-                    clearInterval(loadingTimer);
-                    setProgress(100);
-                    setTimeout(() => {
-                        loaderOverlay.classList.add('hidden');
-                    }, 150);
-                }
-
-                // Show the loading indicator (and start progress)
-                function showLoading() {
-                    loaderOverlay.classList.remove('hidden');
-                    startFakeProgress();
-                }
-
-                // Hide the loading indicator once finished
-                function hideLoading() {
-                    stopLoading();
-                }
-
-                // Global Fetch Override (safe version)
-                if (!window.originalFetch) {
-                    window.originalFetch = window.fetch;
-
-                    window.fetch = async function (...args) {
-                        showLoading(); // Show loader before request
-                        try {
-                            const response = await window.originalFetch(...args);
-                            return response;
-                        } finally {
-                            hideLoading(); // Hide loader after response
-                        }
-                    };
-                }
-
-                // Global XMLHttpRequest Override
+                // Enhanced loader: supports nested concurrent requests and smooth animation
                 (function () {
-                    const originalOpen = XMLHttpRequest.prototype.open;
+                    const overlay = document.getElementById('page-loader');
+                    const bar = document.getElementById('loader-bar');
+                    const num = document.getElementById('loader-num');
 
-                    XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
-                        this.addEventListener('loadstart', function () {
-                            showLoading();
+                    if (!overlay || !bar || !num) return;
+
+                    let activeRequests = 0;
+                    let current = 0;
+                    let target = 0;
+                    let rafId = null;
+                    let watchTimer = null;
+
+                    function setVisual(v) {
+                        const pct = Math.max(0, Math.min(100, Math.round(v)));
+                        bar.style.width = pct + '%';
+                        num.textContent = pct + '%';
+                    }
+
+                    function animate() {
+                        current += (target - current) * 0.12 + 0.02;
+                        if (Math.abs(target - current) < 0.3) current = target;
+                        setVisual(current);
+                        if (current !== target) rafId = requestAnimationFrame(animate);
+                        else rafId = null;
+                    }
+
+                    function startFakeProgress() {
+                        // move toward a safe intermediate target while work is active
+                        target = Math.max(target, 50);
+                        if (!rafId) animate();
+                    }
+
+                    function showLoading() {
+                        activeRequests++;
+                        if (activeRequests === 1) {
+                            overlay.classList.remove('hidden');
+                            overlay.setAttribute('aria-hidden', 'false');
+                            // initial quick rise
+                            target = 20;
+                            if (!rafId) animate();
+                            // then continue to fake progress
+                            setTimeout(() => { if (activeRequests>0) startFakeProgress(); }, 120);
+                            // start watchdog to avoid stuck overlay
+                            if (watchTimer) clearTimeout(watchTimer);
+                            watchTimer = setTimeout(() => {
+                                console.warn('Loader watchdog: forcing hide after timeout');
+                                // force-complete and reset
+                                activeRequests = 0;
+                                target = 100;
+                                if (!rafId) animate();
+                                setTimeout(() => {
+                                    overlay.classList.add('hidden');
+                                    overlay.setAttribute('aria-hidden', 'true');
+                                    current = 0; target = 0; setVisual(0);
+                                }, 350);
+                            }, 20000); // 20s
+                        }
+                    }
+
+                    function hideLoading() {
+                        if (activeRequests > 0) activeRequests--;
+                        if (activeRequests === 0) {
+                            // finish to 100% then hide
+                            target = 100;
+                            if (!rafId) animate();
+                            setTimeout(() => {
+                                overlay.classList.add('hidden');
+                                overlay.setAttribute('aria-hidden', 'true');
+                                // reset values for next show
+                                current = 0; target = 0; setVisual(0);
+                                if (watchTimer) { clearTimeout(watchTimer); watchTimer = null; }
+                            }, 350);
+                        }
+                    }
+
+                    // One-time page-load loader: show immediately and hide on window.load
+                    try {
+                        showLoading();
+                        window.addEventListener('load', () => {
+                            // complete progress then hide
+                            activeRequests = 0;
+                            target = 100;
+                            if (!rafId) animate();
+                            setTimeout(() => {
+                                overlay.classList.add('hidden');
+                                overlay.setAttribute('aria-hidden', 'true');
+                                current = 0; target = 0; setVisual(0);
+                                if (watchTimer) { clearTimeout(watchTimer); watchTimer = null; }
+                            }, 350);
                         });
-                        this.addEventListener('loadend', function () {
-                            hideLoading();
+
+                        // Allow manual dismiss on overlay click as a safety
+                        overlay.addEventListener('click', function () {
+                            console.warn('Overlay clicked: forcing loader hide');
+                            activeRequests = 0;
+                            target = 100;
+                            if (!rafId) animate();
+                            setTimeout(() => {
+                                overlay.classList.add('hidden');
+                                overlay.setAttribute('aria-hidden', 'true');
+                                current = 0; target = 0; setVisual(0);
+                                if (watchTimer) { clearTimeout(watchTimer); watchTimer = null; }
+                            }, 150);
                         });
-                        originalOpen.call(this, method, url, async, user, pass);
-                    };
+                    } catch (e) {
+                        console.error('Loader init error', e);
+                    }
                 })();
             </script>
 
@@ -26993,6 +27045,7 @@ async function loadEarningsData() {
             <script src="/js/fiscalYearDate.js"></script>
             <script src="/js/active.js"></script>
             <script src="/js/movable.js"></script>
+            <script src="/js/drives.js" defer></script>
             <script src="/js/calculator.js"></script>
             <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
             <script
