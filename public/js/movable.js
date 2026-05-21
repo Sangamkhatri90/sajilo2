@@ -116,6 +116,23 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
 }
 
 
+function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
+    const draggable = document.getElementById(movableDivId);
+    const toggleButton = document.getElementById(toggleButtonId);
+
+    if (!draggable || !toggleButton) {
+        return;
+    }
+
+    toggleButton.addEventListener('click', function () {
+        const currentDisplay = window.getComputedStyle(draggable).display;
+        draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
+        if (currentDisplay === 'none') {
+            highestZIndex++;
+            draggable.style.zIndex = highestZIndex;
+        }
+    });
+}
 // Initialize movable divs (example initialization)
 makeMovable('movableDiv1', 'closeButton1', 'cancelButton1', 'toggleButton1');
 makeMovable('movableDiv2', 'closeButton2', 'cancelButton2', 'toggleButton2');
@@ -295,10 +312,13 @@ makeMovable('movableDiv181', 'closeButton181', 'cancelButton181', 'toggleButton1
 makeMovable('movableDiv182', 'closeButton182', 'cancelButton182', 'toggleButton182');
 makeMovable('movableDiv183', 'closeButton183', 'cancelButton183', 'toggleButton183');
 makeMovable('movableDiv184', 'closeButton184', 'cancelButton184', 'toggleButton184');
+bindAdditionalToggleButton('movableDiv184', 'MaintranstoggleButton184');
 makeMovable('movableDiv185', 'closeButton185', 'cancelButton185', 'toggleButton185');
 makeMovable('movableDiv186', 'closeButton186', 'cancelButton186', 'toggleButton186');
 makeMovable('movableDiv187', 'closeButton187', 'cancelButton187', 'toggleButton187');
+bindAdditionalToggleButton('movableDiv187', 'MaintranstoggleButton187');
 makeMovable('movableDiv188', 'closeButton188', 'cancelButton188', 'toggleButton188');
+bindAdditionalToggleButton('movableDiv188', 'MaintranstoggleButton188');
 makeMovable('movableDiv189', 'closeButton189', 'cancelButton189', 'toggleButton189');
 makeMovable('movableDiv190', 'closeButton190', 'cancelButton190', 'toggleButton190');
 
