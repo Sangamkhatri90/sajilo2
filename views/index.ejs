@@ -24674,6 +24674,12 @@ async function loadEarningsData() {
                                     <input type="checkbox" id="Maintranssuspicious-trans" name="suspicious-trans">
                                     <label for="suspicious-trans" style="margin-top: 15px;">Suspicious
                                         Transaction</label>
+
+
+                                </div>
+                                <div style="display: flex;">
+                                           <input type="checkbox" id="MaintransAccClose" name="MaintransAccClose">
+                                    <label for="suspicious-trans" style="margin-top: 15px;">Account Close</label>
                                 </div>
                             </div>
 
@@ -53662,63 +53668,7 @@ async function loadEarningsData() {
                                     showCustomAlert(data.message || 'Member not found');
                                 }
 
-
-
-
-
-                                /* Check if Remarks and Transaction type is returned
-                                if (data.Remarks) {
-                                    document.getElementById('EditCollCheque-Remarks').value = data.Remarks; // Populate the Remarks field
-                                } else {
-                                    document.getElementById('EditCollCheque-Remarks').value = ''; // Default to empty if no Remarks
-                                }
-                                // Handle the Collected field (checkbox)
-                                const Collectedcb = document.getElementById('EditCollCheque-collectedcb');
-        
-                                if (data.Collected === true) {
-                                    Collectedcb.checked = true; // If Collected is true, check the checkbox
-        
-                                } else {
-                                    Collectedcb.checked = false; // If Collected is false, uncheck the checkbox
-        
-                                }
-        
-        
-                                // Handle the Posted field (checkbox)
-                                const AccPostedcb = document.getElementById('EditCollCheque-accpostedcb');
-        
-                                if (data.Posted === true) {
-                                    AccPostedcb.checked = true; // If Posted is true, check the checkbox
-        
-                                } else {
-                                    AccPostedcb.checked = false; // If Posted is false, uncheck the checkbox
-        
-                                }
-        
-        
-                               
-                               
-                              
-        
-        
-                            })
-                            .catch(error => {
-                                console.error('Error fetching Collection Cheque remarks:', error);
-                                document.getElementById('EditCollCheque-Remarks').value = 'Error fetching remarks'; // Handle error
-                            });
-                           
-                        
-                        
-        
-         
-                        // Ensure the form is displayed
-                        document.getElementById('movableDiv184').style.display = 'block';
-                    } else {
-                        console.log('No row selected. Please select a row to edit.');
-                        
-                        document.getElementById('movableDiv148').style.display = 'none';
-                    }
-                        */
+                      
                             });
 
                         const slAlias = document.getElementById("accountnumberofaccpostedit")?.value?.trim() ||
