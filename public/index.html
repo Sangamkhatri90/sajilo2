@@ -89,22 +89,23 @@ now insted of that open the FiscalYearInsert ejs that help the user to set the d
 
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    const inputs = document.querySelectorAll(".line-input");
+  document.addEventListener("DOMContentLoaded", () => {
+  const inputs = document.querySelectorAll(".line-input");
 
-    inputs.forEach((input, index) => {
-        input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
+  inputs.forEach((input, index) => {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
 
-                if (index < inputs.length - 1) {
-                    inputs[index + 1].focus();
-                } else {
-                    document.getElementById('login').submit();
-                }
-            }
-        });
+        if (index < inputs.length - 1) {
+          inputs[index + 1].focus();
+        } else {
+          // Trigger the same login flow as the Login button
+          document.getElementById('okDTNB').click();
+        }
+      }
     });
+  });
 });
 </script>
 
