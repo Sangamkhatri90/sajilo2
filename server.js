@@ -7266,6 +7266,33 @@ app.get("/getLastVoucherNo", async (req, res) => {
   }
 });
 
+app.get("/journal-voucher-list", (req, res) => {
+  const conn = req.session.conn;
+  if (!conn) {
+    return res.status(500).send("Database connection is not available.");
+  }
+
+  const query = `
+        SELECT VoucherNo
+        FROM tbJournalMaster
+        WHERE UDVNo = 1
+        ORDER BY VoucherNo;
+    `;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("Error querying tbJournalMaster:", err);
+      return res.status(500).send("Error fetching journal voucher numbers.");
+    }
+
+    const vouchers = Array.isArray(rows)
+      ? rows.map((row) => ({ voucherNo: row.VoucherNo }))
+      : [];
+
+    res.json({ vouchers });
+  });
+});
+
 app.get("/getSubLedgerDetails", (req, res) => {
   const { SlAlias } = req.query;
   console.log("SlAlias", SlAlias);

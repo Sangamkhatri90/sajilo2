@@ -4502,11 +4502,11 @@
                                 <div class="dp-form-style-horizontal3">
                                     <div>
                                         <label for="start-from">Start From</label>
-                                        <input type="date" name="DPStartFrom" class="dp-date" id="nepali-date">
+                                        <input type="text" name="DPStartFrom" class="dp-date" id="">
                                     </div>
                                     <div>
                                         <label for="end-to">End To</label>
-                                        <input type="date" name="DPEndTo" class="dp-date" id="nepali-date1">
+                                        <input type="text" name="DPEndTo" class="dp-date" id="">
                                     </div>
                                 </div>
 
@@ -4549,8 +4549,136 @@
                                 </div>
                             </fieldset>
                         </form>
+                        <div id="documentPrintingSearchResults" class="dp-results" style="display:none; float:right; width: 340px; margin-top: 16px; margin-left: 16px; border: 1px solid #ccc; padding: 12px; background: #fbfbfb;">
+                            <strong>Journal Voucher Numbers</strong>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 8px; gap: 8px;">
+                                <span style="font-size:0.9rem; color:#333;">Double-click a row to fill the field</span>
+                                <div>
+                                    <button id="documentPrintingScrollUp" type="button" style="border:1px solid #aaa; background:#fff; color:#333; padding:4px 8px; margin-right:4px; cursor:pointer;">▲</button>
+                                    <button id="documentPrintingScrollDown" type="button" style="border:1px solid #aaa; background:#fff; color:#333; padding:4px 8px; cursor:pointer;">▼</button>
+                                </div>
+                            </div>
+                            <div id="documentPrintingSearchResultsScroll" style="max-height: 240px; overflow-y: auto; margin-top: 8px;">
+                                <table id="documentPrintingSearchResultsTable" style="width:100%; margin-top: 0; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background:#e8e8e8; text-align:left;">
+                                            <th style="padding:6px; border-bottom:1px solid #ccc; position: sticky; top: 0; background:#e8e8e8; z-index: 1;">Voucher No</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="documentPrintingSearchResultsList"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const startInput = document.querySelector('#movableDiv31 form input[name="DPStartFrom"]');
+                        const endInput = document.querySelector('#movableDiv31 form input[name="DPEndTo"]');
+                        const resultsBox = document.getElementById('documentPrintingSearchResults');
+                        const resultsScroll = document.getElementById('documentPrintingSearchResultsScroll');
+                        const resultsList = document.getElementById('documentPrintingSearchResultsList');
+                        const scrollUpButton = document.getElementById('documentPrintingScrollUp');
+                        const scrollDownButton = document.getElementById('documentPrintingScrollDown');
+                        let activeInput = null;
+
+                        if (!startInput || !endInput || !resultsBox || !resultsScroll || !resultsList || !scrollUpButton || !scrollDownButton) {
+                            return;
+                        }
+
+                        const fetchJournalVoucherList = async () => {
+                            try {
+                                const response = await fetch('/journal-voucher-list');
+                                if (!response.ok) {
+                                    throw new Error('Failed to load journal voucher list');
+                                }
+
+                                const data = await response.json();
+                                const vouchers = data.vouchers || [];
+
+                                if (vouchers.length === 0) {
+                                    resultsList.innerHTML = '<tr><td style="padding:8px;">No vouchers found for UDVNo = 1.</td></tr>';
+                                } else {
+                                    resultsList.innerHTML = vouchers
+                                        .map(item => `
+                                            <tr class="document-printing-row" style="cursor:pointer;">
+                                                <td style="padding:8px; border-bottom:1px solid #ddd;">${item.voucherNo}</td>
+                                            </tr>
+                                        `)
+                                        .join('');
+                                }
+
+                                resultsBox.style.display = 'block';
+                                attachRowHandlers();
+                            } catch (error) {
+                                console.error(error);
+                                resultsList.innerHTML = '<tr><td style="padding:8px;">Error loading voucher numbers.</td></tr>';
+                                resultsBox.style.display = 'block';
+                            }
+                        };
+
+                        const setSelectedRow = (row) => {
+                            resultsList.querySelectorAll('tr').forEach((r) => {
+                                r.style.backgroundColor = '';
+                                r.style.color = '';
+                            });
+                            if (row) {
+                                row.style.backgroundColor = '#cce5ff';
+                                row.style.color = '#000';
+                            }
+                        };
+
+                        const attachRowHandlers = () => {
+                            document.querySelectorAll('#documentPrintingSearchResultsList tr').forEach((row) => {
+                                row.addEventListener('click', () => {
+                                    setSelectedRow(row);
+                                });
+
+                                row.addEventListener('dblclick', () => {
+                                    const voucherNo = row.querySelector('td')?.innerText;
+                                    if (!voucherNo) return;
+
+                                    setSelectedRow(row);
+
+                                    if (activeInput) {
+                                        activeInput.value = voucherNo;
+                                    } else {
+                                        startInput.value = voucherNo;
+                                    }
+
+                                    resultsBox.style.display = 'none';
+                                });
+                            });
+                        };
+
+                        const handleSpace = (event) => {
+                            if (event.code === 'Space') {
+                                event.preventDefault();
+                                fetchJournalVoucherList();
+                            }
+                        };
+
+                        startInput.addEventListener('focus', () => {
+                            activeInput = startInput;
+                        });
+
+                        endInput.addEventListener('focus', () => {
+                            activeInput = endInput;
+                        });
+
+                        scrollUpButton.addEventListener('click', () => {
+                            resultsScroll.scrollBy({ top: -100, behavior: 'smooth' });
+                        });
+
+                        scrollDownButton.addEventListener('click', () => {
+                            resultsScroll.scrollBy({ top: 100, behavior: 'smooth' });
+                        });
+
+                        startInput.addEventListener('keydown', handleSpace);
+                        endInput.addEventListener('keydown', handleSpace);
+                    });
+                </script>
 
                 <!--Fiscal Year Master-->
                 <div class="movableDiv" id="movableDiv32">
