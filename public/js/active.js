@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     menu.style.display = 'none';
                 });
                 
-                // Toggle current submenuu
+                // Toggle current submenuuuu
                 submenu.style.display = isVisible ? 'none' : 'block';
             }
         });
