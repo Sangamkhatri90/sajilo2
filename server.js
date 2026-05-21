@@ -1833,17 +1833,28 @@ app.get("/fetchLedgerNames", (req, res) => {
   });
 });
 
+
+
 // Return list of removable drives (Windows) to the client
 app.get('/api/drives', (req, res) => {
-  exec('wmic logicaldisk where drivetype=2 get caption', (err, stdout) => {
+  const command = `powershell "Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DriveType -eq 2 } | Select-Object -ExpandProperty DeviceID"`;
+
+  exec(command, (err, stdout, stderr) => {
     if (err) {
       console.error('Error detecting drives:', err);
       return res.json({ drives: [] });
     }
 
-    const lines = stdout.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-    // WMIC typically includes a header like 'Caption' — filter for lines like 'F:'
-    const drives = lines.filter(l => /^[A-Za-z]:$/.test(l)).map(l => l[0]);
+    const lines = stdout
+      .split(/\r?\n/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    // Convert ["F:", "G:"] -> ["F", "G"]
+    const drives = lines
+      .filter(l => /^[A-Za-z]:$/.test(l))
+      .map(l => l.replace(':', ''));
+
     return res.json({ drives });
   });
 });
