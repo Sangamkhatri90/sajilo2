@@ -687,6 +687,19 @@ input[type="number"]::-webkit-inner-spin-button {
   cursor: pointer;
 }
 
+/* Close button for searched data form */
+.close-x {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: #333;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.close-x:hover { background: rgba(0,0,0,0.05); }
+
 .fieldset {
   border: 1px solid black;
   border-radius: 5px;

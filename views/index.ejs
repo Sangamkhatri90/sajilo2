@@ -48,7 +48,23 @@
             background-color: #4CAF50;
             /* Green for online */
         }
+
+        .hide-searched-data-form #searcheddataform {
+            display: none !important;
+        }
     </style>
+
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('hideSearchedDataForm') === 'true') {
+                    document.documentElement.classList.add('hide-searched-data-form');
+                }
+            } catch (e) {
+                // Ignore storage errors
+            }
+        })();
+    </script>
 
     <div id="connection-status-banner">
         Your internet connection seems to be interrupted, so some features and services will not be available although
@@ -691,7 +707,7 @@
                     <legend class="search-result">Searched Results</legend>
                     <div class="choose-transaction">
                         <div>
-                            <button type="button" onclick="remove()" id="RemoveTable">Remove Table</button>
+                            <button type="button" id="closeSearchedDataForm" class="close-x" title="Close">&times;</button>
                         </div>
                         <div>
                             <label for="actionSelect">Choose an action:</label>
@@ -27511,6 +27527,9 @@ async function loadEarningsData() {
                 function closeOrganization() {
                     const links = document.querySelectorAll('.navbar-menu a');
                     const searchInput = document.querySelector('.navbar-search input');
+                    const newMemberBtn = document.getElementById('newMemberBtn');
+                    const searchButton = document.getElementById('search');
+                    const aliasInput = document.getElementById('alias');
 
                     // Disable all navbar links except "Organization" and "Load Organization"
                     links.forEach(link => {
@@ -27520,11 +27539,22 @@ async function loadEarningsData() {
                         }
                     });
 
-                    // Disable the search input
-                    searchInput.disabled = true;
+                    // Disable the search controls
+                    if (searchInput) searchInput.disabled = true;
+                    if (aliasInput) aliasInput.disabled = true;
+                    if (searchButton) {
+                        searchButton.disabled = true;
+                        searchButton.style.opacity = '0.5';
+                    }
+                    if (newMemberBtn) {
+                        newMemberBtn.disabled = true;
+                        newMemberBtn.style.opacity = '0.5';
+                        newMemberBtn.style.pointerEvents = 'none';
+                    }
 
                     // Hide the organization table
-                    document.getElementById('organization-table').style.display = 'none';
+                    const orgTable = document.getElementById('organization-table');
+                    if (orgTable) orgTable.style.display = 'none';
 
                     // Reset row selection status
                     isRowSelected = false;
@@ -27535,6 +27565,20 @@ async function loadEarningsData() {
                     document.getElementById('organization-table').style.display = 'block';
                     isRowSelected = false; // Ensure row selection is reset
                     enableAllLinks(); // Enable all links after "Load Organization" is clicked
+
+                    const aliasInput = document.getElementById('alias');
+                    const searchButton = document.getElementById('search');
+                    const newMemberBtn = document.getElementById('newMemberBtn');
+                    if (aliasInput) aliasInput.disabled = false;
+                    if (searchButton) {
+                        searchButton.disabled = false;
+                        searchButton.style.opacity = '1';
+                    }
+                    if (newMemberBtn) {
+                        newMemberBtn.disabled = false;
+                        newMemberBtn.style.opacity = '1';
+                        newMemberBtn.style.pointerEvents = 'auto';
+                    }
                 }
 
                 // Function to handle row selection in the table
@@ -30510,17 +30554,60 @@ async function loadEarningsData() {
 
 
             <script>
-                document.addEventListener("DOMContentLoaded", (e) => {
-                    e.preventDefault();
-
-
-                    function remove() {
-                        const tableid = document.getElementsByClassName("body1");
-                        tableid.style.display = 'none';
-
+                (function () {
+                    // Utility to hide the searched data form and persist choice
+                    function hideSearchedDataForm() {
+                        const form = document.getElementById('searcheddataform');
+                        if (form) form.style.display = 'none';
+                        try { localStorage.setItem('hideSearchedDataForm', 'true'); } catch (e) {}
                     }
-                });
 
+                    function showSearchedDataForm() {
+                        const form = document.getElementById('searcheddataform');
+                        if (form) form.style.display = '';
+                        try { localStorage.removeItem('hideSearchedDataForm'); } catch (e) {}
+                    }
+
+                    // Attach handlers on DOM ready
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const closeBtn = document.getElementById('closeSearchedDataForm');
+                        if (closeBtn) {
+                            closeBtn.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                hideSearchedDataForm();
+                            });
+                        }
+
+                        const searchForm = document.querySelector('.search-form');
+                        if (searchForm) {
+                            searchForm.addEventListener('submit', function () {
+                                try { localStorage.removeItem('hideSearchedDataForm'); } catch (e) {}
+                            });
+                        }
+
+                        // Apply preference from localStorage
+                        try {
+                            if (localStorage.getItem('hideSearchedDataForm') === 'true') {
+                                const form = document.getElementById('searcheddataform');
+                                if (form) form.style.display = 'none';
+                            }
+                        } catch (e) {}
+                    });
+
+                    // Handle back/forward cache & page show to re-apply preference
+                    window.addEventListener('pageshow', function () {
+                        try {
+                            if (localStorage.getItem('hideSearchedDataForm') === 'true') {
+                                const form = document.getElementById('searcheddataform');
+                                if (form) form.style.display = 'none';
+                            }
+                        } catch (e) {}
+                    });
+
+                    // Expose for debugging if needed
+                    window.hideSearchedDataForm = hideSearchedDataForm;
+                    window.showSearchedDataForm = showSearchedDataForm;
+                })();
             </script>
             <script>
                 let selectedLedgerForSystem = null;  // To store the currently selected ledger
