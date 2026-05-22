@@ -191,7 +191,7 @@ function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
 
                       
                             });
-    const slAlias = document.getElementById("accountnumberofaccpostedit")?.value?.trim() ||
+    const slAlias = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim() ||
                             EditCollChequemasAccIDforaccpostingVD;
                         console.log("value", slAlias)
                         if (!slAlias) {
