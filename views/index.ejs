@@ -4493,8 +4493,8 @@
                 </div>
 
                 <!--Document Printing Journal Voucher-->
-                <div class="movableDiv" id="movableDiv31">
-                    <button id="closeButton31">&times;</button>
+                <div class="movableDiv" id="DocumentPrintingJournalVoucher">
+                    <button id="docPriJourVoucherCloseButton">&times;</button>
                     <div class="dp-container">
                         <form action="" id="myForm31">
                             <fieldset class="dp-fieldset">
@@ -4545,7 +4545,7 @@
 
                                 <div class="dp-button-row">
                                     <button type="submit" class="dp-button">Ok</button>
-                                    <button type="button" class="dp-button" id="cancelButton31">Cancel</button>
+                                    <button type="button" class="dp-button" id="docPriJourVoucherCancelButton">Cancel</button>
                                 </div>
                             </fieldset>
                         </form>
@@ -4574,28 +4574,55 @@
 
                 <script>
                     let currentVoucherType = null;
+                    
 
                     function loadDocumentPrintingForm(voucherType) {
-                        event.preventDefault();
                         currentVoucherType = voucherType;
-                        const movableDiv31 = document.getElementById('movableDiv31');
-                        if (movableDiv31) {
-                            movableDiv31.style.display = 'block';
+                        const DocumentPrintingJournalVoucher = document.getElementById('DocumentPrintingJournalVoucher');
+                        if (DocumentPrintingJournalVoucher) {
+                            DocumentPrintingJournalVoucher.style.display = 'block';
                         }
                     }
 
                     document.addEventListener('DOMContentLoaded', () => {
-                        const startInput = document.querySelector('#movableDiv31 form input[name="DPStartFrom"]');
-                        const endInput = document.querySelector('#movableDiv31 form input[name="DPEndTo"]');
+                        const startInput = document.querySelector('#DocumentPrintingJournalVoucher form input[name="DPStartFrom"]');
+                        const endInput = document.querySelector('#DocumentPrintingJournalVoucher form input[name="DPEndTo"]');
                         const resultsBox = document.getElementById('documentPrintingSearchResults');
                         const resultsScroll = document.getElementById('documentPrintingSearchResultsScroll');
                         const resultsList = document.getElementById('documentPrintingSearchResultsList');
                         const scrollUpButton = document.getElementById('documentPrintingScrollUp');
                         const scrollDownButton = document.getElementById('documentPrintingScrollDown');
+                        const docPriJourVoucherCloseButton = document.getElementById("docPriJourVoucherCloseButton");
+                        const docPriJourVoucherCancelButton = document.getElementById("docPriJourVoucherCancelButton");
                         let activeInput = null;
 
                         if (!startInput || !endInput || !resultsBox || !resultsScroll || !resultsList || !scrollUpButton || !scrollDownButton) {
                             return;
+                        }
+
+                        const hideAndResetDocumentPrintingForm = () => {
+                            const DocumentPrintingJournalVoucher = document.getElementById('DocumentPrintingJournalVoucher');
+                            if (DocumentPrintingJournalVoucher) {
+                                DocumentPrintingJournalVoucher.style.display = 'none';
+                            }
+                            if (typeof resetFormFields === 'function') {
+                                resetFormFields('DocumentPrintingJournalVoucher');
+                            }
+                            if (resultsBox) {
+                                resultsBox.style.display = 'none';
+                            }
+                            if (resultsList) {
+                                resultsList.innerHTML = '';
+                            }
+                            currentVoucherType = null;
+                            activeInput = null;
+                        };
+
+                        if (docPriJourVoucherCloseButton) {
+                            docPriJourVoucherCloseButton.addEventListener('click', hideAndResetDocumentPrintingForm);
+                        }
+                        if (docPriJourVoucherCancelButton) {
+                            docPriJourVoucherCancelButton.addEventListener('click', hideAndResetDocumentPrintingForm);
                         }
 
                         const fetchJournalVoucherList = async () => {

@@ -289,7 +289,7 @@ makeMovable('movableDiv27', 'closeButton27', 'cancelButton27', 'toggleButton27')
 makeMovable('movableDiv28', 'closeButton28', 'cancelButton28', 'toggleButton28');
 makeMovable('movableDiv29', 'closeButton29', 'cancelButton29', 'toggleButton29');
 makeMovable('movableDiv30', 'closeButton30', 'cancelButton30', 'toggleButton30');
-makeMovable('movableDiv31', 'closeButton31', 'cancelButton31', 'toggleButton31');
+
 makeMovable('movableDiv32', 'closeButton32', 'cancelButton32', 'toggleButton32');
 makeMovable('movableDiv33', 'closeButton33', 'cancelButton33', 'toggleButton33');
 makeMovable('movableDiv34', 'closeButton34', 'cancelButton34', 'toggleButton34');
@@ -393,14 +393,7 @@ makeMovable('movableDiv135', 'closeButton135', 'cancelButton135', 'toggleButton1
 makeMovable('movableDiv136', 'closeButton136', 'cancelButton136', 'toggleButton136');
 makeMovable('movableDiv137', 'closeButton137', 'cancelButton137', 'toggleButton137');
 makeMovable('movableDiv138', 'closeButton138', 'cancelButton138', 'toggleButton138');
-makeMovable('movableDiv139', 'closeButton139', 'cancelButton139', 'toggleButton139');
-makeMovable('movableDiv140', 'closeButton140', 'cancelButton140', 'toggleButton140');
-makeMovable('movableDiv141', 'closeButton141', 'cancelButton141', 'toggleButton141');
-makeMovable('movableDiv142', 'closeButton142', 'cancelButton142', 'toggleButton142');
-makeMovable('movableDiv143', 'closeButton143', 'cancelButton143', 'toggleButton143');
-makeMovable('movableDiv144', 'closeButton144', 'cancelButton144', 'toggleButton144');
-makeMovable('movableDiv145', 'closeButton145', 'cancelButton145', 'toggleButton145');
-makeMovable('movableDiv146', 'closeButton146', 'cancelButton146', 'toggleButton146');
+
 makeMovable('movableDiv147', 'closeButton147', 'cancelButton147', 'toggleButton147');
 makeMovable('movableDiv148', 'closeButton148', 'cancelButton148', 'toggleButton148');
 makeMovable('movableDiv149', 'closeButton149', 'cancelButton149', 'toggleButton149');
