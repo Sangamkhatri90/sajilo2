@@ -259,6 +259,53 @@ function bindAdditionalToggleButtonNrm(movableDivId, toggleButtonId) {
 
     });
 }
+function bindAdditionalToggleButtonNrmBill(movableDivId, toggleButtonId) {
+    const draggable = document.getElementById(movableDivId);
+    const toggleButton = document.getElementById(toggleButtonId);
+
+    if (!draggable || !toggleButton) {
+        return;
+    }
+
+    toggleButton.addEventListener('click', function () {
+       
+        const currentDisplay = window.getComputedStyle(draggable).display;
+        draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
+        if (currentDisplay === 'none') {
+            highestZIndex++;
+            draggable.style.zIndex = highestZIndex;
+        }
+
+            
+                            const ccacceditGLName = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim();
+                            document.getElementById("cc-apBillsLedger").value = ccacceditGLName || '';
+                             const EditCollChequemasAccIDforaccposting = document.getElementById("Maintransaccountnumberofaccpostedit").value;
+console.log("value", EditCollChequemasAccIDforaccposting)
+                            fetch('/fetchCollectionChequemasaccpostForEdit', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ EditCollChequemasAccIDforaccposting })
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+
+                                    if (data.success) {
+                                        document.getElementById('ccapbillsMemberAlias').value = (data.MemberAlias || '');
+                                        document.getElementById('ccapbillsMemberName').value = (data.MemberName || '');
+
+                                    }
+
+                                    else {
+                                        showCustomAlert(data.message || 'Member not found');
+                                    }
+
+                                })
+               
+
+    });
+}
 
 // Initialize movable divs (example initialization)
 makeMovable('movableDiv1', 'closeButton1', 'cancelButton1', 'toggleButton1');
@@ -443,7 +490,7 @@ bindAdditionalToggleButton('movableDiv184', 'MaintranstoggleButton184');
 makeMovable('movableDiv185', 'closeButton185', 'cancelButton185', 'toggleButton185');
 makeMovable('movableDiv186', 'closeButton186', 'cancelButton186', 'toggleButton186');
 makeMovable('movableDiv187', 'closeButton187', 'cancelButton187', 'toggleButton187');
-bindAdditionalToggleButtonNrm('movableDiv187', 'MaintranstoggleButton187');
+bindAdditionalToggleButtonNrmBill('movableDiv187', 'MaintranstoggleButton187');
 makeMovable('movableDiv188', 'closeButton188', 'cancelButton188', 'toggleButton188');
 bindAdditionalToggleButtonNrm('movableDiv188', 'MaintranstoggleButton188');
 makeMovable('movableDiv189', 'closeButton189', 'cancelButton189', 'toggleButton189');

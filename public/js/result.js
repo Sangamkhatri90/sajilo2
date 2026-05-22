@@ -36,7 +36,7 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
                 let offsetX, offsetY;
 
                 div.addEventListener('mousedown', (e) => {
-                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') {
                         return; // Allow interaction with input fields and buttons
                     }
                     e.preventDefault();
