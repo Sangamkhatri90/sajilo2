@@ -191,7 +191,48 @@ function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
 
                       
                             });
+    const slAlias = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim() ||
+                            EditCollChequemasAccIDforaccpostingVD;
+                        console.log("value", slAlias)
+                        if (!slAlias) {
+                            alert("Missing End date, or SubLedger Alias.");
+                            return;
+                        }
 
+
+
+                        try {
+                            const res = await fetch("/api/getRecentTransactionsLP9", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ slAlias })
+                            });
+
+                            const data = await res.json();
+                            const tbody = document.querySelector("#ccactranstablefd tbody");
+                            tbody.innerHTML = ""; // clear old rows
+
+                            if (data.success && data.transactions.length > 0) {
+                                data.transactions.forEach((txn, index) => {
+                                    const row = document.createElement("tr");
+                                    row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${txn.JV_Date || ''}</td>
+            <td>${txn.VoucherNo || ''} </td>
+            <td>${txn.MenuName || ''} </td>
+            <td>${txn.DrAmount}</td>
+            <td>${txn.CrAmount}</td>
+            <td>${txn.Balance.toFixed(2)} ${txn.BalanceType}</td>
+          `;
+                                    tbody.appendChild(row);
+                                });
+                            } else {
+                                tbody.innerHTML = `<tr><td colspan="3">No transactions found</td></tr>`;
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert("Error loading transactions");
+                        }
 
     });
 }
