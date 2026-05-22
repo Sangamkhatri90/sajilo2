@@ -53687,59 +53687,7 @@ async function loadEarningsData() {
                             EditCollChequemasAccNameforaccpostingVD
                         });
 
-
-
-
-
-
-                        /*
-                         // Handle date formatting without timezone shift
-                         let formattedDate = '';
-                         if (EditCollChequemasEffectiveDate) {
-                             // If the date is already in 'YYYY-MM-DD' format, use it directly
-                             if (EditCollChequemasEffectiveDate.includes('-')) {
-                                 formattedDate = EditCollChequemasEffectiveDate;
-                             } else {
-                                 // If it's in 'MM/DD/YYYY' format, convert it manually
-                                 const dateParts = EditCollChequemasEffectiveDate.split('/'); // Split by the slashes
-                                 formattedDate = `${dateParts[2]}-${String(dateParts[0]).padStart(2, '0')}-${String(dateParts[1]).padStart(2, '0')}`; // Convert to 'YYYY-MM-DD'
-                             }
-                         }
-         
-                         console.log('Formatted Date:', formattedDate); // Log the formatted date to ensure it's correct
-         
-                         // Handle date formatting without timezone shift
-                         let ChequeDate = '';
-                         if (EditCollChequemasChequqDate) {
-                             // If the date is already in 'YYYY-MM-DD' format, use it directly
-                             if (EditCollChequemasChequqDate.includes('-')) {
-                                 ChequeDate = EditCollChequemasChequqDate;
-                             } else {
-                                 // If it's in 'MM/DD/YYYY' format, convert it manually
-                                 const dateParts = EditCollChequemasChequqDate.split('/'); // Split by the slashes
-                                 ChequeDate = `${dateParts[2]}-${String(dateParts[0]).padStart(2, '0')}-${String(dateParts[1]).padStart(2, '0')}`; // Convert to 'YYYY-MM-DD'
-                             }
-                         }
-         
-                         console.log('Cheque Date:', ChequeDate); // Log the Cheque date to ensure it's correct
-         
-                         // Handle date formatting without timezone shift
-                         let CollectedDate = '';
-                         if (EditCollChequemasCollectedDate) {
-                             // If the date is already in 'YYYY-MM-DD' format, use it directly
-                             if (EditCollChequemasCollectedDate.includes('-')) {
-                                 CollectedDate = EditCollChequemasCollectedDate;
-                             } else {
-                                 // If it's in 'MM/DD/YYYY' format, convert it manually
-                                 const dateParts = EditCollChequemasCollectedDate.split('/'); // Split by the slashes
-                                 CollectedDate = `${dateParts[2]}-${String(dateParts[0]).padStart(2, '0')}-${String(dateParts[1]).padStart(2, '0')}`; // Convert to 'YYYY-MM-DD'
-                             }
-                         }
-         
-                         console.log('Collected Date:', CollectedDate); // Log the collected date to ensure it's correct
-         */
-
-                        // Populate the form fields with values (including default empty strings for empty cells)
+            // Populate the form fields with values (including default empty strings for empty cells)
 
                         document.getElementById('accpost-viewdetials-account-number').value = EditCollChequemasAccIDforaccpostingVD;
 
