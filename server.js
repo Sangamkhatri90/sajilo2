@@ -33402,10 +33402,12 @@ app.post("/fetchCollectionChequemasaccpostviewDetailsForEdit", (req, res) => {
   // Now join MemberPhoto as well
   const query = `
       SELECT s.*, m.MemberName, m.MemberAlias, m.MemberID, m.DateOfBirth,
-             p.Photo, p.Sign1, p.Sign2, p.Sign3, p.Sign4
+             p.Photo, p.Sign1, p.Sign2, p.Sign3, p.Sign4,
+             g.GLName
       FROM dbo.tbSubLedgerMaster s
       LEFT JOIN dbo.tbMemberMaster m ON s.MemberID = m.MemberID
       LEFT JOIN dbo.tbMemberPhoto p ON m.MemberID = p.MemberID
+      LEFT JOIN dbo.tbLedgerMaster g ON s.GLID = g.GLID
       WHERE s.SlAlias = ?;
   `;
 
@@ -33426,6 +33428,8 @@ app.post("/fetchCollectionChequemasaccpostviewDetailsForEdit", (req, res) => {
       success: true,
       AccountOpenDate: row.AccountOpenDate ? row.AccountOpenDate.toISOString().split('T')[0] : "",
       SLName: row.SLName || "",
+      SLAlias: row.SlAlias || "",
+      GLName: row.GLName || "",
       Address1: row.Address1 || "",
       Address2: row.Address2 || "",
       Phone1: row.Phone1 || "",

@@ -146,9 +146,10 @@ function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
                             .then(data => {
 
                                 if (data.success) {
-                                    document.getElementById('accpost-viewdetials-account-number').value = data.AccountNumber || '';
+                                    document.getElementById('accpost-viewdetials-account-number').value = data.SLAlias || '';
                                     document.getElementById('accopendate-viewaccdeteditaccposting').value = data.AccountOpenDate || '';
                                     document.getElementById('acc-name-viewaccdeteditaccposting').value = data.SLName || '';
+                                    document.getElementById('ccacceditvd-accountType').value = data.GLName || '';
                                     document.getElementById('acc-address-viewaccdeteditaccposting').value = data.Address1 || '';
                                     document.getElementById('acc-address2-viewaccdeteditaccposting').value = data.Address2 || '';
                                     document.getElementById('acc-phone-viewaccdeteditaccposting').value = data.Phone1 || '';
