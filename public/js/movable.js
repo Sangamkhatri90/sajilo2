@@ -37,6 +37,10 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
     const cancelButton = document.getElementById(cancelButtonId);
     const toggleButton = document.getElementById(toggleButtonId);
 
+    if (!draggable || !closeButton || !cancelButton || !toggleButton) {
+        return;
+    }
+
     let isDragging = false;
 
     // Function to bring the div to the front by updating the z-index
@@ -68,7 +72,7 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
 
     // Add a keyboard shortcut for toggling the div using Ctrl + alphabet
     document.addEventListener('keydown', function (e) {
-        if (e.ctrlKey && e.key.toLowerCase() === toggleKey.toLowerCase()) {
+        if (toggleKey && e.ctrlKey && e.key.toLowerCase() === toggleKey.toLowerCase()) {
             const currentDisplay = window.getComputedStyle(draggable).display;
             draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
             if (currentDisplay === 'none') {
@@ -123,7 +127,7 @@ function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
         return;
     }
 
-    toggleButton.addEventListener('click', function () {
+    toggleButton.addEventListener('click', async function () {
         const EditCollChequemasAccIDforaccpostingVD = document.getElementById('Maintransaccountnumberofaccpostedit').value;
        
         const currentDisplay = window.getComputedStyle(draggable).display;
@@ -191,8 +195,7 @@ function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
 
                       
                             });
-    const slAlias = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim() ||
-                            EditCollChequemasAccIDforaccpostingVD;
+    const slAlias = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim();
                         console.log("value", slAlias)
                         if (!slAlias) {
                             alert("Missing End date, or SubLedger Alias.");
