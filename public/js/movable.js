@@ -146,6 +146,7 @@ function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
                             .then(data => {
 
                                 if (data.success) {
+                                    document.getElementById('accpost-viewdetials-account-number').value = data.AccountNumber || '';
                                     document.getElementById('accopendate-viewaccdeteditaccposting').value = data.AccountOpenDate || '';
                                     document.getElementById('acc-name-viewaccdeteditaccposting').value = data.SLName || '';
                                     document.getElementById('acc-address-viewaccdeteditaccposting').value = data.Address1 || '';
@@ -190,6 +191,26 @@ function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
                       
                             });
 
+
+    });
+}
+
+function bindAdditionalToggleButtonNrm(movableDivId, toggleButtonId) {
+    const draggable = document.getElementById(movableDivId);
+    const toggleButton = document.getElementById(toggleButtonId);
+
+    if (!draggable || !toggleButton) {
+        return;
+    }
+
+    toggleButton.addEventListener('click', function () {
+       
+        const currentDisplay = window.getComputedStyle(draggable).display;
+        draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
+        if (currentDisplay === 'none') {
+            highestZIndex++;
+            draggable.style.zIndex = highestZIndex;
+        }
 
     });
 }
@@ -377,9 +398,9 @@ bindAdditionalToggleButton('movableDiv184', 'MaintranstoggleButton184');
 makeMovable('movableDiv185', 'closeButton185', 'cancelButton185', 'toggleButton185');
 makeMovable('movableDiv186', 'closeButton186', 'cancelButton186', 'toggleButton186');
 makeMovable('movableDiv187', 'closeButton187', 'cancelButton187', 'toggleButton187');
-bindAdditionalToggleButton('movableDiv187', 'MaintranstoggleButton187');
+bindAdditionalToggleButtonNrm('movableDiv187', 'MaintranstoggleButton187');
 makeMovable('movableDiv188', 'closeButton188', 'cancelButton188', 'toggleButton188');
-bindAdditionalToggleButton('movableDiv188', 'MaintranstoggleButton188');
+bindAdditionalToggleButtonNrm('movableDiv188', 'MaintranstoggleButton188');
 makeMovable('movableDiv189', 'closeButton189', 'cancelButton189', 'toggleButton189');
 makeMovable('movableDiv190', 'closeButton190', 'cancelButton190', 'toggleButton190');
 
