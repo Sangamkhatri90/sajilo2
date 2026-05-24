@@ -112,7 +112,13 @@
         // List of all Ledger Master fields
         const lgrMasFields = [
             { inputId: 'PostingLedgerForNew', listId: 'PostingLedgerListNewDIV' },
-           
+            { inputId: 'PostingLedgerForEdit', listId: 'PostingLedgerListEditDIV' },
+            { inputId: 'PostingLedgerForCopy', listId: 'PostingLedgerListCopyDIV' },
+            { inputId: 'PostingLedgerForSubGrpEdit', listId: 'PostingLedgerListSubGrpEditDIV' },
+            { inputId: 'PostingLedgerForSubLgrCopy', listId: 'PostingLedgerListSubLgrCopyDIV' },
+            { inputId: 'AccTypeIntSetEdit', listId: 'PostingLedgerListIntSetEdit' },
+            { inputId: 'AccTypeIntSetCopy', listId: 'PostingLedgerListIntSetCopy' },
+            { inputId: 'AccTypeIntSetSubGrpEdit', listId: 'PostingLedgerListIntSetSubGrpEdit' },
         ];
 
         // Attach events for all fields (single fetch for all)
