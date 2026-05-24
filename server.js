@@ -189,8 +189,6 @@ app.get("/fetch-fiscal-data", (req, res) => {
             const rawStartDate = formatDate(fiscalResult[0].StartDate);
             const rawEndDate = formatDate(fiscalResult[0].EndDate);
 
-            console.log(rawStartDate, rawEndDate)
-
             // If DateType is LD, convert using tbLocalDate in master DB
             if (dateType === "LD") {
               const localDateQuery = `
@@ -213,14 +211,14 @@ app.get("/fetch-fiscal-data", (req, res) => {
                 }
 
                 pushOrgData(startDateLocal, endDateLocal);
-                console.log('Raw', startDateLocal, endDateLocal)
+                
               });
             } else {
               // AD: use raw dates
               pushOrgData(rawStartDate, rawEndDate);
             }
           } else {
-            console.warn(`No fiscal year found for DB: ${orgDBName}`);
+            
             pushOrgData(startDate, endDate);
           }
 
@@ -243,7 +241,7 @@ app.get("/fetch-fiscal-data", (req, res) => {
             if (processed === orgResults.length) {
 
               res.json(allData);
-              console.log(allData)
+              
             }
           }
         });
@@ -746,8 +744,6 @@ WHERE
                             const voucherPrefix = extractVoucherPrefix(
                               item.VoucherNo
                             );
-                            console.log(voucherPrefix);
-
                             map[item.SLIDPR] = {
                               JV_Miti: item.JV_Miti,
                               VoucherNo: item.VoucherNo,
@@ -942,8 +938,6 @@ app.post("/account/Transaction", (req, res) => {
           if (!voucherPrefix) {
             return res.status(400).send("Invalid voucher prefix.");
           }
-
-          console.log("Voucher Prefix:", voucherPrefix);
 
           // Fetch VoucherID for the provided voucherid prefix
           const getVoucherIDQuery = `SELECT VoucherID FROM tbAutoNumberSetting WHERE Prefix = ?`;
@@ -4497,11 +4491,6 @@ app.get("/fiscal-master-years", (req, res) => {
 
           const startMiti = result[0]?.StartMiti || "N/A";
           const endMiti = result[0]?.EndMiti || "N/A";
-
-          console.log(
-            `M_Miti retrieved for fiscal year ${index + 1
-            }: StartMiti=${startMiti}, EndMiti=${endMiti}`
-          );
           resolve(`${startMiti} - ${endMiti}`);
         });
       });
@@ -4509,9 +4498,6 @@ app.get("/fiscal-master-years", (req, res) => {
 
     Promise.all(mitiPromises)
       .then((results) => {
-        console.log(
-          `All fiscal years processed successfully: ${JSON.stringify(results)}`
-        );
         res.json(results);
       })
       .catch((err) => {
@@ -5073,7 +5059,7 @@ app.post("/copy-master", async (req, res) => {
 });
 
 
-//Fetch  Ledger Master 
+//Fetch all Ledger Master 
 app.get("/fetchLgrMaster", (req, res) => {
   // Query to get GLName and GLAlias from dbo.tbLedgerMaster
   const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
@@ -5098,9 +5084,9 @@ app.get("/fetchLgrMaster", (req, res) => {
   });
 });
 
-app.get("/fetchPostingLedger1", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
+// Fetch Ledger Master where category is 'AT' 
+app.get("/fetchLgrMasterAT", (req, res) => {
+  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'AT'`;
 
   const conn = req.session.conn;
 
@@ -5114,16 +5100,16 @@ app.get("/fetchPostingLedger1", (req, res) => {
 
     // If rows are returned, send them back as JSON
     if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
+      res.json({ lgrmasterat: rows }); // Send both GLName and GLAlias values
     } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
+      res.json({ lgrmasterat: [] }); // Return an empty array if no records are found
     }
   });
 });
 
-app.get("/fetchPostingLedger2", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
+// Fetch Ledger Master where category is 'O' 
+app.get("/fetchLgrMasterO", (req, res) => {
+  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'O'`;
 
   const conn = req.session.conn;
 
@@ -5137,34 +5123,41 @@ app.get("/fetchPostingLedger2", (req, res) => {
 
     // If rows are returned, send them back as JSON
     if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
+      res.json({ lgrmastero: rows }); // Send both GLName and GLAlias values
     } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
+      res.json({ lgrmastero: [] }); // Return an empty array if no records are found
     }
   });
 });
-app.get("/fetchPostingLedgerForBooksAS", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster Where Category ='AT'`;
 
-  const conn = req.session.conn;
+// Fetch Ledger Master where SavingorLoan is 'saving'
+app.get("/fetchLgrMasterSaving", (req, res) => {
+  
+  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='saving'`;
 
+  const conn = req.session.conn; // Get the database connection from the session
+
+  if (!conn) {
+    return res.status(500).send({ message: "Database connection is missing." });
+  }
+
+  // Execute the SQL query
   sql.query(conn, query, (err, rows) => {
     if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" });
+      console.error("SQL error:", err); // Log the error
+      return res.status(500).send({ message: "Error fetching Posting Ledgers" });
     }
 
-    // If rows are returned, send them back as JSON
+    // Check if there are rows returned
     if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
+      return res.json({ lgrmastersaving: rows });
     } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
+      // Return empty array if no records found
+      return res.json({ lgrmastersaving: [] });
     }
   });
 });
+
 app.get("/fetchPostingLedgerForDataEntryallNew", (req, res) => {
   const query = `
     SELECT GLName, GLAlias 
@@ -5188,232 +5181,8 @@ app.get("/fetchPostingLedgerForDataEntryallNew", (req, res) => {
   });
 });
 
-app.get("/fetchPostingLedger3", (req, res) => {
-  // Updated query to include Category = 'AT' condition
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'AT'`;
-
-  const conn = req.session.conn;
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-//Fetch posting Ledger for Account type interest setting
-app.get("/fetchPostingLedger4", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-
-  const conn = req.session.conn; // Get the database connection from the session
-
-  // Execute the query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" }); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-//Fetch posting Ledger for Account type interest setting/search
-app.get("/fetchPostingLedger5", (req, res) => {
-  // Updated query to include Category = 'AT' condition
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'AT'`;
-
-  const conn = req.session.conn; // Get the database connection from the session
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" }); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-//Fetch posting Ledger for Account type Penalty setting/search
-app.get("/fetchPostingLedger6", (req, res) => {
-  // Updated query to include Category = 'AT' condition
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'AT'`;
-
-  const conn = req.session.conn; // Get the database connection from the session
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" }); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-app.get("/fetchPostingLedger7", (req, res) => {
-  // Updated query to include Category = 'O' condition
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'O'`;
-
-  const conn = req.session.conn; // Get the database connection from the session
-
-  if (!conn) {
-    return res.status(500).send({ message: "Database connection is missing." });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // Check if there are rows returned
-    if (rows && rows.length > 0) {
-      return res.json({ postingLedgers: rows });
-    } else {
-      // Return empty array if no records found
-      return res.json({ postingLedgers: [] });
-    }
-  });
-});
-app.get("/fetchPostingLedger8", (req, res) => {
-  // Updated query to include Category = 'O' condition (similar to /fetchPostingLedger7)
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'O'`;
-
-  const conn = req.session.conn; // Get the database connection from the session
-
-  if (!conn) {
-    return res.status(500).send({ message: "Database connection is missing." });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // Check if there are rows returned
-    if (rows && rows.length > 0) {
-      return res.json({ postingLedgers: rows });
-    } else {
-      // Return empty array if no records found
-      return res.json({ postingLedgers: [] });
-    }
-  });
-});
-app.get("/fetchPostingLedger9", (req, res) => {
-  // Updated query to include Category = 'AT' condition
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='saving'`;
-
-  const conn = req.session.conn; // Get the database connection from the session
-
-  if (!conn) {
-    return res.status(500).send({ message: "Database connection is missing." });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // Check if there are rows returned
-    if (rows && rows.length > 0) {
-      return res.json({ postingLedgers: rows });
-    } else {
-      // Return empty array if no records found
-      return res.json({ postingLedgers: [] });
-    }
-  });
-});
-app.get("/fetchPostingLedger10", (req, res) => {
-  // Updated query to include Category = 'O' condition
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'O'`;
-
-  const conn = req.session.conn; // Get the database connection from the session
-
-  if (!conn) {
-    return res.status(500).send({ message: "Database connection is missing." });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // Check if there are rows returned
-    if (rows && rows.length > 0) {
-      return res.json({ postingLedgers: rows });
-    } else {
-      // Return empty array if no records found
-      return res.json({ postingLedgers: [] });
-    }
-  });
-});
-app.get("/fetchPostingLedger11", (req, res) => {
-  // Query to select GLName and GLAlias where SavingorLoan = 'saving'
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='saving'`;
-
-  const conn = req.session.conn; // Get the database connection from the session
-
-  if (!conn) {
-    return res.status(500).send({ message: "Database connection is missing." });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // Check if there are rows returned
-    if (rows && rows.length > 0) {
-      return res.json({ postingLedgers: rows });
-    } else {
-      // Return empty array if no records found
-      return res.json({ postingLedgers: [] });
-    }
-  });
-});
 app.get("/fetchPostingLedger12", (req, res) => {
-  // Updated query to include Category = 'AT' condition
+ 
   const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='Loan'`;
 
   const conn = req.session.conn; // Get the database connection from the session
@@ -5439,7 +5208,7 @@ app.get("/fetchPostingLedger12", (req, res) => {
   });
 });
 app.get("/fetchPostingLedger13", (req, res) => {
-  // Updated query to include Category = 'AT' condition
+
   const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE LgrGrpID=20`;
 
   const conn = req.session.conn; // Get the database connection from the session
@@ -5465,95 +5234,6 @@ app.get("/fetchPostingLedger13", (req, res) => {
   });
 });
 
-// Fetch  Ledger Group in Ledger for DE_JVM_SEARCH
-app.get("/fetchPostingLedgerForDEJVMsearch", async (req, res) => {
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-  const conn = req.session.conn;
-
-  // Check if the database connection exists
-  if (!conn) {
-    return res
-      .status(400)
-      .send({ message: "Database connection not available" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching  Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-
-
-// Fetch  Ledger Group in Ledger for DE_TVM_SEARCH
-app.get("/fetchPostingLedgerForDETVMsearch", async (req, res) => {
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-  const conn = req.session.conn;
-
-  // Check if the database connection exists
-  if (!conn) {
-    return res
-      .status(400)
-      .send({ message: "Database connection not available" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching  Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-// Fetch  Ledger Group in Ledger for DE_RPVM_SEARCH
-app.get("/fetchPostingLedgerForDERPVMsearch", async (req, res) => {
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-  const conn = req.session.conn;
-
-  // Check if the database connection exists
-  if (!conn) {
-    return res
-      .status(400)
-      .send({ message: "Database connection not available" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching  Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
 //To add a new ledger group
 app.post("/save-ledger", (req, res) => {
   const conn = req.session.conn;
@@ -6881,7 +6561,7 @@ app.get("/getVoucherConfig1", async (req, res) => {
 
 app.get("/getLastVoucherNo", async (req, res) => {
   const prefix = req.query.prefix;
-  console.log("Prefix", prefix);
+  
   const conn = req.session.conn; // Connection string for the primary database
   if (!prefix) return res.status(400).send("Prefix is required");
 
@@ -12400,26 +12080,7 @@ app.get("/fetchRouteForRouteWiseacc", (req, res) => {
     }
   });
 });
-// Route to fetch GLNames and GlAliases for RouteWiseacc
-app.get("/fetchGLNamesForRouteWiseacc", (req, res) => {
-  // Fetch GLName and GlAlias for Category 'AT'
-  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'AT'`; // Change to fetch Category 'AT'
-  const conn = req.session.conn;
 
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).send("Error fetching GLNames and GlAliases");
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ glNames: rows }); // Send both GLName and GlAlias values
-    } else {
-      res.json({ message: "No GLNames found for Category AT" });
-    }
-  });
-});
 
 // Search Route
 app.post("/search-mobile-alert", (req, res) => {
@@ -12497,46 +12158,6 @@ app.post("/search-mobile-alert", (req, res) => {
   });
 });
 
-// Route to fetch GLNames and GlAliases for MobileAlert
-app.get("/fetchGLNamesForMobileAlert", (req, res) => {
-  // Fetch GLName and GlAlias for Category 'AT'
-  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'AT'`; // Fetch for Category 'AT'
-  const conn = req.session.conn;
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).send("Error fetching GLNames and GlAliases");
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ glNames: rows }); // Send both GLName and GlAlias values
-    } else {
-      res.json({ message: "No GLNames found for Category AT" });
-    }
-  });
-});
-// Route to fetch GLNames and GlAliases for AccLockUnLock
-app.get("/fetchGLNamesForAccLockUnLock", (req, res) => {
-  // Fetch GLName and GlAlias for Category 'AT'
-  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'AT'`; // Fetch for Category 'AT'
-  const conn = req.session.conn;
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).send("Error fetching GLNames and GlAliases");
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ glNames: rows }); // Send both GLName and GlAlias values
-    } else {
-      res.json({ message: "No GLNames found for Category AT" });
-    }
-  });
-});
 
 app.post("/search-account-locked-unlocked", (req, res) => {
   const { ALAcType, ALAcStatus, AlAcNo, page = 1 } = req.body;
@@ -19623,48 +19244,12 @@ app.post("/fetchacctypemasDetailsForEdit", (req, res) => {
 
     });
 
-    console.log("Remarks:", row.Remarks);
-    console.log("ANPrefix:", row.ANPrefix);
-    console.log("ANSuffix:", row.ANSuffix);
-    console.log("ANStartFrom:", row.ANStartFrom);
-    console.log("ANEndTo:", row.ANEndTo);
-    console.log("ANBodyLength:", row.ANBodyLength);
-    console.log("ANFillChar:", row.ANFillChar);
-    console.log("AltAlias:", row.AltAlias);
-    console.log("Duration:", row.Duration);
-    console.log("ValidFrom:", row.ValidFrom);
-    console.log("ValidTo:", row.ValidTo);
-    console.log("MaxLoanAmount:", row.MaxLoanAmount);
-    console.log("EMIScheme:", row.EMIScheme);
-    console.log("OverdraftAmount:", row.OverDraftAmount);
-    console.log("MinBalance:", row.MinBalance);
-    console.log("PreNoticeAmount:", row.PreNoticeAmount);
-    console.log("PreNoticeDays:", row.PreNoticeDays);
-    console.log("SMSCharge:", row.SMSCharge);
-    console.log("NatureofAccount:", row.NatureofAccount);
-    console.log("ConvertAge:", row.ConvertAge);
-    console.log("ConvertAccDuration:", row.ConvertAcDuration);
-    console.log("InterestCapitalized:", row.InterestCapitalized);
-    console.log("ChequeIssue:", row.ChequeIssue);
-    console.log("UseOpenTimeInterateRateAlways:", row.UseOpenTimeInterateRateAlways);
-    console.log("Collateralable:", row.Collateralable);
-    console.log("OverDraft:", row.OverDraft);
-    console.log("Penalty:", row.Penalty);
-    console.log("MinBalanceDrawable:", row.MinBalanceDrawable);
-    console.log("PreNoticeonWithDraw:", row.PreNoticeonWithDraw);
-    console.log("PenaltyRebateBasedOnPaymentDay:", row.PenaltyRebateBasedOnPaymentDay);
-    console.log("Revolving:", row.Revolving);
-    console.log("RebatePenaltyBasedonInterestPostDate:", row.RebatePenaltyBasedonInterestPostDate);
-    console.log("PenaltyBasedOnTotalDuePrincipal:", row.PenaltyBasedOnTotalDuePrincipal);
-    console.log("PenaltyonInstallment:", row.PenaltyonInstallment);
-    console.log("PenaltyonInterest:", row.PenaltyonInterest);
-
   });
 });
 app.post("/fetchacctypemasMoreDetailsForEdit", (req, res) => {
   const { EditAccTypeMasSelectedName } = req.body;
   const conn = req.session.conn;
-  console.log("Received from frontend:", EditAccTypeMasSelectedName);
+  
 
   // Step 1: Find the GLID corresponding to the AccountName
   const queryGLID = `
@@ -21577,7 +21162,6 @@ app.get("/get-org-master", (req, res) => {
       console.error("SQL Error:", err);
       return res.status(500).send("Database error");
     }
-    console.log('yy', rows)
     res.json(rows);
   });
 });
@@ -22150,30 +21734,6 @@ app.get('/voucher-PostedNUnposted-option', (req, res) => {
     res.json(result);
   });
 });
-
-app.get("/fetchListInVoucherPosting", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-
-  const conn = req.session.conn;
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-
 
 
 app.post('/api/save-shortcut', (req, res) => {
@@ -31828,7 +31388,6 @@ app.get("/fetchPostingLedgerSubheadForNew", async (req, res) => {
 });
 
 app.get('/api/nextJournalVoucher', (req, res) => {
-  console.log("fetching..............");
   const conn = req.session.conn;
   const menuName = 'Journal Voucher';
 
@@ -31842,7 +31401,7 @@ app.get('/api/nextJournalVoucher', (req, res) => {
       return res.status(404).send({ message: "No UDVNo found for MenuName " + menuName });
     }
     const udvNo = udvRows[0].UDVNo;
-    console.log('udvNo:', udvNo);
+  
 
     const settingsQuery = `
       SELECT BodyLength, Prefix, Suffix, StartFrom, EndTo FROM tbAutoNumberSetting WHERE VoucherId = ?
@@ -31903,8 +31462,6 @@ app.get('/api/nextJournalVoucher', (req, res) => {
 });
 
 app.get('/api/nextReceiptVoucher', (req, res) => {
-  console.log("fetching..............");
-
   const conn = req.session.conn;
 
 
@@ -32234,7 +31791,6 @@ app.post("/fetchCollectionChequemasaccpostForEdit", (req, res) => {
   });
 });
 app.get('/api/nextJournalVoucherforaccountedit', (req, res) => {
-  console.log("fetching..............");
   const conn = req.session.conn;
   const menuName = 'Transaction';
 
@@ -33421,7 +32977,6 @@ app.get('/get-signatures/:username', (req, res) => {
   const username = decodeURIComponent(req.params.username);
 
   const subusername = 'Super';
-  console.log("Received username3456:", username);
   const query = `SELECT FullName, Designation FROM tbUserMaster WHERE UserName = ?`;
 
   sql.query(connectionString, query, [username], (err, result) => {
@@ -33429,11 +32984,8 @@ app.get('/get-signatures/:username', (req, res) => {
       console.error("Database error:", err);
       return res.status(500).json({ message: "Failed to fetch record" });
     }
-
-
-
     res.status(200).json(result[0]); // send the row
-    console.log('hher', result);
+    
   });
 });
 // 🕒 Helper for SQL datetime (Nepal Time: UTC+5:45)
@@ -33948,7 +33500,7 @@ app.get("/api/getUserData", (req, res) => {
     if (rows.length === 0) return res.status(404).json({ message: "No data found" });
 
     res.json(rows[0]); // send first row (object)
-    console.log(rows[0])
+    
   });
 });
 

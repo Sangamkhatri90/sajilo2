@@ -1,26 +1,26 @@
 
         // Shared cache for all Ledger Master fields
-        const LgrMasCache = [];
-        let LgrMasDataFetched = false;
+        const LgrMasCacheSave = [];
+        let LgrMasDataFetchedSave = false;
 
         // Store filtered results separately per input
-        const LgrMasFiltered = {};
+        const LgrMasFilteredSave = {};
 
         // Fetch Ledger Groups only once
-        function fetchLgrMas(fetchUrl, callback) {
-            if (LgrMasDataFetched) {
-                callback(LgrMasCache);
+        function fetchLgrMasSave(fetchUrl, callback) {
+            if (LgrMasDataFetchedSave) {
+                callback(LgrMasCacheSave);
                 return;
             }
             fetch(fetchUrl)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.lgrmaster && data.lgrmaster.length > 0) {
+                    if (data.lgrmastersaving && data.lgrmastersaving.length > 0) {
                         // Sort alphabetically by GLName before caching
-                        data.lgrmaster.sort((a, b) => a.GLName.localeCompare(b.GLName));
-                        LgrMasCache.push(...data.lgrmaster);
-                        LgrMasDataFetched = true;
-                        callback(LgrMasCache);
+                        data.lgrmastersaving.sort((a, b) => a.GLName.localeCompare(b.GLName));
+                        LgrMasCacheSave.push(...data.lgrmastersaving);
+                        LgrMasDataFetchedSave = true;
+                        callback(LgrMasCacheSave);
                     } else {
                         callback([]);
                     }
@@ -32,15 +32,15 @@
         }
 
         // Handle focus
-        function handleLgrMasFocus(inputId, listId, fetchUrl) {
+        function handleLgrMasFocusSave(inputId, listId, fetchUrl) {
             const listElement = document.getElementById(listId);
             listElement.innerHTML = '';
             listElement.style.display = 'none';
 
-            fetchLgrMas(fetchUrl, (data) => {
+            fetchLgrMasSave(fetchUrl, (data) => {
                 if (data.length > 0) {
-                    LgrMasFiltered[inputId] = [...data];
-                    displayLgrMasSuggestions(inputId, listId);
+                    LgrMasFilteredSave[inputId] = [...data];
+                    displayLgrMasSuggestionsSave(inputId, listId);
                 } else {
                     listElement.innerHTML = '<div>No Ledger Master found</div>';
                     listElement.style.display = 'block';
@@ -49,22 +49,22 @@
         }
 
         // Handle typing
-        function handleLgrMasInput(inputId, listId) {
+        function handleLgrMasInputSave(inputId, listId) {
             const inputVal = document.getElementById(inputId).value.toLowerCase();
 
             if (inputVal === '') {
-                LgrMasFiltered[inputId] = [...LgrMasCache];
+                LgrMasFilteredSave[inputId] = [...LgrMasCacheSave];
             } else {
-                LgrMasFiltered[inputId] = LgrMasCache.filter(item =>
+                LgrMasFilteredSave[inputId] = LgrMasCacheSave.filter(item =>
                     item.GLName.toLowerCase().includes(inputVal) ||
                     item.GLAlias.toLowerCase().includes(inputVal)
                 );
             }
-            displayLgrMasSuggestions(inputId, listId);
+            displayLgrMasSuggestionsSave(inputId, listId);
         }
 
         // Display dropdown suggestions
-        function displayLgrMasSuggestions(inputId, listId) {
+        function displayLgrMasSuggestionsSave(inputId, listId) {
             const listElement = document.getElementById(listId);
             listElement.innerHTML = '';
 
@@ -77,7 +77,7 @@
             };
             listElement.appendChild(closeButton);
 
-            const suggestions = LgrMasFiltered[inputId] || [];
+            const suggestions = LgrMasFilteredSave[inputId] || [];
             if (suggestions.length > 0) {
                 listElement.style.display = 'block';
                 suggestions.forEach(item => {
@@ -96,41 +96,30 @@
         }
 
         // Attach autocomplete to multiple fields easily
-        function attachLgrMasAutocomplete(inputId, listId, fetchUrl) {
+        function attachLgrMasSaveAutocomplete(inputId, listId, fetchUrl) {
             const inputEl = document.getElementById(inputId);
             if (!inputEl) return;
 
             inputEl.addEventListener('focus', function () {
-                handleLgrMasFocus(inputId, listId, fetchUrl);
+                handleLgrMasFocusSave(inputId, listId, fetchUrl);
             });
 
             inputEl.addEventListener('input', function () {
-                handleLgrMasInput(inputId, listId);
+                handleLgrMasInputSave(inputId, listId);
             });
         }
 
-        // List of all Ledger Master fields
-        const lgrMasFields = [
-            { inputId: 'PostingLedgerForNew', listId: 'PostingLedgerListNewDIV' },
-            { inputId: 'PostingLedgerForEdit', listId: 'PostingLedgerListEditDIV' },
-            { inputId: 'PostingLedgerForCopy', listId: 'PostingLedgerListCopyDIV' },
-            { inputId: 'PostingLedgerForSubGrpEdit', listId: 'PostingLedgerListSubGrpEditDIV' },
-            { inputId: 'PostingLedgerForSubLgrCopy', listId: 'PostingLedgerListSubLgrCopyDIV' },
-            { inputId: 'AccTypeIntSetEdit', listId: 'PostingLedgerListIntSetEdit' },
-            { inputId: 'AccTypeIntSetCopy', listId: 'PostingLedgerListIntSetCopy' },
-            { inputId: 'AccTypeIntSetSubGrpEdit', listId: 'PostingLedgerListIntSetSubGrpEdit' },
-            { inputId: 'PostingLedger1', listId: 'PostingLedgerList1' },
-            { inputId: 'PostingLedger2', listId: 'PostingLedgerList2' },
-            { inputId: 'PostingLedger4', listId: 'PostingLedgerList4' },
-            { inputId: 'DE-JVM-searchledger', listId: 'LedgerListForDEJVMsearchDIV' },
-            { inputId: 'DE-TVM-searchledger', listId: 'LedgerListForDETVMsearchDIV' },
-            { inputId: 'DE-RPVM-searchledger', listId: 'LedgerListForDERPVMsearchDIV' },
-            { inputId: 'VPNUPledgergrp', listId: 'voucherpostingsuggestionDIV' },
+        // List of all Ledger Master Saving fields
+        const lgrMasSaveFields = [
+            { inputId: 'PostingLedger9', listId: 'PostingLedgerList9' },
+            { inputId: 'PostingLedger11', listId: 'PostingLedgerList11' },
+           
+
         ];
 
         // Attach events for all fields (single fetch for all)
-        lgrMasFields.forEach(field => {
-            attachLgrMasAutocomplete(field.inputId, field.listId, '/fetchLgrMaster');
+        lgrMasSaveFields.forEach(field => {
+            attachLgrMasSaveAutocomplete(field.inputId, field.listId, '/fetchLgrMasterSaving');
         });
 
   
