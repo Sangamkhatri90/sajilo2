@@ -1,5 +1,13 @@
 #movableDiv38 {
-    width: 1027px;
+    position: absolute;
+    top: 60px;
+    left: 30px;
+    width: 90vw;
+    max-width: 1027px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding-right: 460px;
 }
 
 #movableDiv97 {
@@ -7,18 +15,21 @@
   transition: width 0.3s ease, height 0.3s ease;
 }
 
-
 #jv-search {
   display: none; /* Hidden by default */
   position: absolute;
+  top: 70px;
   right: 15px;
-  top: -27px;
-  width: 450px;
+  width: min(420px, calc(100% - 30px));
   background: #f4f4f4;
   padding: 20px;
+  margin: 0;
   opacity: 0; /* Invisible by default */
   transform: translateX(100%);
   transition: all 0.3s ease-in-out;
+  z-index: 20;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
 }
 
 #jv-search[style*="display: block"] {
