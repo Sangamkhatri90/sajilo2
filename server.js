@@ -6905,18 +6905,48 @@ app.get("/getLastVoucherNo", async (req, res) => {
 
 app.get("/journal-voucher-list", (req, res) => {
   const conn = req.session.conn;
+  const voucherType = req.query.type;
+  
   if (!conn) {
     return res.status(500).send("Database connection is not available.");
+  }
+
+  if (!voucherType) {
+    return res.status(400).send("Voucher type is required.");
+  }
+
+  let udvNo;
+
+  if (voucherType === "journal-voucher") {
+    udvNo = 1;
+  } else if (voucherType === "transaction") {
+    udvNo = 6;
+  } else if (voucherType === "receipt-voucher") {
+    udvNo = 2;
+  } else if (voucherType === "payment-voucher") {
+    udvNo = 3;
+  } else if (voucherType === "collection") {
+    udvNo = 7;
+  } else if (voucherType === "distribution") {
+    udvNo = 8;
+  } else if (voucherType === "interest-posting") {
+    udvNo = 9;
+  } else if (voucherType === "multiple-transaction") {
+    udvNo = 5;
+  } else if (voucherType === "auto-journal") {
+    udvNo = 4;
+  } else {
+    return res.status(400).send("Invalid voucher type.");
   }
 
   const query = `
         SELECT VoucherNo
         FROM tbJournalMaster
-        WHERE UDVNo = 1
+        WHERE UDVNo = ?
         ORDER BY VoucherNo;
     `;
 
-  sql.query(conn, query, (err, rows) => {
+  sql.query(conn, query, [udvNo], (err, rows) => {
     if (err) {
       console.error("Error querying tbJournalMaster:", err);
       return res.status(500).send("Error fetching journal voucher numbers.");

@@ -253,21 +253,21 @@
                                                 <a href="#">Voucher<i class="fas fa-caret-right"></i></a>
                                                 <div class="dropdown-menu-2" style="display:none;">
                                                     <ul class="menu">
-                                                        <li><a href="#" id="toggleButton31">Journal Voucher</a>
+                                                        <li><a href="#" onclick="loadDocumentPrintingForm('journal-voucher')">Journal Voucher</a>
                                                         </li>
-                                                        <li><a href="#" id="toggleButton139">Transaction</a></li>
-                                                        <li><a href="#" id="toggleButton140">Receipt Voucher</a>
+                                                        <li><a href="#" onclick="loadDocumentPrintingForm('transaction')">Transaction</a></li>
+                                                        <li><a href="#" onclick="loadDocumentPrintingForm('receipt-voucher')">Receipt Voucher</a>
                                                         </li>
-                                                        <li><a href="#" id="toggleButton141">Payment Voucher</a>
+                                                        <li><a href="#" onclick="loadDocumentPrintingForm('payment-voucher')">Payment Voucher</a>
                                                         </li>
-                                                        <li><a href="#" id="toggleButton142">Collection</a></li>
-                                                        <li><a href="#" id="toggleButton143">Distribution</a>
+                                                        <li><a href="#" onclick="loadDocumentPrintingForm('collection')">Collection</a></li>
+                                                        <li><a href="#" onclick="loadDocumentPrintingForm('distribution')">Distribution</a>
                                                         </li>
-                                                        <li><a href="#" id="toggleButton144">Interest Posting</a>
+                                                        <li><a href="#" onclick="loadDocumentPrintingForm('interest-posting')">Interest Posting</a>
                                                         </li>
-                                                        <li><a href="#" id="toggleButton145">Multiple Transaction
+                                                        <li><a href="#" onclick="loadDocumentPrintingForm('multiple-transaction')">Multiple Transaction
                                                                 Voucher</a></li>
-                                                        <li><a href="#" id="toggleButton146">Auto Journal</a>
+                                                        <li><a href="#" onclick="loadDocumentPrintingForm('auto-journal')">Auto Journal</a>
                                                         </li>
                                                     </ul>
                                                 </div>
@@ -4460,8 +4460,8 @@
                 </div>
 
                 <!--Document Printing Journal Voucher-->
-                <div class="movableDiv" id="movableDiv31">
-                    <button id="closeButton31">&times;</button>
+                <div class="movableDiv" id="DocumentPrintingJournalVoucher">
+                    <button id="docPriJourVoucherCloseButton">&times;</button>
                     <div class="dp-container">
                         <form action="" id="myForm31">
                             <fieldset class="dp-fieldset">
@@ -4512,7 +4512,7 @@
 
                                 <div class="dp-button-row">
                                     <button type="submit" class="dp-button">Ok</button>
-                                    <button type="button" class="dp-button" id="cancelButton31">Cancel</button>
+                                    <button type="button" class="dp-button" id="docPriJourVoucherCancelButton">Cancel</button>
                                 </div>
                             </fieldset>
                         </form>
@@ -4540,23 +4540,66 @@
                 </div>
 
                 <script>
+                    let currentVoucherType = null;
+                    
+
+                    function loadDocumentPrintingForm(voucherType) {
+                        currentVoucherType = voucherType;
+                        const DocumentPrintingJournalVoucher = document.getElementById('DocumentPrintingJournalVoucher');
+                        if (DocumentPrintingJournalVoucher) {
+                            DocumentPrintingJournalVoucher.style.display = 'block';
+                        }
+                    }
+
                     document.addEventListener('DOMContentLoaded', () => {
-                        const startInput = document.querySelector('#movableDiv31 form input[name="DPStartFrom"]');
-                        const endInput = document.querySelector('#movableDiv31 form input[name="DPEndTo"]');
+                        const startInput = document.querySelector('#DocumentPrintingJournalVoucher form input[name="DPStartFrom"]');
+                        const endInput = document.querySelector('#DocumentPrintingJournalVoucher form input[name="DPEndTo"]');
                         const resultsBox = document.getElementById('documentPrintingSearchResults');
                         const resultsScroll = document.getElementById('documentPrintingSearchResultsScroll');
                         const resultsList = document.getElementById('documentPrintingSearchResultsList');
                         const scrollUpButton = document.getElementById('documentPrintingScrollUp');
                         const scrollDownButton = document.getElementById('documentPrintingScrollDown');
+                        const docPriJourVoucherCloseButton = document.getElementById("docPriJourVoucherCloseButton");
+                        const docPriJourVoucherCancelButton = document.getElementById("docPriJourVoucherCancelButton");
                         let activeInput = null;
 
                         if (!startInput || !endInput || !resultsBox || !resultsScroll || !resultsList || !scrollUpButton || !scrollDownButton) {
                             return;
                         }
 
+                        const hideAndResetDocumentPrintingForm = () => {
+                            const DocumentPrintingJournalVoucher = document.getElementById('DocumentPrintingJournalVoucher');
+                            if (DocumentPrintingJournalVoucher) {
+                                DocumentPrintingJournalVoucher.style.display = 'none';
+                            }
+                            if (typeof resetFormFields === 'function') {
+                                resetFormFields('DocumentPrintingJournalVoucher');
+                            }
+                            if (resultsBox) {
+                                resultsBox.style.display = 'none';
+                            }
+                            if (resultsList) {
+                                resultsList.innerHTML = '';
+                            }
+                            currentVoucherType = null;
+                            activeInput = null;
+                        };
+
+                        if (docPriJourVoucherCloseButton) {
+                            docPriJourVoucherCloseButton.addEventListener('click', hideAndResetDocumentPrintingForm);
+                        }
+                        if (docPriJourVoucherCancelButton) {
+                            docPriJourVoucherCancelButton.addEventListener('click', hideAndResetDocumentPrintingForm);
+                        }
+
                         const fetchJournalVoucherList = async () => {
+                            if (!currentVoucherType) {
+                                console.error('No voucher type selected');
+                                return;
+                            }
+
                             try {
-                                const response = await fetch('/journal-voucher-list');
+                                const response = await fetch(`/journal-voucher-list?type=${encodeURIComponent(currentVoucherType)}`);
                                 if (!response.ok) {
                                     throw new Error('Failed to load journal voucher list');
                                 }
@@ -4565,7 +4608,7 @@
                                 const vouchers = data.vouchers || [];
 
                                 if (vouchers.length === 0) {
-                                    resultsList.innerHTML = '<tr><td style="padding:8px;">No vouchers found for UDVNo = 1.</td></tr>';
+                                    resultsList.innerHTML = '<tr><td style="padding:8px;">No vouchers found.</td></tr>';
                                 } else {
                                     resultsList.innerHTML = vouchers
                                         .map(item => `
@@ -18730,484 +18773,9 @@ async function loadEarningsData() {
                 </div>
             </div>
 
-            <!--Document Printing Transaction-->
-            <div class="movableDiv" id="movableDiv139">
-                <button id="closeButton139">&times;</button>
-                <div class="dp-container">
-                    <form action="" id="myForm139">
-                        <fieldset class="dp-fieldset">
-                            <legend class="dp-legend">Document Printing</legend>
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="start-from">Start From</label>
-                                    <input type="date" class="dp-date" id="nepali-date">
-                                </div>
-                                <div>
-                                    <label for="end-to">End To</label>
-                                    <input type="date" class="dp-date" id="nepali-date1">
-                                </div>
-                            </div>
 
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <input type="checkbox" name="auto-journal" id="auto-journal">
-                                    <label for="auto-journal">Auto Journal</label>
-                                </div>
-                            </div>
+ 
 
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="printer">Printer</label>
-                                    <select name="printer" id="printer" class="dp-select" required>
-                                        <option value="fax">Fax</option>
-                                        <option value="pdf">Microsoft Print To PDF</option>
-                                        <option value="xps">Microsoft XPS Document Writer</option>
-                                        <option value="onenote">OneNote For Windows 10</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="format">Format</label>
-                                    <select name="format" id="format" class="dp-select" required>
-                                        <option value="savings-receipt">Periodic Savings Receipt</option>
-                                        <option value="voucher">Voucher</option>
-                                        <option value="bill">Bill</option>
-                                        <option value="return-voucher">Return Voucher</option>
-                                        <option value="business-bill">Business Bill</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="copies">Number of Copies</label>
-                                    <input type="text" name="copies" id="copies" class="dp-text">
-                                </div>
-                            </div>
-
-                            <div class="dp-button-row">
-                                <button type="submit" class="dp-button">Ok</button>
-                                <button type="button" class="dp-button" id="cancelButton139">Cancel</button>
-                            </div>
-                        </fieldset>
-                    </form>
-                </div>
-            </div>
-            <!--Document Printing Receipt Voucher-->
-            <div class="movableDiv" id="movableDiv140">
-                <button id="closeButton140">&times;</button>
-                <div class="dp-container">
-                    <form action="" id="myForm140">
-                        <fieldset class="dp-fieldset">
-                            <legend class="dp-legend">Document Printing</legend>
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="start-from">Start From</label>
-                                    <input type="date" class="dp-date" id="nepali-date">
-                                </div>
-                                <div>
-                                    <label for="end-to">End To</label>
-                                    <input type="date" class="dp-date" id="nepali-date1">
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <input type="checkbox" name="auto-journal" id="auto-journal">
-                                    <label for="auto-journal">Auto Journal</label>
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="printer">Printer</label>
-                                    <select name="printer" id="printer" class="dp-select" required>
-                                        <option value="fax">Fax</option>
-                                        <option value="pdf">Microsoft Print To PDF</option>
-                                        <option value="xps">Microsoft XPS Document Writer</option>
-                                        <option value="onenote">OneNote For Windows 10</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="format">Format</label>
-                                    <select name="format" id="format" class="dp-select" required>
-                                        <option value="savings-receipt">Periodic Savings Receipt</option>
-                                        <option value="voucher">Voucher</option>
-                                        <option value="bill">Bill</option>
-                                        <option value="return-voucher">Return Voucher</option>
-                                        <option value="business-bill">Business Bill</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="copies">Number of Copies</label>
-                                    <input type="text" name="copies" id="copies" class="dp-text">
-                                </div>
-                            </div>
-
-                            <div class="dp-button-row">
-                                <button type="submit" class="dp-button">Ok</button>
-                                <button type="button" class="dp-button" id="cancelButton140">Cancel</button>
-                            </div>
-                        </fieldset>
-                    </form>
-                </div>
-            </div>
-
-            <!--Document Printing Payment Voucher-->
-            <div class="movableDiv" id="movableDiv141">
-                <button id="closeButton141">&times;</button>
-                <div class="dp-container">
-                    <form action="" id="myForm141">
-                        <fieldset class="dp-fieldset">
-                            <legend class="dp-legend">Document Printing</legend>
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="start-from">Start From</label>
-                                    <input type="date" class="dp-date" id="nepali-date">
-                                </div>
-                                <div>
-                                    <label for="end-to">End To</label>
-                                    <input type="date" class="dp-date" id="nepali-date1">
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <input type="checkbox" name="auto-journal" id="auto-journal">
-                                    <label for="auto-journal">Auto Journal</label>
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="printer">Printer</label>
-                                    <select name="printer" id="printer" class="dp-select" required>
-                                        <option value="fax">Fax</option>
-                                        <option value="pdf">Microsoft Print To PDF</option>
-                                        <option value="xps">Microsoft XPS Document Writer</option>
-                                        <option value="onenote">OneNote For Windows 10</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="format">Format</label>
-                                    <select name="format" id="format" class="dp-select" required>
-                                        <option value="savings-receipt">Periodic Savings Receipt</option>
-                                        <option value="voucher">Voucher</option>
-                                        <option value="bill">Bill</option>
-                                        <option value="return-voucher">Return Voucher</option>
-                                        <option value="business-bill">Business Bill</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="copies">Number of Copies</label>
-                                    <input type="text" name="copies" id="copies" class="dp-text">
-                                </div>
-                            </div>
-
-                            <div class="dp-button-row">
-                                <button type="submit" class="dp-button">Ok</button>
-                                <button type="button" class="dp-button" id="cancelButton141">Cancel</button>
-                            </div>
-                        </fieldset>
-                    </form>
-                </div>
-            </div>
-
-            <!--Document Printing Collection-->
-            <div class="movableDiv" id="movableDiv142">
-                <button id="closeButton142">&times;</button>
-                <div class="dp-container">
-                    <form action="" id="myForm142">
-                        <fieldset class="dp-fieldset">
-                            <legend class="dp-legend">Document Printing</legend>
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="start-from">Start From</label>
-                                    <input type="date" class="dp-date" id="nepali-date">
-                                </div>
-                                <div>
-                                    <label for="end-to">End To</label>
-                                    <input type="date" class="dp-date" id="nepali-date1">
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <input type="checkbox" name="auto-journal" id="auto-journal">
-                                    <label for="auto-journal">Auto Journal</label>
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="printer">Printer</label>
-                                    <select name="printer" id="printer" class="dp-select" required>
-                                        <option value="fax">Fax</option>
-                                        <option value="pdf">Microsoft Print To PDF</option>
-                                        <option value="xps">Microsoft XPS Document Writer</option>
-                                        <option value="onenote">OneNote For Windows 10</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="format">Format</label>
-                                    <select name="format" id="format" class="dp-select" required>
-                                        <option value="savings-receipt">Periodic Savings Receipt</option>
-                                        <option value="voucher">Voucher</option>
-                                        <option value="bill">Bill</option>
-                                        <option value="return-voucher">Return Voucher</option>
-                                        <option value="business-bill">Business Bill</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="copies">Number of Copies</label>
-                                    <input type="text" name="copies" id="copies" class="dp-text">
-                                </div>
-                            </div>
-
-                            <div class="dp-button-row">
-                                <button type="submit" class="dp-button">Ok</button>
-                                <button type="button" class="dp-button" id="cancelButton142">Cancel</button>
-                            </div>
-                        </fieldset>
-                    </form>
-                </div>
-            </div>
-
-            <!--Document Printing Distribution-->
-            <div class="movableDiv" id="movableDiv143">
-                <button id="closeButton143">&times;</button>
-                <div class="dp-container">
-                    <form action="" id="myForm143">
-                        <fieldset class="dp-fieldset">
-                            <legend class="dp-legend">Document Printing</legend>
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="start-from">Start From</label>
-                                    <input type="date" class="dp-date" id="nepali-date">
-                                </div>
-                                <div>
-                                    <label for="end-to">End To</label>
-                                    <input type="date" class="dp-date" id="nepali-date1">
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <input type="checkbox" name="auto-journal" id="auto-journal">
-                                    <label for="auto-journal">Auto Journal</label>
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="printer">Printer</label>
-                                    <select name="printer" id="printer" class="dp-select" required>
-                                        <option value="fax">Fax</option>
-                                        <option value="pdf">Microsoft Print To PDF</option>
-                                        <option value="xps">Microsoft XPS Document Writer</option>
-                                        <option value="onenote">OneNote For Windows 10</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="format">Format</label>
-                                    <select name="format" id="format" class="dp-select" required>
-                                        <option value="savings-receipt">Periodic Savings Receipt</option>
-                                        <option value="voucher">Voucher</option>
-                                        <option value="bill">Bill</option>
-                                        <option value="return-voucher">Return Voucher</option>
-                                        <option value="business-bill">Business Bill</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="copies">Number of Copies</label>
-                                    <input type="text" name="copies" id="copies" class="dp-text">
-                                </div>
-                            </div>
-
-                            <div class="dp-button-row">
-                                <button type="submit" class="dp-button">Ok</button>
-                                <button type="button" class="dp-button" id="cancelButton143">Cancel</button>
-                            </div>
-                        </fieldset>
-                    </form>
-                </div>
-            </div>
-
-            <!--Document Printing Interest Posting-->
-            <div class="movableDiv" id="movableDiv144">
-                <button id="closeButton144">&times;</button>
-                <div class="dp-container">
-                    <form action="" id="myForm144">
-                        <fieldset class="dp-fieldset">
-                            <legend class="dp-legend">Document Printing</legend>
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="start-from">Start From</label>
-                                    <input type="date" class="dp-date" id="nepali-date">
-                                </div>
-                                <div>
-                                    <label for="end-to">End To</label>
-                                    <input type="date" class="dp-date" id="nepali-date1">
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <input type="checkbox" name="auto-journal" id="auto-journal">
-                                    <label for="auto-journal">Auto Journal</label>
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="printer">Printer</label>
-                                    <select name="printer" id="printer" class="dp-select" required>
-                                        <option value="fax">Fax</option>
-                                        <option value="pdf">Microsoft Print To PDF</option>
-                                        <option value="xps">Microsoft XPS Document Writer</option>
-                                        <option value="onenote">OneNote For Windows 10</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="format">Format</label>
-                                    <select name="format" id="format" class="dp-select" required>
-                                        <option value="savings-receipt">Periodic Savings Receipt</option>
-                                        <option value="voucher">Voucher</option>
-                                        <option value="bill">Bill</option>
-                                        <option value="return-voucher">Return Voucher</option>
-                                        <option value="business-bill">Business Bill</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="copies">Number of Copies</label>
-                                    <input type="text" name="copies" id="copies" class="dp-text">
-                                </div>
-                            </div>
-
-                            <div class="dp-button-row">
-                                <button type="submit" class="dp-button">Ok</button>
-                                <button type="button" class="dp-button" id="cancelButton144">Cancel</button>
-                            </div>
-                        </fieldset>
-                    </form>
-                </div>
-            </div>
-
-            <!--Document Printing Multiple Transaction Voucher-->
-            <div class="movableDiv" id="movableDiv145">
-                <button id="closeButton145">&times;</button>
-                <div class="dp-container">
-                    <form action="" id="myForm145">
-                        <fieldset class="dp-fieldset">
-                            <legend class="dp-legend">Document Printing</legend>
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="start-from">Start From</label>
-                                    <input type="date" class="dp-date" id="nepali-date">
-                                </div>
-                                <div>
-                                    <label for="end-to">End To</label>
-                                    <input type="date" class="dp-date" id="nepali-date1">
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <input type="checkbox" name="auto-journal" id="auto-journal">
-                                    <label for="auto-journal">Auto Journal</label>
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="printer">Printer</label>
-                                    <select name="printer" id="printer" class="dp-select" required>
-                                        <option value="fax">Fax</option>
-                                        <option value="pdf">Microsoft Print To PDF</option>
-                                        <option value="xps">Microsoft XPS Document Writer</option>
-                                        <option value="onenote">OneNote For Windows 10</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="format">Format</label>
-                                    <select name="format" id="format" class="dp-select" required>
-                                        <option value="savings-receipt">Periodic Savings Receipt</option>
-                                        <option value="voucher">Voucher</option>
-                                        <option value="bill">Bill</option>
-                                        <option value="return-voucher">Return Voucher</option>
-                                        <option value="business-bill">Business Bill</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="copies">Number of Copies</label>
-                                    <input type="text" name="copies" id="copies" class="dp-text">
-                                </div>
-                            </div>
-
-                            <div class="dp-button-row">
-                                <button type="submit" class="dp-button">Ok</button>
-                                <button type="button" class="dp-button" id="cancelButton145">Cancel</button>
-                            </div>
-                        </fieldset>
-                    </form>
-                </div>
-            </div>
-
-            <!--Document Printing Auto Journal-->
-            <div class="movableDiv" id="movableDiv146">
-                <button id="closeButton146">&times;</button>
-                <div class="dp-container">
-                    <form action="" id="myForm146">
-                        <fieldset class="dp-fieldset">
-                            <legend class="dp-legend">Document Printing</legend>
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="start-from">Start From</label>
-                                    <input type="date" class="dp-date" id="nepali-date">
-                                </div>
-                                <div>
-                                    <label for="end-to">End To</label>
-                                    <input type="date" class="dp-date" id="nepali-date1">
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <input type="checkbox" name="auto-journal" id="auto-journal">
-                                    <label for="auto-journal">Auto Journal</label>
-                                </div>
-                            </div>
-
-                            <div class="dp-form-style-horizontal3">
-                                <div>
-                                    <label for="printer">Printer</label>
-                                    <select name="printer" id="printer" class="dp-select" required>
-                                        <option value="fax">Fax</option>
-                                        <option value="pdf">Microsoft Print To PDF</option>
-                                        <option value="xps">Microsoft XPS Document Writer</option>
-                                        <option value="onenote">OneNote For Windows 10</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="format">Format</label>
-                                    <select name="format" id="format" class="dp-select" required>
-                                        <option value="savings-receipt">Periodic Savings Receipt</option>
-                                        <option value="voucher">Voucher</option>
-                                        <option value="bill">Bill</option>
-                                        <option value="return-voucher">Return Voucher</option>
-                                        <option value="business-bill">Business Bill</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="copies">Number of Copies</label>
-                                    <input type="text" name="copies" id="copies" class="dp-text">
-                                </div>
-                            </div>
-
-                            <div class="dp-button-row">
-                                <button type="submit" class="dp-button">Ok</button>
-                                <button type="button" class="dp-button" id="cancelButton146">Cancel</button>
-                            </div>
-                        </fieldset>
-                    </form>
-                </div>
-            </div>
 
             <!--Periodic Voucher-->
             <div class="movableDiv" id="movableDiv147">
@@ -50501,59 +50069,7 @@ async function loadEarningsData() {
                             EditCollChequemasAccNameforaccpostingVD
                         });
 
-
-
-
-
-
-                        /*
-                         // Handle date formatting without timezone shift
-                         let formattedDate = '';
-                         if (EditCollChequemasEffectiveDate) {
-                             // If the date is already in 'YYYY-MM-DD' format, use it directly
-                             if (EditCollChequemasEffectiveDate.includes('-')) {
-                                 formattedDate = EditCollChequemasEffectiveDate;
-                             } else {
-                                 // If it's in 'MM/DD/YYYY' format, convert it manually
-                                 const dateParts = EditCollChequemasEffectiveDate.split('/'); // Split by the slashes
-                                 formattedDate = `${dateParts[2]}-${String(dateParts[0]).padStart(2, '0')}-${String(dateParts[1]).padStart(2, '0')}`; // Convert to 'YYYY-MM-DD'
-                             }
-                         }
-         
-                         console.log('Formatted Date:', formattedDate); // Log the formatted date to ensure it's correct
-         
-                         // Handle date formatting without timezone shift
-                         let ChequeDate = '';
-                         if (EditCollChequemasChequqDate) {
-                             // If the date is already in 'YYYY-MM-DD' format, use it directly
-                             if (EditCollChequemasChequqDate.includes('-')) {
-                                 ChequeDate = EditCollChequemasChequqDate;
-                             } else {
-                                 // If it's in 'MM/DD/YYYY' format, convert it manually
-                                 const dateParts = EditCollChequemasChequqDate.split('/'); // Split by the slashes
-                                 ChequeDate = `${dateParts[2]}-${String(dateParts[0]).padStart(2, '0')}-${String(dateParts[1]).padStart(2, '0')}`; // Convert to 'YYYY-MM-DD'
-                             }
-                         }
-         
-                         console.log('Cheque Date:', ChequeDate); // Log the Cheque date to ensure it's correct
-         
-                         // Handle date formatting without timezone shift
-                         let CollectedDate = '';
-                         if (EditCollChequemasCollectedDate) {
-                             // If the date is already in 'YYYY-MM-DD' format, use it directly
-                             if (EditCollChequemasCollectedDate.includes('-')) {
-                                 CollectedDate = EditCollChequemasCollectedDate;
-                             } else {
-                                 // If it's in 'MM/DD/YYYY' format, convert it manually
-                                 const dateParts = EditCollChequemasCollectedDate.split('/'); // Split by the slashes
-                                 CollectedDate = `${dateParts[2]}-${String(dateParts[0]).padStart(2, '0')}-${String(dateParts[1]).padStart(2, '0')}`; // Convert to 'YYYY-MM-DD'
-                             }
-                         }
-         
-                         console.log('Collected Date:', CollectedDate); // Log the collected date to ensure it's correct
-         */
-
-                        // Populate the form fields with values (including default empty strings for empty cells)
+            // Populate the form fields with values (including default empty strings for empty cells)
 
                         document.getElementById('accpost-viewdetials-account-number').value = EditCollChequemasAccIDforaccpostingVD;
 
