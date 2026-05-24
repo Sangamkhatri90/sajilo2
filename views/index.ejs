@@ -32602,7 +32602,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                editButton.addEventListener('click', function () {
+                editButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRow) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRow);
@@ -32704,7 +32706,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                copyButton.addEventListener('click', function () {
+                copyButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForCopy);
@@ -33502,7 +33506,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                editButtonofLedgermaster.addEventListener('click', function () {
+                editButtonofLedgermaster.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForEditLedgermaster) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForEditLedgermaster);
@@ -33761,7 +33767,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                copyButtonofLedgermaster.addEventListener('click', function () {
+                copyButtonofLedgermaster.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForCopyLedgermaster) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForCopyLedgermaster);
@@ -34171,7 +34179,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                editButtonofSubLgr.addEventListener('click', function () {
+                editButtonofSubLgr.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForSubLgrEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForSubLgrEdit);
@@ -34382,7 +34392,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                copyButtonofSubLgr.addEventListener('click', function () {
+                copyButtonofSubLgr.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForSubLgrCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForSubLgrCopy);
@@ -34623,7 +34635,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                editButtonofCollectormas.addEventListener('click', function () {
+                editButtonofCollectormas.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForCollectormasEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForCollectormasEdit);
@@ -34825,7 +34839,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                copyButtonofCollectormas.addEventListener('click', function () {
+                copyButtonofCollectormas.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForCollectormasCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForCollectormasCopy);
@@ -35316,7 +35332,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                AccInterestSetEditButton.addEventListener('click', function () {
+                AccInterestSetEditButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForAccInterestSettingEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForAccInterestSettingEdit);
@@ -35643,7 +35661,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                AccInterestSetCopyButton.addEventListener('click', function () {
+                AccInterestSetCopyButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForAccInterestSettingCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForAccInterestSettingCopy);
@@ -36253,7 +36273,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                AccPenaltySetEditButton.addEventListener('click', function () {
+                AccPenaltySetEditButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForAccPenaltySettingEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForAccPenaltySettingEdit);
@@ -36539,7 +36561,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                AccPenaltySetCopyButton.addEventListener('click', function () {
+                AccPenaltySetCopyButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForAccPenaltySettingCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForAccPenaltySettingCopy);
@@ -37167,7 +37191,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                AccRebateSetEditButton.addEventListener('click', function () {
+                AccRebateSetEditButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForAccRebateSettingEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForAccRebateSettingEdit);
@@ -37391,7 +37417,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                AccRebateSetCopyButton.addEventListener('click', function () {
+                AccRebateSetCopyButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForAccRebateSettingCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForAccRebateSettingCopy);
@@ -37692,7 +37720,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                ChequeIssuMasEditButton.addEventListener('click', function () {
+                ChequeIssuMasEditButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForChequeIssuemasEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForChequeIssuemasEdit);
@@ -37964,7 +37994,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                ChequeIssuMasCopyButton.addEventListener('click', function () {
+                ChequeIssuMasCopyButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForChequeIssuemasCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForChequeIssuemasCopy);
@@ -38313,7 +38345,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                MobilealertMasEditButton.addEventListener('click', function () {
+                MobilealertMasEditButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForMobilealertmasEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForMobilealertmasEdit);
@@ -38632,7 +38666,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                MobilealertMasCopyButton.addEventListener('click', function () {
+                MobilealertMasCopyButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForMobilealertmasCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForMobilealertmasCopy);
@@ -39012,7 +39048,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                ShareTransSetmasEditButton.addEventListener('click', function () {
+                ShareTransSetmasEditButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForShareTransmasEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForShareTransmasEdit);
@@ -39601,7 +39639,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                ShareTransSetmasCopyButton.addEventListener('click', function () {
+                ShareTransSetmasCopyButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForShareTransmasCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForShareTransmasCopy);
@@ -40307,7 +40347,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                CollChequemasEditButton.addEventListener('click', function () {
+                CollChequemasEditButton.addEventListener('click', function (e) {
+                    e.preventDefault(); // Prevent default button behavior
+                    e.stopImmediatePropagation(); // Keep the generic movable toggle from closing the edit form again
                     if (selectedRowForCollChquemasEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForCollChquemasEdit);
@@ -40534,12 +40576,6 @@ async function loadEarningsData() {
                 });
             </script>
             <script>
-                document.getElementById("toggleButton177").addEventListener('click', function (e) {
-                    //getting parent div 
-                    const parentDiv = document.getElementById("movableDiv119")
-
-                    parentDiv.style.display = 'none';
-                })
                 document.getElementById('myForm177').addEventListener('submit', function (event) {
                     event.preventDefault(); // Prevent the form from submitting in the usual way
 
@@ -40664,7 +40700,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                CollChequemasCopyButton.addEventListener('click', function () {
+                CollChequemasCopyButton.addEventListener('click', function (e) {
+                    e.preventDefault(); // Prevent default button behavior
+                    e.stopImmediatePropagation(); // Keep the generic movable toggle from closing the copy form again
                     if (selectedRowForCollChquemasCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForCollChquemasCopy);
@@ -41127,7 +41165,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                AccTypeMasEditButton.addEventListener('click', function () {
+                AccTypeMasEditButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForAccTypeMasEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForAccTypeMasEdit);
@@ -41691,7 +41731,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Copy" button is clicked, populate the form
-                AccTypeMasCopyButton.addEventListener('click', function () {
+                AccTypeMasCopyButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForAccTypeMasCopy) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForAccTypeMasCopy);
@@ -49086,7 +49128,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Acc Posting" button is clicked, populate the form
-                CollChequemasAccpostingButton.addEventListener('click', function () {
+                CollChequemasAccpostingButton.addEventListener('click', function (e) {
+                    e.preventDefault(); // Prevent default button behavior
+                    e.stopImmediatePropagation(); // Keep the generic movable toggle from closing the A/c Posting form again
                     if (selectedRowForCollChquemasAccpostingEdit) {
                         // Show the form first
                         document.getElementById("myForm179").style.display = "block";
@@ -49098,14 +49142,14 @@ async function loadEarningsData() {
 
                         // Get data from the selected row, with default values if empty or 'null' as string
 
-                        const EditCollChequemasDraweebankforaccposting = selectedRowForCollChquemasEdit.cells[3].textContent.trim() || '';
-                        const EditCollChequemasChequqDateforaccposting = selectedRowForCollChquemasEdit.cells[6].textContent.trim() || '';
-                        const EditCollChequemasCollectedDateforaccposting = selectedRowForCollChquemasEdit.cells[7].textContent.trim() || '';
-                        const EditCollChequemasAccTypeforaccposting = selectedRowForCollChquemasEdit.cells[8].textContent.trim() || '';
-                        const EditCollChequemasAccIDforaccposting = selectedRowForCollChquemasEdit.cells[9].textContent.trim() || '';
-                        const EditCollChequemasAccNameforaccposting = selectedRowForCollChquemasEdit.cells[10].textContent.trim() || '';
+                        const EditCollChequemasDraweebankforaccposting = selectedRowForCollChquemasAccpostingEdit.cells[3].textContent.trim() || '';
+                        const EditCollChequemasChequqDateforaccposting = selectedRowForCollChquemasAccpostingEdit.cells[6].textContent.trim() || '';
+                        const EditCollChequemasCollectedDateforaccposting = selectedRowForCollChquemasAccpostingEdit.cells[7].textContent.trim() || '';
+                        const EditCollChequemasAccTypeforaccposting = selectedRowForCollChquemasAccpostingEdit.cells[8].textContent.trim() || '';
+                        const EditCollChequemasAccIDforaccposting = selectedRowForCollChquemasAccpostingEdit.cells[9].textContent.trim() || '';
+                        const EditCollChequemasAccNameforaccposting = selectedRowForCollChquemasAccpostingEdit.cells[10].textContent.trim() || '';
 
-                        const EditCollChequeDocClassforaccposting = selectedRowForCollChquemasEdit.cells[17].textContent.trim() || '';
+                        const EditCollChequeDocClassforaccposting = selectedRowForCollChquemasAccpostingEdit.cells[17].textContent.trim() || '';
 
                         // Log the populated data before assigning it to the form
                         console.log('Populating form with:', {
@@ -50046,7 +50090,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Acc Posting" button is clicked, populate the form
-                CollChequemasAccpostingViewdetailsButton.addEventListener('click', async function () {
+                CollChequemasAccpostingViewdetailsButton.addEventListener('click', async function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForCollChquemasAccpostingViewdetailsEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForCollChquemasAccpostingViewdetailsEdit);
@@ -50203,7 +50249,9 @@ async function loadEarningsData() {
                 });
 
                 // When the "Edit" button is clicked, populate the form
-                DEJVMEditButton.addEventListener('click', function () {
+                DEJVMEditButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     if (selectedRowForDEJVMEdit) {
                         // Log the selected row's data
                         console.log('Selected row data:', selectedRowForDEJVMEdit);
@@ -52736,6 +52784,55 @@ async function loadEarningsData() {
 
             
 
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const transactionTypeSelect = document.getElementById('transactionTypeforMaintrans');
+                    const cashChequeSelect = document.getElementById('CashChequeforMaintrans');
+                    const chequeNumberInput = document.getElementById('MaintranschequeNumber');
+                    const chequeDateInput = document.getElementById('MaintranschequeDate');
+
+                    if (!transactionTypeSelect || !cashChequeSelect) return;
+
+                    const cashChequeName = cashChequeSelect.name;
+                    let cashChequeHidden = document.getElementById('CashChequeforMaintransHidden');
+                    if (!cashChequeHidden) {
+                        cashChequeHidden = document.createElement('input');
+                        cashChequeHidden.type = 'hidden';
+                        cashChequeHidden.id = 'CashChequeforMaintransHidden';
+                        cashChequeHidden.name = cashChequeName;
+                        cashChequeSelect.insertAdjacentElement('afterend', cashChequeHidden);
+                    }
+                    cashChequeSelect.removeAttribute('name');
+
+                    function syncMainTransactionCashCheque() {
+                        if (transactionTypeSelect.value === 'Deposit') {
+                            cashChequeSelect.value = 'Cash';
+                        } else if (transactionTypeSelect.value === 'Withdraw') {
+                            cashChequeSelect.value = 'Cheque';
+                        }
+
+                        cashChequeHidden.value = cashChequeSelect.value;
+
+                        const isCheque = cashChequeSelect.value === 'Cheque';
+                        [chequeNumberInput, chequeDateInput].forEach(function (input) {
+                            if (!input) return;
+
+                            input.disabled = !isCheque;
+                            input.style.pointerEvents = isCheque ? '' : 'none';
+                            input.style.backgroundColor = isCheque ? '' : '#f2f2f2';
+
+                            if (!isCheque) {
+                                input.value = '';
+                            }
+                        });
+                    }
+
+                    cashChequeSelect.disabled = true;
+                    syncMainTransactionCashCheque();
+                    transactionTypeSelect.addEventListener('change', syncMainTransactionCashCheque);
+                });
+            </script>
 
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
