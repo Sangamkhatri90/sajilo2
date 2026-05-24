@@ -28,35 +28,60 @@
             visibility: visible;
             opacity: 1;
         }
+        body {
+            justify-content: center;
+            padding: 24px;
+            color: var(--white);
+        }
         .selection-container {
-            max-width: 800px;
+            width: min(920px, 100%);
+            max-height: calc(100vh - 48px);
             margin: 0 auto;
-            padding: 20px;
+            padding: 28px 32px;
+            background-color: rgba(0, 0, 0, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 12px;
+            box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+            animation: fadeIn 0.5s ease-in-out;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .table-wrap {
+            overflow: auto;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.08);
         }
         .org-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 0;
+            color: var(--white);
         }
         .org-table thead {
-            background-color: #f0f0f0;
+            background-color: rgba(195, 56, 56, 0.95);
         }
         .org-table th {
             padding: 12px;
             text-align: left;
-            border-bottom: 2px solid #ddd;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1;
         }
         .org-table td {
             padding: 12px;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+            color: rgba(255, 255, 255, 0.92);
         }
         .org-table tbody tr:hover {
-            background-color: #f9f9f9;
+            background-color: rgba(255, 255, 255, 0.16);
             cursor: pointer;
         }
         .org-table tbody tr.selected {
-            background-color: #e3f2fd;
+            background-color: rgba(75, 140, 217, 0.55);
         }
         .button-group {
             display: flex;
@@ -95,7 +120,43 @@
         }
         .welcome-header p {
             margin: 0;
-            color: #666;
+            color: rgba(255, 255, 255, 0.78);
+        }
+        .loading-cell,
+        .empty-cell {
+            text-align: center;
+            padding: 28px 12px !important;
+            color: rgba(255, 255, 255, 0.82) !important;
+        }
+        .loading-state {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+        .loading-spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.25);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @media (max-width: 700px) {
+            body {
+                padding: 14px;
+            }
+            .selection-container {
+                padding: 20px 14px;
+            }
+            .org-table th,
+            .org-table td {
+                padding: 10px 8px;
+                font-size: 13px;
+            }
         }
     </style>
 </head>
@@ -106,19 +167,28 @@
             <p>Welcome, <strong><%= username %></strong>. Please select an organization and fiscal year to continue.</p>
         </div>
 
-        <table class="org-table">
-            <thead>
-                <tr>
-                    <th>Organization</th>
-                    <th>Fiscal Year</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                </tr>
-            </thead>
-            <tbody id="orgTableBody">
-                <!-- Will be populated by JavaScript -->
-            </tbody>
-        </table>
+        <div class="table-wrap">
+            <table class="org-table">
+                <thead>
+                    <tr>
+                        <th>Organization</th>
+                        <th>Fiscal Year</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                    </tr>
+                </thead>
+                <tbody id="orgTableBody">
+                    <tr>
+                        <td colspan="4" class="loading-cell">
+                            <span class="loading-state">
+                                <span class="loading-spinner" aria-hidden="true"></span>
+                                Loading databases...
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <div class="button-group">
             <button type="button" class="btn-continue" id="continueBtn">Continue</button>
@@ -137,6 +207,18 @@
         });
 
         async function loadOrganizations() {
+            const tableBody = document.getElementById('orgTableBody');
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="loading-cell">
+                        <span class="loading-state">
+                            <span class="loading-spinner" aria-hidden="true"></span>
+                            Loading databases...
+                        </span>
+                    </td>
+                </tr>
+            `;
+
             try {
                 const response = await fetch('/fetch-fiscal-data');
                 if (!response.ok) throw new Error('Failed to fetch organizations');
@@ -145,6 +227,7 @@
                 populateTable(data);
             } catch (error) {
                 console.error('Error loading organizations:', error);
+                tableBody.innerHTML = '<tr><td colspan="4" class="empty-cell">Unable to load databases. Please refresh the page.</td></tr>';
                 showToast('❌ Failed to load organizations. Please refresh the page.');
             }
         }
@@ -152,6 +235,11 @@
         function populateTable(data) {
             const tableBody = document.getElementById('orgTableBody');
             tableBody.innerHTML = '';
+
+            if (!Array.isArray(data) || data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="empty-cell">No databases found.</td></tr>';
+                return;
+            }
 
             data.forEach((org) => {
                 const row = document.createElement('tr');

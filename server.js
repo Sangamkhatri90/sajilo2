@@ -2357,9 +2357,7 @@ app.post("/add-ta-code-menu", (req, res) => {
 // Route to handle form submission
 
 // to fetch ledger group
-
-// Endpoint to fetch Parent Groups (GrpName and GrpAlias)
-app.get("/fetchParentGroups", (req, res) => {
+app.get("/fetchLgrGrps", (req, res) => {
   // SQL query to fetch GrpName and GrpAlias from tbLedgerGroup table
   const query = "SELECT GrpName, GrpAlias FROM tbLedgerGroup";
   const conn = req.session.conn;
@@ -2383,9 +2381,9 @@ app.get("/fetchParentGroups", (req, res) => {
 
       // Check if data is returned
       if (result && result.length > 0) {
-        res.json({ parentGroups: result }); // Send GrpName and GrpAlias
+        res.json({ ledgerGroups: result }); // Send GrpName and GrpAlias
       } else {
-        res.json({ message: "No Parent Groups found" });
+        res.json({ message: "No Ledger Groups found" });
       }
 
       // Close the connection after the query is executed
@@ -2393,6 +2391,7 @@ app.get("/fetchParentGroups", (req, res) => {
     });
   });
 });
+
 // POST route for saving District
 app.post("/add-district", (req, res) => {
   console.log("Request body:", req.body);
@@ -5073,215 +5072,9 @@ app.post("/copy-master", async (req, res) => {
   }
 });
 
-// Fetch GrpName and GrpAlias from dbo.tbLedgerGroup for new in LedgerGroup
-app.get("/fetchLedgerGroup1", (req, res) => {
-  // Define the query to fetch GrpName and GrpAlias from tbLedgerGroup
-  const query = `SELECT GrpName, GrpAlias FROM dbo.tbLedgerGroup`; // Fetch GrpName and GrpAlias
-  const conn = req.session.conn; // Get the database connection from the session
 
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send("Error fetching Ledger Group data"); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ ledgerGroups: rows }); // Send the fetched GrpName and GrpAlias values as a response
-    } else {
-      res.json({ message: "No Ledger Group data found" }); // Send a message if no data is found
-    }
-  });
-});
-
-// Fetch GrpName and GrpAlias from dbo.tbLedgerGroup for edit in LedgerGroup
-app.get("/fetchLedgerGroup1Edit", (req, res) => {
-  // Define the query to fetch GrpName and GrpAlias from tbLedgerGroup
-  const query = `SELECT GrpName, GrpAlias FROM dbo.tbLedgerGroup`; // Fetch GrpName and GrpAlias
-  const conn = req.session.conn; // Get the database connection from the session
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send("Error fetching Ledger Group data"); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ ledgerGroups: rows }); // Send the fetched GrpName and GrpAlias values as a response
-    } else {
-      res.json({ message: "No Ledger Group data found" }); // Send a message if no data is found
-    }
-  });
-});
-// Fetch GrpName and GrpAlias from dbo.tbLedgerGroup for copy in LedgerGroup
-app.get("/fetchLedgerGroup1Copy", (req, res) => {
-  // Define the query to fetch GrpName and GrpAlias from tbLedgerGroup
-  const query = `SELECT GrpName, GrpAlias FROM dbo.tbLedgerGroup`; // Fetch GrpName and GrpAlias
-  const conn = req.session.conn; // Get the database connection from the session
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send("Error fetching Ledger Group data"); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ ledgerGroups: rows }); // Send the fetched GrpName and GrpAlias values as a response
-    } else {
-      res.json({ message: "No Ledger Group data found" }); // Send a message if no data is found
-    }
-  });
-});
-
-// Fetch GrpName and GrpAlias from dbo.tbLedgerGroup
-app.get("/fetchLedgerGroup2", (req, res) => {
-  // Define the query to fetch GrpName and GrpAlias from tbLedgerGroup
-  const query = `SELECT GrpName, GrpAlias FROM dbo.tbLedgerGroup`; // Fetch GrpName and GrpAlias
-  const conn = req.session.conn; // Get the database connection from the session
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send("Error fetching Ledger Group data"); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ ledgerGroups: rows }); // Send the fetched GrpName and GrpAlias values as a response
-    } else {
-      res.json({ message: "No Ledger Group data found" }); // Send a message if no data is found
-    }
-  });
-});
-// Fetch GrpName and GrpAlias from dbo.tbLedgerGroup
-app.get("/fetchLedgerGroup3", (req, res) => {
-  // Define the query to fetch GrpName and GrpAlias from tbLedgerGroup
-  const query = `SELECT GrpName, GrpAlias FROM dbo.tbLedgerGroup`; // Fetch GrpName and GrpAlias
-  const conn = req.session.conn; // Get the database connection from the session
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send("Error fetching Ledger Group data"); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ ledgerGroups: rows }); // Send the fetched GrpName and GrpAlias values as a response
-    } else {
-      res.json({ message: "No Ledger Group data found" }); // Send a message if no data is found
-    }
-  });
-});
-// Fetch GrpName and GrpAlias from dbo.tbLedgerGroup to AccountType new
-app.get("/fetchLedgerGroup4", (req, res) => {
-  // Check if the database connection exists in the session
-  const conn = req.session.conn;
-  if (!conn) {
-    return res.status(400).send("Database connection not found");
-  }
-
-  // Define the query to fetch GrpName and GrpAlias from tbLedgerGroup
-  const query = `SELECT GrpName, GrpAlias FROM dbo.tbLedgerGroup`;
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error for debugging
-      return res.status(500).send("Error fetching Ledger Group data"); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ ledgerGroups: rows }); // Send the fetched GrpName and GrpAlias values
-    } else {
-      res.json({ message: "No Ledger Group data found" }); // Send a message if no data is found
-    }
-  });
-});
-// Fetch GrpName and GrpAlias from dbo.tbLedgerGroup to AccountType new/search
-app.get("/fetchLedgerGroup5", (req, res) => {
-  // Define the query to fetch GrpName and GrpAlias from tbLedgerGroup
-  const query = `SELECT GrpName, GrpAlias FROM dbo.tbLedgerGroup`; // Fetch GrpName and GrpAlias
-  const conn = req.session.conn; // Get the database connection from the session
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error
-      return res.status(500).send("Error fetching Ledger Group data"); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ ledgerGroups: rows }); // Send the fetched GrpName and GrpAlias values
-    } else {
-      res.json({ message: "No Ledger Group data found" }); // Send a message if no data is found
-    }
-  });
-});
-app.get("/fetchLedgerGroup6", (req, res) => {
-  // Check if the database connection exists in the session
-  const conn = req.session.conn;
-  if (!conn) {
-    return res.status(400).send("Database connection not found");
-  }
-
-  // Define the query to fetch GrpName and GrpAlias from tbLedgerGroup
-  const query = `SELECT GrpName, GrpAlias FROM dbo.tbLedgerGroup`;
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err); // Log the error for debugging
-      return res.status(500).send("Error fetching Ledger Group data"); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      // Send the fetched GrpName and GrpAlias values in a structured JSON format
-      res.json({ ledgerGroups: rows });
-    } else {
-      // If no data is found, send a message
-      res.json({ message: "No Ledger Group data found" });
-    }
-  });
-});
-app.get("/fetchLedgerGroup7", (req, res) => {
-  // Check if the database connection exists in the session
-  const conn = req.session.conn;
-  if (!conn) {
-    return res.status(400).send("Database connection not found");
-  }
-
-  // Define the query to fetch GrpName and GrpAlias from tbLedgerGroup
-  const query = `SELECT GrpName, GrpAlias FROM dbo.tbLedgerGroup`;
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);             // Log the error for debugging
-      return res.status(500).send("Error fetching Ledger Group data"); // Send an error response
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ ledgerGroups: rows });             // Structured JSON response
-    } else {
-      res.json({ message: "No Ledger Group data found" });
-    }
-  });
-});
-
-//Fetch posting Ledger Group in Ledger for New
-app.get("/fetchPostingLedger", (req, res) => {
+//Fetch  Ledger Master 
+app.get("/fetchLgrMaster", (req, res) => {
   // Query to get GLName and GLAlias from dbo.tbLedgerMaster
   const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
 
@@ -5297,102 +5090,10 @@ app.get("/fetchPostingLedger", (req, res) => {
 
     // If rows are returned, send them back as JSON
     if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
+      res.json({ lgrmaster: rows }); // Send both GLName and GLAlias values
 
     } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-// Fetch posting Ledger Group in Ledger for new
-app.get("/fetchPostingLedgerForNew", async (req, res) => {
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-  const conn = req.session.conn;
-
-  // Check if the database connection exists
-  if (!conn) {
-    return res
-      .status(400)
-      .send({ message: "Database connection not available" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-
-// Fetch posting Ledger Group in Ledger  for edit
-app.get("/fetchPostingLedgerForEdit", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-
-  const conn = req.session.conn;
-
-  // Check if the database connection exists
-  if (!conn) {
-    return res
-      .status(400)
-      .send({ message: "Database connection not available" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-// Fetch posting Ledger Group in Ledger for copy
-app.get("/fetchPostingLedgerForCopy", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-
-  const conn = req.session.conn;
-
-  // Check if the database connection exists
-  if (!conn) {
-    return res
-      .status(400)
-      .send({ message: "Database connection not available" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
+      res.json({ lgrmaster: [] }); // Return an empty array if no records are found
     }
   });
 });
@@ -5763,70 +5464,6 @@ app.get("/fetchPostingLedger13", (req, res) => {
     }
   });
 });
-
-// Fetch posting Ledger Group for SubLedger Edit
-app.get("/fetchPostingLedgerForSubLgrEdit", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-
-  const conn = req.session.conn;
-
-  // Check if the database connection exists
-  if (!conn) {
-    return res
-      .status(400)
-      .send({ message: "Database connection not available" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-// Fetch posting Ledger Group for SubLedger Copy
-app.get("/fetchPostingLedgerForSubLgrCopy", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-
-  const conn = req.session.conn;
-
-  // Check if the database connection exists
-  if (!conn) {
-    return res
-      .status(400)
-      .send({ message: "Database connection not available" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-
 
 // Fetch  Ledger Group in Ledger for DE_JVM_SEARCH
 app.get("/fetchPostingLedgerForDEJVMsearch", async (req, res) => {
@@ -13772,54 +13409,6 @@ app.get("/fetchPostingLedgerCopy", (req, res) => {
       res.json({ postingLedgerName: result[0].GLName });
       console.log("Posting ledger name forcopyis", result[0].GLName);
     });
-  });
-});
-
-
-//Fetch posting Ledger Group in Ledger for Edit
-app.get("/fetchPostingLedgerForInterestSetEdit", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-
-  const conn = req.session.conn;
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
-  });
-});
-//Fetch posting Ledger Group in Ledger for Copy
-app.get("/fetchPostingLedgerForInterestSetCopy", (req, res) => {
-  // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
-
-  const conn = req.session.conn;
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send({ message: "Error fetching Posting Ledgers" });
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ postingLedgers: rows }); // Send both GLName and GLAlias values
-    } else {
-      res.json({ postingLedgers: [] }); // Return an empty array if no records are found
-    }
   });
 });
 

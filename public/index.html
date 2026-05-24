@@ -141,6 +141,10 @@ document.getElementById('okDTNB').addEventListener('click', async function (even
       document.open();
       document.write(data);
       document.close();
+
+   
+   localStorage.setItem('selectedusername', username);
+
     } else {
       // Parse error response
       try {
