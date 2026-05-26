@@ -22,7 +22,7 @@ const checkSessionDB = require('./checkSessionDB');
 
 const util = require("util");
 
-const sql = require("msnodesqlv8");
+const sql = require("./dbPool");
 const sqlq = require('mssql');      // Used just for setup
 const { encodeToBase64 } = require("./utils");
 const { start } = require("repl");
@@ -22396,7 +22396,66 @@ app.post("/api/enrichExcelWithJournalData", async (req, res) => {
       return res.json({ enriched: excelData, usedDB: false });
     }
 
+    const entriesWithParticular = excelData
+      .map((entry) => ({ entry, particular: entry.particular?.trim() }))
+      .filter((item) => item.particular);
+    const uniqueParticulars = [...new Set(entriesWithParticular.map((item) => item.particular))];
+    const ledgerByName = new Map();
+    const openingTotalsByGlid = new Map();
+    const periodTotalsByGlid = new Map();
+    let newFromDate = "";
+    let newToDate = "";
+
+    if (uniqueParticulars.length > 0) {
+      const ledgerPlaceholders = uniqueParticulars.map(() => "?").join(",");
+      const ledgerRows = await queryAsync(conn, `
+        SELECT GLID, RTRIM(LTRIM(GLName)) AS LedgerName
+        FROM dbo.tbLedgerMaster
+        WHERE RTRIM(LTRIM(GLName)) IN (${ledgerPlaceholders})
+      `, uniqueParticulars);
+
+      // Performance: cache ledger IDs once per request instead of repeating GLID
+      // lookups for every Excel row.
+      for (const row of ledgerRows || []) {
+        if (!ledgerByName.has(row.LedgerName)) {
+          ledgerByName.set(row.LedgerName, row.GLID);
+        }
+      }
+
+      const uniqueGlids = [...new Set([...ledgerByName.values()])];
+
+      if (uniqueGlids.length > 0) {
+        const fromYear = parseInt(fromDate.split('/')[0]) - 1;
+        const toYear = parseInt(fromDate.split('/')[0]);
+        newFromDate = `${fromYear}/04/01`;
+        newToDate = `${toYear}/03/31`;
+        const glidPlaceholders = uniqueGlids.map(() => "?").join(",");
+        const totalQuery = `
+          SELECT
+            GLID,
+            ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
+            ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
+          FROM dbo.tbJournal
+          WHERE GLID IN (${glidPlaceholders})
+            AND JV_Miti BETWEEN ? AND ?
+          GROUP BY GLID
+        `;
+
+        const openingRows = await queryAsync(conn, totalQuery, [...uniqueGlids, newFromDate, newToDate]);
+        const periodRows = await queryAsync(conn, totalQuery, [...uniqueGlids, fromDate, toDate]);
+
+        for (const row of openingRows || []) {
+          openingTotalsByGlid.set(row.GLID, row);
+        }
+
+        for (const row of periodRows || []) {
+          periodTotalsByGlid.set(row.GLID, row);
+        }
+      }
+    }
+
     const enrichedData = [];
+    let glidResult = [];
 
     for (const entry of excelData) {
       const particular = entry.particular?.trim();
@@ -22408,64 +22467,24 @@ app.post("/api/enrichExcelWithJournalData", async (req, res) => {
 
       console.log(`🔍 Looking for GLID of: "${particular}"`);
 
-      const glidQuery = `
-        SELECT TOP 1 GLID
-        FROM dbo.tbLedgerMaster
-        WHERE RTRIM(LTRIM(GLName)) = RTRIM(LTRIM(?))
-      `;
-
-      const glidResult = await new Promise((resolve, reject) => {
-        sql.query(conn, glidQuery, [particular], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
       console.log("🧾 GLID query result:", glidResult);
 
-      const glid = glidResult?.[0]?.GLID;
+      const glid = ledgerByName.get(particular);
+      glidResult = glid ? [{ GLID: glid }] : [];
 
       if (!glid) {
         console.warn(`⚠️ No GLID found for: "${particular}"`);
         enrichedData.push(entry);
         continue;
       }
-      // Calculate previous fiscal year date range
-      const fromYear = parseInt(fromDate.split('/')[0]) - 1;
-      const toYear = parseInt(fromDate.split('/')[0]);
-      const newFromDate = `${fromYear}/04/01`;
-      const newToDate = `${toYear}/03/31`;
-
       console.log("📅 newFromDate:", newFromDate);
       console.log("📅 newToDate:", newToDate);
 
-      const totalQuery = `
-        SELECT
-          ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-          ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-        FROM dbo.tbJournal
-        WHERE GLID = ?
-          AND JV_Miti BETWEEN ? AND ?
-      `;
-
-      const totalResult = await new Promise((resolve, reject) => {
-        sql.query(conn, totalQuery, [glid, newFromDate, newToDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      const total = totalResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
+      const total = openingTotalsByGlid.get(glid) || { TotalDrAmount: 0, TotalCrAmount: 0 };
 
       console.log(`💰 Totals for ${particular}:`, total);
       // Step 2: Calculate period balance using original fromDate and toDate
-      const periodResult = await new Promise((resolve, reject) => {
-        sql.query(conn, totalQuery, [glid, fromDate, toDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      const period = periodResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
+      const period = periodTotalsByGlid.get(glid) || { TotalDrAmount: 0, TotalCrAmount: 0 };
 
       enrichedData.push({
         particular: entry.particular,

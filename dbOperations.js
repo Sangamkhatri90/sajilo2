@@ -1,4 +1,4 @@
-const sql = require('msnodesqlv8');
+const sql = require('./dbPool');
 const  {connectionString, connectionString1,connectionString2,connectionString3, createConnectionString, conn} = require('./dbconfig');
 console.error      ('Type of config:', typeof connectionString2,typeof connectionString3);
 // Function to get all login details
