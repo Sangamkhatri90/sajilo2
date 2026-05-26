@@ -541,19 +541,28 @@ app.get("/api/membersearchdigitcheck", (req, res) => {
 
 
 
-app.post("/search", (req, res) => {
+app.post("/search", async (req, res) => {
   const conn = req.session.conn;
-
   const memberAlias = req.body.alias;
-  // 🚨 Check if alias exists first
-  const checkQuery = `SELECT 1 FROM dbo.tbMemberMaster WHERE MemberAlias = ?`;
-  sql.query(conn, checkQuery, [memberAlias], (err, result) => {
-    if (err) {
-      console.error("Validation error:", err);
-      return res.send("Database validation error.");
-    }
 
-    if (result.length === 0) {
+  try {
+    // =========================
+    // 1. Validate Member Alias
+    // =========================
+    const checkQuery = `
+      SELECT TOP 1 MemberID
+      FROM dbo.tbMemberMaster
+      WHERE MemberAlias = ?
+    `;
+
+    const checkResult = await new Promise((resolve, reject) => {
+      sql.query(conn, checkQuery, [memberAlias], (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      });
+    });
+
+    if (!checkResult || checkResult.length === 0) {
       return res.send(`
         <script>
           alert("The given member alias seems to be invalid or not found. Please check and provide the right member alias.");
@@ -561,263 +570,285 @@ app.post("/search", (req, res) => {
         </script>
       `);
     }
-    // Query to fetch member and ledger details, including SlAlias
-    const query = `
-  SELECT 
-    m.MemberID, 
-    m.MemberAlias, 
-    m.MemberName, 
-    s.SLID, 
-    s.SlAlias,        
-    s.SLName,         
-    s.Address1,       
-    s.Phone1,         
-    s.Mobile,         
-    s.AccountOpenDate,
-    s.Gender,         
-    s.NextofKinName,  
-    s.NextofKinAddress,
-    s.NextofKinContactNumber,
-    s.Relation,       
-    s.DOB,            
-    l.GLName          
-FROM 
-    tbMemberMaster m 
-LEFT JOIN 
-    tbSubLedgerMaster s 
-    ON m.MemberId = s.MemberId 
-    AND (s.Closed IS NULL OR s.Closed = 0)  -- Exclude rows where Closed = 1
-LEFT JOIN 
-    tbLedgerMaster l 
-    ON s.GLID = l.GLID 
-WHERE 
-    m.MemberAlias = ?;`;
 
-    sql.query(conn, query, [memberAlias], (err, results) => {
-      if (err) {
-        console.error("SQL error:", err);
-        return res.render("index", {
-          memberName: null,
-          results: [],
-          error: "Database error occurred.",
-        });
-      } else if (results.length > 0) {
-        const MemberAlias = memberAlias; // Extract the MemberID
+    // =========================
+    // 2. Fetch Member + Ledger Details
+    // =========================
+    const memberQuery = `
+      SELECT 
+          m.MemberID,
+          m.MemberAlias,
+          m.MemberName,
 
-        const memberName = results[0].MemberName; // Extract the MemberName
-        const slids = results.map((row) => row.SLID).filter(Boolean); // Extract valid SLIDs
-        const memberIds = results.map((row) => row.MemberID); // Extract MemberIDs from result
+          s.SLID,
+          s.SlAlias,
+          s.SLName,
+          s.Address1,
+          s.Phone1,
+          s.Mobile,
+          s.AccountOpenDate,
+          s.Gender,
+          s.NextofKinName,
+          s.NextofKinAddress,
+          s.NextofKinContactNumber,
+          s.Relation,
+          s.DOB,
 
-        console.log("1", memberIds);
-        console.log("2", MemberAlias);
+          s.GLID,
+          l.GLName,
+          l.ANPrefix
 
-        if (results.length === 0) {
-          return res.render("index", {
-            memberName: null,
-            data: [],
-            searchedMemberId: [],
-            error: "No member found.",
-          }); // No results found
-        }
+      FROM tbMemberMaster m
 
-        // Query dbo.tbMemberPhoto to get the Photo based on MemberID
-        const queryMemberPhoto = `
-                    SELECT MemberID, Photo, Sign1, Sign2, Sign3, Sign4 
-                    FROM dbo.tbMemberPhoto 
-                    WHERE MemberID IN (${memberIds
-            .map((id) => `'${id}'`)
-            .join(", ")})
-                    `;
-        console.log("byr", queryMemberPhoto);
+      LEFT JOIN tbSubLedgerMaster s
+          ON m.MemberId = s.MemberId
+          AND (s.Closed IS NULL OR s.Closed = 0)
 
-        sql.query(conn, queryMemberPhoto, (errPhoto, photoResult) => {
-          if (errPhoto) {
-            console.log("Error querying tbMemberPhoto:", errPhoto);
-          } else {
-            const photoMap = photoResult.reduce((map, item) => {
-              map[item.MemberID] = {
-                Photo: item.Photo,
-                Sign1: item.Sign1,
-                Sign2: item.Sign2,
-                Sign3: item.Sign3,
-                Sign4: item.Sign4,
-              };
-              return map;
-            }, {});
+      LEFT JOIN tbLedgerMaster l
+          ON s.GLID = l.GLID
 
-            results.forEach((item) => {
-              const { Photo, Sign1, Sign2, Sign3, Sign4 } =
-                photoMap[item.MemberID] || {};
-              item.Photo = encodeToBase64(Photo);
-              item.Sign1 = encodeToBase64(Sign1);
-              item.Sign2 = encodeToBase64(Sign2);
-              item.Sign3 = encodeToBase64(Sign3);
-              item.Sign4 = encodeToBase64(Sign4);
-            });
-            if (slids.length === 0) {
-              return res.render("index", {
-                memberName,
-                data: results,
-                searchedMemberId: MemberAlias,
-              }); // Render without SLID-based data
-            }
+      WHERE m.MemberAlias = ?
+    `;
 
-            // Query for journal details
-            const queryJournalDetails = `
-      SELECT SLID, DrAmount, CrAmount 
-      FROM dbo.tbJournalDetails 
-      WHERE SLID IN (${slids.map((id) => `'${id}'`).join(", ")})`;
-            console.log(queryJournalDetails);
-            sql.query(
-              conn,
-              queryJournalDetails,
-              slids,
-              (errJournal, journalResult) => {
-                if (errJournal) {
-                  console.error("Error querying tbJournalDetails:", errJournal);
-                  return res.render("index", {
-                    memberName,
-                    results,
-                    searchedMemberId,
-                  }); // Render without journal data
-                }
-
-                const balanceMap = {};
-                journalResult.forEach((row) => {
-                  const drAmount = row.DrAmount || 0;
-                  const crAmount = row.CrAmount || 0;
-                  const balance =
-                    (balanceMap[row.SLID] || 0) + (crAmount - drAmount);
-                  balanceMap[row.SLID] = balance;
-                  console.log(drAmount,crAmount,balance)
-                });
-
-                // Attach balance and journal details to results
-
-                // Query for ledger details
-                const queryLedger = `
-        SELECT ANPrefix, GLName 
-        FROM dbo.tbLedgerMaster`;
-
-                sql.query(conn, queryLedger, (errLedger, ledgerResult) => {
-                  if (errLedger) {
-                    console.error("Error querying tbLedgerMaster:", errLedger);
-                    return res.render("index", {
-                      memberName,
-                      results,
-                      searchedMemberId,
-                    }); // Render without ledger data
-                  }
-
-                  const ledgerMap = ledgerResult.reduce((map, item) => {
-                    map[item.ANPrefix] = item.GLName;
-                    return map;
-                  }, {});
-
-                  // Fetch JV_Miti and VoucherNo from tbJournalMaster using SLID from tbSubLedgerMaster
-                  const queryJournalMaster = `
-         SELECT SLIDPR, JV_Miti, VoucherNo 
-         FROM dbo.tbJournalMaster 
-         WHERE SLIDPR IN (${slids.map((id) => `'${id}'`).join(", ")})
-       `;
-
-                  sql.query(
-                    conn,
-                    queryJournalMaster,
-                    (errJournalMaster, journalMasterResult) => {
-                      if (errJournalMaster) {
-                        console.log(
-                          "Error querying tbJournalMaster:",
-                          errJournalMaster
-                        );
-                      } else {
-                        // Function to extract the first two characters (prefix) of the VoucherNo
-                        function extractVoucherPrefix(voucherNo) {
-                          return voucherNo
-                            ? voucherNo.substring(0, 2)
-                            : "Not Available";
-                        }
-
-                        // Map SLIDPR to JV_Miti and VoucherNo
-                        const journalMasterMap = journalMasterResult.reduce(
-                          (map, item) => {
-                            const voucherPrefix = extractVoucherPrefix(
-                              item.VoucherNo
-                            );
-                            map[item.SLIDPR] = {
-                              JV_Miti: item.JV_Miti,
-                              VoucherNo: item.VoucherNo,
-                              VoucherPrefix: voucherPrefix,
-                            };
-                            return map;
-                          },
-                          {}
-                        );
-
-                        results.forEach((item) => {
-                          const slid = item.SLID;
-                          const journalEntries = journalResult.filter(
-                            (j) => j.SLID === item.SLID
-                          );
-
-                          item.DrAmount =
-                            journalResult.find((j) => j.SLID === slid)
-                              ?.DrAmount || 0;
-                          item.CrAmount =
-                            journalResult.find((j) => j.SLID === slid)
-                              ?.CrAmount || 0;
-                          item.Balance = balanceMap[slid] || 0;
-                          item.LedgerName = ledgerMap[item.GLName] || "N/A";
-                          item.JV_Miti =
-                            journalMasterMap[slid]?.JV_Miti || "Not Found";
-                          item.VoucherNo =
-                            journalMasterMap[slid]?.VoucherNo || "Not Found";
-                          item.VoucherPrefix =
-                            journalMasterMap[slid]?.VoucherPrefix || "Not Found";
-                          item.Address1 = item.Address1 || "Not Available";
-                          item.Phone1 = item.Phone1 || "Not Available";
-                          item.SLName = item.SLName || "Not Available";
-                          item.Mobile = item.Mobile || "Not Available";
-                          item.AccountOpenDate =
-                            item.AccountOpenDate || "Not Available";
-                          item.Gender = item.Gender || "Not Available";
-                          item.NextofKinName =
-                            item.NextofKinName || "Not Available";
-                          item.NextofKinAddress =
-                            item.NextofKinAddress || "Not Available";
-                          item.NextofKinContactNumber =
-                            item.NextofKinContactNumber || "Not Available";
-                          item.Relation = item.Relation || "Not Available";
-                          item.DOB = item.DOB || "Not Available";
-                          item.MemberName = memberName || "not avai";
-                          item.JournalEntries = journalEntries;
-                          item.MemberAlias = MemberAlias || "not avai";
-                        });
-
-                        // Render final results
-                        res.render("index", {
-                          memberName,
-                          data: results,
-                         
-                          searchedMemberId: MemberAlias,
-                        });
-                      }
-                    }
-                  );
-                });
-              }
-            );
-          }
-        });
-      }
+    const results = await new Promise((resolve, reject) => {
+      sql.query(conn, memberQuery, [memberAlias], (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      });
     });
-  });
+
+    if (!results || results.length === 0) {
+      return res.render("index", {
+        memberName: null,
+        data: [],
+        searchedMemberId: [],
+        error: "No member found.",
+      });
+    }
+
+    const memberName = results[0].MemberName;
+    const memberIds = [
+      ...new Set(results.map((r) => r.MemberID).filter(Boolean)),
+    ];
+
+    const slids = [
+      ...new Set(results.map((r) => r.SLID).filter(Boolean)),
+    ];
+
+    // =========================
+    // 3. If No SLID
+    // =========================
+    if (slids.length === 0) {
+      return res.render("index", {
+        memberName,
+        data: results,
+        searchedMemberId: memberAlias,
+      });
+    }
+
+    // =========================
+    // 4. Prepare Parameterized IN Queries
+    // =========================
+    const memberPlaceholders = memberIds.map(() => "?").join(",");
+    const slidPlaceholders = slids.map(() => "?").join(",");
+
+    // =========================
+    // 5. Run Queries In Parallel
+    // =========================
+    const [
+      photoResult,
+      journalResult,
+      journalMasterResult,
+    ] = await Promise.all([
+      // Photos
+      new Promise((resolve, reject) => {
+        const q = `
+          SELECT 
+            MemberID,
+            Photo,
+            Sign1,
+            Sign2,
+            Sign3,
+            Sign4
+          FROM dbo.tbMemberPhoto
+          WHERE MemberID IN (${memberPlaceholders})
+        `;
+
+        sql.query(conn, q, memberIds, (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      }),
+
+      // Journal Details
+      new Promise((resolve, reject) => {
+        const q = `
+          SELECT 
+            SLID,
+            DrAmount,
+            CrAmount
+          FROM dbo.tbJournalDetails
+          WHERE SLID IN (${slidPlaceholders})
+        `;
+
+        sql.query(conn, q, slids, (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      }),
+
+      // Journal Master
+      new Promise((resolve, reject) => {
+        const q = `
+          SELECT 
+            SLIDPR,
+            JV_Miti,
+            VoucherNo
+          FROM dbo.tbJournalMaster
+          WHERE SLIDPR IN (${slidPlaceholders})
+        `;
+
+        sql.query(conn, q, slids, (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      }),
+    ]);
+
+    // =========================
+    // 6. Build Photo Map
+    // =========================
+    const photoMap = new Map();
+
+    photoResult.forEach((item) => {
+      photoMap.set(item.MemberID, {
+        Photo: encodeToBase64(item.Photo),
+        Sign1: encodeToBase64(item.Sign1),
+        Sign2: encodeToBase64(item.Sign2),
+        Sign3: encodeToBase64(item.Sign3),
+        Sign4: encodeToBase64(item.Sign4),
+      });
+    });
+
+    // =========================
+    // 7. Build Journal Maps
+    // =========================
+    const balanceMap = new Map();
+    const journalEntriesMap = new Map();
+
+    journalResult.forEach((row) => {
+      const slid = row.SLID;
+
+      const dr = Number(row.DrAmount || 0);
+      const cr = Number(row.CrAmount || 0);
+
+      // Balance
+      const currentBalance = balanceMap.get(slid) || 0;
+      balanceMap.set(slid, currentBalance + (cr - dr));
+
+      // Journal Entries
+      if (!journalEntriesMap.has(slid)) {
+        journalEntriesMap.set(slid, []);
+      }
+
+      journalEntriesMap.get(slid).push(row);
+    });
+
+    // =========================
+    // 8. Journal Master Map
+    // =========================
+    const journalMasterMap = new Map();
+
+    journalMasterResult.forEach((item) => {
+      journalMasterMap.set(item.SLIDPR, {
+        JV_Miti: item.JV_Miti || "Not Found",
+        VoucherNo: item.VoucherNo || "Not Found",
+        VoucherPrefix: item.VoucherNo
+          ? item.VoucherNo.substring(0, 2)
+          : "Not Found",
+      });
+    });
+
+    // =========================
+    // 9. Final Data Merge
+    // =========================
+    const finalData = results.map((item) => {
+      const slid = item.SLID;
+
+      const photoData = photoMap.get(item.MemberID) || {};
+
+      const journalMaster =
+        journalMasterMap.get(slid) || {};
+
+      return {
+        ...item,
+
+        // Photos
+        Photo: photoData.Photo || null,
+        Sign1: photoData.Sign1 || null,
+        Sign2: photoData.Sign2 || null,
+        Sign3: photoData.Sign3 || null,
+        Sign4: photoData.Sign4 || null,
+
+        // Balances
+        Balance: balanceMap.get(slid) || 0,
+
+        // Journal Info
+        JV_Miti: journalMaster.JV_Miti,
+        VoucherNo: journalMaster.VoucherNo,
+        VoucherPrefix: journalMaster.VoucherPrefix,
+
+        // Journal Entries
+        JournalEntries:
+          journalEntriesMap.get(slid) || [],
+
+        // Defaults
+        Address1: item.Address1 || "Not Available",
+        Phone1: item.Phone1 || "Not Available",
+        SLName: item.SLName || "Not Available",
+        Mobile: item.Mobile || "Not Available",
+        AccountOpenDate:
+          item.AccountOpenDate || "Not Available",
+        Gender: item.Gender || "Not Available",
+        NextofKinName:
+          item.NextofKinName || "Not Available",
+        NextofKinAddress:
+          item.NextofKinAddress || "Not Available",
+        NextofKinContactNumber:
+          item.NextofKinContactNumber ||
+          "Not Available",
+        Relation: item.Relation || "Not Available",
+        DOB: item.DOB || "Not Available",
+        MemberName: memberName || "Not Available",
+        MemberAlias: memberAlias || "Not Available",
+      };
+    });
+
+    // =========================
+    // 10. Render
+    // =========================
+    return res.render("index", {
+      memberName,
+      data: finalData,
+      searchedMemberId: memberAlias,
+    });
+
+  } catch (err) {
+    console.error("Search Route Error:", err);
+
+    return res.render("index", {
+      memberName: null,
+      data: [],
+      searchedMemberId: [],
+      error: "Database error occurred.",
+    });
+  }
 });
 
 app.get("/search", (req, res) => {
-  // Fetch data if necessary, else set an empty array for a fresh page load
-  const data = [];
-  res.render("index", { data });
+  res.render("index", {
+    data: [],
+  });
 });
 
 app.get("/transaction", (req, res) => {
@@ -17309,6 +17340,75 @@ app.post("/fetchShareTransmasDetailsForEdit", (req, res) => {
     });
   });
 });
+
+app.post("/fetchShareTransDetailsForMainAccedit", (req, res) => {
+  const { EditShareTransACCNumber } = req.body;
+  const conn = req.session.conn; // Get the database connection from the session
+  console.log(
+    "Received name of selected AccType for retrieving add info",
+    EditShareTransACCNumber
+  );
+
+  if (!EditShareTransACCNumber) {
+    return res.status(400).json({ message: "Account Number is required" });
+  }
+
+  // Step 1: Fetch the SLID based on the Account Number (from tbSubLedgerMaster)
+  const query = `
+      SELECT SLID
+      FROM dbo.tbSubLedgerMaster
+      WHERE SlAlias = ?
+  `;
+
+  sql.query(conn, query, [EditShareTransACCNumber], (err, rows) => {
+    if (err) {
+      console.error("Error fetching SLID:", err);
+      return res.status(500).json({ message: "Error fetching SLID" });
+    }
+
+    // If no matching row is found for the given Account Number
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ message: "No matching SLID found for this Account Number." });
+    }
+
+    const SLID = rows[0].SLID;
+
+    
+      // Step 2: Retrieve the TransactionNo, ShareIDFrom, ShareIDTo, TotalShare from tbShareTransactionMaster using the ShareTransactionID 
+      const queryDetails = `
+        SELECT TransactionNo, ShareIDFrom, ShareIDTo, TotalShare
+        FROM dbo.tbShareTransactionMaster
+        WHERE SLID = ?
+      `;
+
+      sql.query(conn, queryDetails, [SLID], (err, detailsResult) => {
+        if (err) {
+          console.error("Error fetching Share Transaction Master details:", err);
+          return res.status(500).json({ message: "Error fetching Share Transaction Master details" });
+        }
+
+        // If no matching row is found for the given SLID
+        if (!detailsResult || detailsResult.length === 0) {
+          return res.json({ message: "No data found for this Account Number." });
+        }
+
+        // Step 4: Send the TransactionNo, ShareIDFrom, ShareIDTo, TotalShare values
+        const ShareTransDetails = detailsResult.map(row => ({
+          TransactionNo: row.TransactionNo || 0,    // Default to 0 if TransactionNo is empty
+          ShareIDFrom: row.ShareIDFrom || 0,         // Default to 0 if ShareIDFrom is empty
+          ShareIDTo: row.ShareIDTo || 0,             // Default to 0 if ShareIDTo is empty
+          TotalShare: row.TotalShare || 0,           // Default to 0 if TotalShare is empty
+        }));
+
+        // Sending the share transaction details as JSON
+        res.json({ ShareTransDetails });
+        console.log("Share Transaction Details:", ShareTransDetails);
+  
+    });
+  });
+});
+
+
 app.post("/fetchShareTransmasDetailsForEditTable1Transfer", (req, res) => {
   const { EditShareTransACCNumber, formattedDate } = req.body;
   const conn = req.session.conn; // Get the database connection from the session

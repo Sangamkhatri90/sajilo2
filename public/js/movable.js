@@ -195,7 +195,7 @@ function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
 
                       
                             });
-    const slAlias = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim();
+                            const slAlias = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim();
                         console.log("value", slAlias)
                         if (!slAlias) {
                             alert("Missing End date, or SubLedger Alias.");
@@ -236,7 +236,118 @@ function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
                             console.error(err);
                             alert("Error loading transactions");
                         }
+                        const accountNumber = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim();
+                        const table = document.getElementById("EditMainSharemastable");
+                        const tbody = table.querySelector('tbody');
+                                                if (accountNumber) {
+                            fetch('/fetchShareTransDetailsForMainAccedit', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    EditShareTransACCNumber: accountNumber
+                                    
 
+                                }),
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log("Share Transaction master Details:", data);
+
+                                    tbody.innerHTML = ""; // Clear existing rows
+
+                                    if (data.ShareTransDetails && data.ShareTransDetails.length > 0) {
+                                        // Populate the table with the returned data
+                                        data.ShareTransDetails.forEach((row, index) => {
+                                            const tr = document.createElement("tr");
+
+                                            const transactionno = row.TransactionNo === 0 ? "0" : row.TransactionNo || '';
+                                            const from = row.ShareIDFrom === 0 ? "0" : row.ShareIDFrom || '';
+                                            const to = row.ShareIDTo === 0 ? "0" : row.ShareIDTo || '';
+                                            const total = row.TotalShare === 0 ? "0" : row.TotalShare || '';
+
+                                            tr.innerHTML = `
+                                        <td>${index + 1}</td>
+                                        <td contenteditable="true" class="editable-cell" data-field="Transactiono">${transactionno}</td>
+                                        <td contenteditable="true" class="editable-cell" data-field="From">${from}</td>
+                                        <td contenteditable="true" class="editable-cell" data-field="To">${to}</td>
+                                        <td contenteditable="true" class="editable-cell" data-field="Total">${total}</td>
+                                    `;
+                                            tbody.appendChild(tr);
+                                        });
+
+                                        // If there are fewer than 5 rows, add empty rows to make it 5
+                                        const emptyRowsCount = 5 - data.ShareTransDetails.length;
+                                        for (let i = 0; i < emptyRowsCount; i++) {
+                                            const emptyRow = document.createElement("tr");
+                                            emptyRow.innerHTML = `
+                                        <td>${data.ShareTransDetails.length + i + 1}</td>
+                                        <td contenteditable="true" class="editable-cell" data-field="Transactiono"></td>
+                                        <td contenteditable="true" class="editable-cell" data-field="From"></td>
+                                        <td contenteditable="true" class="editable-cell" data-field="To"></td>
+                                        <td contenteditable="true" class="editable-cell" data-field="Total"></td>
+                                    `;
+                                            tbody.appendChild(emptyRow);
+                                        }
+                                    } else {
+                                        // No data found, show the "No Data Found" message and 5 empty rows
+                                        console.log("No data available to display in the table.");
+                                        tbody.innerHTML = "";
+                                        const noDataRow = document.createElement("tr");
+                                        noDataRow.innerHTML = `<td colspan="5" >No data found for the entered Account Number.</td>`;
+                                        tbody.appendChild(noDataRow);
+
+                                        // Add 5 empty rows (if no data is returned)
+                                        for (let i = 0; i < 5; i++) {
+                                            const emptyRow = document.createElement("tr");
+                                            emptyRow.innerHTML = `
+                                        <td></td> <!-- No serial number when no data -->
+                                        <td contenteditable="true" class="editable-cell" data-field="Transactiono"></td>
+                                        <td contenteditable="true" class="editable-cell" data-field="From"></td>
+                                        <td contenteditable="true" class="editable-cell" data-field="To"></td>
+                                        <td contenteditable="true" class="editable-cell" data-field="Total"></td>
+                                    `;
+                                            tbody.appendChild(emptyRow);
+                                        }
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error("Error fetching data:", error);
+                                    // Handle the error here (e.g., show an alert or message to the user)
+                                    tbody.innerHTML = "";
+                                    const errorRow = document.createElement("tr");
+                                    errorRow.innerHTML = `<td colspan="5" rowspan = "5">Error fetching data. Please try again later.</td>`;
+                                    tbody.appendChild(errorRow);
+
+                                    // Add 5 empty rows (if there's an error)
+                                    for (let i = 0; i < 5; i++) {
+                                        const emptyRow = document.createElement("tr");
+                                        emptyRow.innerHTML = `
+                                    <td></td> <!-- No serial number when error occurs -->
+                                    <td contenteditable="true" class="editable-cell" data-field="Transactiono"></td>
+                                    <td contenteditable="true" class="editable-cell" data-field="From"></td>
+                                    <td contenteditable="true" class="editable-cell" data-field="To"></td>
+                                    <td contenteditable="true" class="editable-cell" data-field="Total"></td>
+                                `;
+                                        tbody.appendChild(emptyRow);
+                                    }
+                                });
+                        } else {
+                            // If account number is empty, clear the table and add 5 empty rows
+                            tbody.innerHTML = "";
+                            for (let i = 0; i < 5; i++) {
+                                const emptyRow = document.createElement("tr");
+                                emptyRow.innerHTML = `
+                            <td></td> <!-- No serial number when no data -->
+                            <td contenteditable="true" class="editable-cell" data-field="Transactiono"></td>
+                            <td contenteditable="true" class="editable-cell" data-field="From"></td>
+                            <td contenteditable="true" class="editable-cell" data-field="To"></td>
+                            <td contenteditable="true" class="editable-cell" data-field="Total"></td>
+                        `;
+                                tbody.appendChild(emptyRow);
+                            }
+                        }
     });
 }
 
