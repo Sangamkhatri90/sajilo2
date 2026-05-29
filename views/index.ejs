@@ -29849,6 +29849,16 @@ async function loadEarningsData() {
                                 data.glNames.sort((a, b) => a.GLName.localeCompare(b.GLName));
                                 ledgerCacheforBandC.push(...data.glNames);
                                 ledgerforBandCDataFetched = true;
+
+
+                // ✅ Set default value for cc-apBillsLedger
+                const cashLedger = ledgerCacheforBandC.find(
+                    item => item.GLName.toLowerCase() === 'cash'
+                );
+
+                if (cashLedger) {
+                    document.getElementById('cc-apBillsLedger').value = cashLedger.GLName;
+                }
                                 callback(ledgerCacheforBandC);
                             } else {
                                 callback([]);

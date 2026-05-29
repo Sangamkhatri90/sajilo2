@@ -278,7 +278,6 @@ function bindAdditionalToggleButtonNrmBill(movableDivId, toggleButtonId) {
 
             
                             const ccacceditGLName = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim();
-                            document.getElementById("cc-apBillsLedger").value = ccacceditGLName || '';
                              const EditCollChequemasAccIDforaccposting = document.getElementById("Maintransaccountnumberofaccpostedit").value;
 console.log("value", EditCollChequemasAccIDforaccposting)
                             fetch('/fetchCollectionChequemasaccpostForEdit', {
