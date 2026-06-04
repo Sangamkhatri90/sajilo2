@@ -11811,8 +11811,6 @@ async function loadEarningsData() {
                                         <label for="">Doc Class</label>
                                         <input type="text" class="benchods" name="docClassTrans"
                                             id="doc-class-receipt-voucher"
-                                            onfocus="fetchDocClassesForReceiptVoucher(true)"
-                                            oninput="filterDocClassesForReceiptVoucher()"
                                             placeholder="Type or Click to get lists">
                                     </div>
                                     <div id="docClassesListforReceiptVoucher" class="suggestions-list2"
@@ -29113,92 +29111,6 @@ async function loadEarningsData() {
 
                 });
             </script>
-
-            <script>
-                let allDocClassForReceiptVoucher = [];  // Store both DocClassName and DocClassAlias fetched from the server for Receipt Voucher
-                let filteredDocClassForReceiptVoucher = [];  // Store filtered DocClassNames and DocClassAliases based on user input for Receipt Voucher
-
-                // Function to fetch DocClassNames and DocClassAliases for Receipt Voucher from the server and display them as suggestions
-                function fetchDocClassesForReceiptVoucher(isInitialFocus) {
-                    const docClassesList = document.getElementById('docClassesListforReceiptVoucher');
-                    docClassesList.innerHTML = '';  // Clear any existing suggestions
-                    docClassesList.style.display = 'none';  // Hide suggestions list initially
-
-                    if (allDocClassForReceiptVoucher.length === 0 || isInitialFocus) {
-                        // Fetch DocClassNames and DocClassAliases for Receipt Voucher from the backend if not already fetched
-                        fetch('/fetchDocClassesForReceiptVoucher')
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.docClasses && data.docClasses.length > 0) {
-                                    allDocClassForReceiptVoucher = data.docClasses;  // Store fetched DocClassNames and DocClassAliases for Receipt Voucher
-                                    filteredDocClassForReceiptVoucher = [...allDocClassForReceiptVoucher];  // Initially show all DocClassNames
-                                    displayDocClassesForReceiptVoucher(filteredDocClassForReceiptVoucher);  // Display the full list on initial focus
-                                } else {
-                                    const noResult = document.createElement('div');
-                                    noResult.textContent = 'No DocClassNames found';
-                                    docClassesList.appendChild(noResult);
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error fetching DocClassNames:', error);
-                                const errorMessage = document.createElement('div');
-                                errorMessage.textContent = 'Error fetching DocClassNames';
-                                docClassesList.appendChild(errorMessage);
-                            });
-                    } else {
-                        displayDocClassesForReceiptVoucher(filteredDocClassForReceiptVoucher);  // Display the filtered list
-                    }
-                }
-
-                // Function to filter DocClassNames and DocClassAliases based on user input for Receipt Voucher
-                function filterDocClassesForReceiptVoucher() {
-                    const input = document.getElementById('doc-class-receipt-voucher').value.toLowerCase();
-                    if (input === '') {
-                        filteredDocClassForReceiptVoucher = [...allDocClassForReceiptVoucher];  // Show the full list when input is empty
-                    } else {
-                        filteredDocClassForReceiptVoucher = allDocClassForReceiptVoucher.filter(item =>
-                            item.DocClassName.toLowerCase().includes(input) || item.DocClassAlias.toLowerCase().includes(input)
-                        );
-                    }
-                    displayDocClassesForReceiptVoucher(filteredDocClassForReceiptVoucher);
-                }
-
-                // Function to display DocClassNames and DocClassAliases in the suggestion list for Receipt Voucher
-                function displayDocClassesForReceiptVoucher(names) {
-                    const docClassesList = document.getElementById('docClassesListforReceiptVoucher');
-                    docClassesList.innerHTML = '';  // Clear previous suggestions
-
-                    // Create and append the close button
-                    const closeButton = document.createElement('button');
-                    closeButton.textContent = 'X';
-                    closeButton.onclick = function (event) {
-                        event.preventDefault();
-                        docClassesList.style.display = 'none';  // Hide the suggestions list when the close button is clicked
-                    };
-                    docClassesList.appendChild(closeButton);  // Append the close button to the list
-
-                    if (names.length > 0) {
-                        docClassesList.style.display = 'block';  // Show the suggestions list
-                        names.forEach(item => {
-                            const div = document.createElement('div');
-                            div.textContent = `${item.DocClassName} - ${item.DocClassAlias}`;  // Show both values
-                            div.onclick = function () {
-                                document.getElementById('doc-class-receipt-voucher').value = item.DocClassName;  // Set the input value to DocClassName
-                                docClassesList.style.display = 'none';  // Hide the suggestions list
-                            };
-                            docClassesList.appendChild(div);
-                        });
-                    } else {
-                        const noResult = document.createElement('div');
-                        noResult.textContent = 'No matching DocClassNames found';
-                        docClassesList.appendChild(noResult);
-                    }
-                }
-            </script>
-
-
-            
-
 
             <script>
                 // Shared cache for all Profession fields

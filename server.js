@@ -8984,34 +8984,7 @@ WHERE 1=1
 });
 
 
-app.get("/fetchDocClassesForReceiptVoucher", (req, res) => {
-  // Fetch both DocClassName and DocClassAlias from the tbDocClassMaster table for Receipt Voucher
-  const query = `SELECT DocClassName, DocClassAlias FROM dbo.tbDocClassMaster`; // Adjust schema if needed
-  const conn = req.session.conn;
 
-  // Validate connection
-  if (!conn) {
-    console.error("Database connection is not available in the session.");
-    return res.status(500).send("Database connection not found");
-  }
-
-  // Execute query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res
-        .status(500)
-        .send("Error fetching DocClassNames and DocClassAliases");
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ docClasses: rows }); // Send both DocClassName and DocClassAlias
-    } else {
-      res.json({ message: "No DocClassNames found" });
-    }
-  });
-});
 
 app.get("/fetchDocClassesForMultiTrans", (req, res) => {
   // Define query to fetch both DocClassName and DocClassAlias for MultiTrans

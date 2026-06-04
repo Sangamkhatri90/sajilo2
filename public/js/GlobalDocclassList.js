@@ -158,6 +158,7 @@
             { inputId: 'doc-class-cost-of-funds', listId: 'docClassesListforCostOfFunds' },
             { inputId: 'doc-class-acc-als-tna', listId: 'docClassesListforAccAlsTNA' },
             { inputId: 'doc-class-acc-als-ttr', listId: 'docClassesListforAccAlsTTR' },
+            { inputId: 'doc-class-receipt-voucher', listId: 'docClassesListforReceiptVoucher' },
         ];
 
         // Attach events for all fields (single fetch for all)
