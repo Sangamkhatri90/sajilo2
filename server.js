@@ -24470,7 +24470,7 @@ app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
         resolve(result);
       });
     });
-    console.log(`✅ Found ${ledgers.length} ledgers`);
+    // console.log(`✅ Found ${ledgers.length} ledgers`);
 
     // 3️⃣ Check if journal entries exist for previous fiscal year
     const checkDateQuery = `
@@ -24485,18 +24485,18 @@ app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
       });
     });
     const openingJournalCount = openingCountResult?.[0]?.Count || 0;
-    console.log("📊 Opening journal entries count:", openingJournalCount);
+    // console.log("📊 Opening journal entries count:", openingJournalCount);
 
     const groupTotals = {}; // key = LgrGrpID
 
     // 4️⃣ Process OpeningBalance ledgers (Category B/C)
     const openingLedgers = ledgers.filter(l => l.Category === 'B' || l.Category === 'C');
-    console.log(`📌 Ledgers considered for OpeningBalance: ${openingLedgers.length}`);
+    // console.log(`📌 Ledgers considered for OpeningBalance: ${openingLedgers.length}`);
 
     for (const ledger of openingLedgers) {
       const { GLID, LgrGrpID, Category, GLName } = ledger;
       if (!GLID || !LgrGrpID) continue;
-      console.log(`🔹 Processing OpeningBalance ledger: ${GLName} (Category: ${Category})`);
+      // console.log(`🔹 Processing OpeningBalance ledger: ${GLName} (Category: ${Category})`);
 
       // Period totals
       const periodQuery = `
@@ -24511,7 +24511,7 @@ app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
         });
       });
       const period = periodResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
-      console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
+      // console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
 
       // Opening balances
       let openingDebit = 0, openingCredit = 0;
@@ -24524,15 +24524,15 @@ app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
         });
         openingDebit = openingResult?.[0]?.TotalDrAmount || 0;
         openingCredit = openingResult?.[0]?.TotalCrAmount || 0;
-        console.log(`📊 DB Opening: Dr=${openingDebit}, Cr=${openingCredit}`);
+        // console.log(`📊 DB Opening: Dr=${openingDebit}, Cr=${openingCredit}`);
       } else if (excelData && excelData.length > 0) {
         const excelRow = excelData.find(row => (row.particular?.trim() || '') === GLName);
         if (excelRow) {
           openingDebit = parseFloat(excelRow.OpeningBalanceDr || 0);
           openingCredit = parseFloat(excelRow.OpeningBalanceCr || 0);
-          console.log(`📊 Excel Opening: ${GLName} → Dr=${openingDebit}, Cr=${openingCredit}`);
+          // console.log(`📊 Excel Opening: ${GLName} → Dr=${openingDebit}, Cr=${openingCredit}`);
         } else {
-          console.log(`⚠️ No Excel row found for ledger: ${GLName}`);
+          // console.log(`⚠️ No Excel row found for ledger: ${GLName}`);
         }
       }
 
@@ -24548,16 +24548,16 @@ app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
       groupTotals[LgrGrpID].GLIDs.add(GLID);
     }
 
-    console.log("✅ OpeningBalance Group Totals Calculated");
+    // console.log("✅ OpeningBalance Group Totals Calculated");
 
     // 5️⃣ Process other ledgers (for Transaction section)
     const transactionLedgers = ledgers.filter(l => l.Category !== 'B' && l.Category !== 'C');
-    console.log(`📌 Ledgers considered for Transaction: ${transactionLedgers.length}`);
+    // console.log(`📌 Ledgers considered for Transaction: ${transactionLedgers.length}`);
 
     for (const ledger of transactionLedgers) {
       const { GLID, LgrGrpID, Category, GLName } = ledger;
       if (!GLID || !LgrGrpID) continue;
-      console.log(`🔹 Processing Transaction ledger: ${GLName} (Category: ${Category})`);
+      // console.log(`🔹 Processing Transaction ledger: ${GLName} (Category: ${Category})`);
 
       const periodQuery = `
         SELECT ISNULL(SUM(DrAmount),0) AS TotalDrAmount, ISNULL(SUM(CrAmount),0) AS TotalCrAmount
@@ -24571,7 +24571,7 @@ app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
         });
       });
       const period = periodResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
-      console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
+      // console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
 
       // Accumulate group totals (openingDebit/credit = 0)
       if (!groupTotals[LgrGrpID]) {
@@ -24583,7 +24583,7 @@ app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
       groupTotals[LgrGrpID].GLIDs.add(GLID);
     }
 
-    console.log("✅ Transaction group totals calculated");
+    // console.log("✅ Transaction group totals calculated");
 
     // 6️⃣ Get group names & aliases
     const groupIds = Object.keys(groupTotals);
