@@ -24123,6 +24123,7 @@ app.post("/api/fetchdataofreceiptandpaymentTformattttt", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
+
 app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
   const conn = req.session.conn;
   const { fromDate, toDate, excelData } = req.body;
@@ -24329,7 +24330,6 @@ app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
-
 
 
 
