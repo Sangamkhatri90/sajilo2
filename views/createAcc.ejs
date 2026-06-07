@@ -43,7 +43,6 @@
                                 <div>
                                     <label for="accountType">Account Type</label>
                                     <input type="text" class="nlm-text" id="accountType" name="accountType"
-                                           onfocus="fetchPostingLedgers3(true)" oninput="filterPostingLedgers3()"
                                            placeholder="Type to get Account List">
                                     <div id="PostingLedgerList3" class="suggestions-list3"></div>
                                 </div>
@@ -818,105 +817,7 @@ function updatePhotoAPI() {
 });
 
     </script>
-   <script>
-    let allPostingLedgers3 = [];  // Store all GLName and GLAlias
-let filteredPostingLedgers3 = [];  // Store filtered GLName and GLAlias
-
-// Fetch Posting Ledgers from the backend when the user focuses on the input field
-function fetchPostingLedgers3(isInitialFocus) {
-    const PostingLedgerList3 = document.getElementById('PostingLedgerList3');
-    const inputField = document.getElementById('accountType');
-    PostingLedgerList3.innerHTML = '';  // Clear any existing suggestions
-    PostingLedgerList3.style.display = 'none';  // Hide suggestions list initially
-
-    // Fetch Posting Ledgers from the backend if not already fetched
-    if (allPostingLedgers3.length === 0 || isInitialFocus) {
-        fetch('/fetchPostingLedger3')  // Make sure the correct endpoint is used
-            .then(response => response.json())
-            .then(data => {
-                if (data.postingLedgers && data.postingLedgers.length > 0) {
-                    allPostingLedgers3 = data.postingLedgers;  // Store GLNames and GLAliases
-                    filteredPostingLedgers3 = [...allPostingLedgers3];  // Initially show all Posting Ledgers
-                    // Sort the Posting Ledgers alphabetically by GLName
-                    filteredPostingLedgers3.sort((a, b) => a.GLName.localeCompare(b.GLName));
-                    displayPostingLedgers3(filteredPostingLedgers3);  // Display the full list
-                } else {
-                    const noResult = document.createElement('div');
-                    noResult.textContent = 'No Posting Ledgers found';
-                    noResult.style.color = 'gray';
-                    PostingLedgerList3.appendChild(noResult);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching Posting Ledgers:', error);
-                const errorMessage = document.createElement('div');
-                errorMessage.textContent = 'Error fetching Posting Ledgers';
-                errorMessage.style.color = 'red';
-                PostingLedgerList3.appendChild(errorMessage);
-            });
-    } else {
-        // For non-initial focus, just display filtered results
-        displayPostingLedgers3(filteredPostingLedgers3);
-    }
-}
-
-// Function to filter Posting Ledgers based on user input
-function filterPostingLedgers3() {
-    const input = document.getElementById('accountType').value.toLowerCase();
-    if (input === '') {
-        filteredPostingLedgers3 = [...allPostingLedgers3];
-    } else {
-        filteredPostingLedgers3 = allPostingLedgers3.filter(item =>
-            item.GLName.toLowerCase().includes(input) || item.GLAlias.toLowerCase().includes(input)
-        );
-    }
-
-    // Sort the filtered results alphabetically
-    filteredPostingLedgers3.sort((a, b) => a.GLName.localeCompare(b.GLName));
-
-    displayPostingLedgers3(filteredPostingLedgers3);
-}
-
-// Function to display filtered Posting Ledgers in the suggestions list
-function displayPostingLedgers3(ledgers) {
-    const PostingLedgerList3 = document.getElementById('PostingLedgerList3');
-    PostingLedgerList3.innerHTML = '';  // Clear previous suggestions
-
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'X';  // Display "X" text for the close button
-    closeButton.className = 'close-button';  // Add a class for styling
-
-    // Add functionality to close the menu list when clicked
-    closeButton.onclick = function (event) {
-        event.preventDefault();
-        PostingLedgerList3.style.display = 'none';  // Hide the suggestions list
-    };
-    PostingLedgerList3.appendChild(closeButton);  // Append the close button
-
-    if (ledgers.length > 0) {
-        PostingLedgerList3.style.display = 'block';  // Show the suggestions list
-        ledgers.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.textContent = `${item.GLName} - ${item.GLAlias}`;
-            div.title = `${item.GLName} - ${item.GLAlias}`;
-
-            // When a user clicks on a suggestion
-            div.onclick = function () {
-                document.getElementById('accountType').value = item.GLName;  // Set the input value to GLName
-                PostingLedgerList3.style.display = 'none';  // Hide the suggestions list
-            };
-            PostingLedgerList3.appendChild(div);
-        });
-    } else {
-        const noResult = document.createElement('div');
-        noResult.textContent = 'No matching Posting Ledgers found';
-        noResult.style.color = 'gray';
-        PostingLedgerList3.appendChild(noResult);
-    }
-}
-
-   </script>
+   
    <script>
     let allCollectors = [];  // Array to store all collector data
 let filteredCollectors = [];  // Array to store filtered collector data
@@ -1011,6 +912,7 @@ function displayCollectors(collectors) {
 
    </script>
      <script src="/js/alertsmessages.js"></script>
+     <script src="/js/GlobalLgrMasterConAT.js"></script>
     
 </body>
 
