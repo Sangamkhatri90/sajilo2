@@ -6,6 +6,7 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
        Relation, DOB, JV_Miti, VoucherNo,MemberName, DrAmount, JournalEntries, CrAmount) {
     const action = document.getElementById('actionSelect').value;
     const transactionDiv = document.getElementById("mainCreatTransDiv");
+    const multitransactionDiv = document.getElementById("mainmultitransaction");
     const voucherNoInput = document.getElementById('MaintransvoucherNo');
     const MaintransMembervalueforeditIN = document.getElementById('MaintransMembervalueforedit'); 
     const memberEditFrom = document.getElementById("ccapctmemedit");
@@ -365,14 +366,20 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
         // &DrAmount=${DrAmount}&JournalEntries=${encodeURIComponent(JournalEntries)}&CrAmount=${CrAmount}`;
     
 
-    } else if (action === 'bigTransaction') {
+    }
+    
+    else if (action === 'bigTransaction') {
+
+        multitransactionDiv.style.display ='block';
+
         url = `/bigTransaction?SlAlias=${SlAlias}
         &Address1=${Address1}&Phone1=${Phone1}&Mobile=${Mobile}
         &Gender=${Gender}&NextofKinName=${NextofKinName}&NextofKinAddress=${NextofKinAddress}
         &NextofKinContactNumber=${NextofKinContactNumber}&Relation=${Relation}&DOB=${DOB}&JV_Miti=${JV_Miti}&VoucherNo=${VoucherNo}
         &DrAmount=${DrAmount}&CrAmount=${CrAmount}`;
         
-    } else if (action === 'openingBalance') {
+    } 
+    else if (action === 'openingBalance') {
         // Don't pass the base64 image in the URL, it's already stored in sessionStorage
         url = `/openingBalance?SlAlias=${SlAlias}&GLName=${GLName}
        `;
