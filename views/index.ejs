@@ -79,6 +79,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bikram-sambat-js@1.0.4/dist/index.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 
 
@@ -1011,7 +1012,7 @@
                                 </div>
 
                             </fieldset>
-                            <input type="text" id="ATDSearch" onkeyup="searchAndSortTable2()"
+                            <input type="text" id="ATDSearch" onkeyup="searchAndSortTable('ATDSearch', 'ledgerMasterTable')"
                                 placeholder="Search account type here">
                             <div class="aa-button-row">
                                 <button type="submit" id="ATDOkButton" class="copy-button">Ok</button>
@@ -1064,7 +1065,7 @@
                                     </table>
                                 </div>
                             </fieldset>
-                            <input type="text" id="ASTDSearch" onkeyup="searchAndSortTable1()"
+                            <input type="text" id="ASTDSearch"  onkeyup="searchAndSortTable('ASTDSearch', 'ledgerSecondMasterTable')"
                                 placeholder="Search Here">
                             <div class="aa-button-row">
                                 <button type="submit" id="ASTDOkButton" class="copy-button">Ok</button>
@@ -3399,7 +3400,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <input type="text" id="LCOFSearch" onkeyup="searchAndSortTable6()"
+                            <input type="text" id="LCOFSearch" onkeyup="searchAndSortTable('LCOFSearch', 'costofFundloanLedger')"
                                 placeholder="Search Account Types Here !">
                             <div class="aa-button-row">
                                 <button type="submit" id="loanOkButton" class="copy-button">Ok</button>
@@ -3453,7 +3454,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <input type="text" id="UCLCOSearch" onkeyup="searchAndSortTable4()"
+                            <input type="text" id="UCLCOSearch" onkeyup="searchAndSortTable('UCLCOSearch', 'unCheckedcostofFundloanLedger')"
                                 placeholder="Search Account Types here !]">
                             <div class="aa-button-row">
                                 <button type="submit" id="unCheckedloanOkButton" class="copy-button">Ok</button>
@@ -3507,7 +3508,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <input type="text" id="UCSCOFSearch" onkeyup="searchAndSortTable3()"
+                            <input type="text" id="UCSCOFSearch" onkeyup="searchAndSortTable('UCSCOFSearch', 'unCheckedcostofFundsavingLedger')"
                                 placeholder="Search Account Types here!">
                             <div class="aa-button-row">
                                 <button type="submit" id="unCheckedsavingOkButton" class="copy-button">Ok</button>
@@ -8097,7 +8098,7 @@ async function loadEarningsData() {
                                     </tbody>
                                 </table>
                             </div>
-                            <input type="text" id="LTNASearch" onkeyup="searchAndSortTable5()"
+                            <input type="text" id="LTNASearch" onkeyup="searchAndSortTable('LTNASearch', 'TopNAccloanLedger')"
                                 placeholder="Search Account Types here !">
                             <div class="aa-button-row">
                                 <button type="submit" id="loanTNAOkButton" class="copy-button">Ok</button>
@@ -25086,9 +25087,13 @@ async function loadEarningsData() {
                                         <input type="number" id="minBalance" name="minBalance">
                                     </div>
                                 </div>
-                            </fieldset>
-                            <fieldset>
+                                <fieldset>
                                  <legend>Share Details</legend>
+                                 <div style="display:flex; justify-content:flex-end; margin: 0 0 8px 0;">
+                                     <button type="button" id="PrintShareCertificateBtn" class="action-button" style="min-width: 190px;">
+                                         PrintShare Certificate
+                                     </button>
+                                 </div>
                                                  <div class="st-table2-container">
                                         <table id="EditMainSharemastable" class="highlight-table">
                                             <thead>
@@ -25112,6 +25117,8 @@ async function loadEarningsData() {
                                         </table>
                                     </div>
                             </fieldset>
+                            </fieldset>
+                            
                             <div>
                                 <label for="remarks">Remark</label>
                                 <input type="text" name="Remarks" id="acc-remarks-viewaccdeteditaccposting">
@@ -31309,246 +31316,6 @@ async function loadEarningsData() {
                 });
 
             </script>
-            <script>
-                function searchAndSortTable1() {
-                    let input = document.getElementById("ASTDSearch").value.toLowerCase();
-                    let table = document.getElementById("ledgerSecondMasterTable");
-                    let rows = Array.from(table.getElementsByTagName("tr")).slice(1); // All rows except header
-
-
-                    let sortedRows = rows.sort((a, b) => {
-                        let matchA = 0;
-                        let matchB = 0;
-
-                        // Check each cell of the row and see if it matches the search term
-                        let cellsA = a.getElementsByTagName("td");
-                        let cellsB = b.getElementsByTagName("td");
-
-                        // Loop through each cell and see if it matches
-                        for (let i = 0; i < cellsA.length; i++) {
-                            let cellA = cellsA[i].textContent || cellsA[i].innerText;
-                            let cellB = cellsB[i].textContent || cellsB[i].innerText;
-
-                            if (cellA.toLowerCase().includes(input)) matchA++;
-                            if (cellB.toLowerCase().includes(input)) matchB++;
-
-                            // ✅ Only apply highlight to non-checkbox columns
-                            if (i !== 0) {
-                                cellsA[i].innerHTML = highlightText1(cellA, input);
-                                cellsB[i].innerHTML = highlightText1(cellB, input);
-                            }
-
-                        }
-
-                        // Sort rows based on the number of matches
-                        return matchB - matchA;  // Higher match count comes first
-                    });
-
-                    // Append the sorted rows to the table
-                    sortedRows.forEach(row => table.appendChild(row));
-                }
-
-                function highlightText1(text, search) {
-                    const regex = new RegExp(`(${search})`, 'gi'); // Regular expression to find matching text (case insensitive)
-                    return text.replace(regex, '<span class="highlight">$1</span>'); // Wrap matched text with <span>
-                }
-            </script>
-            <script>
-                function searchAndSortTable2() {
-                    let input = document.getElementById("ATDSearch").value.toLowerCase();
-                    let table = document.getElementById("ledgerMasterTable");
-                    let rows = Array.from(table.getElementsByTagName("tr")).slice(1); // All rows except header
-                    let sortedRows = rows.sort((a, b) => {
-                        let matchA = 0;
-                        let matchB = 0;
-
-                        // Check each cell of the row and see if it matches the search term
-                        let cellsA = a.getElementsByTagName("td");
-                        let cellsB = b.getElementsByTagName("td");
-
-                        // Loop through each cell and see if it matches
-                        for (let i = 0; i < cellsA.length; i++) {
-                            let cellA = cellsA[i].textContent || cellsA[i].innerText;
-                            let cellB = cellsB[i].textContent || cellsB[i].innerText;
-
-                            if (cellA.toLowerCase().includes(input)) matchA++;
-                            if (cellB.toLowerCase().includes(input)) matchB++;
-
-                            // Highlight matching text in the cell
-                            cellsA[i].innerHTML = highlightText2(cellA, input);
-                            cellsB[i].innerHTML = highlightText2(cellB, input);
-                        }
-
-                        // Sort rows based on the number of matches
-                        return matchB - matchA;  // Higher match count comes first
-                    });
-
-                    // Append the sorted rows to the table
-                    sortedRows.forEach(row => table.appendChild(row));
-                }
-
-                function highlightText2(text, search) {
-                    const regex = new RegExp(`(${search})`, 'gi'); // Regular expression to find matching text (case insensitive)
-                    return text.replace(regex, '<span class="highlight">$1</span>'); // Wrap matched text with <span>
-                }
-            </script>
-            <script>
-                function searchAndSortTable3() {
-                    let input = document.getElementById("UCSCOFSearch").value.toLowerCase();
-                    let table = document.getElementById("unCheckedcostofFundsavingLedger");
-                    let rows = Array.from(table.getElementsByTagName("tr")).slice(1); // All rows except header
-                    let sortedRows = rows.sort((a, b) => {
-                        let matchA = 0;
-                        let matchB = 0;
-
-                        // Check each cell of the row and see if it matches the search term
-                        let cellsA = a.getElementsByTagName("td");
-                        let cellsB = b.getElementsByTagName("td");
-
-                        // Loop through each cell and see if it matches
-                        for (let i = 0; i < cellsA.length; i++) {
-                            let cellA = cellsA[i].textContent || cellsA[i].innerText;
-                            let cellB = cellsB[i].textContent || cellsB[i].innerText;
-
-                            if (cellA.toLowerCase().includes(input)) matchA++;
-                            if (cellB.toLowerCase().includes(input)) matchB++;
-
-                            // Highlight matching text in the cell
-                            cellsA[i].innerHTML = highlightText3(cellA, input);
-                            cellsB[i].innerHTML = highlightText3(cellB, input);
-                        }
-
-                        // Sort rows based on the number of matches
-                        return matchB - matchA;  // Higher match count comes first
-                    });
-
-                    // Append the sorted rows to the table
-                    sortedRows.forEach(row => table.appendChild(row));
-                }
-
-                function highlightText3(text, search) {
-                    const regex = new RegExp(`(${search})`, 'gi'); // Regular expression to find matching text (case insensitive)
-                    return text.replace(regex, '<span class="highlight">$1</span>'); // Wrap matched text with <span>
-                }
-            </script>
-            <script>
-                function searchAndSortTable4() {
-                    let input = document.getElementById("UCLCOSearch").value.toLowerCase();
-                    let table = document.getElementById("unCheckedcostofFundloanLedger");
-                    let rows = Array.from(table.getElementsByTagName("tr")).slice(1); // All rows except header
-                    let sortedRows = rows.sort((a, b) => {
-                        let matchA = 0;
-                        let matchB = 0;
-
-                        // Check each cell of the row and see if it matches the search term
-                        let cellsA = a.getElementsByTagName("td");
-                        let cellsB = b.getElementsByTagName("td");
-
-                        // Loop through each cell and see if it matches
-                        for (let i = 0; i < cellsA.length; i++) {
-                            let cellA = cellsA[i].textContent || cellsA[i].innerText;
-                            let cellB = cellsB[i].textContent || cellsB[i].innerText;
-
-                            if (cellA.toLowerCase().includes(input)) matchA++;
-                            if (cellB.toLowerCase().includes(input)) matchB++;
-
-                            // Highlight matching text in the cell
-                            cellsA[i].innerHTML = highlightText4(cellA, input);
-                            cellsB[i].innerHTML = highlightText4(cellB, input);
-                        }
-
-                        // Sort rows based on the number of matches
-                        return matchB - matchA;  // Higher match count comes first
-                    });
-
-                    // Append the sorted rows to the table
-                    sortedRows.forEach(row => table.appendChild(row));
-                }
-
-                function highlightText4(text, search) {
-                    const regex = new RegExp(`(${search})`, 'gi'); // Regular expression to find matching text (case insensitive)
-                    return text.replace(regex, '<span class="highlight">$1</span>'); // Wrap matched text with <span>
-                }
-            </script>
-            <script>
-                function searchAndSortTable5() {
-                    let input = document.getElementById("LTNASearch").value.toLowerCase();
-                    let table = document.getElementById("TopNAccloanLedger");
-                    let rows = Array.from(table.getElementsByTagName("tr")).slice(1); // All rows except header
-                    let sortedRows = rows.sort((a, b) => {
-                        let matchA = 0;
-                        let matchB = 0;
-
-                        // Check each cell of the row and see if it matches the search term
-                        let cellsA = a.getElementsByTagName("td");
-                        let cellsB = b.getElementsByTagName("td");
-
-                        // Loop through each cell and see if it matches
-                        for (let i = 0; i < cellsA.length; i++) {
-                            let cellA = cellsA[i].textContent || cellsA[i].innerText;
-                            let cellB = cellsB[i].textContent || cellsB[i].innerText;
-
-                            if (cellA.toLowerCase().includes(input)) matchA++;
-                            if (cellB.toLowerCase().includes(input)) matchB++;
-
-                            // Highlight matching text in the cell
-                            cellsA[i].innerHTML = highlightText5(cellA, input);
-                            cellsB[i].innerHTML = highlightText5(cellB, input);
-                        }
-
-                        // Sort rows based on the number of matches
-                        return matchB - matchA;  // Higher match count comes first
-                    });
-
-                    // Append the sorted rows to the table
-                    sortedRows.forEach(row => table.appendChild(row));
-                }
-
-                function highlightText5(text, search) {
-                    const regex = new RegExp(`(${search})`, 'gi'); // Regular expression to find matching text (case insensitive)
-                    return text.replace(regex, '<span class="highlight">$1</span>'); // Wrap matched text with <span>
-                }
-            </script>
-            <script>
-                function searchAndSortTable6() {
-                    let input = document.getElementById("LCOFSearch").value.toLowerCase();
-                    let table = document.getElementById("costofFundloanLedger");
-                    let rows = Array.from(table.getElementsByTagName("tr")).slice(1); // All rows except header
-                    let sortedRows = rows.sort((a, b) => {
-                        let matchA = 0;
-                        let matchB = 0;
-
-                        // Check each cell of the row and see if it matches the search term
-                        let cellsA = a.getElementsByTagName("td");
-                        let cellsB = b.getElementsByTagName("td");
-
-                        // Loop through each cell and see if it matches
-                        for (let i = 0; i < cellsA.length; i++) {
-                            let cellA = cellsA[i].textContent || cellsA[i].innerText;
-                            let cellB = cellsB[i].textContent || cellsB[i].innerText;
-
-                            if (cellA.toLowerCase().includes(input)) matchA++;
-                            if (cellB.toLowerCase().includes(input)) matchB++;
-
-                            // Highlight matching text in the cell
-                            cellsA[i].innerHTML = highlightText6(cellA, input);
-                            cellsB[i].innerHTML = highlightText6(cellB, input);
-                        }
-
-                        // Sort rows based on the number of matches
-                        return matchB - matchA;  // Higher match count comes first
-                    });
-
-                    // Append the sorted rows to the table
-                    sortedRows.forEach(row => table.appendChild(row));
-                }
-
-                function highlightText6(text, search) {
-                    const regex = new RegExp(`(${search})`, 'gi'); // Regular expression to find matching text (case insensitive)
-                    return text.replace(regex, '<span class="highlight">$1</span>'); // Wrap matched text with <span>
-                }
-            </script>
-
 
             <script>
                 // This function handles the submission of the form and the updating of the ledger
