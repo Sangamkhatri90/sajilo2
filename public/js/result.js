@@ -17,69 +17,90 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
     sessionStorage.setItem('firstSign2Base64', Sign2);
     sessionStorage.setItem('firstSign3Base64', Sign3);
     sessionStorage.setItem('firstSign4Base64', Sign4);
-  
+
     let url;
+    const hideTransactionPanels = () => {
+        transactionDiv.style.display = 'none';
+        multitransactionDiv.style.display = 'none';
+    };
+
+    const makeDivMovableOnce = (div) => {
+        if (div.dataset.movableBound === 'true') {
+            return;
+        }
+
+        div.dataset.movableBound = 'true';
+        let isDragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+        let highestZIndex = 3;
+
+        const bringToFront = (element) => {
+            highestZIndex++;
+            element.style.zIndex = highestZIndex;
+        };
+
+        div.addEventListener('mousedown', (e) => {
+            if (
+                e.target.tagName === 'INPUT' ||
+                e.target.tagName === 'TEXTAREA' ||
+                e.target.tagName === 'BUTTON' ||
+                e.target.tagName === 'SELECT'
+            ) {
+                return;
+            }
+
+            e.preventDefault();
+            bringToFront(div);
+
+            const rect = div.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            isDragging = true;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) {
+                return;
+            }
+
+            div.style.left = `${e.pageX - offsetX}px`;
+            div.style.top = `${e.pageY - offsetY}px`;
+            div.style.position = 'absolute';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+    };
+
+    const bindCloseButtonsOnce = (buttonIds, div) => {
+        if (div.dataset.closeBound === 'true') {
+            return;
+        }
+
+        div.dataset.closeBound = 'true';
+        buttonIds.forEach((buttonId) => {
+            const button = document.getElementById(buttonId);
+            if (!button) {
+                return;
+            }
+
+            button.addEventListener('click', function (e) {
+                e.preventDefault();
+                div.style.display = 'none';
+            });
+        });
+    };
 
     if (action === 'transaction') {
-        
+       hideTransactionPanels();
        transactionDiv.style.display ='block';
-         let highestZIndex = 3;
-
-            // Function to bring the div to the front by updating the z-index
-            function bringToFront(element) {
-                highestZIndex++;
-                element.style.zIndex = highestZIndex;
-            }
-
-            // Make div movable
-            function makeDivMovable(div) {
-                let isDragging = false;
-                let offsetX, offsetY;
-
-                div.addEventListener('mousedown', (e) => {
-                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') {
-                        return; // Allow interaction with input fields and buttons
-                    }
-                    e.preventDefault();
-                    bringToFront(div);
-
-                    const rect = div.getBoundingClientRect();
-                    offsetX = e.clientX - rect.left;
-                    offsetY = e.clientY - rect.top;
-
-                    isDragging = true;
-                });
-
-
-
-                document.addEventListener('mousemove', (e) => {
-                    if (isDragging) {
-                        div.style.left = `${e.pageX - offsetX}px`;
-                        div.style.top = `${e.pageY - offsetY}px`;
-                        div.style.position = 'absolute';
-                    }
-                });
-
-                document.addEventListener('mouseup', () => {
-                    isDragging = false;
-                });
-            }
-
-            makeDivMovable(transactionDiv);
-
-            const closeButtons = [
-                    { buttonId: 'mainCreatTransDcloseButton', div: transactionDiv },
-                    { buttonId: 'mainCreatTransDcancelButton', div: transactionDiv },
-
-
-                ];
-
-                closeButtons.forEach(({ buttonId, div }) => {
-                    document.getElementById(buttonId).addEventListener('click', function (e) {
-                        e.preventDefault();
-                        div.style.display = 'none';
-                    });
-                });
+       makeDivMovableOnce(transactionDiv);
+       bindCloseButtonsOnce(
+            ['mainCreatTransDcloseButton', 'mainCreatTransDcancelButton'],
+            transactionDiv
+       );
 
 
 
@@ -369,8 +390,9 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
     }
     
     else if (action === 'bigTransaction') {
-
+        hideTransactionPanels();
         multitransactionDiv.style.display ='block';
+        makeDivMovableOnce(multitransactionDiv);
 
         url = `/bigTransaction?SlAlias=${SlAlias}
         &Address1=${Address1}&Phone1=${Phone1}&Mobile=${Mobile}
