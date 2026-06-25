@@ -20,6 +20,20 @@
   z-index: 3;
 }
 
+/* Close Button */
+#mainmultitransaction #mainmultitranscloseButton {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+  color: #444;
+}
+#mainmultitransaction #mainmultitranscloseButton:hover {
+  color: #d00;
+}
 #mainmultitransaction .container {
   width: 100%;
   padding: 0;

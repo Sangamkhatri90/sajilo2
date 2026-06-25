@@ -1,0 +1,97 @@
+/* -----------------------------
+   Opening Balance Modal Container
+------------------------------*/
+#mainopeningbalance {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(to bottom, #e6f2f8, #cde1ed);
+  width: 950px;
+  height: 900px;
+  max-height: 95vh;
+  overflow-y: auto;
+  border: 1px solid #7aa7c7;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  padding: 12px 18px;
+  box-sizing: border-box;
+  z-index: 3;
+}
+
+/* Close Button */
+#mainopeningbalance #mainopenBalcloseButton {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+  color: #444;
+}
+#mainopeningbalance #mainopenBalcloseButton:hover {
+  color: #d00;
+}
+#mainopeningbalance .container {
+  width: 100%;
+  padding: 0;
+}
+
+#mainopeningbalance .transaction-form {
+  width: 100%;
+}
+
+/* Header */
+#mainopeningbalance .header h3 {
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #004d80;
+  margin: 0;
+  padding: 4px;
+}
+
+/* Labels and Inputs */
+#mainopeningbalance label {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 3px;
+  display: block;
+  color: #000;
+}
+
+#mainopeningbalance input,
+#mainopeningbalance select,
+#mainopeningbalance textarea {
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid #7aa7c7;
+  border-radius: 2px;
+  background: #fff;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#mainopeningbalance input:focus,
+#mainopeningbalance select:focus,
+#mainopeningbalance textarea:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 2px rgba(25, 118, 210, 0.6);
+}
+
+/* Fieldsets */
+#mainopeningbalance fieldset {
+  border: 1px solid #7aa7c7;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  padding: 8px;
+}
+
+#mainopeningbalance legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: #004d80;
+}

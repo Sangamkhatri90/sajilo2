@@ -7,6 +7,7 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
     const action = document.getElementById('actionSelect').value;
     const transactionDiv = document.getElementById("mainCreatTransDiv");
     const multitransactionDiv = document.getElementById("mainmultitransaction");
+    const openingBalanceDiv = document.getElementById("mainopeningbalance");
     const voucherNoInput = document.getElementById('MaintransvoucherNo');
     const MaintransMembervalueforeditIN = document.getElementById('MaintransMembervalueforedit'); 
     const memberEditFrom = document.getElementById("ccapctmemedit");
@@ -22,6 +23,7 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
     const hideTransactionPanels = () => {
         transactionDiv.style.display = 'none';
         multitransactionDiv.style.display = 'none';
+        openingBalanceDiv.style.display = 'none';
     };
 
     const makeDivMovableOnce = (div) => {
@@ -393,6 +395,10 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
         hideTransactionPanels();
         multitransactionDiv.style.display ='block';
         makeDivMovableOnce(multitransactionDiv);
+        bindCloseButtonsOnce(
+            ['mainmultitranscloseButton', 'mainMultiTranscancelButton'],
+            multitransactionDiv
+       );
 
         url = `/bigTransaction?SlAlias=${SlAlias}
         &Address1=${Address1}&Phone1=${Phone1}&Mobile=${Mobile}
@@ -402,6 +408,16 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
         
     } 
     else if (action === 'openingBalance') {
+
+         hideTransactionPanels();
+        openingBalanceDiv.style.display ='block';
+        makeDivMovableOnce(openingBalanceDiv);
+        bindCloseButtonsOnce(
+            ['mainopenBalcloseButton', 'mainopenBalcancelButton'],
+            openingBalanceDiv
+       );
+
+
         // Don't pass the base64 image in the URL, it's already stored in sessionStorage
         url = `/openingBalance?SlAlias=${SlAlias}&GLName=${GLName}
        `;

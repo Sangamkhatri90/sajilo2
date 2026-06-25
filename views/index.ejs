@@ -227,6 +227,7 @@
     <link rel="stylesheet" href="/css/editMember.css">
     <link rel="stylesheet" href="/css/MainTransaction.css">
     <link rel="stylesheet" href="/css/MainMultiTransaction.css">
+    <link rel="stylesheet" href="/css/MainOpeningBalance.css">
 
 
 </head>
@@ -24324,7 +24325,8 @@ async function loadEarningsData() {
 
             <!-- Main Multi Transaction-->
              <div id="mainmultitransaction" style="display: none;" class="container">
-        <form  class="transaction-form">
+                <button id="mainmultitranscloseButton">&times;</button>
+                <form  class="transaction-form">
         <fieldset class="fieldset">
             <legend class="legend"></legend>
             <div class="form-row2">
@@ -24617,13 +24619,79 @@ async function loadEarningsData() {
 
                     </div>
                     <button class="save" type="submit"><img src="PNG/save.png" alt="Save">Save</button>
-                    <button class="cancel"><img src="PNG/cancel.png" alt="Cancel">Cancel</button>
+                    <button type="button" class="cancel" id="mainMultiTranscancelButton"><img src="PNG/cancel.png" alt="Cancel">Cancel</button>
                 </div>
         </fieldset>
         </form>
             </div>
 
+            <!-- Main Opening Balance-->
+             <div class="ob-container" style="display: none;" id="mainopeningbalance" class="container">
+                <button id="mainopenBalcloseButton">&times;</button>
+    <form class="transaction-form">
 
+      <fieldset class="ob-fieldset">
+         <div class="header">
+                <h3>OPENING BALANCE</h3>
+            </div>
+        <div class="form-style-horizontal3">
+          <div>
+            <label for="ac-type">A/C Type/Ledger</label>
+            <input type="text" class="ob-text" id="acctype" name="GLName" value="" readonly>
+          </div>
+          <div>
+            <label for="account-number">Account#</label>
+            <input type="text" class="ob-text" id="balanceAcc" name="SlAlias" value="" readonly>
+          </div>
+        </div>
+
+        <div class="form-style-horizontal3">
+          <div>
+            <label for="dr-cr">Dr/Cr</label>
+            <select name="transaction" class="ob-select" id="select">
+              <option value="Dr">Debit</option>
+              <option value="Cr">Credit</option>
+            </select>
+          </div>
+          <div>
+            <label for="amount">Amount</label>
+            <input type="number" class="ob-number" id="amount" name="amount" required>
+          </div>
+          <div>
+            <label for="ac-name">A/C Name</label>
+            <input type="text" class="ob-text" id="balanceName" name="accName" readonly>
+          </div>
+        </div>
+
+        <div class="form-style-horizontal3">
+          <div>
+            <label for="doc-class">Doc class</label>
+            <input type="text" class="ob-text" id="doc-class" name="docClass">
+          </div>
+          <div>
+            <label for="interest-amount">Interest Amount</label>
+            <input type="text" class="ob-text" id="interest-amount" name="intAmount" style="pointer-events: none;">
+          </div>
+        </div>
+        <div class="form-style-horizontal3">
+          <div>
+            <label><input type="checkbox" name="checkbox"> Continue to next A/C.</label>
+            <input type="hidden" name="OBCreatedBy" id="username-pr"><!--Keep it hidden-->
+          </div>
+          <div>
+            <label for="Remark">Remarks</label>
+            <input type="text" class="ob-text" name="remarks" id="">
+          </div>
+        </div>
+
+
+        <div class="ob-button-row">
+          <button type="submit" class="ob-button">Save</button>
+          <button type="button" class="ob-button" id="mainopenBalcancelButton"> Cancel</button>
+        </div>
+      </fieldset>
+    </form>
+  </div>
             <!--Financial report Income Statement-->
             <div class="movableDiv report-div" id="movableDiv180" data-report-name="Income Statement">
                 <button id="closeButton180">&times;</button>
