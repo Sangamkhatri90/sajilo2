@@ -4,10 +4,13 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
     AccountOpenDate, Photo, Sign1, Sign2, Sign3, Sign4,
       Gender, NextofKinName, NextofKinAddress, NextofKinContactNumber,
        Relation, DOB, JV_Miti, VoucherNo,MemberName, DrAmount, JournalEntries, CrAmount) {
+    
     const action = document.getElementById('actionSelect').value;
+    
     const transactionDiv = document.getElementById("mainCreatTransDiv");
     const multitransactionDiv = document.getElementById("mainmultitransaction");
     const openingBalanceDiv = document.getElementById("mainopeningbalance");
+    
     const voucherNoInput = document.getElementById('MaintransvoucherNo');
     const MaintransMembervalueforeditIN = document.getElementById('MaintransMembervalueforedit'); 
     const memberEditFrom = document.getElementById("ccapctmemedit");
@@ -399,6 +402,35 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
             ['mainmultitranscloseButton', 'mainMultiTranscancelButton'],
             multitransactionDiv
        );
+
+        document.getElementById('MultitransmemberAlias').value = MemberAlias;
+        document.getElementById('MultitransmemberName').value = MemberName;
+        document.getElementById('Multitransaccountname').value = MemberName;
+        document.getElementById('Multitransaccountnumber').value =SlAlias;
+        document.getElementById('MultitransaccTypeLgrname').value =GLName;
+
+
+        if (SlAlias) {
+            fetch(`/getSubLedgerDetails?SlAlias=${encodeURIComponent(SlAlias)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error(data.error);
+                    showCustomAlert('Error retrieving details. Please try again.');
+                    return;
+                }
+
+                // Fill the inputs with retrieved data
+                // document.getElementById('SLName').value = data.SLName || '';
+                // document.getElementById('GLNamess').value = data.GLName || '';
+                document.getElementById('MultiTransPrincipalBal').value = data.Balance || 0;
+                // document.getElementById('Amount').value = data.Balance || 0;
+            })
+            .catch(err => {
+                console.error('Error fetching data:', err);
+                showCustomAlert('Failed to retrieve details.');
+            });
+    }
 
         url = `/bigTransaction?SlAlias=${SlAlias}
         &Address1=${Address1}&Phone1=${Phone1}&Mobile=${Mobile}

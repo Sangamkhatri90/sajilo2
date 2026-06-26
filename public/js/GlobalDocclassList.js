@@ -123,6 +123,7 @@
             { inputId: 'ccApmemedit', listId: 'ccApmemeditlistdiv' },
             { inputId: 'ccapeditmemotherdoc', listId: 'ccapeditmemotherdoclist' },
             { inputId: 'MaintransDocclass', listId: 'DocClassMaintrans' },
+            { inputId: 'MainMultitransDocclass', listId: 'DocClassMainMultitrans' },
             { inputId: 'DEJVMNewDocclass', listId: 'DocClassDEJVMNew' },
             { inputId: 'doc-class-journal-voucher-search', listId: 'docClassesListforJournalVoucherSearch' },
             { inputId: 'doc-class-transaction-master-search', listId: 'docClassesListforTransactionMasterSearch' },
