@@ -22136,7 +22136,7 @@ async function loadEarningsData() {
                             <div class="ra-form-style-horizontal3">
                                 <div>
                                     <label for="">Transaction Date</label>
-                                    <input type="date" class="ra-date" id="ccaprenewTransdate">
+                                    <input type="date" class="currentlocaldate" id="ccaprenewTransdate">
                                 </div>
                                 <div>
                                     <label for="">A/c Type</label>
@@ -24060,6 +24060,7 @@ async function loadEarningsData() {
                                 <div>
                                     <label for="">Member</label>
                                     <input type="text" id="MaintransMembervalueforedit" readonly>
+                                    <input type="text" id="MaintransMembervalueforedit1" readonly>
                                 </div>
                                 <div class="header">
                                     <h3>TRANSACTION</h3>
@@ -24237,7 +24238,7 @@ async function loadEarningsData() {
                                 </div>
                                 <div style="margin-top: 10px;">
                                     <a href="#" id="MaintranstoggleButton187" class="decoration"> <button type="button"
-                                            class="action-button bill" id="MaintransBillsbtn">Bill</button></a>
+                                            class="action-button bill">Bill</button></a>
                                 </div>
                                 <div style="width: 184px; margin-left: 202px;">
                                     <label for="rebate">Rebate</label>
@@ -24351,13 +24352,7 @@ async function loadEarningsData() {
                        
                         <input type="text" id="MultitransmemberName" name="member" placeholder="Member Name">
                     </div>
-                    <div>
-                        <label for="doc-class">Doc. Class</label>
-                        <input type="text" id="MainMultitransDocclass" name="doc-class" placeholder="Type or click to get lists.">
-                         <div id="DocClassMainMultitrans" class="suggestions-list"
-                                    style="display: none; margin-top: 16.5%; margin-left: 57.5%; max-width: 205px;">
-                                </div>
-                    </div>
+                   
 
                     <div>
                         <label for="voucher-number">Voucher Number</label>
@@ -24445,6 +24440,13 @@ async function loadEarningsData() {
                     <label for="cheque-date">Cheque Date</label>
                     <input type="date" id="MainMultitranschequeDate" name="cheque-date" class="date">
                 </div>
+                 <div>
+                        <label for="doc-class">Doc. Class</label>
+                        <input type="text" id="MainMultitransDocclass" name="doc-class" placeholder="Type or click to get lists.">
+                         <div id="DocClassMainMultitrans" class="suggestions-list"
+                                    style="display: none; margin-top: 16.5%; margin-left: 57.5%; max-width: 205px;">
+                                </div>
+                    </div>
                 <div>
                     <label for="account-number">Account Number</label>
                     <input type="text" id="Multitransaccountnumber" name="id"  readonly>
@@ -24457,18 +24459,6 @@ async function loadEarningsData() {
                         <label for="account-type-ledger">A/C Type/Ledger</label>
                         <input type="text" class="cem-text" id="MultitransaccTypeLgrname" name="account-name"  readonly>
                 </div>
-                
-                <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
-                <div>
-                    <label for="principal-balance">Principal Balance</label>
-                    <input type="text" id="MultiTransPrincipalBal" name="id" value="" readonly>
-                </div>
-                <div>
-                        <label for="interest-balance">Interest Balance</label>
-                        <input type="number" id="interest-balance" name="interest-balance">
-                    </div>
-               
-                </div>
                 <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
                     
                     <div class="cem-button-row">
@@ -24479,14 +24469,12 @@ async function loadEarningsData() {
                         </button>
                         
                     </div>
-                    <div>
-                        <label for="bearer">Bearer</label>
-                        <input type="number" id="bearer" name="bearer">
-                    </div>
+                   
                 </div>
                 <div class="cem-form-style-horizontal1" style="margin-top: 10px;">
                    
                     <div class="cem-button-row">
+                        <button type="button" class="" id="MultiTransViewAccDetailBtn">View Acc Detials</button>
                         <button class="action-button bill" id="cem-bill">Bill</button>
                         <button class="action-button renew" id="cem-renew">Renew</button>
                         <button class="action-button post-interest" id="cem-post">Post Interest</button>
@@ -24494,6 +24482,21 @@ async function loadEarningsData() {
                        
                     </div>
                 </div>
+                 <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
+                    <div>
+                    <label for="principal-balance">Principal Balance</label>
+                    <input type="text" id="MultiTransPrincipalBal" name="id" value="" readonly>
+                </div>
+                     <div>
+                        <label for="interest-balance">Interest Balance</label>
+                        <input type="number" id="interest-balance" name="interest-balance">
+                    </div>
+                    <div>
+                        <label for="bearer">Bearer</label>
+                        <input type="number" id="bearer" name="bearer">
+                    </div>
+                </div>
+
                 <div class="cem-form-style-horizontal2" style="margin-top: 10px;">
                     <div>
                         <label for="amount">Amount</label>
@@ -24626,20 +24629,22 @@ async function loadEarningsData() {
                         <label for="total-cash">Total Cash</label>
                         <input type="number" id="total-cash" name="total-cash">
                     </div>
-                    <div class="inword">
-                        <input type="text"id="totalInWords" rows="2" cols="20" placeholder="Amount in Words" style="width: 500px; margin-left: 10px;
-                        margin-top: -2px;" readonly>
+                    <div class="">
+                         <label for="total-cash">Total Cash in word</label>
+                        <input type="text"id="totalInWords" rows="2" cols="20" placeholder="Amount in Words" 
+                 readonly>
                     </div>
-                    <div class="checkbox">
-                        <input type="checkbox" id="suspicious-trans" name="suspicious-trans" style="margin-right: 5px;">
-                        <label for="suspicious-trans">Suspicious Transaction</label>
-                    </div>
+                    
                 </div>
                 <div class="form-row buttons">
                     <div style="margin-left: 10px;">
                         <label for="refund-amount">Refund Amount</label>
                         <input type="number" id="refund-amount" name="refund-amount">
 
+                    </div>
+                    <div class="checkbox">
+                        <input type="checkbox" id="suspicious-trans" name="suspicious-trans" style="margin-right: 5px;">
+                        <label for="suspicious-trans">Suspicious Transaction</label>
                     </div>
                     <button class="save" type="submit"><img src="PNG/save.png" alt="Save">Save</button>
                     <button type="button" class="cancel" id="mainMultiTranscancelButton"><img src="PNG/cancel.png" alt="Cancel">Cancel</button>

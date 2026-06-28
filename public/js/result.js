@@ -110,7 +110,8 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
 
 
       
-       document.getElementById('MaintransMembervalueforedit').value =MemberName + MemberAlias;
+       document.getElementById('MaintransMembervalueforedit').value =MemberName ;
+       document.getElementById("MaintransMembervalueforedit1").value= MemberAlias;
        document.getElementById('Maintransaccountnumberofaccpostedit').value =SlAlias;
        document.getElementById('Maintransacctypeforaccpostingedit').value =GLName;
        document.getElementById('Maintransmembervalueforedit').value =SLName;

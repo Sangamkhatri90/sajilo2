@@ -119,17 +119,17 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
     };
 }
 
-function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
-    const draggable = document.getElementById(movableDivId);
-    const toggleButton = document.getElementById(toggleButtonId);
+function bindAdditionalToggleButton({ buttonId, popupId, getAccountNumber, getSlAlias }) {
+    const draggable = document.getElementById(popupId);      
+    const toggleButton = document.getElementById(buttonId);  
 
-    if (!draggable || !toggleButton) {
-        return;
-    }
+    if (!draggable || !toggleButton) return;
 
     toggleButton.addEventListener('click', async function () {
-        const EditCollChequemasAccIDforaccpostingVD = document.getElementById('Maintransaccountnumberofaccpostedit').value;
-       
+
+        const accountNumber = getAccountNumber();  // ← use the passed function
+        const slAlias = getSlAlias();              // ← use the passed function
+
         const currentDisplay = window.getComputedStyle(draggable).display;
         draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
         if (currentDisplay === 'none') {
@@ -137,235 +137,154 @@ function bindAdditionalToggleButton(movableDivId, toggleButtonId) {
             draggable.style.zIndex = highestZIndex;
         }
 
-        
-                        // Inside the fetch call for necessary data 
-                        fetch('/fetchCollectionChequemasaccpostviewDetailsForEdit', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ EditCollChequemasAccIDforaccpostingVD })  // Send the EditAccTypePenaltySelectedName to the backend
-                        })
-                            .then(response => response.json())
-                            .then(data => {
+        // ── Fetch view details ──────────────────────────────────────────
+        fetch('/fetchCollectionChequemasaccpostviewDetailsForEdit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ EditCollChequemasAccIDforaccpostingVD: accountNumber })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('accpost-viewdetials-account-number').value = data.SLAlias || '';
+                document.getElementById('accopendate-viewaccdeteditaccposting').value = data.AccountOpenDate || '';
+                document.getElementById('acc-name-viewaccdeteditaccposting').value = data.SLName || '';
+                document.getElementById('ccacceditvd-accountType').value = data.GLName || '';
+                document.getElementById('acc-address-viewaccdeteditaccposting').value = data.Address1 || '';
+                document.getElementById('acc-address2-viewaccdeteditaccposting').value = data.Address2 || '';
+                document.getElementById('acc-phone-viewaccdeteditaccposting').value = data.Phone1 || '';
+                document.getElementById('acc-email-viewaccdeteditaccposting').value = data.Email || '';
+                document.getElementById('acc-mobile-viewaccdeteditaccposting').value = data.Mobile || '';
+                document.getElementById('acc-DOB-viewaccdeteditaccposting').value = data.DateOfBirth || '';
+                document.getElementById('NextofKinName-viewaccdeteditaccposting').value = data.NextofKinName || '';
+                document.getElementById('NextofKinAddress-viewaccdeteditaccposting').value = data.NextofKinAddress || '';
+                document.getElementById('NextofKinReln-viewaccdeteditaccposting').value = data.Relation || '';
+                document.getElementById('NextofKinContactNumber-viewaccdeteditaccposting').value = data.NextofKinContactNumber || '';
+                document.getElementById('acc-remarks-viewaccdeteditaccposting').value = data.Remarks || '';
+                document.getElementById('acc-fax-viewaccdeteditaccposting').value = data.Fax || '';
+                document.getElementById('acc-MemberId-viewaccdeteditaccposting').value = data.MemberAlias || '';
+                document.getElementById('acc-MemberName-viewaccdeteditaccposting').value = data.MemberName || '';
 
-                                if (data.success) {
-                                    document.getElementById('accpost-viewdetials-account-number').value = data.SLAlias || '';
-                                    document.getElementById('accopendate-viewaccdeteditaccposting').value = data.AccountOpenDate || '';
-                                    document.getElementById('acc-name-viewaccdeteditaccposting').value = data.SLName || '';
-                                    document.getElementById('ccacceditvd-accountType').value = data.GLName || '';
-                                    document.getElementById('acc-address-viewaccdeteditaccposting').value = data.Address1 || '';
-                                    document.getElementById('acc-address2-viewaccdeteditaccposting').value = data.Address2 || '';
-                                    document.getElementById('acc-phone-viewaccdeteditaccposting').value = data.Phone1 || '';
-                                    document.getElementById('acc-email-viewaccdeteditaccposting').value = data.Email || '';
-                                    document.getElementById('acc-mobile-viewaccdeteditaccposting').value = data.Mobile || '';
-                                    document.getElementById('acc-DOB-viewaccdeteditaccposting').value = data.DateOfBirth || '';
-                                    document.getElementById('NextofKinName-viewaccdeteditaccposting').value = data.NextofKinName || '';
-                                    document.getElementById('NextofKinAddress-viewaccdeteditaccposting').value = data.NextofKinAddress || '';
-                                    document.getElementById('NextofKinReln-viewaccdeteditaccposting').value = data.Relation || '';
-                                    document.getElementById('NextofKinContactNumber-viewaccdeteditaccposting').value = data.NextofKinContactNumber || '';
-                                    document.getElementById('acc-remarks-viewaccdeteditaccposting').value = data.Remarks || '';
-                                    document.getElementById('acc-fax-viewaccdeteditaccposting').value = data.Fax || '';
-                                    document.getElementById('acc-MemberId-viewaccdeteditaccposting').value = data.MemberAlias || '';
-                                    document.getElementById('acc-MemberName-viewaccdeteditaccposting').value = data.MemberName || '';
+                document.getElementById("accounteidtcolcheque-photo").src = data.Photo || "";
+                document.getElementById("accounteidtcolcheque-sign1").src = data.Sign1 || "";
+                document.getElementById("accounteidtcolcheque-sign2").src = data.Sign2 || "";
+                document.getElementById("accounteidtcolcheque-sign3").src = data.Sign3 || "";
+                document.getElementById("accounteidtcolcheque-sign4").src = data.Sign4 || "";
 
+                const genderTypeSelect = document.getElementById('EditGenderTrans-optionforaccpost');
+                for (let opt of genderTypeSelect.options) {
+                    if (opt.value === data.Gender) { opt.selected = true; break; }
+                }
+            } else {
+                showCustomAlert(data.message || 'Member not found');
+            }
+        });
 
-                                    document.getElementById("accounteidtcolcheque-photo").src = data.Photo || "";
-                                    document.getElementById("accounteidtcolcheque-sign1").src = data.Sign1 || "";
-                                    document.getElementById("accounteidtcolcheque-sign2").src = data.Sign2 || "";
-                                    document.getElementById("accounteidtcolcheque-sign3").src = data.Sign3 || "";
-                                    document.getElementById("accounteidtcolcheque-sign4").src = data.Sign4 || "";
+        // ── Fetch recent transactions ───────────────────────────────────
+        if (!slAlias) {
+            alert("Missing SubLedger Alias.");
+            return;
+        }
 
-                                    const gendertype = data.Gender;
-                                    // Select the appropriate option in the dropdown based on the TransactionType
-                                    const genderTypeSelect = document.getElementById('EditGenderTrans-optionforaccpost');
-                                    const options = genderTypeSelect.options;
-                                    //Loop through the options to find the matching value and set it as selected
-                                    for (let i = 0; i < options.length; i++) {
-                                        if (options[i].value === gendertype) {
-                                            options[i].selected = true;
-                                            break; // Stop the loop once the correct option is selected
-                                        }
-                                    }
+        try {
+            const res = await fetch("/api/getRecentTransactionsLP9", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ slAlias })
+            });
+            const data = await res.json();
+            const tbody = document.querySelector("#ccactranstablefd tbody");
+            tbody.innerHTML = "";
 
+            if (data.success && data.transactions.length > 0) {
+                data.transactions.forEach((txn, index) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${txn.JV_Date || ''}</td>
+                        <td>${txn.VoucherNo || ''}</td>
+                        <td>${txn.MenuName || ''}</td>
+                        <td>${txn.DrAmount}</td>
+                        <td>${txn.CrAmount}</td>
+                        <td>${txn.Balance.toFixed(2)} ${txn.BalanceType}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="7">No transactions found</td></tr>`;
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error loading transactions");
+        }
 
-                                } else {
-                                    showCustomAlert(data.message || 'Member not found');
-                                }
+        // ── Fetch share transactions ────────────────────────────────────
+        const table = document.getElementById("EditMainSharemastable");
+        const tbody = table.querySelector('tbody');
 
-                      
-                            });
-                            const slAlias = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim();
-                        console.log("value", slAlias)
-                        if (!slAlias) {
-                            alert("Missing End date, or SubLedger Alias.");
-                            return;
-                        }
+        if (!accountNumber) {
+            tbody.innerHTML = "";
+            window.__lastShareCertificateData = { accountNumber: "", rows: [] };
+            _appendEmptyShareRows(tbody, 5);
+            return;
+        }
 
+        fetch('/fetchShareTransDetailsForMainAccedit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ EditShareTransACCNumber: accountNumber })
+        })
+        .then(r => r.json())
+        .then(data => {
+            tbody.innerHTML = "";
+            const rows = Array.isArray(data.ShareTransDetails) ? data.ShareTransDetails : [];
+            window.__lastShareCertificateData = { accountNumber, rows };
 
-
-                        try {
-                            const res = await fetch("/api/getRecentTransactionsLP9", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ slAlias })
-                            });
-
-                            const data = await res.json();
-                            const tbody = document.querySelector("#ccactranstablefd tbody");
-                            tbody.innerHTML = ""; // clear old rows
-
-                            if (data.success && data.transactions.length > 0) {
-                                data.transactions.forEach((txn, index) => {
-                                    const row = document.createElement("tr");
-                                    row.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${txn.JV_Date || ''}</td>
-            <td>${txn.VoucherNo || ''} </td>
-            <td>${txn.MenuName || ''} </td>
-            <td>${txn.DrAmount}</td>
-            <td>${txn.CrAmount}</td>
-            <td>${txn.Balance.toFixed(2)} ${txn.BalanceType}</td>
-          `;
-                                    tbody.appendChild(row);
-                                });
-                            } else {
-                                tbody.innerHTML = `<tr><td colspan="3">No transactions found</td></tr>`;
-                            }
-                        } catch (err) {
-                            console.error(err);
-                            alert("Error loading transactions");
-                        }
-                        const accountNumber = document.getElementById("Maintransaccountnumberofaccpostedit")?.value?.trim();
-                        const table = document.getElementById("EditMainSharemastable");
-                        const tbody = table.querySelector('tbody');
-                                                if (accountNumber) {
-                            fetch('/fetchShareTransDetailsForMainAccedit', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    EditShareTransACCNumber: accountNumber
-                                    
-
-                                }),
-                            })
-                                .then(response => response.json())
-                                .then(data => {
-                                    console.log("Share Transaction master Details:", data);
-
-                                    tbody.innerHTML = ""; // Clear existing rows
-                                    window.__lastShareCertificateData = {
-                                        accountNumber,
-                                        rows: Array.isArray(data.ShareTransDetails) ? data.ShareTransDetails : []
-                                    };
-
-                                    if (data.ShareTransDetails && data.ShareTransDetails.length > 0) {
-                                        // Populate the table with the returned data
-                                        data.ShareTransDetails.forEach((row, index) => {
-                                            const tr = document.createElement("tr");
-
-                                            const transactionno = row.TransactionNo === 0 ? "0" : row.TransactionNo || '';
-                                            const from = row.ShareIDFrom === 0 ? "0" : row.ShareIDFrom || '';
-                                            const to = row.ShareIDTo === 0 ? "0" : row.ShareIDTo || '';
-                                            const total = row.TotalShare === 0 ? "0" : row.TotalShare || '';
-
-                                            tr.innerHTML = `
-                                        <td>${index + 1}</td>
-                                        <td contenteditable="true" class="editable-cell" data-field="Transactiono">${transactionno}</td>
-                                        <td contenteditable="true" class="editable-cell" data-field="From">${from}</td>
-                                        <td contenteditable="true" class="editable-cell" data-field="To">${to}</td>
-                                        <td contenteditable="true" class="editable-cell" data-field="Total">${total}</td>
-                                    `;
-                                            tbody.appendChild(tr);
-                                        });
-
-                                        // If there are fewer than 5 rows, add empty rows to make it 5
-                                        const emptyRowsCount = 5 - data.ShareTransDetails.length;
-                                        for (let i = 0; i < emptyRowsCount; i++) {
-                                            const emptyRow = document.createElement("tr");
-                                            emptyRow.innerHTML = `
-                                        <td>${data.ShareTransDetails.length + i + 1}</td>
-                                        <td contenteditable="true" class="editable-cell" data-field="Transactiono"></td>
-                                        <td contenteditable="true" class="editable-cell" data-field="From"></td>
-                                        <td contenteditable="true" class="editable-cell" data-field="To"></td>
-                                        <td contenteditable="true" class="editable-cell" data-field="Total"></td>
-                                    `;
-                                            tbody.appendChild(emptyRow);
-                                        }
-                                    } else {
-                                        // No data found, show the "No Data Found" message and 5 empty rows
-                                        console.log("No data available to display in the table.");
-                                        tbody.innerHTML = "";
-                                        const noDataRow = document.createElement("tr");
-                                        noDataRow.innerHTML = `<td colspan="5" >No data found for the entered Account Number.</td>`;
-                                        tbody.appendChild(noDataRow);
-
-                                        // Add 5 empty rows (if no data is returned)
-                                        for (let i = 0; i < 5; i++) {
-                                            const emptyRow = document.createElement("tr");
-                                            emptyRow.innerHTML = `
-                                        <td></td> <!-- No serial number when no data -->
-                                        <td contenteditable="true" class="editable-cell" data-field="Transactiono"></td>
-                                        <td contenteditable="true" class="editable-cell" data-field="From"></td>
-                                        <td contenteditable="true" class="editable-cell" data-field="To"></td>
-                                        <td contenteditable="true" class="editable-cell" data-field="Total"></td>
-                                    `;
-                                            tbody.appendChild(emptyRow);
-                                        }
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error("Error fetching data:", error);
-                                    // Handle the error here (e.g., show an alert or message to the user)
-                                    tbody.innerHTML = "";
-                                    window.__lastShareCertificateData = {
-                                        accountNumber,
-                                        rows: []
-                                    };
-                                    const errorRow = document.createElement("tr");
-                                    errorRow.innerHTML = `<td colspan="5" rowspan = "5">Error fetching data. Please try again later.</td>`;
-                                    tbody.appendChild(errorRow);
-
-                                    // Add 5 empty rows (if there's an error)
-                                    for (let i = 0; i < 5; i++) {
-                                        const emptyRow = document.createElement("tr");
-                                        emptyRow.innerHTML = `
-                                    <td></td> <!-- No serial number when error occurs -->
-                                    <td contenteditable="true" class="editable-cell" data-field="Transactiono"></td>
-                                    <td contenteditable="true" class="editable-cell" data-field="From"></td>
-                                    <td contenteditable="true" class="editable-cell" data-field="To"></td>
-                                    <td contenteditable="true" class="editable-cell" data-field="Total"></td>
-                                `;
-                                        tbody.appendChild(emptyRow);
-                                    }
-                                });
-                        } else {
-                            // If account number is empty, clear the table and add 5 empty rows
-                            tbody.innerHTML = "";
-                            window.__lastShareCertificateData = {
-                                accountNumber: "",
-                                rows: []
-                            };
-                            for (let i = 0; i < 5; i++) {
-                                const emptyRow = document.createElement("tr");
-                                emptyRow.innerHTML = `
-                            <td></td> <!-- No serial number when no data -->
-                            <td contenteditable="true" class="editable-cell" data-field="Transactiono"></td>
-                            <td contenteditable="true" class="editable-cell" data-field="From"></td>
-                            <td contenteditable="true" class="editable-cell" data-field="To"></td>
-                            <td contenteditable="true" class="editable-cell" data-field="Total"></td>
-                        `;
-                                tbody.appendChild(emptyRow);
-                            }
-                        }
+            if (rows.length > 0) {
+                rows.forEach((row, index) => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td contenteditable="true" class="editable-cell" data-field="Transactiono">${row.TransactionNo ?? ''}</td>
+                        <td contenteditable="true" class="editable-cell" data-field="From">${row.ShareIDFrom ?? ''}</td>
+                        <td contenteditable="true" class="editable-cell" data-field="To">${row.ShareIDTo ?? ''}</td>
+                        <td contenteditable="true" class="editable-cell" data-field="Total">${row.TotalShare ?? ''}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                _appendEmptyShareRows(tbody, Math.max(0, 5 - rows.length), rows.length);
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5">No data found for the entered Account Number.</td></tr>`;
+                _appendEmptyShareRows(tbody, 5);
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching data:", error);
+            tbody.innerHTML = `<tr><td colspan="5">Error fetching data. Please try again later.</td></tr>`;
+            window.__lastShareCertificateData = { accountNumber, rows: [] };
+            _appendEmptyShareRows(tbody, 5);
+        });
     });
 }
 
-function bindAdditionalToggleButtonNrm(movableDivId, toggleButtonId) {
-    const draggable = document.getElementById(movableDivId);
-    const toggleButton = document.getElementById(toggleButtonId);
+// Helper: appends N empty editable share rows
+function _appendEmptyShareRows(tbody, count, startIndex = 0) {
+    for (let i = 0; i < count; i++) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${startIndex + i + 1}</td>
+            <td contenteditable="true" class="editable-cell" data-field="Transactiono"></td>
+            <td contenteditable="true" class="editable-cell" data-field="From"></td>
+            <td contenteditable="true" class="editable-cell" data-field="To"></td>
+            <td contenteditable="true" class="editable-cell" data-field="Total"></td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
+function bindAdditionalToggleButtonNrm({buttonId, popupId ,getAccType, getBalance, getMemId, getAccNo}) {
+    const draggable = document.getElementById(popupId);
+    const toggleButton = document.getElementById(buttonId);
 
     if (!draggable || !toggleButton) {
         return;
@@ -379,7 +298,14 @@ function bindAdditionalToggleButtonNrm(movableDivId, toggleButtonId) {
             highestZIndex++;
             draggable.style.zIndex = highestZIndex;
         }
-
+        const accType = getAccType();
+        document.getElementById("cc-apRenewLedger").value = accType || '';
+        const accBal = getBalance();
+        document.getElementById("ccaprenewAmt").value = accBal || '';
+        const memID = getMemId();
+        document.getElementById("ccaprenewMemAlias").value = memID || '';
+        const accNo = getAccNo();
+        document.getElementById("ccaprenewaccid").value = accNo || '';
     });
 }
 function bindAdditionalToggleButtonNrmBill(movableDivId, toggleButtonId) {
@@ -814,9 +740,35 @@ if (document.readyState === 'loading') {
     initializeMovableDivs();
 }
 
-bindAdditionalToggleButton('movableDiv184', 'MaintranstoggleButton184');
+bindAdditionalToggleButton({
+    buttonId: "MaintranstoggleButton184",
+    popupId: "movableDiv184",
+    getAccountNumber: () =>
+        document.getElementById("Maintransaccountnumberofaccpostedit").value,
+
+    getSlAlias: () =>
+        document.getElementById("Maintransaccountnumberofaccpostedit").value
+    });
+
+
+bindAdditionalToggleButton({
+    buttonId: "MultiTransViewAccDetailBtn",
+    popupId: "movableDiv184",
+    getAccountNumber: () =>
+        document.getElementById("Multitransaccountnumber").value,
+    getSlAlias: () =>
+        document.getElementById("Multitransaccountnumber").value
+});
 bindAdditionalToggleButtonNrmBill('movableDiv187', 'MaintranstoggleButton187');
-bindAdditionalToggleButtonNrm('movableDiv188', 'MaintranstoggleButton188');
+
+bindAdditionalToggleButtonNrm({
+    popupId: "movableDiv188",
+    buttonId: "MaintranstoggleButton188",
+    getAccType: () => document.getElementById("Maintransacctypeforaccpostingedit").value,
+    getBalance: () => document.getElementById("MaintransBalance").value,
+    getMemId: () => document.getElementById("MaintransMembervalueforedit1").value,
+    getAccNo: () => document.getElementById("Maintransaccountnumberofaccpostedit").value
+});
 bindPrintShareCertificateButton('PrintShareCertificateBtn');
 
       
