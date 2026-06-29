@@ -21598,7 +21598,12 @@ async function loadEarningsData() {
                                     <div>
                                         <label for="">Account #</label>
                                         <input type="text" class="cc-text" name="" id="EditCollCheque-accID"
-                                            oninput="fetchMemberNameCollectionChequeEdit()">
+                                             oninput="fetchMemberName({
+        inputId: 'EditCollCheque-accID',
+        outputId: 'EditCollCheque-accName',
+        fetchUrl: '/fetchCollChequemasAccNameForEdit',
+        requestKey: 'EditCollChequeACCNumber'
+    })">
                                     </div>
                                     <div>
                                         <label for="">A/c Name</label>
@@ -22155,7 +22160,12 @@ async function loadEarningsData() {
                                 </div>
                                 <div>
                                     <input type="text" class="ra-text acc-id" data-target="ccaprenewMemName" name=""
-                                        id="ccaprenewMemAlias" placeholder="MemberID">
+                                        id="ccaprenewMemAlias" placeholder="MemberID"  oninput="fetchMemberName({
+        inputId: 'ccaprenewMemAlias',
+        outputId: 'ccaprenewMemName',
+        fetchUrl: '/fetchMemberNameBasedonMemID',
+        requestKey: 'EditCollChequeACCNumber'
+    })">
                                 </div>
                                 <div>
                                     <input type="text" class="ra-text" name="" id="ccaprenewMemName" value="" readonly
@@ -22168,7 +22178,12 @@ async function loadEarningsData() {
                                 </div>
                                 <div>
                                     <input type="text" class="ra-text acc-id" data-target="ccaprenewaccname" name=""
-                                        id="ccaprenewaccid" placeholder="AccountID">
+                                        id="ccaprenewaccid" placeholder="AccountID"  oninput="fetchMemberName({
+        inputId: 'ccaprenewaccid',
+        outputId: 'ccaprenewaccname',
+        fetchUrl: '/fetchCollChequemasAccNameForEdit',
+        requestKey: 'EditCollChequeACCNumber'
+    })">
                                 </div>
                                 <div>
                                     <input type="text" class="ra-text" name="" id="ccaprenewaccname" readonly
@@ -38761,35 +38776,7 @@ async function loadEarningsData() {
                 });
 
             </script>
-            <script>
-                function fetchMemberNameCollectionChequeEdit() {
-                    const accountNumber = document.getElementById('EditCollCheque-accID').value;
-
-                    if (accountNumber) {
-                        // Send a POST request to fetch member details
-                        fetch('/fetchCollChequemasAccNameForEdit', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ EditCollChequeACCNumber: accountNumber }),
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.MemberDetail) {
-                                    document.getElementById('EditCollCheque-accName').value = data.MemberDetail;
-                                } else {
-                                    document.getElementById('EditCollCheque-accName').value = 'Invalid Account Number';
-                                }
-
-                            })
-                            .catch(error => {
-                                console.error('Error fetching member name:', error);
-                                document.getElementById('EditCollCheque-accName').value = 'Error fetching data';
-                            });
-                    }
-                }
-            </script>
+           
             <script>
                 document.addEventListener('DOMContentLoaded', function () {
                     const checkbox = document.getElementById('EditCollCheque-collectedcb');
@@ -51518,7 +51505,8 @@ async function loadEarningsData() {
             <script src="/js/MatAccFDTrans.js"></script>
             <script src="/js/dbQueryExecutor.js"></script>
             <script src="/js/PageLoader.js"></script>
-
+            <script src="/js/GlobalLgrMasterConO.js"></script>
+            <script src="/js/FetchMemberName.js"></script>
 
 
 

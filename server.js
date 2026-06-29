@@ -18593,6 +18593,45 @@ app.post("/fetchCollChequemasAccNameForEdit", (req, res) => {
 
   });
 });
+app.post("/fetchMemberNameBasedonMemID", (req, res) => {
+  const { EditCollChequeACCNumber } = req.body; // Retrieve the selected AccTypeIntSet for edit
+  const conn = req.session.conn;  // Get the database connection from the session
+ 
+
+  if (!EditCollChequeACCNumber) {
+    return res.status(400).send("MemberACCNumber is required");
+  }
+
+
+  // Step 2: Fetch the Member Name from the tbMemberMaster table
+  const query = `
+      SELECT MemberName
+      FROM dbo.tbMemberMaster
+      WHERE MemberAlias = ?
+    `;
+
+  sql.query(conn, query, [EditCollChequeACCNumber], (err, rows) => {
+    if (err) {
+      console.error("Error fetching Member  details:", err);
+      return res.status(500).send("Error fetching Member details");
+    }
+
+    // If no matching row is found for the given Account Number
+    if (!rows || rows.length === 0) {
+      return res.json({ message: "Invalid Member Number" });
+    }
+
+    // Step 3: Return Member Name
+    const row = rows[0]; // Assuming only one row will be returned
+
+    res.json({
+
+
+      MemberDetail: row.MemberName || "",
+
+    });
+  });
+});
 app.post("/updateCollectionChequeMas", (req, res) => {
   const {
     EditCollectionChequeMasSelectedTransNumber,
