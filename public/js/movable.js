@@ -282,7 +282,7 @@ function _appendEmptyShareRows(tbody, count, startIndex = 0) {
     }
 }
 
-function bindAdditionalToggleButtonNrm({buttonId, popupId ,getAccType, getBalance, getMemId, getAccNo}) {
+function bindAdditionalToggleButtonNrm({buttonId, popupId ,getAccType, getBalance, getMemId, getAccNo, getMemIdName, getAccNoName}) {
     const draggable = document.getElementById(popupId);
     const toggleButton = document.getElementById(buttonId);
 
@@ -306,6 +306,10 @@ function bindAdditionalToggleButtonNrm({buttonId, popupId ,getAccType, getBalanc
         document.getElementById("ccaprenewMemAlias").value = memID || '';
         const accNo = getAccNo();
         document.getElementById("ccaprenewaccid").value = accNo || '';
+        const memIdName = getMemIdName();
+        document.getElementById("ccaprenewMemName").value = memIdName || '';
+        const accNoName = getAccNoName();
+        document.getElementById("ccaprenewaccname").value = accNoName || '';
     });
 }
 function bindAdditionalToggleButtonNrmBill(movableDivId, toggleButtonId) {
@@ -767,7 +771,20 @@ bindAdditionalToggleButtonNrm({
     getAccType: () => document.getElementById("Maintransacctypeforaccpostingedit").value,
     getBalance: () => document.getElementById("MaintransBalance").value,
     getMemId: () => document.getElementById("MaintransMembervalueforedit1").value,
-    getAccNo: () => document.getElementById("Maintransaccountnumberofaccpostedit").value
+    getMemIdName: () => document.getElementById("MaintransMembervalueforedit").value,
+    getAccNo: () => document.getElementById("Maintransaccountnumberofaccpostedit").value,
+    getAccNoName: () => document.getElementById("Maintransmembervalueforedit").value,
+});
+
+bindAdditionalToggleButtonNrm({
+    popupId: "movableDiv188",
+    buttonId: "MultiTransRenewBtn",
+    getAccType: () => document.getElementById("MultitransaccTypeLgrname").value,
+    getBalance: () => document.getElementById("MultiTransPrincipalBal").value,
+    getMemId: () => document.getElementById("MultitransmemberAlias").value,
+    getMemIdName: () => document.getElementById("MultitransmemberName").value,
+    getAccNo: () => document.getElementById("Multitransaccountnumber").value,
+    getAccNoName: () => document.getElementById("Multitransaccountname").value,
 });
 bindPrintShareCertificateButton('PrintShareCertificateBtn');
 

@@ -18594,11 +18594,11 @@ app.post("/fetchCollChequemasAccNameForEdit", (req, res) => {
   });
 });
 app.post("/fetchMemberNameBasedonMemID", (req, res) => {
-  const { EditCollChequeACCNumber } = req.body; // Retrieve the selected AccTypeIntSet for edit
+  const { TransRenewMemName } = req.body; // Retrieve the selected AccTypeIntSet for edit
   const conn = req.session.conn;  // Get the database connection from the session
  
 
-  if (!EditCollChequeACCNumber) {
+  if (!TransRenewMemName) {
     return res.status(400).send("MemberACCNumber is required");
   }
 
@@ -18610,7 +18610,7 @@ app.post("/fetchMemberNameBasedonMemID", (req, res) => {
       WHERE MemberAlias = ?
     `;
 
-  sql.query(conn, query, [EditCollChequeACCNumber], (err, rows) => {
+  sql.query(conn, query, [TransRenewMemName], (err, rows) => {
     if (err) {
       console.error("Error fetching Member  details:", err);
       return res.status(500).send("Error fetching Member details");

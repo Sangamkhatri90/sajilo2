@@ -22164,7 +22164,7 @@ async function loadEarningsData() {
         inputId: 'ccaprenewMemAlias',
         outputId: 'ccaprenewMemName',
         fetchUrl: '/fetchMemberNameBasedonMemID',
-        requestKey: 'EditCollChequeACCNumber'
+        requestKey: 'TransRenewMemName'
     })">
                                 </div>
                                 <div>
@@ -24490,10 +24490,10 @@ async function loadEarningsData() {
                    
                     <div class="cem-button-row">
                         <button type="button" class="" id="MultiTransViewAccDetailBtn">View Acc Detials</button>
-                        <button class="action-button bill" id="cem-bill">Bill</button>
-                        <button class="action-button renew" id="cem-renew">Renew</button>
-                        <button class="action-button post-interest" id="cem-post">Post Interest</button>
-                        <button class="add"><img src="/PNG/add.png" alt="">Add</button>
+                        <button type="button" class="action-button bill" id="cem-bill">Bill</button>
+                        <button type="button" class="action-button renew" id="MultiTransRenewBtn">Renew</button>
+                        <button type="button" class="action-button post-interest" id="cem-post">Post Interest</button>
+                        <button type="button" class="add" id="MultiTransAddBtn"><img src="/PNG/add.png" alt="">Add</button>
                        
                     </div>
                 </div>
@@ -24579,11 +24579,10 @@ async function loadEarningsData() {
                 </div>
 
 
-                <div class="createbigtrans-table" id="do-table-container">
+                <div class="createbigtrans-table" id="MultiTransAddTable">
                     <table>
                         <thead>
                             <tr>
-
                                 <th>S.NO</th>
                                 <th>Ledger/Account Type</th>
                                 <th>A/C.No,SlAlias</th>
@@ -24599,12 +24598,11 @@ async function loadEarningsData() {
                                 <th>Bearer</th>
                                 <th>Principal Received Till Date</th>
                                 <th>Interest Received Till Date</th>
-
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td></td>
+                            <tr id="multiTransDetailRow">
+                                <td>1</td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
@@ -24620,7 +24618,6 @@ async function loadEarningsData() {
                                 <td></td>
                                 <td></td>
                             </tr>
-                          
                         </tbody>
                     </table>
                 </div>
@@ -51136,59 +51133,56 @@ async function loadEarningsData() {
                 });
             </script>
             <script>
-                document.addEventListener('DOMContentLoaded', () => {
+                document.addEventListener('DOMContentLoaded', function () {
+                    const addButton = document.getElementById('MultiTransAddBtn');
+                    const tableBody = document.querySelector('#MultiTransAddTable tbody');
 
-                    // Attach input listener to all Account # fields
-                    document.querySelectorAll('.acc-id').forEach(input => {
-                        input.addEventListener('input', handleAccountInput);
+                    if (!addButton || !tableBody) return;
+
+                    addButton.addEventListener('click', function () {
+                        const row = document.getElementById('multiTransDetailRow');
+                        if (!row) return;
+
+                        const rowValues = {
+                            ledgerType: document.getElementById('MultitransaccTypeLgrname')?.value || '',
+                            accountNo: document.getElementById('Multitransaccountnumber')?.value || '',
+                            accountName: document.getElementById('Multitransaccountname')?.value || '',
+                            drAmount: document.getElementById('TransactionTypeForMultiTrans')?.value === 'Withdraw'
+                                ? (document.getElementById('MainMultitransamount')?.value || '')
+                                : '',
+                            crAmount: document.getElementById('TransactionTypeForMultiTrans')?.value === 'Deposit'
+                                ? (document.getElementById('MainMultitransamount')?.value || '')
+                                : '',
+                            interestWithdraw: document.getElementById('interest-amount')?.value || '',
+                            interestDeposit: document.getElementById('interest-amount')?.value || '',
+                            rebate: document.getElementById('MainMultitransrebate')?.value || '',
+                            penalty: document.getElementById('MainMultitranspenalty')?.value || '',
+                            chequeNo: document.getElementById('MainMultitranschequeNumber')?.value || '',
+                            chequeDate: document.getElementById('MainMultitranschequeDate')?.value || '',
+                            bearer: document.getElementById('bearer')?.value || '',
+                            principalReceived: document.getElementById('prin-receive-date')?.value || '',
+                            interestReceived: document.getElementById('int-receive-date')?.value || ''
+                        };
+
+                        const cells = row.querySelectorAll('td');
+                        cells[1].textContent = rowValues.ledgerType;
+                        cells[2].textContent = rowValues.accountNo;
+                        cells[3].textContent = rowValues.accountName;
+                        cells[4].textContent = rowValues.drAmount;
+                        cells[5].textContent = rowValues.crAmount;
+                        cells[6].textContent = rowValues.interestWithdraw;
+                        cells[7].textContent = rowValues.interestDeposit;
+                        cells[8].textContent = rowValues.rebate;
+                        cells[9].textContent = rowValues.penalty;
+                        cells[10].textContent = rowValues.chequeNo;
+                        cells[11].textContent = rowValues.chequeDate;
+                        cells[12].textContent = rowValues.bearer;
+                        cells[13].textContent = rowValues.principalReceived;
+                        cells[14].textContent = rowValues.interestReceived;
                     });
-
                 });
-
-                /**
-                 * Handles Account # input change
-                 */
-                function handleAccountInput(e) {
-                    const accInput = e.target;
-                    const accountNumber = accInput.value.trim();
-                    const targetAccNameId = accInput.dataset.target;
-                    const accNameInput = document.getElementById(targetAccNameId);
-
-                    // Safety check
-                    if (!accNameInput) return;
-
-                    // Clear if empty
-                    if (!accountNumber) {
-                        accNameInput.value = '';
-                        return;
-                    }
-
-                    fetchAccountName(accountNumber, accNameInput);
-                }
-
-                /**
-                 * Fetch Account Name from backend
-                 */
-                function fetchAccountName(accountNumber, accNameInput) {
-                    fetch('/fetchCollChequemasAccNameForEdit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            EditCollChequeACCNumber: accountNumber
-                        })
-                    })
-                        .then(res => res.json())
-                        .then(data => {
-                            accNameInput.value = data.MemberDetail
-                                ? data.MemberDetail
-                                : 'Invalid Account Number';
-                        })
-                        .catch(err => {
-                            console.error('Fetch error:', err);
-                            accNameInput.value = 'Error fetching data';
-                        });
-                }
             </script>
+           
 
          
 
