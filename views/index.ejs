@@ -24597,11 +24597,13 @@ async function loadEarningsData() {
                                 <th>Bearer</th>
                                 <th>Principal Received Till Date</th>
                                 <th>Interest Received Till Date</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr id="multiTransDetailRow">
+                            <tr id="multiTransDetailRow" data-template="true" style="display: none;">
                                 <td>1</td>
+                                <td></td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
@@ -24638,12 +24640,11 @@ async function loadEarningsData() {
                 <div class="cem-form-style-horizontal3" style="margin-top: 10px;">
                     <div>
                         <label for="total-cash">Total Cash</label>
-                        <input type="number" id="total-cash" name="total-cash">
+                        <input type="number" id="MultiTransTotalCash" name="total-cash" readonly>
                     </div>
                     <div class="">
                          <label for="total-cash">Total Cash in word</label>
-                        <input type="text"id="totalInWords" rows="2" cols="20" placeholder="Amount in Words" 
-                 readonly>
+                        <input type="text" id="MultiTranstotalInWords" rows="2" cols="20" placeholder="Amount in Words" readonly>
                     </div>
                     
                 </div>
@@ -51211,6 +51212,9 @@ async function loadEarningsData() {
                 document.addEventListener('DOMContentLoaded', function () {
                     const addButton = document.getElementById('MultiTransAddBtn');
                     const tableBody = document.querySelector('#MultiTransAddTable tbody');
+                    const totalCashInput = document.getElementById('MultiTransTotalCash');
+                    const totalWordsInput = document.getElementById('MultiTranstotalInWords');
+                    const amountInput = document.getElementById('MainMultitransamount');
 
                     if (!addButton || !tableBody) return;
 
@@ -51224,19 +51228,86 @@ async function loadEarningsData() {
                         return Object.values(rowValues).some((value) => String(value ?? '').trim() !== '');
                     };
 
+                    const getVisibleRows = () => Array.from(
+                        tableBody.querySelectorAll('tr:not([data-template="true"])')
+                    );
+
+                    const parseNumericValue = (value) => {
+                        const cleaned = String(value ?? '').replace(/,/g, '').trim();
+                        const parsed = parseFloat(cleaned);
+                        return Number.isFinite(parsed) ? parsed : 0;
+                    };
+
+                    const getRowBalance = (row) => {
+                        const cells = row.querySelectorAll('td');
+                        const drAmount = parseNumericValue(cells[4]?.textContent);
+                        const crAmount = parseNumericValue(cells[5]?.textContent);
+                        return drAmount - crAmount;
+                    };
+
+                    const renumberRowsAndTotals = () => {
+                        const visibleRows = getVisibleRows();
+                        let totalCash = 0;
+
+                        visibleRows.forEach((row, index) => {
+                            const cells = row.querySelectorAll('td');
+                            if (cells[0]) {
+                                cells[0].textContent = String(index + 1);
+                            }
+                            totalCash += getRowBalance(row);
+                        });
+
+                        if (totalCashInput) {
+                            totalCashInput.value = String(totalCash);
+                        }
+
+                        if (totalWordsInput) {
+                            const totalWords = typeof numberToWords === 'function'
+                                ? numberToWords(Math.floor(totalCash))
+                                : String(totalCash);
+                            totalWordsInput.value = totalWords;
+                        }
+                    };
+
+                    const removeRow = (row) => {
+                        row.remove();
+                        renumberRowsAndTotals();
+                    };
+
+                    tableBody.addEventListener('click', function (event) {
+                        const removeButton = event.target.closest('.multi-trans-remove-btn');
+                        if (!removeButton) return;
+
+                        const row = removeButton.closest('tr');
+                        if (!row || row.dataset.template === 'true') return;
+
+                        removeRow(row);
+                    });
+
                     addButton.addEventListener('click', function () {
-                        const row = document.getElementById('multiTransDetailRow');
-                        if (!row) return;
+                        const templateRow = document.getElementById('multiTransDetailRow');
+                        if (!templateRow) return;
+
+                        const amountValue = parseNumericValue(amountInput?.value);
+                        if (amountValue <= 0) {
+                            if (typeof showCustomAlert === 'function') {
+                                showCustomAlert('Amount must be greater than 0 before adding a row.');
+                            } else {
+                                alert('Amount must be greater than 0 before adding a row.');
+                            }
+                            amountInput?.focus();
+                            return;
+                        }
 
                         const rowValues = {
                             ledgerType: document.getElementById('MultitransaccTypeLgrname')?.value || '',
                             accountNo: document.getElementById('Multitransaccountnumber')?.value || '',
                             accountName: document.getElementById('Multitransaccountname')?.value || '',
                             drAmount: document.getElementById('TransactionTypeForMultiTrans')?.value === 'Withdraw'
-                                ? (document.getElementById('MainMultitransamount')?.value || '')
+                                ? (amountInput?.value || '')
                                 : '',
                             crAmount: document.getElementById('TransactionTypeForMultiTrans')?.value === 'Deposit'
-                                ? (document.getElementById('MainMultitransamount')?.value || '')
+                                ? (amountInput?.value || '')
                                 : '',
                             interestWithdraw: document.getElementById('interest-amount')?.value || '',
                             interestDeposit: document.getElementById('interest-amount')?.value || '',
@@ -51254,17 +51325,23 @@ async function loadEarningsData() {
                         }
 
                         const rowKey = getNormalizedRowKey(rowValues);
-                        const existingRow = Array.from(tableBody.querySelectorAll('tr'))
+                        const existingRow = getVisibleRows()
                             .find((tableRow) => tableRow.dataset.rowKey === rowKey);
 
                         if (existingRow) {
+                            renumberRowsAndTotals();
                             return;
                         }
 
-                        const targetRow = row.dataset.rowKey ? row.cloneNode(true) : row;
+                        const targetRow = templateRow.cloneNode(true);
                         const cells = targetRow.querySelectorAll('td');
 
-                        cells[0].textContent = String(tableBody.querySelectorAll('tr').length);
+                        targetRow.removeAttribute('id');
+                        targetRow.removeAttribute('data-template');
+                        targetRow.style.display = '';
+                        targetRow.dataset.rowKey = rowKey;
+
+                        cells[0].textContent = String(getVisibleRows().length + 1);
                         cells[1].textContent = rowValues.ledgerType;
                         cells[2].textContent = rowValues.accountNo;
                         cells[3].textContent = rowValues.accountName;
@@ -51279,15 +51356,15 @@ async function loadEarningsData() {
                         cells[12].textContent = rowValues.bearer;
                         cells[13].textContent = rowValues.principalReceived;
                         cells[14].textContent = rowValues.interestReceived;
-                        targetRow.dataset.rowKey = rowKey;
-
-                        if (targetRow !== row) {
-                            targetRow.removeAttribute('id');
-                            tableBody.appendChild(targetRow);
-                        } else {
-                            row.dataset.rowKey = rowKey;
+                        if (cells[15]) {
+                            cells[15].innerHTML = '<button type="button" class="multi-trans-remove-btn">Remove</button>';
                         }
+
+                        tableBody.appendChild(targetRow);
+                        renumberRowsAndTotals();
                     });
+
+                    renumberRowsAndTotals();
                 });
             </script>
            
