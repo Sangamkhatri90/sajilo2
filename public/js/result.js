@@ -449,7 +449,42 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
             ['mainopenBalcloseButton', 'mainopenBalcancelButton'],
             openingBalanceDiv
        );
+       document.getElementById('OpeningBalacctype').value = GLName;
+       document.getElementById('OpeningBalAccountNumber').value = SlAlias;
+             if (SlAlias) {
+        fetch(`/getSubLedgerDetails?SlAlias=${encodeURIComponent(SlAlias)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error(data.error);
+                    showCustomAlert('Error retrieving details. Please try again.');
+                    return;
+                }
+                 const balance = Number(data.Balance) || 0;
+                // Fill the inputs with retrieved data
+                // document.getElementById('SLName').value = data.SLName || '';
+                // document.getElementById('GLNamess').value = data.GLName || '';
+                // document.getElementById('OpeningBalamount').value = data.Balance || 0;
+                // document.getElementById('Amount').value = data.Balance || 0;
+                
+                  // Select Debit/Credit based on balance
+            const balanceSelect = document.getElementById('OpeningBalselect');
 
+            if (balance > 0) {
+                balanceSelect.value = "Cr"; // Positive -> Credit
+            } else {
+                balanceSelect.value = "Dr"; // Zero or Negative -> Debit
+            }
+            })
+            .catch(err => {
+                console.error('Error fetching data:', err);
+                showCustomAlert('Failed to retrieve details.');
+            });
+    }
+      
+      
+       document.getElementById('OpeningBalAccName').value =SLName;
+      
 
         // Don't pass the base64 image in the URL, it's already stored in sessionStorage
         url = `/openingBalance?SlAlias=${SlAlias}&GLName=${GLName}

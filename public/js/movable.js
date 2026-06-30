@@ -360,6 +360,25 @@ console.log("value", EditCollChequemasAccIDforaccposting)
     });
 }
 
+function openTransPostInt({buttonId,popupId}){
+ const draggable = document.getElementById(popupId);
+    const toggleButton = document.getElementById(buttonId);
+
+    if (!draggable || !toggleButton) {
+        return;
+    }
+
+    toggleButton.addEventListener('click', function () {
+       
+        const currentDisplay = window.getComputedStyle(draggable).display;
+        draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
+        if (currentDisplay === 'none') {
+            highestZIndex++;
+            draggable.style.zIndex = highestZIndex;
+        }
+    })  
+}
+
 function getShareCertificateFallbackRate() {
     const candidates = [
         document.getElementById('RatePerShare'),
@@ -786,6 +805,9 @@ bindAdditionalToggleButtonNrm({
     getAccNo: () => document.getElementById("Multitransaccountnumber").value,
     getAccNoName: () => document.getElementById("Multitransaccountname").value,
 });
+
+openTransPostInt({buttonId:'MaintransPostIntBtn',popupId:'movableDiv191'});
+
 bindPrintShareCertificateButton('PrintShareCertificateBtn');
 
       

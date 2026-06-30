@@ -24217,8 +24217,7 @@ async function loadEarningsData() {
                                     <button type="button" id="MaintranstoggleButton184"> View A/c Details </button>
                                 </div>
                                 <div style="margin-left: 10px ; margin-right: -54px;">
-                                    <a href="#" id="toggleButton4" class="decoration"><button type="button"
-                                            class="action-button post-interest">Post Interest</button></a>
+                                    <button type="button" id="MaintransPostIntBtn" class="action-button post-interest">Post Interest</button></a>
                                 </div>
                             </div>
 
@@ -24677,37 +24676,38 @@ async function loadEarningsData() {
         <div class="form-style-horizontal3">
           <div>
             <label for="ac-type">A/C Type/Ledger</label>
-            <input type="text" class="ob-text" id="acctype" name="GLName" value="" readonly>
+            <input type="text" class="ob-text" id="OpeningBalacctype" name="GLName" value="" readonly>
           </div>
           <div>
             <label for="account-number">Account#</label>
-            <input type="text" class="ob-text" id="balanceAcc" name="SlAlias" value="" readonly>
+            <input type="text" class="ob-text" id="OpeningBalAccountNumber" name="SlAlias" value="" readonly>
           </div>
         </div>
 
         <div class="form-style-horizontal3">
           <div>
             <label for="dr-cr">Dr/Cr</label>
-            <select name="transaction" class="ob-select" id="select">
+            <select name="openingbalance" class="ob-select" id="OpeningBalselect">
               <option value="Dr">Debit</option>
               <option value="Cr">Credit</option>
             </select>
           </div>
           <div>
             <label for="amount">Amount</label>
-            <input type="number" class="ob-number" id="amount" name="amount" required>
+            <input type="number" class="ob-number" id="OpeningBalamount" name="amount" required>
           </div>
           <div>
             <label for="ac-name">A/C Name</label>
-            <input type="text" class="ob-text" id="balanceName" name="accName" readonly>
+            <input type="text" class="ob-text" id="OpeningBalAccName" name="accName" readonly>
           </div>
         </div>
 
         <div class="form-style-horizontal3">
           <div>
             <label for="doc-class">Doc class</label>
-            <input type="text" class="ob-text" id="doc-class" name="docClass">
-          </div>
+            <input type="text" class="ob-text" id="OpeningBalDocClassInput" name="docClass" placeholder="Type or click to get lists.">
+            <div class="suggestion-list1" id="OpeningBalDocClassDiv" style="display: none;"></div>
+        </div>
           <div>
             <label for="interest-amount">Interest Amount</label>
             <input type="text" class="ob-text" id="interest-amount" name="intAmount" style="pointer-events: none;">
@@ -24727,11 +24727,86 @@ async function loadEarningsData() {
 
         <div class="ob-button-row">
           <button type="submit" class="ob-button">Save</button>
-          <button type="button" class="ob-button" id="mainopenBalcancelButton"> Cancel</button>
+          <button type="button" class="ob-button" id="OpeningBalcancelButton"> Cancel</button>
         </div>
       </fieldset>
     </form>
-  </div>
+            </div>
+
+            
+            <!--Transaction post Interest Calculation-->
+    <div class="movableDiv" id="movableDiv191" style="display: none;">
+      <button id="closeButton191">&times;</button>
+      <div class="nic-container">
+        <form action="" id="myForm191">
+          <fieldset class="nic-fieldset">
+              <legend class="nic-legend">Interest Calculation</legend>
+              <fieldset class="nic-fieldset">
+                  <div class="nic-form-style-horizontal3">
+                      <div>
+                          <label for="">Calculate Interest Till Date</label>
+                          <input type="date" class="nic-date" name="" id="">
+                      </div>
+                      <div>
+                          <label for="">Voucher Date</label>
+                          <input type="date" class="nic-date" name="" id="">
+                      </div>
+                  </div>
+                  <div class="nic-form-style-horizontal3">
+                      <div>
+                          <label for="">Last Interest Calculated Till</label>
+                          <input type="date" class="nic-date" name="" id="">
+                      </div>
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Carry to Transacation</label>
+                      </div>
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Day Closing</label>
+                      </div>
+                  </div>
+              </fieldset>
+              <fieldset class="nic-fieldset">
+                  <div class="checkbox-grid">
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Select All A/c Type</label>
+                      </div>
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Select All A/c</label>
+                      </div>
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Show Projection Report</label>
+                      </div>
+                      <div>
+                          <input type="checkbox" name="" id="">
+                          <label for="">Calculation Only</label>
+                      </div>
+                  </div>
+              </fieldset>
+              <div class="nic-form-style-horizontal3">
+                  <div>
+                      <label for="">Interest Amount</label>
+                      <input type="text" class="nic-text" name="" id="">
+                  </div>
+                  <div>
+                      <label for="">Doc Class</label>
+                      <input type="text" class="nic-text" name="" id="">
+                  </div>
+              </div>
+              <div class="nic-button-row">
+                  <button type="submit" class="nic-button">Ok</button>
+                  <button type="button" class="nic-button" id="cancelButton191">Cancel</button>
+              </div>
+          </fieldset>
+      </form>
+      </div>
+    </div>
+
+
             <!--Financial report Income Statement-->
             <div class="movableDiv report-div" id="movableDiv180" data-report-name="Income Statement">
                 <button id="closeButton180">&times;</button>
@@ -51139,6 +51214,16 @@ async function loadEarningsData() {
 
                     if (!addButton || !tableBody) return;
 
+                    const getNormalizedRowKey = (rowValues) => {
+                        return Object.values(rowValues)
+                            .map((value) => String(value ?? '').trim())
+                            .join('||');
+                    };
+
+                    const hasMeaningfulValue = (rowValues) => {
+                        return Object.values(rowValues).some((value) => String(value ?? '').trim() !== '');
+                    };
+
                     addButton.addEventListener('click', function () {
                         const row = document.getElementById('multiTransDetailRow');
                         if (!row) return;
@@ -51164,7 +51249,22 @@ async function loadEarningsData() {
                             interestReceived: document.getElementById('int-receive-date')?.value || ''
                         };
 
-                        const cells = row.querySelectorAll('td');
+                        if (!hasMeaningfulValue(rowValues)) {
+                            return;
+                        }
+
+                        const rowKey = getNormalizedRowKey(rowValues);
+                        const existingRow = Array.from(tableBody.querySelectorAll('tr'))
+                            .find((tableRow) => tableRow.dataset.rowKey === rowKey);
+
+                        if (existingRow) {
+                            return;
+                        }
+
+                        const targetRow = row.dataset.rowKey ? row.cloneNode(true) : row;
+                        const cells = targetRow.querySelectorAll('td');
+
+                        cells[0].textContent = String(tableBody.querySelectorAll('tr').length);
                         cells[1].textContent = rowValues.ledgerType;
                         cells[2].textContent = rowValues.accountNo;
                         cells[3].textContent = rowValues.accountName;
@@ -51179,6 +51279,14 @@ async function loadEarningsData() {
                         cells[12].textContent = rowValues.bearer;
                         cells[13].textContent = rowValues.principalReceived;
                         cells[14].textContent = rowValues.interestReceived;
+                        targetRow.dataset.rowKey = rowKey;
+
+                        if (targetRow !== row) {
+                            targetRow.removeAttribute('id');
+                            tableBody.appendChild(targetRow);
+                        } else {
+                            row.dataset.rowKey = rowKey;
+                        }
                     });
                 });
             </script>
