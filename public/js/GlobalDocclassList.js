@@ -159,6 +159,7 @@
             { inputId: 'doc-class-cost-of-funds', listId: 'docClassesListforCostOfFunds' },
             { inputId: 'doc-class-acc-als-tna', listId: 'docClassesListforAccAlsTNA' },
             { inputId: 'doc-class-acc-als-ttr', listId: 'docClassesListforAccAlsTTR' },
+            { inputId: 'OpeningBalDocClassInput', listId: 'OpeningBalDocClassDiv' },
         ];
 
         // Attach events for all fields (single fetch for all)

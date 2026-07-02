@@ -19,20 +19,6 @@
   box-sizing: border-box;
   z-index: 3;
 }
-/* Close Button */
-#mainmultitransaction #mainmultitranscloseButton {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  border: none;
-  background: transparent;
-  font-size: 20px;
-  cursor: pointer;
-  color: #444;
-}
-#mainmultitransaction #mainmultitranscloseButton:hover {
-  color: #d00;
-}
 #mainmultitransaction .container {
   width: 100%;
   padding: 0;
@@ -251,30 +237,10 @@
 
 #mainmultitransaction .createbigtrans-table {
   max-height: 300px;
-  overflow-y: auto;
+  overflow: auto;
+  display: block;
   border: 1px solid #ccc;
   width: 100%;
-  background: #fff;
-}
-
-#mainmultitransaction .createbigtrans-table table {
-  min-width: 1200px;
-  width: max-content;
-  border-collapse: collapse;
-  table-layout: fixed;
-  white-space: nowrap;
-}
-
-#mainmultitransaction .createbigtrans-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-#mainmultitransaction .createbigtrans-table th,
-#mainmultitransaction .createbigtrans-table td {
-  min-width: 90px;
-  white-space: nowrap;
 }
 
 #mainmultitransaction .createbigtrans-table th,
