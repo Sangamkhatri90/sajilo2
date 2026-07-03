@@ -97,34 +97,34 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-document.addEventListener("DOMContentLoaded", function () {
-    const menuList = document.getElementById('menu-names');
+// document.addEventListener("DOMContentLoaded", function () {
+//     const menuList = document.getElementById('menu-names');
     
-    // Display loading state
-    menuList.innerHTML = '<li>Loading...</li>';
+//     // Display loading state
+//     menuList.innerHTML = '<li>Loading...</li>';
 
-    // Fetch the menu names from the server
-    fetch('/get-menu-names')
-      .then(response => response.json())
-      .then(data => {
-        menuList.innerHTML = ''; // Clear loading state
+//     // Fetch the menu names from the server
+//     fetch('/get-menu-names')
+//       .then(response => response.json())
+//       .then(data => {
+//         menuList.innerHTML = ''; // Clear loading state
 
-        if (data.length === 0) {
-          menuList.innerHTML = '<li>No menu items available</li>';
-          return;
-        }
+//         if (data.length === 0) {
+//           menuList.innerHTML = '<li>No menu items available</li>';
+//           return;
+//         }
 
-        data.forEach(menu => {
-          const listItem = document.createElement('li');
-          listItem.textContent = menu.MenuName;
-          menuList.appendChild(listItem);
-        });
-      })
-      .catch(error => {
-        console.error('Error fetching menu names:', error);
-        menuList.innerHTML = '<li>Error loading menu items</li>';
-      });
-  });
+//         data.forEach(menu => {
+//           const listItem = document.createElement('li');
+//           listItem.textContent = menu.MenuName;
+//           menuList.appendChild(listItem);
+//         });
+//       })
+//       .catch(error => {
+//         console.error('Error fetching menu names:', error);
+//         menuList.innerHTML = '<li>Error loading menu items</li>';
+//       });
+//   });
 
   document.addEventListener("DOMContentLoaded", function () {
     const menuList = document.getElementById('menu-names-1');
