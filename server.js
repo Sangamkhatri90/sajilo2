@@ -1686,133 +1686,7 @@ app.get("/fetchGLNames", (req, res) => {
     }
   });
 });
-app.get("/fetchBanksNamesForCollChequeSearch", (req, res) => {
-  // Fetch GLName and GlAlias for Categories 'B' only (no query change)
-  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'B'`;
-  const conn = req.session.conn;
 
-  // Validate connection before executing query
-  if (!conn) {
-    console.error("Database connection is not available in the session.");
-    return res.status(500).send("Database connection not found");
-  }
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).send("Error fetching GLNames and GlAliases");
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ glNames: rows }); // Send both GLName and GlAlias values
-    } else {
-      res.json({ message: "No GLNames found for Category B" });
-    }
-  });
-});
-//To get Bank list in BRs
-app.get("/fetchBanksNamesForFRBRS", (req, res) => {
-  // Fetch GLName and GlAlias for Categories 'B' only (no query change)
-  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'B'`; // No change to the query
-  const conn = req.session.conn;
-
-  // Validate connection before executing query
-  if (!conn) {
-    console.error("Database connection is not available in the session.");
-    return res.status(500).send("Database connection not found");
-  }
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).send("Error fetching GLNames and GlAliases");
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ glNames: rows }); // Send both GLName and GlAlias values
-    } else {
-      res.json({ message: "No GLNames found for Category B" });
-    }
-  });
-});
-//To get Bank list in cash flow statement
-app.get("/fetchBanksNamesForFRCFS", (req, res) => {
-  // Fetch GLName and GlAlias for Categories 'B' only (no query change)
-  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'B'`; // No change to the query
-  const conn = req.session.conn;
-
-  // Validate connection before executing query
-  if (!conn) {
-    console.error("Database connection is not available in the session.");
-    return res.status(500).send("Database connection not found");
-  }
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).send("Error fetching GLNames and GlAliases");
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ glNames: rows }); // Send both GLName and GlAlias values
-    } else {
-      res.json({ message: "No GLNames found for Category B" });
-    }
-  });
-});
-app.get("/fetchBanksNamesForBooksCBB", (req, res) => {
-  // Fetch GLName and GlAlias for Categories 'B' only (no query change)
-  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'B' OR Category ='C'`; // No change to the query
-  const conn = req.session.conn;
-
-  // Validate connection before executing query
-  if (!conn) {
-    console.error("Database connection is not available in the session.");
-    return res.status(500).send("Database connection not found");
-  }
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).send("Error fetching GLNames and GlAliases");
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ glNames: rows }); // Send both GLName and GlAlias values
-    } else {
-      res.json({ message: "No GLNames found for Category B" });
-    }
-  });
-});
-app.get("/fetchBanksNamesForDEBR", (req, res) => {
-  // Fetch GLName and GlAlias for Categories 'B' only (no query change)
-  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'B'`; // No change to the query
-  const conn = req.session.conn;
-
-  // Validate connection before executing query
-  if (!conn) {
-    console.error("Database connection is not available in the session.");
-    return res.status(500).send("Database connection not found");
-  }
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).send("Error fetching GLNames and GlAliases");
-    }
-
-    // If rows are returned, send them back as JSON
-    if (rows && rows.length > 0) {
-      res.json({ glNames: rows }); // Send both GLName and GlAlias values
-    } else {
-      res.json({ message: "No GLNames found for Category B" });
-    }
-  });
-});
 
 
 // To get Doc Class
@@ -5160,6 +5034,28 @@ app.get("/fetchLgrMasterO", (req, res) => {
     }
   });
 });
+// Fetch Ledger Master where category is 'B' 
+app.get("/fetchLgrMasterB", (req, res) => {
+  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'B'`;
+
+  const conn = req.session.conn;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("SQL error:", err);
+      return res
+        .status(500)
+        .send({ message: "Error fetching Posting Ledgers" });
+    }
+
+    // If rows are returned, send them back as JSON
+    if (rows && rows.length > 0) {
+      res.json({ lgrmasterb: rows }); // Send both GLName and GLAlias values
+    } else {
+      res.json({ lgrmasterb: [] }); // Return an empty array if no records are found
+    }
+  });
+});
 
 // Fetch Ledger Master where SavingorLoan is 'saving'
 app.get("/fetchLgrMasterSaving", (req, res) => {
@@ -5212,7 +5108,7 @@ app.get("/fetchPostingLedgerForDataEntryallNew", (req, res) => {
   });
 });
 
-app.get("/fetchPostingLedger12", (req, res) => {
+app.get("/fetchLgrMasterLoanAcc", (req, res) => {
  
   const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='Loan'`;
 
