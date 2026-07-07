@@ -35755,6 +35755,115 @@ app.post("/get-openingBalance-MasterEntry", (req, res) => {
 });
 
 
+app.post("/api/cbbSummaryOnly", async (req, res) => {
+  const conn = req.session.conn;
+  let { bankBook, fromDate, toDate, excelData } = req.body;
+
+  console.log("🔍 bankBook:", bankBook, "| fromDate:", fromDate, "| toDate:", toDate);
+
+  if (!bankBook || !fromDate || !toDate) {
+    return res.status(400).json({ error: "bankBook, fromDate and toDate are required." });
+  }
+
+  // 🔄 Normalize incoming dates from "YYYY-MM-DD" to "YYYY/MM/DD"
+  // (HTML date inputs send dashes; JV_Miti in DB is stored with slashes)
+  fromDate = fromDate.replace(/-/g, "/");
+  toDate = toDate.replace(/-/g, "/");
+
+  console.log("🔄 Normalized fromDate:", fromDate, "| toDate:", toDate);
+
+  try {
+    // Step 1: Resolve GLID from GLName (bankBook)
+    const ledgerRows = await queryAsync(conn, `
+      SELECT GLID
+      FROM dbo.tbLedgerMaster
+      WHERE RTRIM(LTRIM(GLName)) = ?
+    `, [bankBook.trim()]);
+
+    if (!ledgerRows || ledgerRows.length === 0) {
+      console.warn(`⚠️ No GLID found for bankBook: "${bankBook}"`);
+      return res.status(404).json({ error: `No ledger found for "${bankBook}".` });
+    }
+
+    const glid = ledgerRows[0].GLID;
+    console.log("📌 Resolved GLID:", glid);
+
+    // Step 2: Compute prior fiscal year range (for Opening Balance)
+    const fromYear = parseInt(fromDate.split('/')[0]) - 1;
+    const toYear = parseInt(fromDate.split('/')[0]);
+    const priorFYFrom = `${fromYear}/04/01`;
+    const priorFYTo = `${toYear}/03/31`;
+
+    console.log("📅 Prior fiscal year range:", priorFYFrom, "to", priorFYTo);
+
+    // Step 3: Run the dynamic CTE query — GLID and both date ranges are parameterized
+    const summaryQuery = `
+      WITH OpeningBalance AS (
+          SELECT
+              SUM(CASE WHEN jm.TransType = 'Deposit' THEN ISNULL(jd.DrAmount, 0) ELSE 0 END)
+              -
+              SUM(CASE WHEN jm.TransType = 'Withdraw' THEN ISNULL(jd.CrAmount, 0) ELSE 0 END) AS OpeningBalance
+          FROM tbJournalMaster jm
+          INNER JOIN tbJournalDetails jd ON jm.JournalID = jd.JournalID
+          WHERE jm.JV_Miti BETWEEN ? AND ?
+            AND jd.GLID = ?
+            AND jm.TransType IN ('Deposit', 'Withdraw')
+      ),
+      DailyTotals AS (
+          SELECT
+              jm.JV_Miti,
+              SUM(CASE WHEN jm.TransType = 'Deposit' THEN ISNULL(jd.DrAmount, 0) ELSE 0 END) AS TotalDeposit,
+              SUM(CASE WHEN jm.TransType = 'Withdraw' THEN ISNULL(jd.CrAmount, 0) ELSE 0 END) AS TotalWithdraw
+          FROM tbJournalMaster jm
+          INNER JOIN tbJournalDetails jd ON jm.JournalID = jd.JournalID
+          WHERE jm.JV_Miti BETWEEN ? AND ?
+            AND jd.GLID = ?
+            AND jm.TransType IN ('Deposit', 'Withdraw')
+          GROUP BY jm.JV_Miti
+      )
+      SELECT
+          d.JV_Miti,
+          ob.OpeningBalance
+            + ISNULL(
+                SUM(d.TotalDeposit - d.TotalWithdraw)
+                OVER (ORDER BY d.JV_Miti ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING),
+                0
+              ) AS OpeningBalance,
+          d.TotalDeposit,
+          d.TotalWithdraw,
+          ob.OpeningBalance
+            + SUM(d.TotalDeposit - d.TotalWithdraw)
+              OVER (ORDER BY d.JV_Miti ROWS UNBOUNDED PRECEDING) AS ClosingBalance
+      FROM DailyTotals d
+      CROSS JOIN OpeningBalance ob
+      ORDER BY d.JV_Miti;
+    `;
+
+    const rows = await queryAsync(conn, summaryQuery, [
+      priorFYFrom, priorFYTo, glid,
+      fromDate, toDate, glid
+    ]);
+
+    console.log("📊 Rows returned:", rows?.length || 0);
+
+    // TODO (later): fallback to excelData if rows is empty / opening balance is null
+    // if (!rows || rows.length === 0) { ... }
+
+    const formatted = (rows || []).map(row => ({
+      Date: row.JV_Miti,
+      OpeningBalance: row.OpeningBalance,
+      Receipt: row.TotalDeposit,
+      Payment: row.TotalWithdraw,
+      Balance: row.ClosingBalance
+    }));
+
+    return res.json(formatted);
+
+  } catch (error) {
+    console.error("❌ Error in cbbSummaryOnly:", error);
+    return res.status(500).json({ error: "Internal Server Error", details: error.message });
+  }
+});
 
 // Start the server
 const PORT = 80;
