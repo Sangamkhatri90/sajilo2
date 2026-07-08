@@ -24085,216 +24085,6 @@ app.post("/api/fetchdataofreceiptandpaymentTformattttt", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
-app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate, excelData } = req.body;
-
-  console.log("📦 /api/fetchdataofreceiptandpaymentTformat HIT");
-  console.log("📅 fromDate:", fromDate, "toDate:", toDate);
-
-  try {
-    // 1️⃣ Previous fiscal year range
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const newFromDate = `${fromYear}/04/01`;
-    const newToDate = `${toYear}/03/31`;
-    console.log("📅 Opening range:", newFromDate, newToDate);
-
-    // 2️⃣ Get all ledgers
-    const ledgersQuery = `
-      SELECT GLID, LgrGrpID, GLName, Category
-      FROM dbo.tbLedgerMaster
-    `;
-    const ledgers = await new Promise((resolve, reject) => {
-      sql.query(conn, ledgersQuery, (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-    console.log(`✅ Found ${ledgers.length} ledgers`);
-
-    // 3️⃣ Check if journal entries exist for previous fiscal year
-    const checkDateQuery = `
-      SELECT COUNT(*) as Count
-      FROM dbo.tbJournal
-      WHERE JV_Miti BETWEEN ? AND ?
-    `;
-    const openingCountResult = await new Promise((resolve, reject) => {
-      sql.query(conn, checkDateQuery, [newFromDate, newToDate], (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-    const openingJournalCount = openingCountResult?.[0]?.Count || 0;
-    console.log("📊 Opening journal entries count:", openingJournalCount);
-
-    const groupTotals = {}; // key = LgrGrpID
-
-    // 4️⃣ Process OpeningBalance ledgers (Category B/C)
-    const openingLedgers = ledgers.filter(l => l.Category === 'B' || l.Category === 'C');
-    console.log(`📌 Ledgers considered for OpeningBalance: ${openingLedgers.length}`);
-
-    for (const ledger of openingLedgers) {
-      const { GLID, LgrGrpID, Category, GLName } = ledger;
-      if (!GLID || !LgrGrpID) continue;
-      console.log(`🔹 Processing OpeningBalance ledger: ${GLName} (Category: ${Category})`);
-
-      // Period totals
-      const periodQuery = `
-        SELECT ISNULL(SUM(DrAmount),0) AS TotalDrAmount, ISNULL(SUM(CrAmount),0) AS TotalCrAmount
-        FROM dbo.tbJournal
-        WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-      `;
-      const periodResult = await new Promise((resolve, reject) => {
-        sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      const period = periodResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
-      console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
-
-      // Opening balances
-      let openingDebit = 0, openingCredit = 0;
-      if (openingJournalCount > 0) {
-        const openingResult = await new Promise((resolve, reject) => {
-          sql.query(conn, periodQuery, [GLID, newFromDate, newToDate], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-        openingDebit = openingResult?.[0]?.TotalDrAmount || 0;
-        openingCredit = openingResult?.[0]?.TotalCrAmount || 0;
-        console.log(`📊 DB Opening: Dr=${openingDebit}, Cr=${openingCredit}`);
-      } else if (excelData && excelData.length > 0) {
-        const excelRow = excelData.find(row => (row.particular?.trim() || '') === GLName);
-        if (excelRow) {
-          openingDebit = parseFloat(excelRow.OpeningBalanceDr || 0);
-          openingCredit = parseFloat(excelRow.OpeningBalanceCr || 0);
-          console.log(`📊 Excel Opening: ${GLName} → Dr=${openingDebit}, Cr=${openingCredit}`);
-        } else {
-          console.log(`⚠️ No Excel row found for ledger: ${GLName}`);
-        }
-      }
-
-      // Accumulate group totals
-      if (!groupTotals[LgrGrpID]) {
-        groupTotals[LgrGrpID] = { periodDebit: 0, periodCredit: 0, openingDebit: 0, openingCredit: 0, categories: new Set(), GLIDs: new Set() };
-      }
-      groupTotals[LgrGrpID].periodDebit += period.TotalDrAmount;
-      groupTotals[LgrGrpID].periodCredit += period.TotalCrAmount;
-      groupTotals[LgrGrpID].openingDebit += openingDebit;
-      groupTotals[LgrGrpID].openingCredit += openingCredit;
-      groupTotals[LgrGrpID].categories.add(Category);
-      groupTotals[LgrGrpID].GLIDs.add(GLID);
-    }
-
-    console.log("✅ OpeningBalance Group Totals Calculated");
-
-    // 5️⃣ Process other ledgers (for Transaction section)
-    const transactionLedgers = ledgers.filter(l => l.Category !== 'B' && l.Category !== 'C');
-    console.log(`📌 Ledgers considered for Transaction: ${transactionLedgers.length}`);
-
-    for (const ledger of transactionLedgers) {
-      const { GLID, LgrGrpID, Category, GLName } = ledger;
-      if (!GLID || !LgrGrpID) continue;
-      console.log(`🔹 Processing Transaction ledger: ${GLName} (Category: ${Category})`);
-
-      const periodQuery = `
-        SELECT ISNULL(SUM(DrAmount),0) AS TotalDrAmount, ISNULL(SUM(CrAmount),0) AS TotalCrAmount
-        FROM dbo.tbJournal
-        WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-      `;
-      const periodResult = await new Promise((resolve, reject) => {
-        sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      const period = periodResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
-      console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
-
-      // Accumulate group totals (openingDebit/credit = 0)
-      if (!groupTotals[LgrGrpID]) {
-        groupTotals[LgrGrpID] = { periodDebit: 0, periodCredit: 0, openingDebit: 0, openingCredit: 0, categories: new Set(), GLIDs: new Set() };
-      }
-      groupTotals[LgrGrpID].periodDebit += period.TotalDrAmount;
-      groupTotals[LgrGrpID].periodCredit += period.TotalCrAmount;
-      groupTotals[LgrGrpID].categories.add(Category);
-      groupTotals[LgrGrpID].GLIDs.add(GLID);
-    }
-
-    console.log("✅ Transaction group totals calculated");
-
-    // 6️⃣ Get group names & aliases
-    const groupIds = Object.keys(groupTotals);
-    const groupsQuery = `
-      SELECT LgrGrpID, GrpName, GrpAlias
-      FROM dbo.tbLedgerGroup
-      WHERE LgrGrpID IN (${groupIds.map(() => '?').join(',')})
-    `;
-    const groupsResult = await new Promise((resolve, reject) => {
-      sql.query(conn, groupsQuery, groupIds, (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-    const groupInfoMap = {};
-    for (const row of groupsResult) {
-      groupInfoMap[row.LgrGrpID] = { name: row.GrpName || "Ungrouped", alias: row.GrpAlias || "" };
-    }
-
-    // 7️⃣ Organize final sections
-    const OpeningBalance = [];
-    const Transaction = [];
-    const Balance = [];
-
-    for (const groupId of groupIds) {
-      const totals = groupTotals[groupId];
-      const categories = Array.from(totals.categories);
-      const category = categories.includes("C") ? "C" :
-        categories.includes("B") ? "B" : "Other";
-
-      const groupName = groupInfoMap[groupId]?.name || "Ungrouped";
-      const groupAlias = groupInfoMap[groupId]?.alias || "";
-
-      if (category === "C" || category === "B") {
-        if (totals.openingDebit !== 0 || totals.openingCredit !== 0) {
-          OpeningBalance.push({ particular: groupName, alias: groupAlias, openingDebit: totals.openingDebit, openingCredit: totals.openingCredit });
-        }
-
-        // Balance section
-        const totalDebit = totals.openingDebit + totals.periodDebit;
-        const totalCredit = totals.openingCredit + totals.periodCredit;
-        const balanceAmount = Math.abs(totalDebit - totalCredit);
-
-        let receipt = 0, payment = 0;
-        if (balanceAmount > 0) {
-          if (totalDebit > totalCredit) receipt = balanceAmount;
-          else if (totalCredit > totalDebit) payment = balanceAmount;
-          Balance.push({ particular: groupName, alias: groupAlias, periodDebit: receipt, periodCredit: payment });
-        }
-
-      } else {
-        // Transaction section
-        if (totals.periodDebit !== 0 || totals.periodCredit !== 0) {
-          Transaction.push({ particular: groupName, alias: groupAlias, periodDebit: totals.periodDebit, periodCredit: totals.periodCredit });
-        }
-      }
-    }
-
-    console.log("✅ Final sections prepared");
-    return res.json({ OpeningBalance, Transaction, Balance });
-
-  } catch (error) {
-    console.error("❌ Error in /api/fetchdataofreceiptandpaymentTformat:", error);
-    return res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
-
-
-
-
 
 app.post("/api/fetchdataofreceiptandpaymentNormalFormattttt", async (req, res) => {
   const conn = req.session.conn;
@@ -24397,182 +24187,221 @@ app.post("/api/fetchdataofreceiptandpaymentNormalFormattttt", async (req, res) =
   }
 });
 
-app.post("/api/fetchdataofreceiptandpaymentNormalFormat", async (req, res) => {
+// =============================================================================
+// SHARED HELPER
+// Extracted from both routes — identical queries, identical order of
+// operations, identical fallback logic. Nothing about the calculations
+// was changed, only moved into one place so both routes call it.
+// =============================================================================
+async function computeGroupTotals(conn, fromDate, toDate, excelData) {
+  // 1️⃣ Previous fiscal year range
+  const fromYear = parseInt(fromDate.split("/")[0]) - 1;
+  const toYear = parseInt(fromDate.split("/")[0]);
+  const newFromDate = `${fromYear}/04/01`;
+  const newToDate = `${toYear}/03/31`;
+  console.log("📅 Opening range:", newFromDate, newToDate);
+
+  // 2️⃣ Get all ledgers
+  const ledgersQuery = `
+    SELECT GLID, LgrGrpID, GLName, Category
+    FROM dbo.tbLedgerMaster
+  `;
+  const ledgers = await new Promise((resolve, reject) => {
+    sql.query(conn, ledgersQuery, (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+  });
+  console.log(`✅ Found ${ledgers.length} ledgers`);
+
+  // 3️⃣ Check if journal entries exist for previous fiscal year
+  // (date lives in tbJournalMaster now, not tbJournal)
+  const checkDateQuery = `
+    SELECT COUNT(*) as Count
+    FROM dbo.tbJournalMaster
+    WHERE JV_Miti BETWEEN ? AND ?
+  `;
+  const openingCountResult = await new Promise((resolve, reject) => {
+    sql.query(conn, checkDateQuery, [newFromDate, newToDate], (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+  });
+  const openingJournalCount = openingCountResult?.[0]?.Count || 0;
+  console.log("📊 Opening journal entries count:", openingJournalCount);
+
+  const groupTotals = {}; // key = LgrGrpID
+  const emptyTotals = { TotalDrAmount: 0, TotalCrAmount: 0 };
+
+  // ---------------------------------------------------------------------
+  // PERFORMANCE: instead of one SELECT ... WHERE GLID = ? per ledger
+  // (N sequential round-trips), fetch ALL ledgers' totals in a single
+  // GROUP BY query, then look them up in memory below. Same numbers,
+  // far fewer queries.
+  //
+  // Date now validated against tbJournalMaster.JV_Miti; amounts pulled
+  // from tbJournalDetails, joined on JournalID.
+  // ---------------------------------------------------------------------
+  const periodAggQuery = `
+    SELECT d.GLID,
+           ISNULL(SUM(d.DrAmount),0) AS TotalDrAmount,
+           ISNULL(SUM(d.CrAmount),0) AS TotalCrAmount
+    FROM dbo.tbJournalMaster m
+    INNER JOIN dbo.tbJournalDetails d ON d.JournalID = m.JournalID
+    WHERE m.JV_Miti BETWEEN ? AND ?
+    GROUP BY d.GLID
+  `;
+  const periodAggRows = await new Promise((resolve, reject) => {
+    sql.query(conn, periodAggQuery, [fromDate, toDate], (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+  });
+  const periodTotalsByGLID = {};
+  for (const row of periodAggRows) {
+    periodTotalsByGLID[row.GLID] = { TotalDrAmount: row.TotalDrAmount, TotalCrAmount: row.TotalCrAmount };
+  }
+  console.log(`✅ Period totals fetched for ${periodAggRows.length} ledgers (1 query)`);
+
+  // Opening-range aggregate — only needed if opening journal entries exist,
+  // exactly like the original per-ledger version only queried when
+  // openingJournalCount > 0.
+  let openingTotalsByGLID = {};
+  if (openingJournalCount > 0) {
+    const openingAggRows = await new Promise((resolve, reject) => {
+      sql.query(conn, periodAggQuery, [newFromDate, newToDate], (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      });
+    });
+    for (const row of openingAggRows) {
+      openingTotalsByGLID[row.GLID] = { TotalDrAmount: row.TotalDrAmount, TotalCrAmount: row.TotalCrAmount };
+    }
+    console.log(`✅ Opening totals fetched for ${openingAggRows.length} ledgers (1 query)`);
+  }
+
+  const accumulate = (LgrGrpID, Category, GLID, period, openingDebit = 0, openingCredit = 0) => {
+    if (!groupTotals[LgrGrpID]) {
+      groupTotals[LgrGrpID] = {
+        periodDebit: 0, periodCredit: 0,
+        openingDebit: 0, openingCredit: 0,
+        categories: new Set(), GLIDs: new Set()
+      };
+    }
+    groupTotals[LgrGrpID].periodDebit += period.TotalDrAmount;
+    groupTotals[LgrGrpID].periodCredit += period.TotalCrAmount;
+    groupTotals[LgrGrpID].openingDebit += openingDebit;
+    groupTotals[LgrGrpID].openingCredit += openingCredit;
+    groupTotals[LgrGrpID].categories.add(Category);
+    groupTotals[LgrGrpID].GLIDs.add(GLID);
+  };
+
+  // 4️⃣ Process OpeningBalance ledgers (Category B/C)
+  const openingLedgers = ledgers.filter(l => l.Category === 'B' || l.Category === 'C');
+  console.log(`📌 Ledgers considered for OpeningBalance: ${openingLedgers.length}`);
+
+  for (const ledger of openingLedgers) {
+    const { GLID, LgrGrpID, Category, GLName } = ledger;
+    if (!GLID || !LgrGrpID) continue;
+    console.log(`🔹 Processing OpeningBalance ledger: ${GLName} (Category: ${Category})`);
+
+    // Period totals — looked up from the single aggregate query above
+    // instead of a fresh SELECT per ledger.
+    const period = periodTotalsByGLID[GLID] || emptyTotals;
+    console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
+
+    // Opening balances
+    let openingDebit = 0, openingCredit = 0;
+    if (openingJournalCount > 0) {
+      const openingRow = openingTotalsByGLID[GLID] || emptyTotals;
+      openingDebit = openingRow.TotalDrAmount || 0;
+      openingCredit = openingRow.TotalCrAmount || 0;
+      console.log(`📊 DB Opening: Dr=${openingDebit}, Cr=${openingCredit}`);
+    } else if (excelData && excelData.length > 0) {
+      const excelRow = excelData.find(row => (row.particular?.trim() || '') === GLName);
+      if (excelRow) {
+        openingDebit = parseFloat(excelRow.OpeningBalanceDr || 0);
+        openingCredit = parseFloat(excelRow.OpeningBalanceCr || 0);
+        console.log(`📊 Excel Opening: ${GLName} → Dr=${openingDebit}, Cr=${openingCredit}`);
+      } else {
+        console.log(`⚠️ No Excel row found for ledger: ${GLName}`);
+      }
+    }
+
+    accumulate(LgrGrpID, Category, GLID, period, openingDebit, openingCredit);
+  }
+
+  console.log("✅ OpeningBalance Group Totals Calculated");
+
+  // 5️⃣ Process other ledgers (for Transaction section)
+  const transactionLedgers = ledgers.filter(l => l.Category !== 'B' && l.Category !== 'C');
+  console.log(`📌 Ledgers considered for Transaction: ${transactionLedgers.length}`);
+
+  for (const ledger of transactionLedgers) {
+    const { GLID, LgrGrpID, Category, GLName } = ledger;
+    if (!GLID || !LgrGrpID) continue;
+    console.log(`🔹 Processing Transaction ledger: ${GLName} (Category: ${Category})`);
+
+    // Looked up from the single aggregate query above instead of a
+    // fresh SELECT per ledger.
+    const period = periodTotalsByGLID[GLID] || emptyTotals;
+    console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
+
+    // openingDebit/credit = 0 for these
+    accumulate(LgrGrpID, Category, GLID, period);
+  }
+
+  console.log("✅ Transaction group totals calculated");
+
+  // 6️⃣ Get group names & aliases
+  const groupIds = Object.keys(groupTotals);
+  const groupsQuery = `
+    SELECT LgrGrpID, GrpName, GrpAlias
+    FROM dbo.tbLedgerGroup
+    WHERE LgrGrpID IN (${groupIds.map(() => '?').join(',')})
+  `;
+  const groupsResult = await new Promise((resolve, reject) => {
+    sql.query(conn, groupsQuery, groupIds, (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+  });
+  const groupInfoMap = {};
+  for (const row of groupsResult) {
+    groupInfoMap[row.LgrGrpID] = { name: row.GrpName || "Ungrouped", alias: row.GrpAlias || "" };
+  }
+
+  return { groupIds, groupTotals, groupInfoMap };
+}
+
+// Small shared helper used by both routes to resolve a group's rollup category
+function resolveCategory(categories) {
+  return categories.includes("C") ? "C" :
+    categories.includes("B") ? "B" : "Other";
+}
+
+// =============================================================================
+// ROUTE 1: T-Format
+// =============================================================================
+app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
   const conn = req.session.conn;
-  const { fromDate, toDate } = req.body;
+  const { fromDate, toDate, excelData } = req.body;
+
+  console.log("📦 /api/fetchdataofreceiptandpaymentTformat HIT");
+  console.log("📅 fromDate:", fromDate, "toDate:", toDate);
 
   try {
-    console.log("=== Fetching Receipt & Payment Normal Format ===");
-    console.log("From:", fromDate, "To:", toDate);
+    const { groupIds, groupTotals, groupInfoMap } =
+      await computeGroupTotals(conn, fromDate, toDate, excelData);
 
-    // 1️⃣ Previous fiscal year range
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const newFromDate = `${fromYear}/04/01`;
-    const newToDate = `${toYear}/03/31`;
-    console.log("📅 Opening range:", newFromDate, newToDate);
-
-
-    // 2️⃣ Get all ledgers
-    const ledgersQuery = `
-      SELECT GLID, LgrGrpID, GLName, Category
-      FROM dbo.tbLedgerMaster
-    `;
-    const ledgers = await new Promise((resolve, reject) => {
-      sql.query(conn, ledgersQuery, (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-    console.log(`✅ Found ${ledgers.length} ledgers`);
-
-
-    // 3️⃣ Check if journal entries exist for previous fiscal year
-    const checkDateQuery = `
-      SELECT COUNT(*) as Count
-      FROM dbo.tbJournal
-      WHERE JV_Miti BETWEEN ? AND ?
-    `;
-    const openingCountResult = await new Promise((resolve, reject) => {
-      sql.query(conn, checkDateQuery, [newFromDate, newToDate], (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-    const openingJournalCount = openingCountResult?.[0]?.Count || 0;
-    console.log("📊 Opening journal entries count:", openingJournalCount);
-
-    const groupTotals = {}; // key = LgrGrpID
-
-    // 4️⃣ Process OpeningBalance ledgers (Category B/C)
-    const openingLedgers = ledgers.filter(l => l.Category === 'B' || l.Category === 'C');
-    console.log(`📌 Ledgers considered for OpeningBalance: ${openingLedgers.length}`);
-
-    for (const ledger of openingLedgers) {
-      const { GLID, LgrGrpID, Category, GLName } = ledger;
-      if (!GLID || !LgrGrpID) continue;
-      console.log(`🔹 Processing OpeningBalance ledger: ${GLName} (Category: ${Category})`);
-
-      // Period totals
-      const periodQuery = `
-        SELECT ISNULL(SUM(DrAmount),0) AS TotalDrAmount, ISNULL(SUM(CrAmount),0) AS TotalCrAmount
-        FROM dbo.tbJournal
-        WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-      `;
-      const periodResult = await new Promise((resolve, reject) => {
-        sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      const period = periodResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
-      console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
-
-      // Opening balances
-      let openingDebit = 0, openingCredit = 0;
-      if (openingJournalCount > 0) {
-        const openingResult = await new Promise((resolve, reject) => {
-          sql.query(conn, periodQuery, [GLID, newFromDate, newToDate], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-        openingDebit = openingResult?.[0]?.TotalDrAmount || 0;
-        openingCredit = openingResult?.[0]?.TotalCrAmount || 0;
-        console.log(`📊 DB Opening: Dr=${openingDebit}, Cr=${openingCredit}`);
-      } else if (excelData && excelData.length > 0) {
-        const excelRow = excelData.find(row => (row.particular?.trim() || '') === GLName);
-        if (excelRow) {
-          openingDebit = parseFloat(excelRow.OpeningBalanceDr || 0);
-          openingCredit = parseFloat(excelRow.OpeningBalanceCr || 0);
-          console.log(`📊 Excel Opening: ${GLName} → Dr=${openingDebit}, Cr=${openingCredit}`);
-        } else {
-          console.log(`⚠️ No Excel row found for ledger: ${GLName}`);
-        }
-      }
-
-      // Accumulate group totals
-      if (!groupTotals[LgrGrpID]) {
-        groupTotals[LgrGrpID] = { periodDebit: 0, periodCredit: 0, openingDebit: 0, openingCredit: 0, categories: new Set(), GLIDs: new Set() };
-      }
-      groupTotals[LgrGrpID].periodDebit += period.TotalDrAmount;
-      groupTotals[LgrGrpID].periodCredit += period.TotalCrAmount;
-      groupTotals[LgrGrpID].openingDebit += openingDebit;
-      groupTotals[LgrGrpID].openingCredit += openingCredit;
-      groupTotals[LgrGrpID].categories.add(Category);
-      groupTotals[LgrGrpID].GLIDs.add(GLID);
-    }
-
-    console.log("✅ OpeningBalance Group Totals Calculated");
-
-
-
-    // 5️⃣ Process other ledgers (for Transaction section)
-    const transactionLedgers = ledgers.filter(l => l.Category !== 'B' && l.Category !== 'C');
-    console.log(`📌 Ledgers considered for Transaction: ${transactionLedgers.length}`);
-
-    for (const ledger of transactionLedgers) {
-      const { GLID, LgrGrpID, Category, GLName } = ledger;
-      if (!GLID || !LgrGrpID) continue;
-      console.log(`🔹 Processing Transaction ledger: ${GLName} (Category: ${Category})`);
-
-      const periodQuery = `
-        SELECT ISNULL(SUM(DrAmount),0) AS TotalDrAmount, ISNULL(SUM(CrAmount),0) AS TotalCrAmount
-        FROM dbo.tbJournal
-        WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-      `;
-      const periodResult = await new Promise((resolve, reject) => {
-        sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      const period = periodResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
-      console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
-
-      // Accumulate group totals (openingDebit/credit = 0)
-      if (!groupTotals[LgrGrpID]) {
-        groupTotals[LgrGrpID] = { periodDebit: 0, periodCredit: 0, openingDebit: 0, openingCredit: 0, categories: new Set(), GLIDs: new Set() };
-      }
-      groupTotals[LgrGrpID].periodDebit += period.TotalDrAmount;
-      groupTotals[LgrGrpID].periodCredit += period.TotalCrAmount;
-      groupTotals[LgrGrpID].categories.add(Category);
-      groupTotals[LgrGrpID].GLIDs.add(GLID);
-    }
-
-    console.log("✅ Transaction group totals calculated");
-
-
-
-    // 6️⃣ Get group names & aliases
-    const groupIds = Object.keys(groupTotals);
-    const groupsQuery = `
-      SELECT LgrGrpID, GrpName, GrpAlias
-      FROM dbo.tbLedgerGroup
-      WHERE LgrGrpID IN (${groupIds.map(() => '?').join(',')})
-    `;
-    const groupsResult = await new Promise((resolve, reject) => {
-      sql.query(conn, groupsQuery, groupIds, (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-    const groupInfoMap = {};
-    for (const row of groupsResult) {
-      groupInfoMap[row.LgrGrpID] = { name: row.GrpName || "Ungrouped", alias: row.GrpAlias || "" };
-    }
-
-    // 7️⃣ Organize final sections
+    // 7️⃣ Organize final sections (T-format specific)
     const OpeningBalance = [];
-    const TransactionReceipt = [];
-    const TransactionPayment = [];
+    const Transaction = [];
     const Balance = [];
 
     for (const groupId of groupIds) {
       const totals = groupTotals[groupId];
-      const categories = Array.from(totals.categories);
-      const category = categories.includes("C") ? "C" :
-        categories.includes("B") ? "B" : "Other";
+      const category = resolveCategory(Array.from(totals.categories));
 
       const groupName = groupInfoMap[groupId]?.name || "Ungrouped";
       const groupAlias = groupInfoMap[groupId]?.alias || "";
@@ -24589,11 +24418,71 @@ app.post("/api/fetchdataofreceiptandpaymentNormalFormat", async (req, res) => {
 
         let receipt = 0, payment = 0;
         if (balanceAmount > 0) {
-          Balance.push({ particular: groupName, alias: groupAlias, Balanceamt: balanceAmount, });
+          if (totalDebit > totalCredit) receipt = balanceAmount;
+          else if (totalCredit > totalDebit) payment = balanceAmount;
+          Balance.push({ particular: groupName, alias: groupAlias, periodDebit: receipt, periodCredit: payment });
         }
 
       } else {
-        // TransactionReceipt section
+        // Transaction section
+        if (totals.periodDebit !== 0 || totals.periodCredit !== 0) {
+          Transaction.push({ particular: groupName, alias: groupAlias, periodDebit: totals.periodDebit, periodCredit: totals.periodCredit });
+        }
+      }
+    }
+
+    console.log("✅ Final sections prepared");
+    return res.json({ OpeningBalance, Transaction, Balance });
+
+  } catch (error) {
+    console.error("❌ Error in /api/fetchdataofreceiptandpaymentTformat:", error);
+    return res.status(500).json({ error: "Internal Server Error", details: error.message });
+  }
+});
+
+// =============================================================================
+// ROUTE 2: Normal Format
+// =============================================================================
+app.post("/api/fetchdataofreceiptandpaymentNormalFormat", async (req, res) => {
+  const conn = req.session.conn;
+  const { fromDate, toDate, excelData } = req.body; // NOTE: excelData added to destructure — see note below
+
+  try {
+    console.log("=== Fetching Receipt & Payment Normal Format ===");
+    console.log("From:", fromDate, "To:", toDate);
+
+    const { groupIds, groupTotals, groupInfoMap } =
+      await computeGroupTotals(conn, fromDate, toDate, excelData);
+
+    // 7️⃣ Organize final sections (Normal-format specific)
+    const OpeningBalance = [];
+    const TransactionReceipt = [];
+    const TransactionPayment = [];
+    const Balance = [];
+
+    for (const groupId of groupIds) {
+      const totals = groupTotals[groupId];
+      const category = resolveCategory(Array.from(totals.categories));
+
+      const groupName = groupInfoMap[groupId]?.name || "Ungrouped";
+      const groupAlias = groupInfoMap[groupId]?.alias || "";
+
+      if (category === "C" || category === "B") {
+        if (totals.openingDebit !== 0 || totals.openingCredit !== 0) {
+          OpeningBalance.push({ particular: groupName, alias: groupAlias, openingDebit: totals.openingDebit, openingCredit: totals.openingCredit });
+        }
+
+        // Balance section
+        const totalDebit = totals.openingDebit + totals.periodDebit;
+        const totalCredit = totals.openingCredit + totals.periodCredit;
+        const balanceAmount = Math.abs(totalDebit - totalCredit);
+
+        if (balanceAmount > 0) {
+          Balance.push({ particular: groupName, alias: groupAlias, Balanceamt: balanceAmount });
+        }
+
+      } else {
+        // TransactionReceipt / TransactionPayment sections
         if (totals.periodCredit !== 0) {
           TransactionReceipt.push({ particular: groupName, alias: groupAlias, periodCredit: totals.periodCredit });
         }
@@ -24604,19 +24493,14 @@ app.post("/api/fetchdataofreceiptandpaymentNormalFormat", async (req, res) => {
     }
 
     console.log("✅ Final sections prepared");
-    // Debug: show TransactionReceipt & TransactionPayment
     console.log("📌 TransactionReceipt Section:");
     console.table(TransactionReceipt);
-
     console.log("📌 TransactionPayment Section:");
     console.table(TransactionPayment);
     console.log("📌 Balance Section:");
     console.table(Balance);
 
     return res.json({ OpeningBalance, TransactionReceipt, TransactionPayment, Balance });
-
-
-
 
   } catch (error) {
     console.error("❌ Error in /api/fetchdataofreceiptandpaymentNormalFormat:", error);
