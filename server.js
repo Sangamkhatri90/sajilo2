@@ -10,6 +10,7 @@ const setupConfig = require('./setupConfig')
 const convertToNepaliDate = require("./date/dateConverter")
 const { exec } = require("child_process");
 const upload = multer({ dest: "uploads/" });
+const restoreUpload = multer({ dest: "restoreUploads/" });
 const uploadmem = multer({ dest: "uploadsMem/" });
 const {
   connectionString,
@@ -519,6 +520,41 @@ const removeBackupFileWithRetry = async (filePath, attempts = 10, delayMs = 1000
   }
 };
 
+const escapeSqlString = (value) => String(value).replace(/'/g, "''");
+const escapeDbIdentifier = (value) => String(value).replace(/]/g, "]]");
+
+const getRestoreValue = (row, key) => {
+  if (!row) return undefined;
+  const foundKey = Object.keys(row).find((rowKey) => rowKey.toLowerCase() === key.toLowerCase());
+  return foundKey ? row[foundKey] : undefined;
+};
+
+const getCurrentDatabaseFiles = async (masterConnectionString, dbName) => {
+  const escapedDbName = escapeSqlString(dbName);
+  const rows = await backupSqlDatabase(masterConnectionString, `
+    SELECT type_desc AS TypeDesc, physical_name AS PhysicalName
+    FROM sys.master_files
+    WHERE database_id = DB_ID(N'${escapedDbName}')
+      AND type IN (0, 1);
+  `);
+
+  return {
+    dataFile: getRestoreValue(rows.find((row) => getRestoreValue(row, "TypeDesc") === "ROWS"), "PhysicalName"),
+    logFile: getRestoreValue(rows.find((row) => getRestoreValue(row, "TypeDesc") === "LOG"), "PhysicalName"),
+  };
+};
+
+const getBackupLogicalFiles = async (masterConnectionString, backupPath) => {
+  const escapedBackupPath = escapeSqlString(backupPath);
+  const rows = await backupSqlDatabase(masterConnectionString, `
+    RESTORE FILELISTONLY FROM DISK = N'${escapedBackupPath}';
+  `);
+
+  return {
+    dataLogicalName: getRestoreValue(rows.find((row) => getRestoreValue(row, "Type") === "D"), "LogicalName"),
+    logLogicalName: getRestoreValue(rows.find((row) => getRestoreValue(row, "Type") === "L"), "LogicalName"),
+  };
+};
 app.get("/backup-database", async (req, res) => {
   const dbName = req.session.dbName;
 
@@ -575,6 +611,99 @@ app.get("/backup-database", async (req, res) => {
       message: "Database backup failed.",
       details: err.message,
     });
+  }
+});
+
+app.post("/restore-database", restoreUpload.single("backupFile"), async (req, res) => {
+  const dbName = req.session.dbName;
+  const uploadedFile = req.file;
+
+  if (!dbName || !req.session.conn) {
+    if (uploadedFile) removeBackupFileWithRetry(uploadedFile.path);
+    return res.status(440).json({
+      success: false,
+      message: "Session expired. Please login and select a database again.",
+    });
+  }
+
+  if (!/^[A-Za-z0-9_]+$/.test(dbName)) {
+    if (uploadedFile) removeBackupFileWithRetry(uploadedFile.path);
+    return res.status(400).json({
+      success: false,
+      message: "Invalid database name in session.",
+    });
+  }
+
+  if (!uploadedFile) {
+    return res.status(400).json({
+      success: false,
+      message: "Please choose a .bak file to restore.",
+    });
+  }
+
+  if (path.extname(uploadedFile.originalname).toLowerCase() !== ".bak") {
+    removeBackupFileWithRetry(uploadedFile.path);
+    return res.status(400).json({
+      success: false,
+      message: "Only SQL Server .bak files are allowed.",
+    });
+  }
+
+  const masterConnectionString = createConnectionString("master");
+  const restoreFilePath = path.resolve(uploadedFile.path);
+  const escapedRestoreFilePath = escapeSqlString(restoreFilePath);
+  const escapedDbName = escapeDbIdentifier(dbName);
+
+  try {
+    await waitForBackupFileReady(restoreFilePath);
+
+    const currentFiles = await getCurrentDatabaseFiles(masterConnectionString, dbName);
+    const backupFiles = await getBackupLogicalFiles(masterConnectionString, restoreFilePath);
+
+    if (!currentFiles.dataFile || !currentFiles.logFile) {
+      throw new Error(`Could not find current data/log file paths for database ${dbName}.`);
+    }
+
+    if (!backupFiles.dataLogicalName || !backupFiles.logLogicalName) {
+      throw new Error("Could not read logical data/log file names from the selected .bak file.");
+    }
+
+    const restoreQuery = `
+      ALTER DATABASE [${escapedDbName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+      RESTORE DATABASE [${escapedDbName}]
+      FROM DISK = N'${escapedRestoreFilePath}'
+      WITH REPLACE,
+        RECOVERY,
+        MOVE N'${escapeSqlString(backupFiles.dataLogicalName)}' TO N'${escapeSqlString(currentFiles.dataFile)}',
+        MOVE N'${escapeSqlString(backupFiles.logLogicalName)}' TO N'${escapeSqlString(currentFiles.logFile)}',
+        STATS = 10;
+      ALTER DATABASE [${escapedDbName}] SET MULTI_USER;
+    `;
+
+    await backupSqlDatabase(masterConnectionString, restoreQuery);
+
+    req.session.dbName = dbName;
+    req.session.conn = createConnectionString(dbName);
+
+    return res.json({
+      success: true,
+      message: `Database ${dbName} restored successfully.`,
+    });
+  } catch (err) {
+    try {
+      await backupSqlDatabase(masterConnectionString, `ALTER DATABASE [${escapedDbName}] SET MULTI_USER;`);
+    } catch (multiUserErr) {
+      console.warn("Could not set database back to MULTI_USER after restore failure:", multiUserErr.message);
+    }
+
+    console.error("Database restore failed:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Database restore failed.",
+      details: err.message,
+    });
+  } finally {
+    removeBackupFileWithRetry(restoreFilePath);
   }
 });
 app.post("/update-session-dates", (req, res) => {
