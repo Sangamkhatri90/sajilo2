@@ -461,6 +461,87 @@ app.post("/update-db", (req, res) => {
 
   res.render("index", { data: [], searchedMemberId: [] });
 });
+
+const backupSqlDatabase = (backupConnectionString, backupQuery) => {
+  return new Promise((resolve, reject) => {
+    sql.open(backupConnectionString, (openErr, connection) => {
+      if (openErr) return reject(openErr);
+
+      connection.query(backupQuery, (queryErr, rows) => {
+        try {
+          connection.close();
+        } catch (closeErr) {
+          console.warn("Backup SQL connection close failed:", closeErr.message);
+        }
+
+        if (queryErr) return reject(queryErr);
+        resolve(rows);
+      });
+    });
+  });
+};
+
+app.get("/backup-database", async (req, res) => {
+  const dbName = req.session.dbName;
+
+  if (!dbName || !req.session.conn) {
+    return res.status(440).json({
+      success: false,
+      message: "Session expired. Please login and select a database again.",
+    });
+  }
+
+  if (!/^[A-Za-z0-9_]+$/.test(dbName)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid database name in session.",
+    });
+  }
+
+  const backupDir = path.join(__dirname, "backups");
+  fs.mkdirSync(backupDir, { recursive: true });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const downloadName = `${dbName}_${timestamp}.bak`;
+  const backupPath = path.join(backupDir, downloadName);
+  const sqlBackupPath = backupPath.replace(/'/g, "''");
+  const escapedDbName = dbName.replace(/]/g, "]]");
+
+  const backupQuery = `
+    BACKUP DATABASE [${escapedDbName}]
+    TO DISK = N'${sqlBackupPath}'
+    WITH INIT, COPY_ONLY, CHECKSUM, STATS = 10;
+  `;
+
+  try {
+    await backupSqlDatabase(createConnectionString("master"), backupQuery);
+
+    res.download(backupPath, downloadName, (downloadErr) => {
+      fs.unlink(backupPath, (unlinkErr) => {
+        if (unlinkErr && unlinkErr.code !== "ENOENT") {
+          console.warn("Could not remove temporary backup file:", unlinkErr.message);
+        }
+      });
+
+      if (downloadErr && !res.headersSent) {
+        console.error("Database backup download failed:", downloadErr);
+        return res.status(500).json({
+          success: false,
+          message: "Backup was created but could not be downloaded.",
+        });
+      }
+    });
+  } catch (err) {
+    fs.unlink(backupPath, () => {});
+    console.error("Database backup failed:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Database backup failed.",
+      details: err.message,
+    });
+  }
+});
 app.post("/update-session-dates", (req, res) => {
   const { startDateLocal, endDateLocal } = req.body;
 
