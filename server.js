@@ -481,6 +481,44 @@ const backupSqlDatabase = (backupConnectionString, backupQuery) => {
   });
 };
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const waitForBackupFileReady = async (filePath, attempts = 30, delayMs = 1000) => {
+  let lastErr;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const handle = await fs.promises.open(filePath, "r");
+      await handle.close();
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (!["EBUSY", "ENOENT", "EACCES", "EPERM"].includes(err.code) || attempt === attempts) {
+        break;
+      }
+      await delay(delayMs);
+    }
+  }
+
+  throw lastErr;
+};
+
+const removeBackupFileWithRetry = async (filePath, attempts = 10, delayMs = 1000) => {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      await fs.promises.unlink(filePath);
+      return;
+    } catch (err) {
+      if (err.code === "ENOENT") return;
+      if (!["EBUSY", "EACCES", "EPERM"].includes(err.code) || attempt === attempts) {
+        console.warn("Could not remove temporary backup file:", err.message);
+        return;
+      }
+      await delay(delayMs);
+    }
+  }
+};
+
 app.get("/backup-database", async (req, res) => {
   const dbName = req.session.dbName;
 
@@ -515,13 +553,10 @@ app.get("/backup-database", async (req, res) => {
 
   try {
     await backupSqlDatabase(createConnectionString("master"), backupQuery);
+    await waitForBackupFileReady(backupPath);
 
     res.download(backupPath, downloadName, (downloadErr) => {
-      fs.unlink(backupPath, (unlinkErr) => {
-        if (unlinkErr && unlinkErr.code !== "ENOENT") {
-          console.warn("Could not remove temporary backup file:", unlinkErr.message);
-        }
-      });
+      removeBackupFileWithRetry(backupPath);
 
       if (downloadErr && !res.headersSent) {
         console.error("Database backup download failed:", downloadErr);
@@ -532,7 +567,7 @@ app.get("/backup-database", async (req, res) => {
       }
     });
   } catch (err) {
-    fs.unlink(backupPath, () => {});
+    removeBackupFileWithRetry(backupPath);
     console.error("Database backup failed:", err);
 
     return res.status(500).json({
