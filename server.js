@@ -12101,6 +12101,38 @@ app.get("/fetchGLNamesForSCTMbank", (req, res) => {
   });
 });
 
+app.get("/fetch-mbank-exclude-list", (req, res) => {
+  const conn = req.session.conn;
+
+  if (!conn) {
+    return res.status(500).json({ success: false, message: "No database connection available." });
+  }
+
+  const query = `
+    SELECT
+      mbe.DetailID,
+      mbe.SNo,
+      mbe.SLID,
+      slm.SLName
+    FROM dbo.tbSystemSettingMBankExclude mbe
+    LEFT JOIN dbo.tbSubLedgerMaster slm
+      ON mbe.SLID = slm.SLID
+    ORDER BY
+      CASE WHEN mbe.SNo IS NULL THEN 1 ELSE 0 END,
+      mbe.SNo,
+      mbe.DetailID
+  `;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("SQL error fetching MBank exclude list:", err);
+      return res.status(500).json({ success: false, message: "Error fetching MBank exclude list" });
+    }
+
+    res.json({ success: true, excludeItems: rows || [] });
+  });
+});
+
 app.post("/insert-mobile-alert-setting", (req, res) => {
   const {
     MASAccNum,
