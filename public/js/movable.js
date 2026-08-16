@@ -31,6 +31,22 @@ function resetFormFields(movableDivId) {
 // Function to keep track of the highest z-index value
 let highestZIndex = 1;
 
+function clampMovableToViewport(element) {
+    if (!element || window.getComputedStyle(element).display === 'none') {
+        return;
+    }
+
+    const margin = 8;
+    const rect = element.getBoundingClientRect();
+    const maxLeft = Math.max(margin, window.innerWidth - rect.width - margin);
+    const maxTop = Math.max(margin, window.innerHeight - rect.height - margin);
+    const currentLeft = Number.parseFloat(element.style.left) || rect.left;
+    const currentTop = Number.parseFloat(element.style.top) || rect.top;
+
+    element.style.left = `${Math.min(Math.max(currentLeft, margin), maxLeft)}px`;
+    element.style.top = `${Math.min(Math.max(currentTop, margin), maxTop)}px`;
+}
+
 function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId, toggleKey) {
     const draggable = document.getElementById(movableDivId);
     const closeButton = document.getElementById(closeButtonId);
@@ -55,6 +71,7 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
         draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
         if (currentDisplay === 'none') {
             bringToFront(draggable);
+            clampMovableToViewport(draggable);
         }
     });
 
@@ -77,6 +94,7 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
             draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
             if (currentDisplay === 'none') {
                 bringToFront(draggable);
+                clampMovableToViewport(draggable);
             }
         }
     });
@@ -95,8 +113,15 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
         let offsetY = e.clientY - draggable.getBoundingClientRect().top;
 
         function moveAt(clientX, clientY) {
-            draggable.style.left = clientX - offsetX + 'px';
-            draggable.style.top = clientY - offsetY + 'px';
+            const rect = draggable.getBoundingClientRect();
+            const margin = 8;
+            const maxLeft = Math.max(margin, window.innerWidth - rect.width - margin);
+            const maxTop = Math.max(margin, window.innerHeight - rect.height - margin);
+            const nextLeft = Math.min(Math.max(clientX - offsetX, margin), maxLeft);
+            const nextTop = Math.min(Math.max(clientY - offsetY, margin), maxTop);
+
+            draggable.style.left = nextLeft + 'px';
+            draggable.style.top = nextTop + 'px';
         }
 
         function onMouseMove(e) {
@@ -110,6 +135,7 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
 
         document.onmouseup = function () {
             isDragging = false;
+            clampMovableToViewport(draggable);
             document.removeEventListener('mousemove', onMouseMove);
         };
     });
@@ -754,9 +780,16 @@ function initializeMovableDivs() {
         }
 
         makeMovable(div.id, `closeButton${id}`, `cancelButton${id}`, `toggleButton${id}`);
+        clampMovableToViewport(div);
+
+        const observer = new MutationObserver(() => clampMovableToViewport(div));
+        observer.observe(div, { attributes: true, attributeFilter: ['style', 'class'] });
     });
 }
 
+window.addEventListener('resize', () => {
+    document.querySelectorAll('.movableDiv, .dcm-movableDiv').forEach(clampMovableToViewport);
+});
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeMovableDivs);
 } else {
