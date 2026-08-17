@@ -6392,7 +6392,18 @@ app.get("/api/voucher-details", (req, res) => {
 
     // Query to get details from tbAutoNumberSetting using UDVNo
     const query2 = `
-            SELECT StartDate, Category, EndDate, Prefix, Suffix, StartFrom, EndTo, BodyLength, FillChar 
+            SELECT
+              StartDate,
+              CONVERT(varchar(10), StartDate, 23) AS StartDateValue,
+              Category,
+              EndDate,
+              CONVERT(varchar(10), EndDate, 23) AS EndDateValue,
+              Prefix,
+              Suffix,
+              StartFrom,
+              EndTo,
+              BodyLength,
+              FillChar
             FROM tbAutoNumberSetting 
             WHERE VoucherID = ?
         `;
@@ -6403,8 +6414,10 @@ app.get("/api/voucher-details", (req, res) => {
 
       const {
         StartDate,
+        StartDateValue,
         Category,
         EndDate,
+        EndDateValue,
         Prefix,
         Suffix,
         StartFrom,
@@ -6434,6 +6447,8 @@ app.get("/api/voucher-details", (req, res) => {
 
           res.json({
             Category,
+            StartDate: StartDateValue,
+            EndDate: EndDateValue,
             StartMiti: startMiti,
             EndMiti: endMiti,
             Prefix,
@@ -6488,10 +6503,12 @@ app.get("/api/module-details", (req, res) => {
         .json({ error: "No details found for the selected module" });
     }
     const {
-      StartDate,
-      Category,
-      EndDate,
-      Prefix,
+        StartDate,
+        StartDateValue,
+        Category,
+        EndDate,
+        EndDateValue,
+        Prefix,
       Suffix,
       StartFrom,
       EndTo,
@@ -6516,10 +6533,12 @@ app.get("/api/module-details", (req, res) => {
       const endMiti = rows3[1]?.M_Miti || "";
 
       res.json({
-        Category,
-        StartMiti: startMiti,
-        EndMiti: endMiti,
-        Prefix,
+            Category,
+            StartDate: StartDateValue,
+            EndDate: EndDateValue,
+            StartMiti: startMiti,
+            EndMiti: endMiti,
+            Prefix,
         Suffix,
         StartFrom,
         EndTo,
@@ -10734,6 +10753,48 @@ app.post("/api/system-settings/system", (req, res) => {
   });
 });
 
+async function resolveLedgerIdValue(conn, value, fieldLabel) {
+  if (value === undefined || value === null || value === "") return null;
+  const numericId = toNullableInt(value);
+  if (numericId !== null) return numericId;
+
+  const name = String(value).trim();
+  const rows = await queryAsync(conn, `
+    SELECT TOP 1 GLID
+    FROM dbo.tbLedgerMaster
+    WHERE LTRIM(RTRIM(GLName)) = ? OR LTRIM(RTRIM(GlAlias)) = ?
+    ORDER BY GLID
+  `, [name, name]);
+
+  const glid = rows?.[0]?.GLID || null;
+  if (glid) return glid;
+
+  const error = new Error(`${fieldLabel} ledger not found: ${name}`);
+  error.statusCode = 400;
+  throw error;
+}
+
+async function resolveUserDefinedVoucherIdValue(conn, value, fieldLabel) {
+  if (value === undefined || value === null || value === "") return null;
+  const numericId = toNullableInt(value);
+  if (numericId !== null) return numericId;
+
+  const name = String(value).trim();
+  const rows = await queryAsync(conn, `
+    SELECT TOP 1 UDVNo
+    FROM dbo.tbUserDefinedVoucher
+    WHERE LTRIM(RTRIM(MenuName)) = ? OR LTRIM(RTRIM(Alias)) = ?
+    ORDER BY UDVNo
+  `, [name, name]);
+
+  const udvNo = rows?.[0]?.UDVNo || null;
+  if (udvNo) return udvNo;
+
+  const error = new Error(`${fieldLabel} voucher not found: ${name}`);
+  error.statusCode = 400;
+  throw error;
+}
+
 const mapping2SettingsColumns = `
   GLIDTaxOnInterest,
   GLIDContraLedgerForReceivableInterest,
@@ -10751,7 +10812,32 @@ const mapping2SettingsColumns = `
 
 app.get("/api/system-settings/mapping2", (req, res) => {
   const conn = req.session.conn;
-  const query = `SELECT TOP 1 ${mapping2SettingsColumns} FROM dbo.tbSystemSettings`;
+  const query = `
+    SELECT TOP 1
+      s.GLIDTaxOnInterest,
+      s.GLIDContraLedgerForReceivableInterest,
+      s.GLIDShareAc,
+      s.InterestPostingVoucher,
+      s.ShareTransactionVoucher,
+      ipv.MenuName AS InterestPostingVoucherName,
+      stv.MenuName AS ShareTransactionVoucherName,
+      s.NIC,
+      s.ShowShareAcInFrontPanel,
+      s.ShowStartupAlertForMaturedAccounts,
+      s.DayClosing,
+      s.FastDayClosing,
+      s.ShowStartupAlertForFixedMatured,
+      s.ShowStartupAlertForInstallment,
+      tax.GLName AS GLIDTaxOnInterestName,
+      contra.GLName AS GLIDContraLedgerForReceivableInterestName,
+      shareAc.GLName AS GLIDShareAcName
+    FROM dbo.tbSystemSettings s
+    LEFT JOIN dbo.tbLedgerMaster tax ON s.GLIDTaxOnInterest = tax.GLID
+    LEFT JOIN dbo.tbLedgerMaster contra ON s.GLIDContraLedgerForReceivableInterest = contra.GLID
+    LEFT JOIN dbo.tbLedgerMaster shareAc ON s.GLIDShareAc = shareAc.GLID
+    LEFT JOIN dbo.tbUserDefinedVoucher ipv ON s.InterestPostingVoucher = ipv.UDVNo
+    LEFT JOIN dbo.tbUserDefinedVoucher stv ON s.ShareTransactionVoucher = stv.UDVNo
+  `;
 
   sql.query(conn, query, (err, rows) => {
     if (err) {
@@ -10764,11 +10850,11 @@ app.get("/api/system-settings/mapping2", (req, res) => {
     res.json({
       success: true,
       settings: {
-        GLIDTaxOnInterest: row.GLIDTaxOnInterest ?? "",
-        GLIDContraLedgerForReceivableInterest: row.GLIDContraLedgerForReceivableInterest ?? "",
-        GLIDShareAc: row.GLIDShareAc ?? "",
-        InterestPostingVoucher: row.InterestPostingVoucher ?? "",
-        ShareTransactionVoucher: row.ShareTransactionVoucher ?? "",
+        GLIDTaxOnInterest: row.GLIDTaxOnInterestName || row.GLIDTaxOnInterest || "",
+        GLIDContraLedgerForReceivableInterest: row.GLIDContraLedgerForReceivableInterestName || row.GLIDContraLedgerForReceivableInterest || "",
+        GLIDShareAc: row.GLIDShareAcName || row.GLIDShareAc || "",
+        InterestPostingVoucher: row.InterestPostingVoucherName || row.InterestPostingVoucher || "",
+        ShareTransactionVoucher: row.ShareTransactionVoucherName || row.ShareTransactionVoucher || "",
         NIC: (row.NIC || "I").trim(),
         ShowShareAcInFrontPanel: !!row.ShowShareAcInFrontPanel,
         ShowStartupAlertForMaturedAccounts: !!row.ShowStartupAlertForMaturedAccounts,
@@ -10781,25 +10867,32 @@ app.get("/api/system-settings/mapping2", (req, res) => {
   });
 });
 
-app.post("/api/system-settings/mapping2", (req, res) => {
+app.post("/api/system-settings/mapping2", async (req, res) => {
   const conn = req.session.conn;
   const body = req.body || {};
   const nic = ["B", "W", "I"].includes(body.NIC) ? body.NIC : "I";
 
-  const values = [
-    toNullableInt(body.GLIDTaxOnInterest),
-    toNullableInt(body.GLIDContraLedgerForReceivableInterest),
-    toNullableInt(body.GLIDShareAc),
-    toNullableInt(body.InterestPostingVoucher),
-    toNullableInt(body.ShareTransactionVoucher),
-    nic,
-    toSqlBit(body.ShowShareAcInFrontPanel),
-    toSqlBit(body.ShowStartupAlertForMaturedAccounts),
-    toSqlBit(body.DayClosing),
-    toSqlBit(body.FastDayClosing),
-    toSqlBit(body.ShowStartupAlertForFixedMatured),
-    toSqlBit(body.ShowStartupAlertForInstallment),
-  ];
+  let values;
+
+  try {
+    values = [
+      await resolveLedgerIdValue(conn, body.GLIDTaxOnInterest, "Tax on Interest"),
+      await resolveLedgerIdValue(conn, body.GLIDContraLedgerForReceivableInterest, "Contra Ledger For Receivable Interest"),
+      await resolveLedgerIdValue(conn, body.GLIDShareAc, "Share A/c Main Ledger"),
+      await resolveUserDefinedVoucherIdValue(conn, body.InterestPostingVoucher, "Interest Posting Voucher"),
+      await resolveUserDefinedVoucherIdValue(conn, body.ShareTransactionVoucher, "Share Transaction Voucher"),
+      nic,
+      toSqlBit(body.ShowShareAcInFrontPanel),
+      toSqlBit(body.ShowStartupAlertForMaturedAccounts),
+      toSqlBit(body.DayClosing),
+      toSqlBit(body.FastDayClosing),
+      toSqlBit(body.ShowStartupAlertForFixedMatured),
+      toSqlBit(body.ShowStartupAlertForInstallment),
+    ];
+  } catch (err) {
+    console.error("Mapping 2 id resolve error:", err);
+    return res.status(err.statusCode || 500).json({ success: false, message: err.message || "Failed to resolve Mapping 2 value" });
+  }
 
   const updateQuery = `
     UPDATE dbo.tbSystemSettings
@@ -11328,18 +11421,32 @@ app.get("/api/system-settings/closing-mapping", async (req, res) => {
   const conn = req.session.conn;
 
   try {
-    const settingsRows = await queryAsync(conn, `SELECT TOP 1 ${closingMappingSettingsColumns} FROM dbo.tbSystemSettings`);
+    const settingsRows = await queryAsync(conn, `
+      SELECT TOP 1
+        s.GLIDIncomeTaxAc,
+        s.IncomeTaxPercent,
+        s.GLIDDividendTaxAc,
+        s.DividendTaxRate,
+        s.GLIDPatronageRefundTaxAc,
+        incomeTax.GLName AS GLIDIncomeTaxAcName,
+        dividendTax.GLName AS GLIDDividendTaxAcName,
+        patronageRefundTax.GLName AS GLIDPatronageRefundTaxAcName
+      FROM dbo.tbSystemSettings s
+      LEFT JOIN dbo.tbLedgerMaster incomeTax ON s.GLIDIncomeTaxAc = incomeTax.GLID
+      LEFT JOIN dbo.tbLedgerMaster dividendTax ON s.GLIDDividendTaxAc = dividendTax.GLID
+      LEFT JOIN dbo.tbLedgerMaster patronageRefundTax ON s.GLIDPatronageRefundTaxAc = patronageRefundTax.GLID
+    `);
     const mappingRows = await getBillSetupRows(conn, "tbSystemSettingClosingMapping");
     const row = settingsRows?.[0] || {};
 
     res.json({
       success: true,
       settings: {
-        GLIDIncomeTaxAc: row.GLIDIncomeTaxAc ?? "",
+        GLIDIncomeTaxAc: row.GLIDIncomeTaxAcName || row.GLIDIncomeTaxAc || "",
         IncomeTaxPercent: row.IncomeTaxPercent ?? "",
-        GLIDDividendTaxAc: row.GLIDDividendTaxAc ?? "",
+        GLIDDividendTaxAc: row.GLIDDividendTaxAcName || row.GLIDDividendTaxAc || "",
         DividendTaxRate: row.DividendTaxRate ?? "",
-        GLIDPatronageRefundTaxAc: row.GLIDPatronageRefundTaxAc ?? "",
+        GLIDPatronageRefundTaxAc: row.GLIDPatronageRefundTaxAcName || row.GLIDPatronageRefundTaxAc || "",
       },
       mappingRows,
     });
@@ -11353,13 +11460,7 @@ app.post("/api/system-settings/closing-mapping", async (req, res) => {
   const conn = req.session.conn;
   const body = req.body || {};
   const settings = body.settings || {};
-  const values = [
-    toNullableInt(settings.GLIDIncomeTaxAc),
-    toNullableMoney(settings.IncomeTaxPercent),
-    toNullableInt(settings.GLIDDividendTaxAc),
-    toNullableMoney(settings.DividendTaxRate),
-    toNullableInt(settings.GLIDPatronageRefundTaxAc),
-  ];
+  let values;
 
   const updateQuery = `
     UPDATE dbo.tbSystemSettings
@@ -11372,6 +11473,14 @@ app.post("/api/system-settings/closing-mapping", async (req, res) => {
   `;
 
   try {
+    values = [
+      await resolveLedgerIdValue(conn, settings.GLIDIncomeTaxAc, "Income Tax"),
+      toNullableMoney(settings.IncomeTaxPercent),
+      await resolveLedgerIdValue(conn, settings.GLIDDividendTaxAc, "Dividend Tax"),
+      toNullableMoney(settings.DividendTaxRate),
+      await resolveLedgerIdValue(conn, settings.GLIDPatronageRefundTaxAc, "Patronage Refund Tax"),
+    ];
+
     const countRows = await queryAsync(conn, "SELECT COUNT(1) AS TotalRows FROM dbo.tbSystemSettings");
     const hasSettingsRow = Number(countRows?.[0]?.TotalRows || 0) > 0;
     const query = hasSettingsRow
@@ -11403,7 +11512,37 @@ const acMappingSettingsColumns = `
 
 app.get("/api/system-settings/ac-mapping", (req, res) => {
   const conn = req.session.conn;
-  const query = `SELECT TOP 1 ${acMappingSettingsColumns} FROM dbo.tbSystemSettings`;
+  const query = `
+    SELECT TOP 1
+      s.ShowTACode,
+      s.VoucherOnlinePrint,
+      s.SLWithMultipleGL,
+      s.CashBook,
+      s.ProfitLoss,
+      s.GLIDInterestIncomeAc,
+      s.GLIDInterestExpenseAc,
+      s.GLIDRebateAc,
+      s.GLIDPenaltyAc,
+      s.InterestPayable,
+      s.InterestReceivable,
+      cashBook.GLName AS CashBookName,
+      profitLoss.GLName AS ProfitLossName,
+      interestIncome.GLName AS GLIDInterestIncomeAcName,
+      interestExpense.GLName AS GLIDInterestExpenseAcName,
+      rebate.GLName AS GLIDRebateAcName,
+      penalty.GLName AS GLIDPenaltyAcName,
+      payable.GLName AS InterestPayableName,
+      receivable.GLName AS InterestReceivableName
+    FROM dbo.tbSystemSettings s
+    LEFT JOIN dbo.tbLedgerMaster cashBook ON s.CashBook = cashBook.GLID
+    LEFT JOIN dbo.tbLedgerMaster profitLoss ON s.ProfitLoss = profitLoss.GLID
+    LEFT JOIN dbo.tbLedgerMaster interestIncome ON s.GLIDInterestIncomeAc = interestIncome.GLID
+    LEFT JOIN dbo.tbLedgerMaster interestExpense ON s.GLIDInterestExpenseAc = interestExpense.GLID
+    LEFT JOIN dbo.tbLedgerMaster rebate ON s.GLIDRebateAc = rebate.GLID
+    LEFT JOIN dbo.tbLedgerMaster penalty ON s.GLIDPenaltyAc = penalty.GLID
+    LEFT JOIN dbo.tbLedgerMaster payable ON s.InterestPayable = payable.GLID
+    LEFT JOIN dbo.tbLedgerMaster receivable ON s.InterestReceivable = receivable.GLID
+  `;
 
   sql.query(conn, query, (err, rows) => {
     if (err) {
@@ -11419,35 +11558,42 @@ app.get("/api/system-settings/ac-mapping", (req, res) => {
         ShowTACode: !!row.ShowTACode,
         VoucherOnlinePrint: !!row.VoucherOnlinePrint,
         SLWithMultipleGL: !!row.SLWithMultipleGL,
-        CashBook: row.CashBook ?? "",
-        ProfitLoss: row.ProfitLoss ?? "",
-        GLIDInterestIncomeAc: row.GLIDInterestIncomeAc ?? "",
-        GLIDInterestExpenseAc: row.GLIDInterestExpenseAc ?? "",
-        GLIDRebateAc: row.GLIDRebateAc ?? "",
-        GLIDPenaltyAc: row.GLIDPenaltyAc ?? "",
-        InterestPayable: row.InterestPayable ?? "",
-        InterestReceivable: row.InterestReceivable ?? "",
+        CashBook: row.CashBookName || row.CashBook || "",
+        ProfitLoss: row.ProfitLossName || row.ProfitLoss || "",
+        GLIDInterestIncomeAc: row.GLIDInterestIncomeAcName || row.GLIDInterestIncomeAc || "",
+        GLIDInterestExpenseAc: row.GLIDInterestExpenseAcName || row.GLIDInterestExpenseAc || "",
+        GLIDRebateAc: row.GLIDRebateAcName || row.GLIDRebateAc || "",
+        GLIDPenaltyAc: row.GLIDPenaltyAcName || row.GLIDPenaltyAc || "",
+        InterestPayable: row.InterestPayableName || row.InterestPayable || "",
+        InterestReceivable: row.InterestReceivableName || row.InterestReceivable || "",
       },
     });
   });
 });
 
-app.post("/api/system-settings/ac-mapping", (req, res) => {
+app.post("/api/system-settings/ac-mapping", async (req, res) => {
   const conn = req.session.conn;
   const body = req.body || {};
-  const values = [
-    toSqlBit(body.ShowTACode),
-    toSqlBit(body.VoucherOnlinePrint),
-    toSqlBit(body.SLWithMultipleGL),
-    toNullableInt(body.CashBook),
-    toNullableInt(body.ProfitLoss),
-    toNullableInt(body.GLIDInterestIncomeAc),
-    toNullableInt(body.GLIDInterestExpenseAc),
-    toNullableInt(body.GLIDRebateAc),
-    toNullableInt(body.GLIDPenaltyAc),
-    toNullableInt(body.InterestPayable),
-    toNullableInt(body.InterestReceivable),
-  ];
+  let values;
+
+  try {
+    values = [
+      toSqlBit(body.ShowTACode),
+      toSqlBit(body.VoucherOnlinePrint),
+      toSqlBit(body.SLWithMultipleGL),
+      await resolveLedgerIdValue(conn, body.CashBook, "Cash Book"),
+      await resolveLedgerIdValue(conn, body.ProfitLoss, "Profit/Loss"),
+      await resolveLedgerIdValue(conn, body.GLIDInterestIncomeAc, "Interest Income From Loan"),
+      await resolveLedgerIdValue(conn, body.GLIDInterestExpenseAc, "Interest Expenses"),
+      await resolveLedgerIdValue(conn, body.GLIDRebateAc, "Rebate"),
+      await resolveLedgerIdValue(conn, body.GLIDPenaltyAc, "Penalty"),
+      await resolveLedgerIdValue(conn, body.InterestPayable, "Interest Payable"),
+      await resolveLedgerIdValue(conn, body.InterestReceivable, "Interest Receivable"),
+    ];
+  } catch (err) {
+    console.error("A/c Mapping ledger resolve error:", err);
+    return res.status(err.statusCode || 500).json({ success: false, message: err.message || "Failed to resolve A/c Mapping ledger" });
+  }
 
   const updateQuery = `
     UPDATE dbo.tbSystemSettings

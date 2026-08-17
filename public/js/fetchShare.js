@@ -53,32 +53,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    const dropdown = document.getElementById('voucherName');
+    const voucherDropdown = document.getElementById('voucherName');
 
-    // Fetch data from the API
-    fetch('/api/voucher-names')
-        .then(response => response.json())
-        .then(data => {
-            // Populate the dropdown with MenuName values
-            data.forEach(item => {
-                const option = document.createElement('option');
-                option.value = 'Select'
-                option.value = item.MenuName;
-                option.textContent = item.MenuName;
-                dropdown.appendChild(option);
-            });
-        })
-        .catch(error => {
-            console.error('Error fetching voucher names:', error);
-        });
-});
-document.addEventListener("DOMContentLoaded", function () {
-    const voucherDropdown = document.getElementById("voucherName");
+    if (!voucherDropdown) return;
 
-    voucherDropdown.addEventListener("change", function () {
-        const selectedMenuName = voucherDropdown.value;
+    const getValue = (value) => (value !== null && value !== undefined ? value : '');
 
-        // Fetch details for the selected MenuName
+    const loadVoucherDetails = (selectedMenuName) => {
+        if (!selectedMenuName) return;
+
         fetch(`/api/voucher-details?menuName=${encodeURIComponent(selectedMenuName)}`)
             .then(response => response.json())
             .then(data => {
@@ -87,15 +70,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
-                // Helper function to handle zero values and empty strings
-                const getValue = (value) => (value !== null && value !== undefined ? value : '');
-
-
-
-                // Populate the respective fields
                 document.getElementById("VCategory").value = getValue(data.Category);
-                document.getElementById("dateFrom").value = (data.StartMiti);
-                document.getElementById("dateTo").value = (data.EndMiti);
+                document.getElementById("dateFrom").value = getValue(data.StartDate || data.StartMiti);
+                document.getElementById("dateTo").value = getValue(data.EndDate || data.EndMiti);
                 document.getElementById("prefix").value = getValue(data.Prefix);
                 document.getElementById("suffix").value = getValue(data.Suffix);
                 document.getElementById("startFromP").value = getValue(data.StartFrom);
@@ -104,11 +81,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 document.getElementById("fillChar").value = getValue(data.FillChar);
             })
             .catch(error => console.error("Error fetching voucher details:", error));
+    };
 
+    fetch('/api/voucher-names')
+        .then(response => response.json())
+        .then(data => {
+            voucherDropdown.innerHTML = '';
 
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.MenuName;
+                option.textContent = item.MenuName;
+                voucherDropdown.appendChild(option);
+            });
+
+            loadVoucherDetails(voucherDropdown.value);
+        })
+        .catch(error => {
+            console.error('Error fetching voucher names:', error);
+        });
+
+    voucherDropdown.addEventListener("change", function () {
+        loadVoucherDetails(voucherDropdown.value);
     });
 });
-
 // Fetch and populate the dropdown
 document.addEventListener("DOMContentLoaded", function () {
     const moduleDropdown = document.getElementById("ModuleName");
