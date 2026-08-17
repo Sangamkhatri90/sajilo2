@@ -10549,6 +10549,944 @@ app.post("/search-cheque-issue", (req, res) => {
   });
 });
 
+function toSqlBit(value) {
+  return value ? 1 : 0;
+}
+
+function toTinyInt(value) {
+  const numberValue = Number(value);
+  if (!Number.isInteger(numberValue) || numberValue < 0 || numberValue > 255) return 0;
+  return numberValue;
+}
+
+function toNullableInt(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const numberValue = Number(value);
+  if (!Number.isInteger(numberValue)) return null;
+  return numberValue;
+}
+
+function toNullableMoney(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const numberValue = Number(value);
+  if (!Number.isFinite(numberValue)) return null;
+  return numberValue;
+}
+
+function toNullableDate(value) {
+  if (!value) return null;
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+}
+
+function formatDateInputValue(value) {
+  if (!value) return "";
+  const dateValue = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(dateValue.getTime())) return "";
+  const year = dateValue.getFullYear();
+  const month = String(dateValue.getMonth() + 1).padStart(2, "0");
+  const day = String(dateValue.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const systemSettingsColumns = `
+  DateType,
+  DateFormat,
+  LockNew,
+  LockEdit,
+  LockDelete,
+  LockDateFrom,
+  LockDateTo,
+  DefaultVoucherAction,
+  AutoBackup,
+  AutoBackupDayDiff,
+  BackupPath,
+  RemindBackup,
+  RemindBackupDayDiff,
+  UDF,
+  ConfirmSaving,
+  ShowLastDate,
+  AutoPopUp,
+  SubGroupSystem
+`;
+
+app.get("/api/system-settings/system", (req, res) => {
+  const conn = req.session.conn;
+  const query = `SELECT TOP 1 ${systemSettingsColumns} FROM dbo.tbSystemSettings`;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("System settings fetch error:", err);
+      return res.status(500).json({ success: false, message: "Failed to load system settings" });
+    }
+
+    const row = rows?.[0] || {};
+
+    res.json({
+      success: true,
+      settings: {
+        DateType: (row.DateType || "AD").trim(),
+        DateFormat: (row.DateFormat || "yyyy/MM/dd").trim(),
+        LockNew: !!row.LockNew,
+        LockEdit: !!row.LockEdit,
+        LockDelete: !!row.LockDelete,
+        LockDateFrom: formatDateInputValue(row.LockDateFrom),
+        LockDateTo: formatDateInputValue(row.LockDateTo),
+        DefaultVoucherAction: (row.DefaultVoucherAction || "H").trim(),
+        AutoBackup: !!row.AutoBackup,
+        AutoBackupDayDiff: row.AutoBackupDayDiff ?? 0,
+        BackupPath: row.BackupPath || "",
+        RemindBackup: !!row.RemindBackup,
+        RemindBackupDayDiff: row.RemindBackupDayDiff ?? 0,
+        UDF: !!row.UDF,
+        ConfirmSaving: !!row.ConfirmSaving,
+        ShowLastDate: !!row.ShowLastDate,
+        AutoPopUp: !!row.AutoPopUp,
+        SubGroupSystem: !!row.SubGroupSystem,
+      },
+    });
+  });
+});
+
+app.post("/api/system-settings/system", (req, res) => {
+  const conn = req.session.conn;
+  const body = req.body || {};
+  const dateType = body.DateType === "LD" ? "LD" : "AD";
+  const dateFormat = String(body.DateFormat || "yyyy/MM/dd").trim().slice(0, 10);
+  const defaultVoucherAction = body.DefaultVoucherAction === "P" ? "P" : "H";
+  const lockDateFrom = toNullableDate(body.LockDateFrom);
+  const lockDateTo = toNullableDate(body.LockDateTo);
+
+  if (body.LockDateFrom && !lockDateFrom) {
+    return res.status(400).json({ success: false, message: "Lock Date From must be a valid date" });
+  }
+
+  if (body.LockDateTo && !lockDateTo) {
+    return res.status(400).json({ success: false, message: "Lock Date To must be a valid date" });
+  }
+
+  if (lockDateFrom && lockDateTo && lockDateFrom > lockDateTo) {
+    return res.status(400).json({ success: false, message: "Lock Date From cannot be after Lock Date To" });
+  }
+
+  const values = [
+    dateType,
+    dateFormat,
+    toSqlBit(body.LockNew),
+    toSqlBit(body.LockEdit),
+    toSqlBit(body.LockDelete),
+    lockDateFrom,
+    lockDateTo,
+    defaultVoucherAction,
+    toSqlBit(body.AutoBackup),
+    toTinyInt(body.AutoBackupDayDiff),
+    String(body.BackupPath || "").trim().slice(0, 255),
+    toSqlBit(body.RemindBackup),
+    toTinyInt(body.RemindBackupDayDiff),
+    toSqlBit(body.UDF),
+    toSqlBit(body.ConfirmSaving),
+    toSqlBit(body.ShowLastDate),
+    toSqlBit(body.AutoPopUp),
+    toSqlBit(body.SubGroupSystem),
+  ];
+
+  const updateQuery = `
+    UPDATE dbo.tbSystemSettings
+    SET
+      DateType = ?,
+      DateFormat = ?,
+      LockNew = ?,
+      LockEdit = ?,
+      LockDelete = ?,
+      LockDateFrom = ?,
+      LockDateTo = ?,
+      DefaultVoucherAction = ?,
+      AutoBackup = ?,
+      AutoBackupDayDiff = ?,
+      BackupPath = ?,
+      RemindBackup = ?,
+      RemindBackupDayDiff = ?,
+      UDF = ?,
+      ConfirmSaving = ?,
+      ShowLastDate = ?,
+      AutoPopUp = ?,
+      SubGroupSystem = ?
+  `;
+
+  sql.query(conn, "SELECT COUNT(1) AS TotalRows FROM dbo.tbSystemSettings", (countErr, countRows) => {
+    if (countErr) {
+      console.error("System settings count error:", countErr);
+      return res.status(500).json({ success: false, message: "Failed to check system settings" });
+    }
+
+    const hasSettingsRow = Number(countRows?.[0]?.TotalRows || 0) > 0;
+    const query = hasSettingsRow
+      ? updateQuery
+      : `INSERT INTO dbo.tbSystemSettings (${systemSettingsColumns}) VALUES (${values.map(() => "?").join(", ")})`;
+
+    sql.query(conn, query, values, (err) => {
+      if (err) {
+        console.error("System settings save error:", err);
+        return res.status(500).json({ success: false, message: "Failed to save system settings" });
+      }
+
+      res.json({ success: true, message: "System settings saved" });
+    });
+  });
+});
+
+const mapping2SettingsColumns = `
+  GLIDTaxOnInterest,
+  GLIDContraLedgerForReceivableInterest,
+  GLIDShareAc,
+  InterestPostingVoucher,
+  ShareTransactionVoucher,
+  NIC,
+  ShowShareAcInFrontPanel,
+  ShowStartupAlertForMaturedAccounts,
+  DayClosing,
+  FastDayClosing,
+  ShowStartupAlertForFixedMatured,
+  ShowStartupAlertForInstallment
+`;
+
+app.get("/api/system-settings/mapping2", (req, res) => {
+  const conn = req.session.conn;
+  const query = `SELECT TOP 1 ${mapping2SettingsColumns} FROM dbo.tbSystemSettings`;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("Mapping 2 settings fetch error:", err);
+      return res.status(500).json({ success: false, message: "Failed to load Mapping 2 settings" });
+    }
+
+    const row = rows?.[0] || {};
+
+    res.json({
+      success: true,
+      settings: {
+        GLIDTaxOnInterest: row.GLIDTaxOnInterest ?? "",
+        GLIDContraLedgerForReceivableInterest: row.GLIDContraLedgerForReceivableInterest ?? "",
+        GLIDShareAc: row.GLIDShareAc ?? "",
+        InterestPostingVoucher: row.InterestPostingVoucher ?? "",
+        ShareTransactionVoucher: row.ShareTransactionVoucher ?? "",
+        NIC: (row.NIC || "I").trim(),
+        ShowShareAcInFrontPanel: !!row.ShowShareAcInFrontPanel,
+        ShowStartupAlertForMaturedAccounts: !!row.ShowStartupAlertForMaturedAccounts,
+        DayClosing: !!row.DayClosing,
+        FastDayClosing: !!row.FastDayClosing,
+        ShowStartupAlertForFixedMatured: !!row.ShowStartupAlertForFixedMatured,
+        ShowStartupAlertForInstallment: !!row.ShowStartupAlertForInstallment,
+      },
+    });
+  });
+});
+
+app.post("/api/system-settings/mapping2", (req, res) => {
+  const conn = req.session.conn;
+  const body = req.body || {};
+  const nic = ["B", "W", "I"].includes(body.NIC) ? body.NIC : "I";
+
+  const values = [
+    toNullableInt(body.GLIDTaxOnInterest),
+    toNullableInt(body.GLIDContraLedgerForReceivableInterest),
+    toNullableInt(body.GLIDShareAc),
+    toNullableInt(body.InterestPostingVoucher),
+    toNullableInt(body.ShareTransactionVoucher),
+    nic,
+    toSqlBit(body.ShowShareAcInFrontPanel),
+    toSqlBit(body.ShowStartupAlertForMaturedAccounts),
+    toSqlBit(body.DayClosing),
+    toSqlBit(body.FastDayClosing),
+    toSqlBit(body.ShowStartupAlertForFixedMatured),
+    toSqlBit(body.ShowStartupAlertForInstallment),
+  ];
+
+  const updateQuery = `
+    UPDATE dbo.tbSystemSettings
+    SET
+      GLIDTaxOnInterest = ?,
+      GLIDContraLedgerForReceivableInterest = ?,
+      GLIDShareAc = ?,
+      InterestPostingVoucher = ?,
+      ShareTransactionVoucher = ?,
+      NIC = ?,
+      ShowShareAcInFrontPanel = ?,
+      ShowStartupAlertForMaturedAccounts = ?,
+      DayClosing = ?,
+      FastDayClosing = ?,
+      ShowStartupAlertForFixedMatured = ?,
+      ShowStartupAlertForInstallment = ?
+  `;
+
+  sql.query(conn, "SELECT COUNT(1) AS TotalRows FROM dbo.tbSystemSettings", (countErr, countRows) => {
+    if (countErr) {
+      console.error("Mapping 2 settings count error:", countErr);
+      return res.status(500).json({ success: false, message: "Failed to check Mapping 2 settings" });
+    }
+
+    const hasSettingsRow = Number(countRows?.[0]?.TotalRows || 0) > 0;
+    const query = hasSettingsRow
+      ? updateQuery
+      : `INSERT INTO dbo.tbSystemSettings (${mapping2SettingsColumns}) VALUES (${values.map(() => "?").join(", ")})`;
+
+    sql.query(conn, query, values, (err) => {
+      if (err) {
+        console.error("Mapping 2 settings save error:", err);
+        return res.status(500).json({ success: false, message: "Failed to save Mapping 2 settings" });
+      }
+
+      res.json({ success: true, message: "Mapping 2 settings saved" });
+    });
+  });
+});
+
+const financialControlSettingsColumns = `
+  NCB,
+  NBB,
+  MinCB,
+  MinCBAmount,
+  MaxCB,
+  MaxCBAmount,
+  MaxPBC,
+  MaxPBCAmount
+`;
+
+function toControlAction(value) {
+  return ["B", "W", "I"].includes(value) ? value : "I";
+}
+
+app.get("/api/system-settings/financial-control", (req, res) => {
+  const conn = req.session.conn;
+  const query = `SELECT TOP 1 ${financialControlSettingsColumns} FROM dbo.tbSystemSettings`;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("Financial Control settings fetch error:", err);
+      return res.status(500).json({ success: false, message: "Failed to load Financial Control settings" });
+    }
+
+    const row = rows?.[0] || {};
+
+    res.json({
+      success: true,
+      settings: {
+        NCB: (row.NCB || "I").trim(),
+        NBB: (row.NBB || "I").trim(),
+        MinCB: (row.MinCB || "I").trim(),
+        MinCBAmount: row.MinCBAmount ?? "",
+        MaxCB: (row.MaxCB || "I").trim(),
+        MaxCBAmount: row.MaxCBAmount ?? "",
+        MaxPBC: (row.MaxPBC || "I").trim(),
+        MaxPBCAmount: row.MaxPBCAmount ?? "",
+      },
+    });
+  });
+});
+
+app.post("/api/system-settings/financial-control", (req, res) => {
+  const conn = req.session.conn;
+  const body = req.body || {};
+  const values = [
+    toControlAction(body.NCB),
+    toControlAction(body.NBB),
+    toControlAction(body.MinCB),
+    toNullableMoney(body.MinCBAmount),
+    toControlAction(body.MaxCB),
+    toNullableMoney(body.MaxCBAmount),
+    toControlAction(body.MaxPBC),
+    toNullableMoney(body.MaxPBCAmount),
+  ];
+
+  const updateQuery = `
+    UPDATE dbo.tbSystemSettings
+    SET
+      NCB = ?,
+      NBB = ?,
+      MinCB = ?,
+      MinCBAmount = ?,
+      MaxCB = ?,
+      MaxCBAmount = ?,
+      MaxPBC = ?,
+      MaxPBCAmount = ?
+  `;
+
+  sql.query(conn, "SELECT COUNT(1) AS TotalRows FROM dbo.tbSystemSettings", (countErr, countRows) => {
+    if (countErr) {
+      console.error("Financial Control settings count error:", countErr);
+      return res.status(500).json({ success: false, message: "Failed to check Financial Control settings" });
+    }
+
+    const hasSettingsRow = Number(countRows?.[0]?.TotalRows || 0) > 0;
+    const query = hasSettingsRow
+      ? updateQuery
+      : `INSERT INTO dbo.tbSystemSettings (${financialControlSettingsColumns}) VALUES (${values.map(() => "?").join(", ")})`;
+
+    sql.query(conn, query, values, (err) => {
+      if (err) {
+        console.error("Financial Control settings save error:", err);
+        return res.status(500).json({ success: false, message: "Failed to save Financial Control settings" });
+      }
+
+      res.json({ success: true, message: "Financial Control settings saved" });
+    });
+  });
+});
+
+const otherSettingsColumns = `
+  DocClassCaption,
+  ProfitCaption,
+  LossCaption,
+  ReportFooter,
+  InterestTaxRate,
+  SourceofFundMaxLimit,
+  SharePrice,
+  InterestRound,
+  InterestTaxDecimal,
+  StatementFormat,
+  GLIDTrialDifference,
+  AlertforDocument
+`;
+
+function toNullableText(value, maxLength) {
+  if (value === undefined || value === null) return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  return text.slice(0, maxLength);
+}
+
+function toRoundMode(value) {
+  const allowed = ["None", "Round Off", "Ceiling", "Floor"];
+  return allowed.includes(value) ? value : "None";
+}
+
+function toStatementFormat(value) {
+  const allowed = ["Default", "Interest Seperated"];
+  return allowed.includes(value) ? value : "Default";
+}
+
+app.get("/api/system-settings/other", (req, res) => {
+  const conn = req.session.conn;
+  const query = `SELECT TOP 1 ${otherSettingsColumns} FROM dbo.tbSystemSettings`;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("Other settings fetch error:", err);
+      return res.status(500).json({ success: false, message: "Failed to load Other settings" });
+    }
+
+    const row = rows?.[0] || {};
+
+    res.json({
+      success: true,
+      settings: {
+        DocClassCaption: row.DocClassCaption || "",
+        ProfitCaption: row.ProfitCaption || "",
+        LossCaption: row.LossCaption || "",
+        ReportFooter: row.ReportFooter || "",
+        InterestTaxRate: row.InterestTaxRate ?? "",
+        SourceofFundMaxLimit: row.SourceofFundMaxLimit ?? "",
+        SharePrice: row.SharePrice ?? "",
+        InterestRound: row.InterestRound || "None",
+        InterestTaxDecimal: row.InterestTaxDecimal || "None",
+        StatementFormat: row.StatementFormat || "Default",
+        GLIDTrialDifference: row.GLIDTrialDifference ?? "",
+        AlertforDocument: !!row.AlertforDocument,
+      },
+    });
+  });
+});
+
+app.post("/api/system-settings/other", (req, res) => {
+  const conn = req.session.conn;
+  const body = req.body || {};
+  const values = [
+    toNullableText(body.DocClassCaption, 50),
+    toNullableText(body.ProfitCaption, 50),
+    toNullableText(body.LossCaption, 50),
+    toNullableText(body.ReportFooter, 1024),
+    toNullableMoney(body.InterestTaxRate),
+    toNullableMoney(body.SourceofFundMaxLimit),
+    toNullableMoney(body.SharePrice),
+    toRoundMode(body.InterestRound),
+    toRoundMode(body.InterestTaxDecimal),
+    toStatementFormat(body.StatementFormat),
+    toNullableInt(body.GLIDTrialDifference),
+    toSqlBit(body.AlertforDocument),
+  ];
+
+  const updateQuery = `
+    UPDATE dbo.tbSystemSettings
+    SET
+      DocClassCaption = ?,
+      ProfitCaption = ?,
+      LossCaption = ?,
+      ReportFooter = ?,
+      InterestTaxRate = ?,
+      SourceofFundMaxLimit = ?,
+      SharePrice = ?,
+      InterestRound = ?,
+      InterestTaxDecimal = ?,
+      StatementFormat = ?,
+      GLIDTrialDifference = ?,
+      AlertforDocument = ?
+  `;
+
+  sql.query(conn, "SELECT COUNT(1) AS TotalRows FROM dbo.tbSystemSettings", (countErr, countRows) => {
+    if (countErr) {
+      console.error("Other settings count error:", countErr);
+      return res.status(500).json({ success: false, message: "Failed to check Other settings" });
+    }
+
+    const hasSettingsRow = Number(countRows?.[0]?.TotalRows || 0) > 0;
+    const query = hasSettingsRow
+      ? updateQuery
+      : `INSERT INTO dbo.tbSystemSettings (${otherSettingsColumns}) VALUES (${values.map(() => "?").join(", ")})`;
+
+    sql.query(conn, query, values, (err) => {
+      if (err) {
+        console.error("Other settings save error:", err);
+        return res.status(500).json({ success: false, message: "Failed to save Other settings" });
+      }
+
+      res.json({ success: true, message: "Other settings saved" });
+    });
+  });
+});
+
+const miscSettingsColumns = `
+  AutoCalculateInterestonTransactionPanel,
+  AutoDistributeAmountinTransactionPanel,
+  AskforInstallmentMonth,
+  DayStart,
+  DayStartAfter,
+  DayCloseByStartedUser,
+  LadderInterestonLoan,
+  DifferentTaxationforPalika
+`;
+
+app.get("/api/system-settings/misc", (req, res) => {
+  const conn = req.session.conn;
+  const query = `SELECT TOP 1 ${miscSettingsColumns} FROM dbo.tbSystemSettings`;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("Miscellaneous settings fetch error:", err);
+      return res.status(500).json({ success: false, message: "Failed to load Miscellaneous settings" });
+    }
+
+    const row = rows?.[0] || {};
+
+    res.json({
+      success: true,
+      settings: {
+        AutoCalculateInterestonTransactionPanel: !!row.AutoCalculateInterestonTransactionPanel,
+        AutoDistributeAmountinTransactionPanel: !!row.AutoDistributeAmountinTransactionPanel,
+        AskforInstallmentMonth: !!row.AskforInstallmentMonth,
+        DayStart: !!row.DayStart,
+        DayStartAfter: row.DayStartAfter ?? "",
+        DayCloseByStartedUser: !!row.DayCloseByStartedUser,
+        LadderInterestonLoan: !!row.LadderInterestonLoan,
+        DifferentTaxationforPalika: !!row.DifferentTaxationforPalika,
+      },
+    });
+  });
+});
+
+app.post("/api/system-settings/misc", (req, res) => {
+  const conn = req.session.conn;
+  const body = req.body || {};
+  const values = [
+    toSqlBit(body.AutoCalculateInterestonTransactionPanel),
+    toSqlBit(body.AutoDistributeAmountinTransactionPanel),
+    toSqlBit(body.AskforInstallmentMonth),
+    toSqlBit(body.DayStart),
+    toTinyInt(body.DayStartAfter),
+    toSqlBit(body.DayCloseByStartedUser),
+    toSqlBit(body.LadderInterestonLoan),
+    toSqlBit(body.DifferentTaxationforPalika),
+  ];
+
+  const updateQuery = `
+    UPDATE dbo.tbSystemSettings
+    SET
+      AutoCalculateInterestonTransactionPanel = ?,
+      AutoDistributeAmountinTransactionPanel = ?,
+      AskforInstallmentMonth = ?,
+      DayStart = ?,
+      DayStartAfter = ?,
+      DayCloseByStartedUser = ?,
+      LadderInterestonLoan = ?,
+      DifferentTaxationforPalika = ?
+  `;
+
+  sql.query(conn, "SELECT COUNT(1) AS TotalRows FROM dbo.tbSystemSettings", (countErr, countRows) => {
+    if (countErr) {
+      console.error("Miscellaneous settings count error:", countErr);
+      return res.status(500).json({ success: false, message: "Failed to check Miscellaneous settings" });
+    }
+
+    const hasSettingsRow = Number(countRows?.[0]?.TotalRows || 0) > 0;
+    const query = hasSettingsRow
+      ? updateQuery
+      : `INSERT INTO dbo.tbSystemSettings (${miscSettingsColumns}) VALUES (${values.map(() => "?").join(", ")})`;
+
+    sql.query(conn, query, values, (err) => {
+      if (err) {
+        console.error("Miscellaneous settings save error:", err);
+        return res.status(500).json({ success: false, message: "Failed to save Miscellaneous settings" });
+      }
+
+      res.json({ success: true, message: "Miscellaneous settings saved" });
+    });
+  });
+});
+
+async function resolveBillSetupRow(conn, row, index) {
+  const accountHead = String(row.accountHead || "").trim();
+  const subHead = String(row.subHead || "").trim();
+  const amount = toNullableMoney(row.amount);
+  let glid = toNullableInt(row.glid);
+  let slid = toNullableInt(row.slid);
+
+  if (!accountHead && !subHead && amount === null) return null;
+
+  if (!glid && accountHead) {
+    const ledgers = await queryAsync(conn, `
+      SELECT TOP 1 GLID
+      FROM dbo.tbLedgerMaster
+      WHERE LTRIM(RTRIM(GLName)) = ? OR LTRIM(RTRIM(GlAlias)) = ?
+      ORDER BY GLID
+    `, [accountHead, accountHead]);
+
+    glid = ledgers?.[0]?.GLID || null;
+  }
+
+  if (!glid) {
+    const message = accountHead
+      ? `Account Head not found in row ${index + 1}: ${accountHead}`
+      : `Account Head is required in row ${index + 1}`;
+    const error = new Error(message);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!slid && subHead) {
+    const subLedgers = await queryAsync(conn, `
+      SELECT TOP 1 SLID
+      FROM dbo.tbSubLedgerMaster
+      WHERE (LTRIM(RTRIM(SLName)) = ? OR LTRIM(RTRIM(SlAlias)) = ?)
+        AND (? IS NULL OR GLID = ?)
+      ORDER BY SLID
+    `, [subHead, subHead, glid, glid]);
+
+    slid = subLedgers?.[0]?.SLID || null;
+
+    if (!slid) {
+      const error = new Error(`Sub Head not found in row ${index + 1}: ${subHead}`);
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  return {
+    sno: index + 1,
+    glid,
+    slid,
+    amount,
+  };
+}
+
+async function saveBillSetupRows(conn, tableName, rows) {
+  const resolvedRows = [];
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const resolved = await resolveBillSetupRow(conn, rows[index], index);
+    if (resolved) resolvedRows.push({ ...resolved, sno: resolvedRows.length + 1 });
+  }
+
+  await queryAsync(conn, `DELETE FROM dbo.${tableName}`);
+
+  for (const row of resolvedRows) {
+    await queryAsync(conn, `
+      INSERT INTO dbo.${tableName} (SNo, GLID, SLID, Amount)
+      VALUES (?, ?, ?, ?)
+    `, [row.sno, row.glid, row.slid, row.amount]);
+  }
+}
+
+async function getBillSetupRows(conn, tableName) {
+  return queryAsync(conn, `
+    SELECT
+      b.DetailID,
+      b.SNo,
+      b.GLID,
+      lm.GLName AS AccountHead,
+      b.SLID,
+      slm.SLName AS SubHead,
+      b.Amount
+    FROM dbo.${tableName} b
+    LEFT JOIN dbo.tbLedgerMaster lm ON b.GLID = lm.GLID
+    LEFT JOIN dbo.tbSubLedgerMaster slm ON b.SLID = slm.SLID
+    ORDER BY ISNULL(b.SNo, b.DetailID), b.DetailID
+  `);
+}
+
+app.get("/api/system-settings/bill-setup", async (req, res) => {
+  const conn = req.session.conn;
+
+  try {
+    const [billRows, acClosingRows] = await Promise.all([
+      getBillSetupRows(conn, "tbSystemSettingBillSetup"),
+      getBillSetupRows(conn, "tbSystemSettingAcClosingBillSetup"),
+    ]);
+
+    res.json({
+      success: true,
+      billRows,
+      acClosingRows,
+    });
+  } catch (err) {
+    console.error("Bill Setup fetch error:", err);
+    res.status(500).json({ success: false, message: "Failed to load Bill Setup" });
+  }
+});
+
+app.post("/api/system-settings/bill-setup", async (req, res) => {
+  const conn = req.session.conn;
+  const body = req.body || {};
+
+  try {
+    await saveBillSetupRows(conn, "tbSystemSettingBillSetup", Array.isArray(body.billRows) ? body.billRows : []);
+    await saveBillSetupRows(conn, "tbSystemSettingAcClosingBillSetup", Array.isArray(body.acClosingRows) ? body.acClosingRows : []);
+    res.json({ success: true, message: "Bill Setup saved" });
+  } catch (err) {
+    console.error("Bill Setup save error:", err);
+    res.status(err.statusCode || 500).json({ success: false, message: err.message || "Failed to save Bill Setup" });
+  }
+});
+
+app.get("/api/system-settings/voucher", (req, res) => {
+  const conn = req.session.conn;
+  const query = `SELECT TOP 1 VoucherFooter FROM dbo.tbSystemSettings`;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("Voucher settings fetch error:", err);
+      return res.status(500).json({ success: false, message: "Failed to load Voucher settings" });
+    }
+
+    res.json({
+      success: true,
+      settings: {
+        VoucherFooter: rows?.[0]?.VoucherFooter || "",
+      },
+    });
+  });
+});
+
+app.post("/api/system-settings/voucher", (req, res) => {
+  const conn = req.session.conn;
+  const footer = toNullableText(req.body?.VoucherFooter, 7000);
+  const values = [footer];
+
+  const updateQuery = `
+    UPDATE dbo.tbSystemSettings
+    SET VoucherFooter = ?
+  `;
+
+  sql.query(conn, "SELECT COUNT(1) AS TotalRows FROM dbo.tbSystemSettings", (countErr, countRows) => {
+    if (countErr) {
+      console.error("Voucher settings count error:", countErr);
+      return res.status(500).json({ success: false, message: "Failed to check Voucher settings" });
+    }
+
+    const hasSettingsRow = Number(countRows?.[0]?.TotalRows || 0) > 0;
+    const query = hasSettingsRow
+      ? updateQuery
+      : "INSERT INTO dbo.tbSystemSettings (VoucherFooter) VALUES (?)";
+
+    sql.query(conn, query, values, (err) => {
+      if (err) {
+        console.error("Voucher settings save error:", err);
+        return res.status(500).json({ success: false, message: "Failed to save Voucher settings" });
+      }
+
+      res.json({ success: true, message: "Voucher settings saved" });
+    });
+  });
+});
+
+const closingMappingSettingsColumns = `
+  GLIDIncomeTaxAc,
+  IncomeTaxPercent,
+  GLIDDividendTaxAc,
+  DividendTaxRate,
+  GLIDPatronageRefundTaxAc
+`;
+
+app.get("/api/system-settings/closing-mapping", async (req, res) => {
+  const conn = req.session.conn;
+
+  try {
+    const settingsRows = await queryAsync(conn, `SELECT TOP 1 ${closingMappingSettingsColumns} FROM dbo.tbSystemSettings`);
+    const mappingRows = await getBillSetupRows(conn, "tbSystemSettingClosingMapping");
+    const row = settingsRows?.[0] || {};
+
+    res.json({
+      success: true,
+      settings: {
+        GLIDIncomeTaxAc: row.GLIDIncomeTaxAc ?? "",
+        IncomeTaxPercent: row.IncomeTaxPercent ?? "",
+        GLIDDividendTaxAc: row.GLIDDividendTaxAc ?? "",
+        DividendTaxRate: row.DividendTaxRate ?? "",
+        GLIDPatronageRefundTaxAc: row.GLIDPatronageRefundTaxAc ?? "",
+      },
+      mappingRows,
+    });
+  } catch (err) {
+    console.error("Closing Mapping fetch error:", err);
+    res.status(500).json({ success: false, message: "Failed to load Closing Mapping" });
+  }
+});
+
+app.post("/api/system-settings/closing-mapping", async (req, res) => {
+  const conn = req.session.conn;
+  const body = req.body || {};
+  const settings = body.settings || {};
+  const values = [
+    toNullableInt(settings.GLIDIncomeTaxAc),
+    toNullableMoney(settings.IncomeTaxPercent),
+    toNullableInt(settings.GLIDDividendTaxAc),
+    toNullableMoney(settings.DividendTaxRate),
+    toNullableInt(settings.GLIDPatronageRefundTaxAc),
+  ];
+
+  const updateQuery = `
+    UPDATE dbo.tbSystemSettings
+    SET
+      GLIDIncomeTaxAc = ?,
+      IncomeTaxPercent = ?,
+      GLIDDividendTaxAc = ?,
+      DividendTaxRate = ?,
+      GLIDPatronageRefundTaxAc = ?
+  `;
+
+  try {
+    const countRows = await queryAsync(conn, "SELECT COUNT(1) AS TotalRows FROM dbo.tbSystemSettings");
+    const hasSettingsRow = Number(countRows?.[0]?.TotalRows || 0) > 0;
+    const query = hasSettingsRow
+      ? updateQuery
+      : `INSERT INTO dbo.tbSystemSettings (${closingMappingSettingsColumns}) VALUES (${values.map(() => "?").join(", ")})`;
+
+    await queryAsync(conn, query, values);
+    await saveBillSetupRows(conn, "tbSystemSettingClosingMapping", Array.isArray(body.mappingRows) ? body.mappingRows : []);
+    res.json({ success: true, message: "Closing Mapping saved" });
+  } catch (err) {
+    console.error("Closing Mapping save error:", err);
+    res.status(err.statusCode || 500).json({ success: false, message: err.message || "Failed to save Closing Mapping" });
+  }
+});
+
+const acMappingSettingsColumns = `
+  ShowTACode,
+  VoucherOnlinePrint,
+  SLWithMultipleGL,
+  CashBook,
+  ProfitLoss,
+  GLIDInterestIncomeAc,
+  GLIDInterestExpenseAc,
+  GLIDRebateAc,
+  GLIDPenaltyAc,
+  InterestPayable,
+  InterestReceivable
+`;
+
+app.get("/api/system-settings/ac-mapping", (req, res) => {
+  const conn = req.session.conn;
+  const query = `SELECT TOP 1 ${acMappingSettingsColumns} FROM dbo.tbSystemSettings`;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("A/c Mapping settings fetch error:", err);
+      return res.status(500).json({ success: false, message: "Failed to load A/c Mapping settings" });
+    }
+
+    const row = rows?.[0] || {};
+
+    res.json({
+      success: true,
+      settings: {
+        ShowTACode: !!row.ShowTACode,
+        VoucherOnlinePrint: !!row.VoucherOnlinePrint,
+        SLWithMultipleGL: !!row.SLWithMultipleGL,
+        CashBook: row.CashBook ?? "",
+        ProfitLoss: row.ProfitLoss ?? "",
+        GLIDInterestIncomeAc: row.GLIDInterestIncomeAc ?? "",
+        GLIDInterestExpenseAc: row.GLIDInterestExpenseAc ?? "",
+        GLIDRebateAc: row.GLIDRebateAc ?? "",
+        GLIDPenaltyAc: row.GLIDPenaltyAc ?? "",
+        InterestPayable: row.InterestPayable ?? "",
+        InterestReceivable: row.InterestReceivable ?? "",
+      },
+    });
+  });
+});
+
+app.post("/api/system-settings/ac-mapping", (req, res) => {
+  const conn = req.session.conn;
+  const body = req.body || {};
+  const values = [
+    toSqlBit(body.ShowTACode),
+    toSqlBit(body.VoucherOnlinePrint),
+    toSqlBit(body.SLWithMultipleGL),
+    toNullableInt(body.CashBook),
+    toNullableInt(body.ProfitLoss),
+    toNullableInt(body.GLIDInterestIncomeAc),
+    toNullableInt(body.GLIDInterestExpenseAc),
+    toNullableInt(body.GLIDRebateAc),
+    toNullableInt(body.GLIDPenaltyAc),
+    toNullableInt(body.InterestPayable),
+    toNullableInt(body.InterestReceivable),
+  ];
+
+  const updateQuery = `
+    UPDATE dbo.tbSystemSettings
+    SET
+      ShowTACode = ?,
+      VoucherOnlinePrint = ?,
+      SLWithMultipleGL = ?,
+      CashBook = ?,
+      ProfitLoss = ?,
+      GLIDInterestIncomeAc = ?,
+      GLIDInterestExpenseAc = ?,
+      GLIDRebateAc = ?,
+      GLIDPenaltyAc = ?,
+      InterestPayable = ?,
+      InterestReceivable = ?
+  `;
+
+  sql.query(conn, "SELECT COUNT(1) AS TotalRows FROM dbo.tbSystemSettings", (countErr, countRows) => {
+    if (countErr) {
+      console.error("A/c Mapping settings count error:", countErr);
+      return res.status(500).json({ success: false, message: "Failed to check A/c Mapping settings" });
+    }
+
+    const hasSettingsRow = Number(countRows?.[0]?.TotalRows || 0) > 0;
+    const query = hasSettingsRow
+      ? updateQuery
+      : `INSERT INTO dbo.tbSystemSettings (${acMappingSettingsColumns}) VALUES (${values.map(() => "?").join(", ")})`;
+
+    sql.query(conn, query, values, (err) => {
+      if (err) {
+        console.error("A/c Mapping settings save error:", err);
+        return res.status(500).json({ success: false, message: "Failed to save A/c Mapping settings" });
+      }
+
+      res.json({ success: true, message: "A/c Mapping settings saved" });
+    });
+  });
+});
+
 
 app.post("/fetch-data", (req, res) => {
   const { startDate, endDate } = req.body;

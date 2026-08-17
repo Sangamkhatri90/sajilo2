@@ -15041,90 +15041,86 @@ async function loadEarningsData() {
                                         <fieldset class="ss-fieldset">
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <label for="">Income Tax</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSClosingIncomeTax">Income Tax</label>
+                                                    <input type="text" class="ss-text" name="SSClosingIncomeTax" id="SSClosingIncomeTax">
                                                 </div>
                                                 <div>
-                                                    <label for="">Income Tax Percent</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSClosingIncomeTaxPercent">Income Tax Percent</label>
+                                                    <input type="text" class="ss-text" name="SSClosingIncomeTaxPercent" id="SSClosingIncomeTaxPercent">
                                                 </div>
                                             </div>
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <label for="">Dividend Tax</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSClosingDividendTax">Dividend Tax</label>
+                                                    <input type="text" class="ss-text" name="SSClosingDividendTax" id="SSClosingDividendTax">
                                                 </div>
                                                 <div>
-                                                    <label for="">Tax Rate on Dividend</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSClosingDividendTaxRate">Tax Rate on Dividend</label>
+                                                    <input type="text" class="ss-text" name="SSClosingDividendTaxRate" id="SSClosingDividendTaxRate">
                                                 </div>
                                             </div>
                                             <div>
-                                                <label for="">Patronage Refund Tax</label>
-                                                <input type="text" class="ss-text" name="" id="">
+                                                <label for="SSClosingPatronageRefundTax">Patronage Refund Tax</label>
+                                                <input type="text" class="ss-text" name="SSClosingPatronageRefundTax" id="SSClosingPatronageRefundTax">
                                             </div>
-                                            <h2>Fund Distribution Percent Mapping (for Profit after Income Tax
-                                                Provision)</h2>
+                                            <h2>Fund Distribution Percent Mapping (for Profit after Income Tax Provision)</h2>
                                             <fieldset class="ss-fieldset">
                                                 <div class="ss-table">
-                                                    <table>
+                                                    <table id="SSClosingMappingTable">
                                                         <thead>
-                                                            <th>S.No</th>
-                                                            <th>Account Head</th>
-                                                            <th>Sub Head</th>
-                                                            <th>Percent</th>
+                                                            <tr>
+                                                                <th>S.No</th>
+                                                                <th>Account Head</th>
+                                                                <th>Sub Head</th>
+                                                                <th>Percent</th>
+                                                            </tr>
                                                         </thead>
-                                                        <tbody>
-                                                            <tr></tr>
-                                                            <tr></tr>
-                                                            <tr></tr>
-                                                            <tr></tr>
-                                                        </tbody>
+                                                        <tbody id="SSClosingMappingTableBody"></tbody>
                                                     </table>
                                                 </div>
+                                                <button type="button" class="ss-button" id="SSClosingMappingAddRow">Add Row</button>
                                             </fieldset>
                                         </fieldset>
                                     </div>
                                 </div>
-
                                 <!--Miscellaneous-->
                                 <div class="contents">
                                     <div id="misc">
                                         <fieldset class="ss-fieldset">
                                             <div class="m-div">
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Auto Calculate Interest in Transaction Panel</label>
+                                                    <input type="checkbox" name="SSMiscAutoCalculateInterest" id="SSMiscAutoCalculateInterest">
+                                                    <label for="SSMiscAutoCalculateInterest">Auto Calculate Interest in Transaction Panel</label>
                                                 </div>
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Auto Distribute Amount in Transaction Panel</label>
+                                                    <input type="checkbox" name="SSMiscAutoDistributeAmount" id="SSMiscAutoDistributeAmount">
+                                                    <label for="SSMiscAutoDistributeAmount">Auto Distribute Amount in Transaction Panel</label>
                                                 </div>
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Ask for Installment Date in Transaction Panel</label>
+                                                    <input type="checkbox" name="SSMiscAskInstallmentDate" id="SSMiscAskInstallmentDate">
+                                                    <label for="SSMiscAskInstallmentDate">Ask for Installment Date in Transaction Panel</label>
                                                 </div>
                                                 <div class="ss-checkbox-grid" style="margin-top: -1px;">
                                                     <div>
-                                                        <input type="checkbox" name="" id="">
-                                                        <label for="">Enable Day Start, After <input type="text"
-                                                                class="ss-text-s" name="" id=""> hours(24 hour
+                                                        <input type="checkbox" name="SSMiscDayStart" id="SSMiscDayStart">
+                                                        <label for="SSMiscDayStart">Enable Day Start, After <input type="text"
+                                                                class="ss-text-s" name="SSMiscDayStartAfter" id="SSMiscDayStartAfter"> hours(24 hour
                                                             format)</label>
                                                     </div>
                                                     <div>
-                                                        <input type="checkbox" name="" id="">
-                                                        <label for="">Day Close only by started user</label>
+                                                        <input type="checkbox" name="SSMiscDayCloseByStartedUser" id="SSMiscDayCloseByStartedUser">
+                                                        <label for="SSMiscDayCloseByStartedUser">Day Close only by started user</label>
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Ladder interest rate on loan on the basis of Approved
+                                                    <input type="checkbox" name="SSMiscLadderInterestonLoan" id="SSMiscLadderInterestonLoan">
+                                                    <label for="SSMiscLadderInterestonLoan">Ladder interest rate on loan on the basis of Approved
                                                         Loan
                                                         Amount</label>
                                                 </div>
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Withheld tax on interest for Municipality Member based
+                                                    <input type="checkbox" name="SSMiscDifferentTaxationforPalika" id="SSMiscDifferentTaxationforPalika">
+                                                    <label for="SSMiscDifferentTaxationforPalika">Withheld tax on interest for Municipality Member based
                                                         on Temp
                                                         Address of member</label>
                                                 </div>
@@ -15183,7 +15179,7 @@ async function loadEarningsData() {
                                                             <label for="">Local Date</label>
                                                         </div>
                                                         <div>
-                                                            <input type="checkbox" name="SSShowLastDate" id="">
+                                                            <input type="checkbox" name="SSShowLastDate" id="SSShowLastDate">
                                                             <label for="">Show Last Date</label>
                                                         </div>
                                                     </div>
@@ -15195,11 +15191,11 @@ async function loadEarningsData() {
                                                     <div class="ss-form-style-horizontal"
                                                         style="margin-top: 25px; margin-left: 10px;">
                                                         <div>
-                                                            <input type="radio" name="SSHOLD" value="H" id="">
+                                                            <input type="radio" name="SSHOLD" value="H" id="SSDefaultHold">
                                                             <label for="">Hold</label>
                                                         </div>
                                                         <div>
-                                                            <input type="radio" name="SSHOLD" value="P" id="">
+                                                            <input type="radio" name="SSHOLD" value="P" id="SSDefaultPost">
                                                             <label for="">Post</label>
                                                         </div>
                                                     </div>
@@ -15212,15 +15208,15 @@ async function loadEarningsData() {
                                                     <legend class="ss-legend">Lock</legend>
                                                     <div class="ss-form-style-horizontal">
                                                         <div>
-                                                            <input type="checkbox" name="SSNew" id="">
+                                                            <input type="checkbox" name="SSNew" id="SSNew">
                                                             <label for="">New</label>
                                                         </div>
                                                         <div>
-                                                            <input type="checkbox" name="SSEdit" id="">
+                                                            <input type="checkbox" name="SSEdit" id="SSEdit">
                                                             <label for="">Edit</label>
                                                         </div>
                                                         <div>
-                                                            <input type="checkbox" name="SSDelete" id="">
+                                                            <input type="checkbox" name="SSDelete" id="SSDelete">
                                                             <label for="">Delete</label>
                                                         </div>
                                                     </div>
@@ -15256,7 +15252,7 @@ async function loadEarningsData() {
                                                                 id="SSBPath">
                                                         </div>
                                                         <div>
-                                                            <button class="ss-button" style="margin-top: 20px;"
+                                                            <button type="button" class="ss-button" style="margin-top: 20px;"
                                                                 id="SSBrowse">Browse</button>
                                                         </div>
                                                     </div>
@@ -15267,11 +15263,11 @@ async function loadEarningsData() {
                                             <div>
                                                 <fieldset class="ss-fieldset1">
                                                     <legend class="ss-legend">Remind Backup <input type="checkbox"
-                                                            name="" id="SSRBCheckBox"></legend>
+                                                            name="SSRBCheckBox" id="SSRBCheckBox"></legend>
                                                     <div style="margin-top: 25px;">
                                                         <div>
                                                             <label for="">In Every <input type="text" class="ss-text-s"
-                                                                    name="" id="SSIEvery"> Day Difference</label>
+                                                                    name="SSIEvery" id="SSIEvery"> Day Difference</label>
                                                         </div>
                                                     </div>
                                                 </fieldset>
@@ -15279,22 +15275,22 @@ async function loadEarningsData() {
                                             <div style="margin-top: 30px;">
                                                 <div class="ss-form-style-horizontal">
                                                     <div>
-                                                        <input type="checkbox" name="" id="">
-                                                        <label for="">Auto Filter Listings</label>
+                                                        <input type="checkbox" name="SSAutoFilterListings" id="SSAutoFilterListings">
+                                                        <label for="SSAutoFilterListings">Auto Filter Listings</label>
                                                     </div>
                                                     <div>
-                                                        <input type="checkbox" name="" id="">
-                                                        <label for="">A/c Sub Group</label>
+                                                        <input type="checkbox" name="SSSubGroupSystem" id="SSSubGroupSystem">
+                                                        <label for="SSSubGroupSystem">A/c Sub Group</label>
                                                     </div>
                                                 </div>
                                                 <div class="ss-form-style-horizontal">
                                                     <div>
-                                                        <input type="checkbox" name="" id="">
-                                                        <label for="">User Defined Field</label>
+                                                        <input type="checkbox" name="SSUDF" id="SSUDF">
+                                                        <label for="SSUDF">User Defined Field</label>
                                                     </div>
                                                     <div>
-                                                        <input type="checkbox" name="" id="">
-                                                        <label for="">Confirm Saving</label>
+                                                        <input type="checkbox" name="SSConfirmSaving" id="SSConfirmSaving">
+                                                        <label for="SSConfirmSaving">Confirm Saving</label>
                                                     </div>
                                                 </div>
                                             </div>
@@ -15309,62 +15305,58 @@ async function loadEarningsData() {
                                         <fieldset class="ss-fieldset">
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Show TA Code</label>
+                                                    <input type="checkbox" name="SSACShowTACode" id="SSACShowTACode">
+                                                    <label for="SSACShowTACode">Show TA Code</label>
                                                 </div>
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Print Voucher Online</label>
+                                                    <input type="checkbox" name="SSACVoucherOnlinePrint" id="SSACVoucherOnlinePrint">
+                                                    <label for="SSACVoucherOnlinePrint">Print Voucher Online</label>
                                                 </div>
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Sub Ledger With Multiple Ledger</label>
+                                                    <input type="checkbox" name="SSACSLWithMultipleGL" id="SSACSLWithMultipleGL">
+                                                    <label for="SSACSLWithMultipleGL">Sub Ledger With Multiple Ledger</label>
                                                 </div>
                                             </div>
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <label for="">Cash Book</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSACCashBook">Cash Book</label>
+                                                    <input type="text" class="ss-text" name="SSACCashBook" id="SSACCashBook">
                                                 </div>
                                                 <div>
-                                                    <label for="">Profit/Loss</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSACProfitLoss">Profit/Loss</label>
+                                                    <input type="text" class="ss-text" name="SSACProfitLoss" id="SSACProfitLoss">
                                                 </div>
                                             </div>
                                             <fieldset class="ss-fieldset">
                                                 <legend class="ss-legend">Ledger Mapping</legend>
                                                 <div>
-                                                    <label for="ledger-input">Interest Income From Loan</label>
-                                                    <input type="text" class="ss-text" id="ledger-input"
-                                                        name="ledger-input" onfocus="showLedgersList()"
-                                                        oninput="filterLedgers()" placeholder="Type to get List">
-                                                    <div id="ledgerList" class="suggestions-list1"></div>
+                                                    <label for="SSACInterestIncomeAc">Interest Income From Loan</label>
+                                                    <input type="text" class="ss-text" id="SSACInterestIncomeAc" name="SSACInterestIncomeAc">
                                                 </div>
                                                 <div>
-                                                    <label for="">Interest Expenses</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSACInterestExpenseAc">Interest Expenses</label>
+                                                    <input type="text" class="ss-text" name="SSACInterestExpenseAc" id="SSACInterestExpenseAc">
                                                 </div>
                                                 <div>
-                                                    <label for="">Rebate</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSACRebateAc">Rebate</label>
+                                                    <input type="text" class="ss-text" name="SSACRebateAc" id="SSACRebateAc">
                                                 </div>
                                                 <div>
-                                                    <label for="">Penalty</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSACPenaltyAc">Penalty</label>
+                                                    <input type="text" class="ss-text" name="SSACPenaltyAc" id="SSACPenaltyAc">
                                                 </div>
                                                 <div>
-                                                    <label for="">Interest Payable</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSACInterestPayable">Interest Payable</label>
+                                                    <input type="text" class="ss-text" name="SSACInterestPayable" id="SSACInterestPayable">
                                                 </div>
                                                 <div>
-                                                    <label for="">Interest Receivable</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSACInterestReceivable">Interest Receivable</label>
+                                                    <input type="text" class="ss-text" name="SSACInterestReceivable" id="SSACInterestReceivable">
                                                 </div>
                                             </fieldset>
                                         </fieldset>
                                     </div>
                                 </div>
-
                                 <!--Fincance Control-->
                                 <div class="contents">
                                     <div id="finance-control">
@@ -15377,16 +15369,16 @@ async function loadEarningsData() {
                                                     <fieldset class="ss-fieldset-small">
                                                         <div class="ss-form-style-horizontal" style="margin-top: -4px;">
                                                             <div>
-                                                                <input type="radio" name="BWI" id="">
-                                                                <label for="">Block</label>
+                                                                <input type="radio" name="SSFNCB" id="SSFNCBBlock" value="B">
+                                                                <label for="SSFNCBBlock">Block</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="BWI" id="">
-                                                                <label for="">Warning</label>
+                                                                <input type="radio" name="SSFNCB" id="SSFNCBWarning" value="W">
+                                                                <label for="SSFNCBWarning">Warning</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="BWI" id="">
-                                                                <label for="">Ignore</label>
+                                                                <input type="radio" name="SSFNCB" id="SSFNCBIgnore" value="I">
+                                                                <label for="SSFNCBIgnore">Ignore</label>
                                                             </div>
                                                         </div>
                                                     </fieldset>
@@ -15401,16 +15393,16 @@ async function loadEarningsData() {
                                                     <fieldset class="ss-fieldset-small">
                                                         <div class="ss-form-style-horizontal" style="margin-top: -4px;">
                                                             <div>
-                                                                <input type="radio" name="BIW" id="">
-                                                                <label for="">Block</label>
+                                                                <input type="radio" name="SSFNBB" id="SSFNBBBlock" value="B">
+                                                                <label for="SSFNBBBlock">Block</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="BIW" id="">
-                                                                <label for="">Warning</label>
+                                                                <input type="radio" name="SSFNBB" id="SSFNBBWarning" value="W">
+                                                                <label for="SSFNBBWarning">Warning</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="BIW" id="">
-                                                                <label for="">Ignore</label>
+                                                                <input type="radio" name="SSFNBB" id="SSFNBBIgnore" value="I">
+                                                                <label for="SSFNBBIgnore">Ignore</label>
                                                             </div>
                                                         </div>
                                                     </fieldset>
@@ -15422,22 +15414,22 @@ async function loadEarningsData() {
                                                     <label for="">Minimum Cash Balance</label>
                                                 </div>
                                                 <div style="margin-left: 10px; margin-top: 10px;">
-                                                    <input type="text" class="ss-text1" name="" id="">
+                                                    <input type="text" class="ss-text1" name="SSMinCBAmount" id="SSMinCBAmount">
                                                 </div>
                                                 <div>
                                                     <fieldset class="ss-fieldset-small" style="margin-left: -157px;">
                                                         <div class="ss-form-style-horizontal" style="margin-top: -4px;">
                                                             <div>
-                                                                <input type="radio" name="WBI" id="">
-                                                                <label for="">Block</label>
+                                                                <input type="radio" name="SSMinCB" id="SSMinCBBlock" value="B">
+                                                                <label for="SSMinCBBlock">Block</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="WBI" id="">
-                                                                <label for="">Warning</label>
+                                                                <input type="radio" name="SSMinCB" id="SSMinCBWarning" value="W">
+                                                                <label for="SSMinCBWarning">Warning</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="WBI" id="">
-                                                                <label for="">Ignore</label>
+                                                                <input type="radio" name="SSMinCB" id="SSMinCBIgnore" value="I">
+                                                                <label for="SSMinCBIgnore">Ignore</label>
                                                             </div>
                                                         </div>
                                                     </fieldset>
@@ -15449,22 +15441,22 @@ async function loadEarningsData() {
                                                     <label for="">Maximum Cash Balance</label>
                                                 </div>
                                                 <div style="margin-left: 10px; margin-top: 10px;">
-                                                    <input type="text" class="ss-text1" name="" id="">
+                                                    <input type="text" class="ss-text1" name="SSMaxCBAmount" id="SSMaxCBAmount">
                                                 </div>
                                                 <div>
                                                     <fieldset class="ss-fieldset-small" style="margin-left: -157px;">
                                                         <div class="ss-form-style-horizontal" style="margin-top: -4px;">
                                                             <div>
-                                                                <input type="radio" name="IWB" id="">
-                                                                <label for="">Block</label>
+                                                                <input type="radio" name="SSMaxCB" id="SSMaxCBBlock" value="B">
+                                                                <label for="SSMaxCBBlock">Block</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="IWB" id="">
-                                                                <label for="">Warning</label>
+                                                                <input type="radio" name="SSMaxCB" id="SSMaxCBWarning" value="W">
+                                                                <label for="SSMaxCBWarning">Warning</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="IWB" id="">
-                                                                <label for="">Ignore</label>
+                                                                <input type="radio" name="SSMaxCB" id="SSMaxCBIgnore" value="I">
+                                                                <label for="SSMaxCBIgnore">Ignore</label>
                                                             </div>
                                                         </div>
                                                     </fieldset>
@@ -15476,22 +15468,22 @@ async function loadEarningsData() {
                                                     <label for="">Maximum Payment By Cash</label>
                                                 </div>
                                                 <div style="margin-left: 10px; margin-top: 10px;">
-                                                    <input type="text" class="ss-text1" name="" id="">
+                                                    <input type="text" class="ss-text1" name="SSMaxPBCAmount" id="SSMaxPBCAmount">
                                                 </div>
                                                 <div>
                                                     <fieldset class="ss-fieldset-small" style="margin-left: -157px;">
                                                         <div class="ss-form-style-horizontal" style="margin-top: -4px;">
                                                             <div>
-                                                                <input type="radio" name="IBW" id="">
-                                                                <label for="">Block</label>
+                                                                <input type="radio" name="SSMaxPBC" id="SSMaxPBCBlock" value="B">
+                                                                <label for="SSMaxPBCBlock">Block</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="IBW" id="">
-                                                                <label for="">Warning</label>
+                                                                <input type="radio" name="SSMaxPBC" id="SSMaxPBCWarning" value="W">
+                                                                <label for="SSMaxPBCWarning">Warning</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="IBW" id="">
-                                                                <label for="">Ignore</label>
+                                                                <input type="radio" name="SSMaxPBC" id="SSMaxPBCIgnore" value="I">
+                                                                <label for="SSMaxPBCIgnore">Ignore</label>
                                                             </div>
                                                         </div>
                                                     </fieldset>
@@ -15506,26 +15498,26 @@ async function loadEarningsData() {
                                         <fieldset class="ss-fieldset">
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <label for="">Tax on Interest</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSM2TaxOnInterest">Tax on Interest</label>
+                                                    <input type="text" class="ss-text" name="SSM2TaxOnInterest" id="SSM2TaxOnInterest">
                                                 </div>
                                                 <div>
-                                                    <label for="">Contra Ledger For Receivable Interest</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSM2ContraReceivableInterest">Contra Ledger For Receivable Interest</label>
+                                                    <input type="text" class="ss-text" name="SSM2ContraReceivableInterest" id="SSM2ContraReceivableInterest">
                                                 </div>
                                                 <div>
-                                                    <label for="">Share A/c Main Ledger</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSM2ShareAcMainLedger">Share A/c Main Ledger</label>
+                                                    <input type="text" class="ss-text" name="SSM2ShareAcMainLedger" id="SSM2ShareAcMainLedger">
                                                 </div>
                                             </div>
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <label for="">Interest Posting Voucher</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSM2InterestPostingVoucher">Interest Posting Voucher</label>
+                                                    <input type="text" class="ss-text" name="SSM2InterestPostingVoucher" id="SSM2InterestPostingVoucher">
                                                 </div>
                                                 <div>
-                                                    <label for="">Share Transaction Voucher</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSM2ShareTransactionVoucher">Share Transaction Voucher</label>
+                                                    <input type="text" class="ss-text" name="SSM2ShareTransactionVoucher" id="SSM2ShareTransactionVoucher">
                                                 </div>
                                             </div>
                                             <div class="ss-form-style-horizontal">
@@ -15536,16 +15528,16 @@ async function loadEarningsData() {
                                                     <fieldset class="ss-fieldset-small" style="margin-left: -157px;">
                                                         <div class="ss-form-style-horizontal" style="margin-top: -4px;">
                                                             <div>
-                                                                <input type="radio" name="SSBWI" id="">
-                                                                <label for="">Block</label>
+                                                                <input type="radio" name="SSBWI" id="SSM2NICBlock" value="B">
+                                                                <label for="SSM2NICBlock">Block</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="SSBWI" id="">
-                                                                <label for="">Warning</label>
+                                                                <input type="radio" name="SSBWI" id="SSM2NICWarning" value="W">
+                                                                <label for="SSM2NICWarning">Warning</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="SSBWI" id="">
-                                                                <label for="">Ignore</label>
+                                                                <input type="radio" name="SSBWI" id="SSM2NICIgnore" value="I">
+                                                                <label for="SSM2NICIgnore">Ignore</label>
                                                             </div>
                                                         </div>
                                                     </fieldset>
@@ -15553,29 +15545,29 @@ async function loadEarningsData() {
                                             </div>
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Startup Share A/c in Front Panel</label>
+                                                    <input type="checkbox" name="SSM2ShowShareAcInFrontPanel" id="SSM2ShowShareAcInFrontPanel">
+                                                    <label for="SSM2ShowShareAcInFrontPanel">Startup Share A/c in Front Panel</label>
                                                 </div>
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Show Startup alert for Matured Loan Accounts</label>
+                                                    <input type="checkbox" name="SSM2ShowMaturedLoanAlert" id="SSM2ShowMaturedLoanAlert">
+                                                    <label for="SSM2ShowMaturedLoanAlert">Show Startup alert for Matured Loan Accounts</label>
                                                 </div>
                                             </div>
                                             <div class="ss-form-style-horizontal">
                                                 <div style="margin-top: 5px;">
                                                     <label for="">Enable Day Closing</label>
-                                                    <input type="checkbox" style="margin-top: 10px;" name="" id="">
+                                                    <input type="checkbox" style="margin-top: 10px;" name="SSM2DayClosing" id="SSM2DayClosing">
                                                 </div>
                                                 <div>
                                                     <fieldset class="ss-fieldset-small" style="margin-left: -157px;">
                                                         <div class="ss-form-style-horizontal" style="margin-top: -4px;">
                                                             <div>
-                                                                <input type="radio" name="SSDC" id="">
-                                                                <label for="">Fast Day Close</label>
+                                                                <input type="radio" name="SSDC" id="SSM2FastDayClose" value="fast">
+                                                                <label for="SSM2FastDayClose">Fast Day Close</label>
                                                             </div>
                                                             <div>
-                                                                <input type="radio" name="SSDC" id="">
-                                                                <label for="">Slow Day Close</label>
+                                                                <input type="radio" name="SSDC" id="SSM2SlowDayClose" value="slow">
+                                                                <label for="SSM2SlowDayClose">Slow Day Close</label>
                                                             </div>
                                                         </div>
                                                     </fieldset>
@@ -15583,12 +15575,12 @@ async function loadEarningsData() {
                                             </div>
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Startup alert for Matured Fixed A/c</label>
+                                                    <input type="checkbox" name="SSM2ShowFixedMaturedAlert" id="SSM2ShowFixedMaturedAlert">
+                                                    <label for="SSM2ShowFixedMaturedAlert">Startup alert for Matured Fixed A/c</label>
                                                 </div>
                                                 <div>
-                                                    <input type="checkbox" name="" id="">
-                                                    <label for="">Show Startup alert for installment</label>
+                                                    <input type="checkbox" name="SSM2ShowInstallmentAlert" id="SSM2ShowInstallmentAlert">
+                                                    <label for="SSM2ShowInstallmentAlert">Show Startup alert for installment</label>
                                                 </div>
                                             </div>
                                         </fieldset>
@@ -15600,35 +15592,47 @@ async function loadEarningsData() {
                                     <div id="bill-setup">
                                         <fieldset class="ss-fieldset">
                                             <legend class="ss-legend">Fill in the Blanks</legend>
-                                            <fieldset>
-                                                <div class="ss-table">
-                                                    <table>
-                                                        <thead>
+                                            <div class="ss-table">
+                                                <table id="SSBillSetupTable">
+                                                    <thead>
+                                                        <tr>
                                                             <th>S.No</th>
                                                             <th>Account Head</th>
                                                             <th>Sub Head</th>
                                                             <th>Amount</th>
-                                                        </thead>
-                                                        <tbody>
-                                                            <tr></tr>
-                                                            <tr></tr>
-                                                            <tr></tr>
-                                                            <tr></tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </fieldset>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="SSBillSetupTableBody"></tbody>
+                                                </table>
+                                            </div>
+                                            <button type="button" class="ss-button" id="SSBillSetupAddRow">Add Row</button>
+                                        </fieldset>
+                                        <fieldset class="ss-fieldset">
+                                            <legend class="ss-legend">Acc closing Bill</legend>
+                                            <div class="ss-table">
+                                                <table id="SSAcClosingBillSetupTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>S.No</th>
+                                                            <th>Account Head</th>
+                                                            <th>Sub Head</th>
+                                                            <th>Amount</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="SSAcClosingBillSetupTableBody"></tbody>
+                                                </table>
+                                            </div>
+                                            <button type="button" class="ss-button" id="SSAcClosingBillSetupAddRow">Add Row</button>
                                         </fieldset>
                                     </div>
                                 </div>
-
                                 <!--Voucher-->
                                 <div class="contents">
                                     <div id="vouchers">
                                         <fieldset class="ss-fieldset">
                                             <div>
-                                                <label for="">Voucher Footer</label>
-                                                <textarea name="" class="ss-text" id=""></textarea>
+                                                <label for="SSVoucherFooter">Voucher Footer</label>
+                                                <textarea name="SSVoucherFooter" class="ss-text" id="SSVoucherFooter"></textarea>
                                             </div>
                                         </fieldset>
                                     </div>
@@ -15639,80 +15643,80 @@ async function loadEarningsData() {
                                     <div id="other">
                                         <fieldset class="ss-fieldset">
                                             <div>
-                                                <label for="">Doc. Class Caption</label>
-                                                <input type="text" class="ss-text" name="" id="">
+                                                <label for="SSOtherDocClassCaption">Doc. Class Caption</label>
+                                                <input type="text" class="ss-text" name="SSOtherDocClassCaption" id="SSOtherDocClassCaption">
                                             </div>
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <label for="">Profit Caption</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSOtherProfitCaption">Profit Caption</label>
+                                                    <input type="text" class="ss-text" name="SSOtherProfitCaption" id="SSOtherProfitCaption">
                                                 </div>
                                                 <div>
-                                                    <label for="">Loss Caption</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSOtherLossCaption">Loss Caption</label>
+                                                    <input type="text" class="ss-text" name="SSOtherLossCaption" id="SSOtherLossCaption">
                                                 </div>
                                             </div>
                                             <div>
-                                                <label for="">Report Footer</label>
-                                                <input type="text" class="ss-text" name="" id="">
+                                                <label for="SSOtherReportFooter">Report Footer</label>
+                                                <input type="text" class="ss-text" name="SSOtherReportFooter" id="SSOtherReportFooter">
                                             </div>
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <label for="">Tax Rate on Interest</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSOtherInterestTaxRate">Tax Rate on Interest</label>
+                                                    <input type="text" class="ss-text" name="SSOtherInterestTaxRate" id="SSOtherInterestTaxRate">
                                                 </div>
                                                 <div>
-                                                    <label for="">Source of fund required if amount >=</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSOtherSourceofFundMaxLimit">Source of fund required if amount >=</label>
+                                                    <input type="text" class="ss-text" name="SSOtherSourceofFundMaxLimit" id="SSOtherSourceofFundMaxLimit">
                                                 </div>
                                             </div>
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <label for="">Share Price per Unit</label>
-                                                    <input type="text" class="ss-text" name="" id="">
+                                                    <label for="SSOtherSharePrice">Share Price per Unit</label>
+                                                    <input type="text" class="ss-text" name="SSOtherSharePrice" id="SSOtherSharePrice">
                                                 </div>
                                                 <div>
-                                                    <label for="">Interest Decimal Places<label>
-                                                            <select name="" class="ss-select" id="">
-                                                                <option value="">None</option>
-                                                                <option value="">Round off</option>
-                                                                <option value="">Ceiling</option>
-                                                                <option value="">Floor</option>
+                                                    <label for="SSOtherInterestRound">Interest Decimal Places<label>
+                                                            <select name="SSOtherInterestRound" class="ss-select" id="SSOtherInterestRound">
+                                                                <option value="None">None</option>
+                                                                <option value="Round Off">Round off</option>
+                                                                <option value="Ceiling">Ceiling</option>
+                                                                <option value="Floor">Floor</option>
                                                             </select>
                                                 </div>
                                             </div>
                                             <div class="ss-form-style-horizontal">
                                                 <div>
-                                                    <label for="">Interest Tax Decimal</label>
-                                                    <select name="" class="ss-select" id="">
-                                                        <option value="">None</option>
-                                                        <option value="">Round off</option>
-                                                        <option value="">Ceiling</option>
-                                                        <option value="">Floor</option>
+                                                    <label for="SSOtherInterestTaxDecimal">Interest Tax Decimal</label>
+                                                    <select name="SSOtherInterestTaxDecimal" class="ss-select" id="SSOtherInterestTaxDecimal">
+                                                        <option value="None">None</option>
+                                                        <option value="Round Off">Round off</option>
+                                                        <option value="Ceiling">Ceiling</option>
+                                                        <option value="Floor">Floor</option>
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label for="">Statement Format<label>
-                                                            <select name="" class="ss-select" id="">
-                                                                <option value="">Default</option>
-                                                                <option value="">Interest Seperated</option>
+                                                    <label for="SSOtherStatementFormat">Statement Format<label>
+                                                            <select name="SSOtherStatementFormat" class="ss-select" id="SSOtherStatementFormat">
+                                                                <option value="Default">Default</option>
+                                                                <option value="Interest Seperated">Interest Seperated</option>
                                                             </select>
                                                 </div>
                                             </div>
                                             <div>
-                                                <label for="">Trial Difference Ledger</label>
-                                                <input type="text" class="ss-text" name="" id="">
+                                                <label for="SSOtherTrialDifferenceLedger">Trial Difference Ledger</label>
+                                                <input type="text" class="ss-text" name="SSOtherTrialDifferenceLedger" id="SSOtherTrialDifferenceLedger">
                                             </div>
                                             <div>
-                                                <input type="checkbox" name="" id="">
-                                                <label for="">Alert for Documents</label>
+                                                <input type="checkbox" name="SSOtherAlertforDocument" id="SSOtherAlertforDocument">
+                                                <label for="SSOtherAlertforDocument">Alert for Documents</label>
                                             </div>
                                         </fieldset>
                                     </div>
                                 </div>
                             </fieldset>
                             <div class="ss-button-row">
-                                <button type="submit" class="ss-button">Ok</button>
+                                <button type="submit" class="ss-button" id="SSSaveButton">Ok</button>
                                 <button type="button" class="ss-button" id="cancelButton122">Cancel</button>
                             </div>
                         </form>
@@ -50757,6 +50761,7 @@ async function loadEarningsData() {
             <script src="/js/alertsmessages.js"></script>
             <script src="/js/infront.js"></script>
             <script src="/js/autoNumSetting.js"></script>
+            <script src="/js/systemSettings.js"></script>
             <script src="/js/indicator.js"></script>
             <script src="/js/red.js"></script>
             <script src="/js/fiscalYearDate.js"></script>
