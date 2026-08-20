@@ -46445,7 +46445,7 @@ async function loadEarningsData() {
                 // Fetch Account Head & Sub Head lists
                 async function loadPostingLedgersDENew() {
                     if (allPostingLedgersDENew.length === 0) {
-                        const res = await fetch('/fetchPostingLedgerForNew');
+                        const res = await fetch('/fetchLgrMaster');
                         const data = await res.json();
                         allPostingLedgersDENew = Array.isArray(data.postingLedgers) ? data.postingLedgers : [];
                     }
