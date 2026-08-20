@@ -32858,6 +32858,134 @@ app.get('/api/nextReceiptVoucher', (req, res) => {
 });
 
 
+app.post("/account/Transaction/JournalMaster97", async (req, res) => {
+  const conn = req.session.conn;
+  const {
+    voucherNo,
+    docClass,
+    JVVoucherDate,
+    JVCollector,
+    JVRemarks,
+    JVUserName,
+    memberID,
+    memberName,
+    details
+  } = req.body;
+
+  const rows = Array.isArray(details) ? details : [];
+  const cleanRows = rows
+    .map((row, index) => ({
+      rowNo: index + 1,
+      accountHead: String(row.accountHead || '').trim(),
+      subHead: String(row.subHead || '').trim(),
+      drAmount: Number(row.drAmount || 0),
+      crAmount: Number(row.crAmount || 0)
+    }))
+    .filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+
+  if (!conn || !voucherNo || !JVVoucherDate || !docClass || cleanRows.length === 0) {
+    return res.status(400).json({ success: false, message: 'Voucher date, number, doc class, and at least one detail row are required.' });
+  }
+
+  if (cleanRows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount < 0 || row.crAmount < 0 || (row.drAmount > 0 && row.crAmount > 0) || (row.drAmount === 0 && row.crAmount === 0))) {
+    return res.status(400).json({ success: false, message: 'Each detail row must contain an account and either a debit or credit amount.' });
+  }
+
+  const totalDr = cleanRows.reduce((total, row) => total + row.drAmount, 0);
+  const totalCr = cleanRows.reduce((total, row) => total + row.crAmount, 0);
+  if (Math.abs(totalDr - totalCr) > 0.005 || totalDr === 0) {
+    return res.status(400).json({ success: false, message: 'Total debit and credit amounts must be equal.' });
+  }
+
+  const query = (text, params = []) => new Promise((resolve, reject) => {
+    sql.query(conn, text, params, (error, result) => error ? reject(error) : resolve(result || []));
+  });
+
+  try {
+    const duplicate = await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo]);
+    if (duplicate.length) {
+      return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
+    }
+
+    const docClassRows = await query('SELECT TOP 1 DocClassID FROM tbDocClassMaster WHERE DocClassName = ? OR DocClassAlias = ?', [docClass, docClass]);
+    if (!docClassRows.length) {
+      return res.status(400).json({ success: false, message: 'Doc class not found.' });
+    }
+
+    const udvRows = await query('SELECT TOP 1 UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?', ['Journal Voucher']);
+    if (!udvRows.length) {
+      return res.status(400).json({ success: false, message: 'Journal Voucher configuration not found.' });
+    }
+
+    const userRows = await query('SELECT TOP 1 UserID FROM SAJILODB.dbo.tbUserMaster WHERE UserName = ?', [JVUserName]);
+    if (!userRows.length) {
+      return res.status(400).json({ success: false, message: 'User not found.' });
+    }
+
+    const mitiRows = await query('SELECT TOP 1 M_Miti FROM tbLocalDate WHERE CONVERT(date, M_date) = CONVERT(date, ?)', [JVVoucherDate]);
+    if (!mitiRows.length) {
+      return res.status(400).json({ success: false, message: 'Voucher date is not configured in the local date table.' });
+    }
+
+    let resolvedMemberID = Number.parseInt(memberID, 10);
+    if (!Number.isInteger(resolvedMemberID) && memberName) {
+      const memberRows = await query('SELECT TOP 1 MemberID FROM tbMemberMaster WHERE MemberName = ?', [memberName]);
+      resolvedMemberID = memberRows.length ? memberRows[0].MemberID : null;
+    }
+    if (!Number.isInteger(resolvedMemberID)) {
+      resolvedMemberID = null;
+    }
+
+    let collectorID = null;
+    if (JVCollector) {
+      const collectorRows = await query('SELECT TOP 1 CollectorID FROM tbCollectorMaster WHERE CollectorName = ? OR CollectorAlias = ?', [JVCollector, JVCollector]);
+      if (!collectorRows.length) {
+        return res.status(400).json({ success: false, message: 'Collector not found.' });
+      }
+      collectorID = collectorRows[0].CollectorID;
+    }
+
+    const journalMiti = String(mitiRows[0].M_Miti).split('/');
+    const formattedMiti = journalMiti.length === 3 ? `${journalMiti[2]}/${journalMiti[1]}/${journalMiti[0]}` : mitiRows[0].M_Miti;
+    const resolvedDetails = [];
+    for (const row of cleanRows) {
+      const ledgerRows = await query('SELECT TOP 1 GLID FROM tbLedgerMaster WHERE GLName = ? OR GlAlias = ?', [row.accountHead, row.accountHead]);
+      if (!ledgerRows.length) {
+        return res.status(400).json({ success: false, message: `Account head not found on row ${row.rowNo}.` });
+      }
+
+      let slid = null;
+      if (row.subHead) {
+        const subLedgerRows = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE GLID = ? AND (SLName = ? OR SlAlias = ?)', [ledgerRows[0].GLID, row.subHead, row.subHead]);
+        if (!subLedgerRows.length) {
+          return res.status(400).json({ success: false, message: `Sub head not found on row ${row.rowNo}.` });
+        }
+        slid = subLedgerRows[0].SLID;
+      }
+      resolvedDetails.push({ ...row, GLID: ledgerRows[0].GLID, SLID: slid });
+    }
+
+    const masterRows = await query(`
+      INSERT INTO tbJournalMaster (VoucherNo, JV_Date, JV_Miti, CreatedDate, CreatedUserID, Remarks, UDVNo, Prov, MemberID, DocClassID, CollectorID, TotalAmountDC)
+      OUTPUT INSERTED.JournalID
+      VALUES (?, ?, ?, GETDATE(), ?, ?, ?, 0, ?, ?, ?, ?)
+    `, [voucherNo, JVVoucherDate, formattedMiti, userRows[0].UserID, JVRemarks || null, udvRows[0].UDVNo, resolvedMemberID, docClassRows[0].DocClassID, collectorID, totalDr]);
+
+    const journalID = masterRows[0].JournalID;
+    for (const row of resolvedDetails) {
+      await query(`
+        INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital)
+        VALUES (?, ?, ?, ?, ?, ?, 0, 0)
+      `, [journalID, row.rowNo, row.SLID, row.GLID, row.drAmount || null, row.crAmount || null]);
+    }
+
+    return res.status(201).json({ success: true, message: 'Journal voucher inserted successfully.', journalID });
+  } catch (error) {
+    console.error('Journal voucher insert failed:', error);
+    return res.status(500).json({ success: false, message: 'Database error while inserting journal voucher.' });
+  }
+});
+
 app.post("/account/Transaction/JournalMaster", (req, res) => {
   const conn = req.session.conn;
   const menuName = 'Journal Voucher';

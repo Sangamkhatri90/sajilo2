@@ -11303,6 +11303,76 @@ async function loadEarningsData() {
                             });
                     });
                 </script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const journalVoucherDiv = document.getElementById('movableDiv97');
+                            const journalVoucherForm = journalVoucherDiv?.querySelector('#myForm97');
+                            const detailTable = journalVoucherDiv?.querySelector('#jv-new-table');
+
+                            if (!journalVoucherForm || !detailTable) {
+                                return;
+                            }
+
+                            const getCellValue = (cell) => {
+                                const control = cell.querySelector('input, select, textarea');
+                                return (control ? control.value : cell.textContent).trim();
+                            };
+
+                            journalVoucherForm.addEventListener('submit', async (event) => {
+                                event.preventDefault();
+
+                                const details = Array.from(detailTable.tBodies[0]?.rows || [])
+                                    .map((row) => ({
+                                        accountHead: getCellValue(row.cells[2]),
+                                        subHead: getCellValue(row.cells[3]),
+                                        drAmount: getCellValue(row.cells[4]),
+                                        crAmount: getCellValue(row.cells[5])
+                                    }))
+                                    .filter((row) => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+
+                                const payload = {
+                                    voucherNo: journalVoucherDiv.querySelector('#voucherNumberJVM')?.value.trim(),
+                                    docClass: journalVoucherDiv.querySelector('#DEJVMNewDocclass')?.value.trim(),
+                                    JVVoucherDate: journalVoucherDiv.querySelector('#JVVoucherDate')?.value,
+                                    JVCollector: journalVoucherDiv.querySelector('#DEJVnewCollector')?.value.trim(),
+                                    JVSubLedger: journalVoucherDiv.querySelector('#JVSubLedger')?.value.trim(),
+                                    JVRemarks: journalVoucherDiv.querySelector('#JVRemarks')?.value.trim(),
+                                    JVUserName: journalVoucherDiv.querySelector('#JVUserName')?.value.trim(),
+                                    memberID: journalVoucherDiv.querySelector('#JVMemberID')?.value.trim(),
+                                    memberName: journalVoucherDiv.querySelector('#JVMemberName')?.value.trim(),
+                                    details
+                                };
+
+                                try {
+                                    const response = await fetch('/account/Transaction/JournalMaster97', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(payload)
+                                    });
+                                    const result = await response.json();
+                                    if (!response.ok || !result.success) {
+                                        throw new Error(result.message || 'Unable to insert journal voucher.');
+                                    }
+
+                                    if (typeof showCustomAlert === 'function') {
+                                        showCustomAlert(result.message);
+                                    } else {
+                                        alert(result.message);
+                                    }
+                                    journalVoucherForm.reset();
+                                    journalVoucherDiv.style.display = 'none';
+                                } catch (error) {
+                                    if (typeof showCustomAlert === 'function') {
+                                        showCustomAlert(error.message);
+                                    } else {
+                                        alert(error.message);
+                                    }
+                                }
+                            });
+
+                            journalVoucherForm.querySelector('button.jv-button:not([type])')?.setAttribute('type', 'button');
+                        });
+                    </script>
 
 
                 <!--Receipt Voucher Master-->
