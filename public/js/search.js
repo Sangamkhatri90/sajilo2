@@ -132,14 +132,13 @@ document.addEventListener("DOMContentLoaded", function () {
         // Toggle the search panel visibility
         if (searchPanel.style.display === "none" || searchPanel.style.display === "") {
             searchPanel.style.display = "block";
-            movableDiv.style.width = "1490px"; // Adjust width for the movableDiv to accommodate the bigger panel
+            movableDiv.classList.add("jv-search-open");
         } else {
             searchPanel.style.display = "none";
-            movableDiv.style.width = "1027px"; // Restore the original width
+            movableDiv.classList.remove("jv-search-open");
         }
 
-        // Smooth transitions for both the div and panel
-        movableDiv.style.transition = "width 0.3s ease";
+        // Smooth transition for the search panel
         searchPanel.style.transition = "all 0.3s ease";
     });
     });

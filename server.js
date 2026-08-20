@@ -32922,7 +32922,7 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
       return res.status(400).json({ success: false, message: 'User not found.' });
     }
 
-    const mitiRows = await query('SELECT TOP 1 M_Miti FROM tbLocalDate WHERE CONVERT(date, M_date) = CONVERT(date, ?)', [JVVoucherDate]);
+    const mitiRows = await query('SELECT TOP 1 M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE CONVERT(date, M_date) = CONVERT(date, ?)', [JVVoucherDate]);
     if (!mitiRows.length) {
       return res.status(400).json({ success: false, message: 'Voucher date is not configured in the local date table.' });
     }

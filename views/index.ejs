@@ -5458,7 +5458,7 @@
                                         </button>
                                     </a>
                                 </div>
-                                <div style="display: flex;">
+                                <div class="jv-table-section" style="display: flex;">
                                     <!-- Left Panel -->
                                     <fieldset>
                                         <div class="jv-table-container">
@@ -5487,34 +5487,31 @@
 
                                                 <tbody>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="16">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="16">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="16">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="16">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="16">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="16">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="16">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="16">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="16">&nbsp;</td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -5523,7 +5520,7 @@
                                 </div>
                         </form>
                         <!-- Right Panel - Search Form -->
-                        <div id="jv-search" style="margin-top: 25px; margin-right: 10px;">
+                        <div id="jv-search">
                             <fieldset class="jv-fieldset">
                                 <legend class="jv-legend">Search</legend>
                                 <form id="jvSearchForm">
@@ -25250,7 +25247,7 @@ async function loadEarningsData() {
                             </div>
                             <fieldset>
                                 <div class="jv-table-container">
-                                    <table id="jv-new-table" class="ledger-table">
+                                    <table id="jv-new-table2" class="ledger-table">
                                         <thead>
                                             <tr>
                                                 <th>S.No</th>
@@ -25345,7 +25342,7 @@ async function loadEarningsData() {
                             </div>
                             <fieldset>
                                 <div class="jv-table-container">
-                                    <table id="jv-new-table" class="ledger-table">
+                                    <table id="jv-new-table3" class="ledger-table">
                                         <thead>
                                             <tr>
                                                 <th>S.No</th>
@@ -46447,7 +46444,7 @@ async function loadEarningsData() {
                     if (allPostingLedgersDENew.length === 0) {
                         const res = await fetch('/fetchLgrMaster');
                         const data = await res.json();
-                        allPostingLedgersDENew = Array.isArray(data.postingLedgers) ? data.postingLedgers : [];
+                        allPostingLedgersDENew = Array.isArray(data.lgrmaster) ? data.lgrmaster : [];
                     }
 
                     if (allPostingLedgersSubDENew.length === 0) {
@@ -46459,6 +46456,29 @@ async function loadEarningsData() {
 
                 function initTableDropdownDENew(tableId) {
                     const table = document.getElementById(tableId);
+                    if (!table) return;
+
+                    const isBlankRowDENew = (row) => Array.from(row.cells).every(cell => !cell.textContent.trim());
+
+                    const ensureTrailingBlankRowDENew = (tbody) => {
+                        const rows = Array.from(tbody.rows);
+                        const lastRow = rows[rows.length - 1];
+                        if (!lastRow || !isBlankRowDENew(lastRow)) {
+                            const newRow = tbody.insertRow();
+                            for (let i = 0; i < 6; i += 1) {
+                                newRow.insertCell();
+                            }
+                        }
+                    };
+
+                    const markRowTypeDENew = (row, type) => {
+                        row.cells[1].textContent = type;
+                        if (type === 'Dr') {
+                            row.cells[5].textContent = '';
+                        } else if (type === 'Cr') {
+                            row.cells[4].textContent = '';
+                        }
+                    };
 
                     table.addEventListener('click', async (e) => {
                         const cell = e.target.closest('td');
@@ -46467,11 +46487,14 @@ async function loadEarningsData() {
                         const cellIndex = cell.cellIndex;
                         const row = cell.parentElement;
                         const rowIndex = row.rowIndex - 1;
+                        const tbody = row.parentElement;
 
                         // Dr column (colIndex 1) → auto set Dr + serial number
                         if (cellIndex === 1) {
-                            cell.textContent = "Dr";
+                            const nextType = cell.textContent.trim() === 'Cr' ? 'Dr' : 'Cr';
+                            markRowTypeDENew(row, nextType);
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
+                            ensureTrailingBlankRowDENew(tbody);
                             return;
                         }
 
@@ -46481,7 +46504,9 @@ async function loadEarningsData() {
                             await loadPostingLedgersDENew();
                             const opts = allPostingLedgersDENew.map(item => `${item.GLName}`);
                             showDropdownDENew(opts, cell);
-                            row.cells[1].textContent = 'Dr'; // Auto serial number in colIndex 0
+                            if (!row.cells[1].textContent.trim()) {
+                                row.cells[1].textContent = 'Dr';
+                            }
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
                         }
 
@@ -46496,11 +46521,14 @@ async function loadEarningsData() {
                             await loadPostingLedgersDENew();
                             const opts = allPostingLedgersSubDENew.map(item => `${item.SLName}`);
                             showDropdownDENew(opts, cell);
-                            row.cells[1].textContent = 'Dr'; // Auto serial number in colIndex 0
+                            if (!row.cells[1].textContent.trim()) {
+                                row.cells[1].textContent = 'Dr';
+                            }
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
                         }
                         if (cellIndex === 4 || cellIndex === 5) {
                             const oldValue = cell.textContent.trim();
+                            markRowTypeDENew(row, cellIndex === 4 ? 'Dr' : 'Cr');
                             cell.innerHTML = `<input type="number" min="0" step="0.01" value="${oldValue}" style=" width: 30px;
                height: 2vh;
                padding: 2px;
@@ -46519,6 +46547,7 @@ async function loadEarningsData() {
                             // When user leaves input, save the value
                             input.addEventListener('blur', () => {
                                 cell.textContent = input.value || '';
+                                ensureTrailingBlankRowDENew(tbody);
                             });
 
                             // Allow pressing Enter to save
@@ -46527,7 +46556,6 @@ async function loadEarningsData() {
                                     input.blur();
                                 }
                             });
-                            row.cells[1].textContent = 'Dr'; // Auto serial number in colIndex 0
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
                         }
 

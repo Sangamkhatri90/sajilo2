@@ -2,12 +2,12 @@
     position: absolute;
     top: 60px;
     left: 30px;
-    width: 90vw;
-    max-width: 1027px;
+    width: min(90vw, 1027px);
+    max-width: calc(100vw - 60px);
     max-height: 90vh;
-    overflow-y: auto;
+    overflow: hidden;
     box-sizing: border-box;
-    padding-right: 460px;
+    padding: 0;
 }
 
 #movableDiv97 {
@@ -18,28 +18,42 @@
 #jv-search {
   display: none; /* Hidden by default */
   position: absolute;
-  top: 70px;
-  right: 15px;
-  width: min(420px, calc(100% - 30px));
+  top: 76px;
+  right: 20px;
+  width: 410px;
+  max-width: calc(100% - 430px);
+  max-height: calc(90vh - 150px);
+  box-sizing: border-box;
   background: #f4f4f4;
-  padding: 20px;
+  padding: 10px;
   margin: 0;
   opacity: 0; /* Invisible by default */
-  transform: translateX(100%);
-  transition: all 0.3s ease-in-out;
-  z-index: 20;
+  transform: none;
+  transition: opacity 0.2s ease-in-out;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
   border-radius: 8px;
+  overflow-y: auto;
 }
 
 #jv-search[style*="display: block"] {
   opacity: 1; /* Fully visible */
-  transform: translateX(0);
+}
+
+#movableDiv38.jv-search-open .jv-table-section {
+  width: calc(100% - 430px);
+  max-width: none;
+}
+
+#movableDiv38.jv-search-open .jv-table-section > fieldset {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .jv-container {
-    padding: 8px;
-    max-width: 1008px;
+  padding: 0 8px;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .jv-fieldset {
@@ -100,6 +114,10 @@
     overflow-x: auto;
 }
 
+#movableDiv38.jv-search-open .jv-table-container {
+  max-width: none;
+}
+
 .jv-table-container table {
     width: 100%;
     border-collapse: collapse;
@@ -115,12 +133,24 @@
 
 .jv-button-row {
   display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  display: flex;
-  flex-direction:row;
-  gap:15px;
-  margin-bottom: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 10px 0;
+  padding: 0;
+}
+
+.jv-button-row a {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.jv-button-row button {
+  width: auto;
+  justify-content: center;
+  padding: 0 8px;
 }
 
 /* Button styles */
