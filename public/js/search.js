@@ -125,6 +125,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const searchButton = document.getElementById("jv-search-button");
     const movableDiv = document.getElementById("movableDiv38");
     const searchPanel = document.getElementById("jv-search");
+    const closeButton = document.getElementById("closeButton38");
+    const cancelButton = document.getElementById("cancelButton38");
+
+    function closeJournalVoucher() {
+        movableDiv.style.display = "none";
+        searchPanel.style.display = "none";
+        movableDiv.classList.remove("jv-search-open");
+    }
     
     searchButton.addEventListener("click", function (e) {
         e.preventDefault(); // Prevent default button behavior
@@ -141,6 +149,9 @@ document.addEventListener("DOMContentLoaded", function () {
         // Smooth transition for the search panel
         searchPanel.style.transition = "all 0.3s ease";
     });
+
+    closeButton.addEventListener("click", closeJournalVoucher);
+    cancelButton.addEventListener("click", closeJournalVoucher);
     });
 
 //Member Master

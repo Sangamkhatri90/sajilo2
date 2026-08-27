@@ -3,11 +3,37 @@
     top: 60px;
     left: 30px;
     width: min(90vw, 1027px);
-    max-width: calc(100vw - 60px);
-    max-height: 90vh;
-    overflow: hidden;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 72px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     box-sizing: border-box;
     padding: 0;
+}
+
+#movableDiv38 > *,
+#movableDiv38 form {
+  max-width: 100%;
+}
+
+#movableDiv38 fieldset {
+  max-width: 100%;
+  min-width: 0;
+}
+
+#movableDiv38 input,
+#movableDiv38 select,
+#movableDiv38 textarea {
+  max-width: 100%;
+}
+
+#closeButton38 {
+  top: 0;
+  right: 4px;
+  z-index: 10;
+  cursor: pointer;
+  background: transparent;
 }
 
 #movableDiv97 {
@@ -40,8 +66,9 @@
 }
 
 #movableDiv38.jv-search-open .jv-table-section {
-  width: calc(100% - 430px);
+  width: calc(100% - 440px);
   max-width: none;
+  min-width: 0;
 }
 
 #movableDiv38.jv-search-open .jv-table-section > fieldset {
@@ -50,7 +77,7 @@
 }
 
 .jv-container {
-  padding: 0 8px;
+  padding: 10px 8px 0;
     position: relative;
     width: 100%;
     box-sizing: border-box;
@@ -111,11 +138,12 @@
     width: 100%;
     max-width: 970px;
     margin: 0 auto;
-    overflow-x: auto;
+    overflow: auto;
 }
 
 #movableDiv38.jv-search-open .jv-table-container {
   max-width: none;
+  max-height: calc(100vh - 220px);
 }
 
 .jv-table-container table {
@@ -129,6 +157,13 @@
 .jv-table-container td {
   padding: 12px 15px;
   border: 1px solid #000000; /* Bolder border */
+  white-space: nowrap;
+}
+
+.jv-table-container thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .jv-button-row {
@@ -151,6 +186,8 @@
   width: auto;
   justify-content: center;
   padding: 0 8px;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 /* Button styles */
@@ -183,5 +220,52 @@
 .jv-button[type="button"] {
   background-color: #dc3545;
   max-width: 80px;
+}
+
+#jv-search .jv-search-actions {
+  justify-content: space-between;
+  gap: 0;
+  margin: 18px 0 10px;
+}
+
+#jv-search .jv-search-actions > div {
+  flex: 0 0 auto;
+}
+
+#jv-search .jv-search-actions .jv-button {
+  min-width: 92px;
+  max-width: none;
+  min-height: 30px;
+  padding: 6px 18px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  #movableDiv38 {
+    left: 10px !important;
+    top: 10px !important;
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 48px);
+  }
+
+  #movableDiv38.jv-search-open .jv-table-section {
+    width: 100%;
+  }
+
+  #jv-search {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    margin-top: 10px;
+  }
+
+  #movableDiv38 .jv-form-style-horizontal3,
+  #movableDiv38 .rv-form-style-horizontal3 {
+    flex-wrap: wrap;
+  }
 }
 
