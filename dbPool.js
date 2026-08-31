@@ -1,6 +1,8 @@
 const sql = require("msnodesqlv8");
 
-const DEFAULT_QUERY_TIMEOUT_MS = Number(process.env.SQL_QUERY_TIMEOUT_MS || 30000);
+// Some report/search queries legitimately take longer than 30 seconds on a
+// large company database.  The value can still be overridden per deployment.
+const DEFAULT_QUERY_TIMEOUT_MS = Number(process.env.SQL_QUERY_TIMEOUT_MS || 60000);
 const QUERY_LEAK_WARNING_MS = Number(process.env.SQL_QUERY_LEAK_WARNING_MS || 60000);
 const MAX_POOL_SIZE = Number(process.env.SQL_POOL_SIZE || 5);
 

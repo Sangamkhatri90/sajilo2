@@ -195,24 +195,22 @@ app.get("/fetch-fiscal-data", (req, res) => {
               const localDateQuery = `
                 SELECT M_date, M_Miti
                 FROM SAJILODB.dbo.tbLocalDate
-                WHERE M_date IN ('${rawStartDate}', '${rawEndDate}');
+                WHERE M_date IN (?, ?);
               `;
 
-              sql.query(connectionString, localDateQuery, (err3, localDates) => {
+              sql.query(connectionString, localDateQuery, [rawStartDate, rawEndDate], (err3, localDates) => {
                 let startDateLocal = rawStartDate;
                 let endDateLocal = rawEndDate;
 
-
-
                 if (!err3 && Array.isArray(localDates)) {
                   localDates.forEach((row) => {
-                    if (formatDate(row.M_date) === rawStartDate) startDateLocal = formatDate(row.M_Miti);
-                    if (formatDate(row.M_date) === rawEndDate) endDateLocal = formatDate(row.M_Miti);
+                    const rowDate = formatDate(row.M_date);
+                    if (rowDate === rawStartDate && row.M_Miti) startDateLocal = String(row.M_Miti).trim();
+                    if (rowDate === rawEndDate && row.M_Miti) endDateLocal = String(row.M_Miti).trim();
                   });
                 }
 
                 pushOrgData(startDateLocal, endDateLocal);
-                
               });
             } else {
               // AD: use raw dates
@@ -402,7 +400,7 @@ app.post("/select-database", (req, res) => {
 
       // Store database info in session
       req.session.dbName = dbName;
-      req.session.conn = `Server=localhost;Database=${dbName};UID=sa;PWD=123;Driver={ODBC Driver 17 for SQL Server};`;
+      req.session.conn = createConnectionString(dbName);
       req.session.selectedStartDateLocal = startDateInput;
       req.session.selectedEndDateLocal = endDateInput;
 
@@ -457,7 +455,7 @@ app.post("/update-db", (req, res) => {
   }
 
   req.session.dbName = newDbName;
-  req.session.conn = `Server=localhost;Database=${newDbName};UID=sa;PWD=123;Driver={ODBC Driver 17 for SQL Server};`;
+  req.session.conn = createConnectionString(newDbName);
   console.log("Session updated:", req.session);
 
   res.render("index", { data: [], searchedMemberId: [] });
@@ -10661,11 +10659,14 @@ app.get("/api/system-settings/system", (req, res) => {
 
     const row = rows?.[0] || {};
 
+    const dateType = (row.DateType || "AD").trim();
+    const defaultDateFormat = dateType === "LD" ? "DD/MM/YYYY" : "YYYY-MM-DD";
+
     res.json({
       success: true,
       settings: {
-        DateType: (row.DateType || "AD").trim(),
-        DateFormat: (row.DateFormat || "yyyy/MM/dd").trim(),
+        DateType: dateType,
+        DateFormat: (row.DateFormat || defaultDateFormat).trim(),
         LockNew: !!row.LockNew,
         LockEdit: !!row.LockEdit,
         LockDelete: !!row.LockDelete,
@@ -10691,7 +10692,8 @@ app.post("/api/system-settings/system", (req, res) => {
   const conn = req.session.conn;
   const body = req.body || {};
   const dateType = body.DateType === "LD" ? "LD" : "AD";
-  const dateFormat = String(body.DateFormat || "yyyy/MM/dd").trim().slice(0, 10);
+  const defaultDateFormat = dateType === "LD" ? "DD/MM/YYYY" : "YYYY-MM-DD";
+  const dateFormat = String(body.DateFormat || defaultDateFormat).trim().slice(0, 20);
   const defaultVoucherAction = body.DefaultVoucherAction === "P" ? "P" : "H";
   const lockDateFrom = toNullableDate(body.LockDateFrom);
   const lockDateTo = toNullableDate(body.LockDateTo);
@@ -22317,11 +22319,10 @@ SELECT
     um.UserName,
     ul.ComputerName,
     ul.WinUserName,
-    -- Convert M_Miti from dd/mm/yyyy to yyyy-mm-dd format
-    CONCAT(CONVERT(varchar, TRY_CONVERT(date, ld.M_Miti, 103), 23), ' ', FORMAT(ul.LoginDateTime, 'HH:mm:ss')) AS LoginMiti,
+    CONCAT(ld.M_Miti, ' ', FORMAT(ul.LoginDateTime, 'HH:mm:ss')) AS LoginMiti,
     CASE 
         WHEN ul.LoginID = (SELECT LoginID FROM LastLoginID) THEN 'CurrentLogin'
-        ELSE CONCAT(CONVERT(varchar, TRY_CONVERT(date, ld2.M_Miti, 103), 23), ' ', FORMAT(ul.LogoutDateTime, 'HH:mm:ss'))
+        ELSE CONCAT(ld2.M_Miti, ' ', FORMAT(ul.LogoutDateTime, 'HH:mm:ss'))
     END AS LogoutMiti
 FROM tbUserLog ul
 LEFT JOIN tbUserMaster um ON ul.UserID = um.UserID
@@ -22353,13 +22354,12 @@ app.get('/get-users-hit-report', (req, res) => {
     ul.ComputerName, 
     ul.WinUserName, 
     um.UserName,
-    -- Convert M_Miti from dd/mm/yyyy to yyyy-mm-dd format
-    CONCAT(CONVERT(varchar, TRY_CONVERT(date, ld.M_Miti, 103), 23), ' ', FORMAT(rh.HitTime, 'HH:mm:ss')) AS LoginMiti,
+    CONCAT(ld.M_Miti, ' ', FORMAT(rh.HitTime, 'HH:mm:ss')) AS LoginMiti,
     CASE 
         WHEN rh.CountID = (SELECT CountID FROM LastCountID) THEN 'CurrentLogin'
         ELSE 
             CONCAT(
-                CONVERT(varchar, TRY_CONVERT(date, ld2.M_Miti, 103), 23), ' ', 
+                ld2.M_Miti, ' ', 
                 FORMAT(rh.CloseTime, 'HH:mm:ss')
             )
     END AS LogoutMiti
@@ -29893,8 +29893,11 @@ app.post("/search-journal-voucher", (req, res) => {
     JVAmount
   } = req.body;
 
+  // LD values are stored in JV_Miti as YYYY/MM/DD.  AD values are sent by the
+  // date input as YYYY-MM-DD and must be compared with the datetime JV_Date.
   const JVDateFromm = JVDateFrom ? JVDateFrom.replace(/-/g, '/') : null;
   const JVDateToo = JVDateTo ? JVDateTo.replace(/-/g, '/') : null;
+  const normalizeAdDate = (value) => value ? String(value).trim().replace(/\//g, '-') : null;
 
   const conn = req.session.conn;
 
@@ -29906,7 +29909,7 @@ app.post("/search-journal-voucher", (req, res) => {
       return res.status(500).json({ error: "Database error" });
     }
 
-    const dateType = result[0]?.DateType?.trim();
+    const dateType = result[0]?.DateType?.trim().toUpperCase();
     let dateFormat = result[0]?.DateFormat?.trim() || 'yyyy/MM/dd';
 
     if (!dateType) {
@@ -29939,18 +29942,8 @@ app.post("/search-journal-voucher", (req, res) => {
         m.Remarks,
         dc.DocClassName,
         cc.CollectorName,
-    (
-  SELECT TOP 1 lm.GLName
-  FROM tbJournalDetails jd
-  INNER JOIN tbLedgerMaster lm ON jd.GLID = lm.GLID
-  WHERE jd.JournalID = m.JournalID
-) AS GLName,
-(
-  SELECT TOP 1 lm.SavingorLoan
-  FROM tbJournalDetails jd
-  INNER JOIN tbLedgerMaster lm ON jd.GLID = lm.GLID
-  WHERE jd.JournalID = m.JournalID
-) AS SavingorLoan,
+        ledger.GLName,
+        ledger.SavingorLoan,
 
 
         uc.UserName AS Creator,
@@ -29976,6 +29969,14 @@ app.post("/search-journal-voucher", (req, res) => {
       LEFT JOIN SAJILODB.dbo.tbUserMaster up ON m.PostUserID = up.UserID
       LEFT JOIN tbDocClassMaster dc ON m.DocClassID = dc.DocClassID
       LEFT JOIN tbCollectorMaster cc ON m.CollectorID = cc.CollectorID
+      OUTER APPLY (
+        SELECT TOP 1
+          lm.GLName,
+          lm.SavingorLoan
+        FROM tbJournalDetails jd
+        INNER JOIN tbLedgerMaster lm ON jd.GLID = lm.GLID
+        WHERE jd.JournalID = m.JournalID
+      ) ledger
      
 
 
@@ -30018,8 +30019,14 @@ app.post("/search-journal-voucher", (req, res) => {
       `;
 
       if (JVDateFrom && JVDateTo) {
-        fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
-        params.push(JVDateFrom, JVDateTo);
+        // An end value such as 2025-04-17 means the whole calendar day, not
+        // only 2025-04-17 00:00:00.  The half-open range also keeps the
+        // datetime column index usable.
+        fromToFilter += `
+          AND m.JV_Date >= CONVERT(date, ?, 23)
+          AND m.JV_Date < DATEADD(day, 1, CONVERT(date, ?, 23))
+        `;
+        params.push(normalizeAdDate(JVDateFrom), normalizeAdDate(JVDateTo));
       }
 
     } else {
@@ -30116,6 +30123,150 @@ app.post("/search-journal-voucher", (req, res) => {
       res.json(rows);
     });
   });
+});
+
+// Selected Journal Voucher actions (used by the Journal Voucher Master grid).
+// The lookup also supports rows rendered by an older cached search script that
+// does not yet include data-journal-id.
+app.get('/api/journal-vouchers/lookup', async (req, res) => {
+  const voucherNo = String(req.query.voucherNo || '').trim();
+  if (!req.session.conn || !voucherNo) return res.status(400).json({ success: false, message: 'Voucher number is required.' });
+  try {
+    const rows = await sql.promises.query(req.session.conn, 'SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo]);
+    if (!rows.length) return res.status(404).json({ success: false, message: 'Journal voucher not found.' });
+    res.json({ success: true, journalID: rows[0].JournalID });
+  } catch (error) {
+    console.error('Journal voucher lookup failed:', error);
+    res.status(500).json({ success: false, message: 'Unable to find journal voucher.' });
+  }
+});
+
+app.get('/api/journal-vouchers/:journalID', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10);
+  if (!req.session.conn || !Number.isInteger(journalID)) return res.status(400).json({ success: false, message: 'Invalid journal voucher.' });
+  try {
+    const [master, details] = await Promise.all([
+      sql.promises.query(req.session.conn, `
+        SELECT m.JournalID, m.VoucherNo, CONVERT(varchar(10), m.JV_Date, 23) AS JV_Date,
+               m.JV_Miti, m.Remarks, dc.DocClassName, cc.CollectorName,
+               m.MemberID, mm.MemberName
+        FROM tbJournalMaster m
+        LEFT JOIN tbDocClassMaster dc ON dc.DocClassID = m.DocClassID
+        LEFT JOIN tbCollectorMaster cc ON cc.CollectorID = m.CollectorID
+        LEFT JOIN tbMemberMaster mm ON mm.MemberID = m.MemberID
+        WHERE m.JournalID = ?`, [journalID]),
+      sql.promises.query(req.session.conn, `
+        SELECT jd.SNo, lm.GLName AS accountHead, sl.SLName AS subHead, jd.DrAmount, jd.CrAmount
+        FROM tbJournalDetails jd
+        LEFT JOIN tbLedgerMaster lm ON lm.GLID = jd.GLID
+        LEFT JOIN tbSubLedgerMaster sl ON sl.SLID = jd.SLID
+        WHERE jd.JournalID = ? ORDER BY jd.SNo`, [journalID])
+    ]);
+    if (!master.length) return res.status(404).json({ success: false, message: 'Journal voucher not found.' });
+    res.json({ success: true, voucher: master[0], details });
+  } catch (error) {
+    console.error('Journal voucher load failed:', error);
+    res.status(500).json({ success: false, message: 'Unable to load journal voucher.' });
+  }
+});
+
+app.patch('/api/journal-vouchers/:journalID', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10);
+  const { voucherNo, voucherDate, remarks, docClass, collector, memberID, details } = req.body || {};
+  if (!req.session.conn || !Number.isInteger(journalID) || !voucherNo || !voucherDate || !docClass) {
+    return res.status(400).json({ success: false, message: 'Voucher number, date, and doc class are required.' });
+  }
+  try {
+    const [docRows, collectorRows] = await Promise.all([
+      sql.promises.query(req.session.conn, 'SELECT TOP 1 DocClassID FROM tbDocClassMaster WHERE DocClassName = ? OR DocClassAlias = ?', [docClass, docClass]),
+      collector ? sql.promises.query(req.session.conn, 'SELECT TOP 1 CollectorID FROM tbCollectorMaster WHERE CollectorName = ? OR CollectorAlias = ?', [collector, collector]) : Promise.resolve([])
+    ]);
+    if (!docRows.length) return res.status(400).json({ success: false, message: 'Doc class not found.' });
+    if (collector && !collectorRows.length) return res.status(400).json({ success: false, message: 'Collector not found.' });
+    const duplicate = await sql.promises.query(req.session.conn, 'SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ? AND JournalID <> ?', [voucherNo, journalID]);
+    if (duplicate.length) return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
+    const suppliedDetails = Array.isArray(details) ? details.map((row, index) => ({
+      rowNo: index + 1,
+      accountHead: String(row.accountHead || '').trim(),
+      subHead: String(row.subHead || '').trim(),
+      drAmount: Number(row.drAmount || 0),
+      crAmount: Number(row.crAmount || 0)
+    })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount) : [];
+    const resolvedDetails = [];
+    for (const row of suppliedDetails) {
+      if (!row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount < 0 || row.crAmount < 0) {
+        return res.status(400).json({ success: false, message: `Enter a valid account head and amounts on row ${row.rowNo}.` });
+      }
+      const ledgerRows = await sql.promises.query(req.session.conn, 'SELECT TOP 1 GLID FROM tbLedgerMaster WHERE GLName = ? OR GlAlias = ?', [row.accountHead, row.accountHead]);
+      if (!ledgerRows.length) return res.status(400).json({ success: false, message: `Account head not found on row ${row.rowNo}.` });
+      let slid = null;
+      if (row.subHead) {
+        const subRows = await sql.promises.query(req.session.conn, 'SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE GLID = ? AND (SLName = ? OR SlAlias = ?)', [ledgerRows[0].GLID, row.subHead, row.subHead]);
+        if (!subRows.length) return res.status(400).json({ success: false, message: `Sub head not found on row ${row.rowNo}.` });
+        slid = subRows[0].SLID;
+      }
+      resolvedDetails.push({ ...row, GLID: ledgerRows[0].GLID, SLID: slid });
+    }
+    if (suppliedDetails.length && Math.abs(suppliedDetails.reduce((sum, row) => sum + row.drAmount, 0) - suppliedDetails.reduce((sum, row) => sum + row.crAmount, 0)) > 0.005) {
+      return res.status(400).json({ success: false, message: 'Total debit and credit amounts must be equal.' });
+    }
+
+    await sql.promises.query(req.session.conn, `
+      UPDATE tbJournalMaster
+      SET VoucherNo = ?, JV_Date = CONVERT(date, ?, 23),
+          JV_Miti = COALESCE((SELECT TOP 1 M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE CONVERT(date, M_date) = CONVERT(date, ?, 23)), JV_Miti),
+          Remarks = ?, DocClassID = ?, CollectorID = ?, MemberID = ?, ModifiedDate = GETDATE()
+      WHERE JournalID = ?`, [voucherNo, String(voucherDate).replace(/\//g, '-'), String(voucherDate).replace(/\//g, '-'), remarks || null, docRows[0].DocClassID, collectorRows[0]?.CollectorID || null, Number.parseInt(memberID, 10) || null, journalID]);
+    if (suppliedDetails.length) {
+      await sql.promises.query(req.session.conn, 'DELETE FROM tbJournalDetails WHERE JournalID = ?', [journalID]);
+      for (const row of resolvedDetails) {
+        await sql.promises.query(req.session.conn, `INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, ?, ?, ?, ?, 0, 0)`, [journalID, row.rowNo, row.SLID, row.GLID, row.drAmount, row.crAmount]);
+      }
+      await sql.promises.query(req.session.conn, 'UPDATE tbJournalMaster SET TotalAmountDC = ? WHERE JournalID = ?', [suppliedDetails.reduce((sum, row) => sum + row.drAmount, 0), journalID]);
+    }
+    res.json({ success: true, message: 'Journal voucher updated successfully.' });
+  } catch (error) {
+    console.error('Journal voucher update failed:', error);
+    res.status(500).json({ success: false, message: 'Unable to update journal voucher.' });
+  }
+});
+
+app.delete('/api/journal-vouchers/:journalID', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10);
+  if (!req.session.conn || !Number.isInteger(journalID)) return res.status(400).json({ success: false, message: 'Invalid journal voucher.' });
+  try {
+    await sql.promises.query(req.session.conn, 'DELETE FROM tbJournalDetails WHERE JournalID = ?', [journalID]);
+    await sql.promises.query(req.session.conn, 'DELETE FROM tbJournalMaster WHERE JournalID = ?', [journalID]);
+    res.json({ success: true, message: 'Journal voucher deleted successfully.' });
+  } catch (error) {
+    console.error('Journal voucher delete failed:', error);
+    res.status(500).json({ success: false, message: 'Unable to delete journal voucher.' });
+  }
+});
+
+app.post('/api/journal-vouchers/:journalID/copy', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10);
+  const voucherNo = String(req.body?.voucherNo || '').trim();
+  if (!req.session.conn || !Number.isInteger(journalID) || !voucherNo) return res.status(400).json({ success: false, message: 'A new voucher number is required.' });
+  try {
+    const duplicate = await sql.promises.query(req.session.conn, 'SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo]);
+    if (duplicate.length) return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
+    const copiedMaster = await sql.promises.query(req.session.conn, `
+      INSERT INTO tbJournalMaster (VoucherNo, JV_Date, JV_Miti, CreatedDate, CreatedUserID, Remarks, UDVNo, Prov, MemberID, DocClassID, CollectorID, TotalAmountDC)
+      OUTPUT INSERTED.JournalID
+      SELECT ?, JV_Date, JV_Miti, GETDATE(), CreatedUserID, Remarks, UDVNo, Prov, MemberID, DocClassID, CollectorID, TotalAmountDC
+      FROM tbJournalMaster WHERE JournalID = ?`, [voucherNo, journalID]);
+    if (!copiedMaster.length) return res.status(404).json({ success: false, message: 'Journal voucher not found.' });
+    const newJournalID = copiedMaster[0].JournalID;
+    await sql.promises.query(req.session.conn, `
+      INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital)
+      SELECT ?, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital
+      FROM tbJournalDetails WHERE JournalID = ?`, [newJournalID, journalID]);
+    res.status(201).json({ success: true, message: 'Journal voucher copied successfully.', journalID: newJournalID });
+  } catch (error) {
+    console.error('Journal voucher copy failed:', error);
+    res.status(500).json({ success: false, message: 'Unable to copy journal voucher.' });
+  }
 });
 
 //Transaction voucher Backend
@@ -32871,6 +33022,7 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
     memberName,
     details
   } = req.body;
+  console.log("Received Journal Voucher data:", req.body);
 
   const rows = Array.isArray(details) ? details : [];
   const cleanRows = rows
@@ -32887,8 +33039,13 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
     return res.status(400).json({ success: false, message: 'Voucher date, number, doc class, and at least one detail row are required.' });
   }
 
-  if (cleanRows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount < 0 || row.crAmount < 0 || (row.drAmount > 0 && row.crAmount > 0) || (row.drAmount === 0 && row.crAmount === 0))) {
-    return res.status(400).json({ success: false, message: 'Each detail row must contain an account and either a debit or credit amount.' });
+  if (cleanRows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount < 0 || row.crAmount < 0 || (row.drAmount === 0 && row.crAmount === 0))) {
+    return res.status(400).json({ success: false, message: 'Each detail row must contain an account and at least one debit or credit amount.' });
+  }
+
+  const rowMismatch = cleanRows.find(row => (row.drAmount > 0 || row.crAmount > 0) && Math.abs(row.drAmount - row.crAmount) > 0.005);
+  if (rowMismatch) {
+    return res.status(400).json({ success: false, message: 'Dr and Cr value should be same.' });
   }
 
   const totalDr = cleanRows.reduce((total, row) => total + row.drAmount, 0);
@@ -32900,6 +33057,50 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
   const query = (text, params = []) => new Promise((resolve, reject) => {
     sql.query(conn, text, params, (error, result) => error ? reject(error) : resolve(result || []));
   });
+
+  const normalizeSqlDateValue = (value) => {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (value instanceof Date) {
+      return value.toISOString().slice(0, 10);
+    }
+
+    let raw = String(value).trim();
+    if (!raw) {
+      return null;
+    }
+
+    raw = raw.replace(/^\s+|\s+$/g, '');
+    raw = raw.replace(/\.(\d{3})Z$/, '');
+    raw = raw.replace(/T\d{2}:\d{2}:\d{2}(\.\d+)?Z?$/, '');
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return raw;
+    }
+
+    if (/^\d{4}\/\d{2}\/\d{2}$/.test(raw)) {
+      return raw.replace(/\//g, '-');
+    }
+
+    if (/^\d{2}[/-]\d{2}[/-]\d{4}$/.test(raw)) {
+      const [day, month, year] = raw.replace(/-/g, '/').split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    if (/^\d{4}[/-]\d{2}[/-]\d{2}$/.test(raw)) {
+      const [year, month, day] = raw.replace(/-/g, '/').split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    const dt = new Date(raw);
+    if (!Number.isNaN(dt.getTime())) {
+      return dt.toISOString().slice(0, 10);
+    }
+
+    return null;
+  };
 
   try {
     const duplicate = await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo]);
@@ -32922,9 +33123,59 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
       return res.status(400).json({ success: false, message: 'User not found.' });
     }
 
-    const mitiRows = await query('SELECT TOP 1 M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE CONVERT(date, M_date) = CONVERT(date, ?)', [JVVoucherDate]);
-    if (!mitiRows.length) {
-      return res.status(400).json({ success: false, message: 'Voucher date is not configured in the local date table.' });
+    const systemSettingsRows = await query('SELECT TOP 1 DateType FROM dbo.tbSystemSettings');
+    const systemDateType = String(systemSettingsRows[0]?.DateType || 'AD').trim().toUpperCase();
+
+    let resolvedVoucherDate = JVVoucherDate;
+    let resolvedMiti = '';
+
+    if (systemDateType === 'LD') {
+      const rawVoucherDate = String(JVVoucherDate || '').trim();
+      const dateCandidates = new Set();
+      if (rawVoucherDate) {
+        dateCandidates.add(rawVoucherDate);
+        dateCandidates.add(rawVoucherDate.replace(/\//g, '-'));
+        dateCandidates.add(rawVoucherDate.replace(/-/g, '/'));
+
+        if (/^\d{2}[/-]\d{2}[/-]\d{4}$/.test(rawVoucherDate)) {
+          const [dd, mm, yyyy] = rawVoucherDate.replace(/-/g, '/').split('/');
+          dateCandidates.add(`${yyyy}/${mm}/${dd}`);
+          dateCandidates.add(`${yyyy}-${mm}-${dd}`);
+        }
+
+        if (/^\d{4}[/-]\d{2}[/-]\d{2}$/.test(rawVoucherDate)) {
+          const [yyyy, mm, dd] = rawVoucherDate.replace(/-/g, '/').split('/');
+          dateCandidates.add(`${dd}/${mm}/${yyyy}`);
+          dateCandidates.add(`${dd}-${mm}-${yyyy}`);
+        }
+      }
+
+      let localDateRows = [];
+      for (const candidate of dateCandidates) {
+        const candidateRows = await query(
+          'SELECT TOP 1 M_Miti, M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ? OR CONVERT(date, M_date) = CONVERT(date, ?)',
+          [candidate, candidate]
+        );
+
+        if (candidateRows.length) {
+          localDateRows = candidateRows;
+          break;
+        }
+      }
+
+      if (!localDateRows.length) {
+        return res.status(400).json({ success: false, message: 'Voucher date is not configured in the local date table.' });
+      }
+
+      resolvedVoucherDate = localDateRows[0].M_date;
+      resolvedMiti = String(localDateRows[0].M_Miti || '').trim();
+    } else {
+      resolvedMiti = '';
+    }
+
+    const safeVoucherDate = normalizeSqlDateValue(resolvedVoucherDate) || normalizeSqlDateValue(JVVoucherDate);
+    if (!safeVoucherDate) {
+      return res.status(400).json({ success: false, message: 'Voucher date is invalid.' });
     }
 
     let resolvedMemberID = Number.parseInt(memberID, 10);
@@ -32945,8 +33196,8 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
       collectorID = collectorRows[0].CollectorID;
     }
 
-    const journalMiti = String(mitiRows[0].M_Miti).split('/');
-    const formattedMiti = journalMiti.length === 3 ? `${journalMiti[2]}/${journalMiti[1]}/${journalMiti[0]}` : mitiRows[0].M_Miti;
+    const journalMiti = String(resolvedMiti || '').split('/');
+    const formattedMiti = journalMiti.length === 3 ? `${journalMiti[2]}/${journalMiti[1]}/${journalMiti[0]}` : resolvedMiti;
     const resolvedDetails = [];
     for (const row of cleanRows) {
       const ledgerRows = await query('SELECT TOP 1 GLID FROM tbLedgerMaster WHERE GLName = ? OR GlAlias = ?', [row.accountHead, row.accountHead]);
@@ -32969,7 +33220,7 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
       INSERT INTO tbJournalMaster (VoucherNo, JV_Date, JV_Miti, CreatedDate, CreatedUserID, Remarks, UDVNo, Prov, MemberID, DocClassID, CollectorID, TotalAmountDC)
       OUTPUT INSERTED.JournalID
       VALUES (?, ?, ?, GETDATE(), ?, ?, ?, 0, ?, ?, ?, ?)
-    `, [voucherNo, JVVoucherDate, formattedMiti, userRows[0].UserID, JVRemarks || null, udvRows[0].UDVNo, resolvedMemberID, docClassRows[0].DocClassID, collectorID, totalDr]);
+    `, [voucherNo, safeVoucherDate, formattedMiti, userRows[0].UserID, JVRemarks || null, udvRows[0].UDVNo, resolvedMemberID, docClassRows[0].DocClassID, collectorID, totalDr]);
 
     const journalID = masterRows[0].JournalID;
     for (const row of resolvedDetails) {
@@ -34815,16 +35066,9 @@ app.post("/api/savingToShareTransferProcess", async (req, res) => {
 
 
 
-// ✅ Convert YYYY-MM-DD → DD/MM/YYYY
-const convertToNepaliFormat = (dateStr) => {
-  const [yyyy, mm, dd] = dateStr.split("-");
-  return `${dd}/${mm}/${yyyy}`;
-};
-// ✅ Convert YYYY-MM-DD → DD/MM/YYYY
-const convertToNepaliFormat2 = (dateStr) => {
-  const [yyyy, mm, dd] = dateStr.split("-");
-  return `${yyyy}/${mm}/${dd}`;
-};
+// No formatter conversion: keep the original date values as-is.
+const convertToNepaliFormat = (dateStr) => dateStr || "";
+const convertToNepaliFormat2 = (dateStr) => dateStr || "";
 
 app.post('/updateFiscalyr', (req, res) => {
   const conn = req.session.conn;
@@ -35297,11 +35541,9 @@ app.post('/collector/multi-report', (req, res) => {
 });
 
 
-// 🔹 Date formatter
+// No formatter conversion: keep the original date value as-is.
 function formatADDate(dateStr) {
-  if (!dateStr) return null;
-  const [dd, mm, yyyy] = dateStr.split('/');
-  return `${yyyy}-${mm}-${dd}`;
+  return dateStr || null;
 }
 
 

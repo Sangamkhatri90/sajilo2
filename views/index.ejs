@@ -11162,7 +11162,7 @@ async function loadEarningsData() {
                                     </div>
                                     <div style="margin-left: 20px; max-width: 40px;">
                                         <label for="">Voucher Date</label>
-                                        <input type="date" class="jv-date" name="JVVoucherDate" id="JVVoucherDate">
+                                        <input type="date" class="currentlocaldate" name="JVVoucherDate" id="JVVoucherDate">
                                     </div>
                                 </div>
                                 <div class="jv-form-style-horizontal3">
@@ -11324,6 +11324,20 @@ async function loadEarningsData() {
                                         crAmount: getCellValue(row.cells[5])
                                     }))
                                     .filter((row) => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+
+                                for (const row of details) {
+                                    const drValue = Number(row.drAmount || 0);
+                                    const crValue = Number(row.crAmount || 0);
+                                    if ((drValue > 0 || crValue > 0) && Math.abs(drValue - crValue) > 0.005) {
+                                        const msg = 'Dr and Cr value should be same.';
+                                        if (typeof showCustomAlert === 'function') {
+                                            showCustomAlert(msg);
+                                        } else {
+                                            alert(msg);
+                                        }
+                                        return;
+                                    }
+                                }
 
                                 const payload = {
                                     voucherNo: journalVoucherDiv.querySelector('#voucherNumberJVM')?.value.trim(),
@@ -26618,18 +26632,32 @@ async function loadEarningsData() {
                                 listItem.addEventListener('click', () => {
                                     const [startDate, endDate] = item.split(' - ');
 
-                                    const formatForInput = (nepDate) => {
-                                        const [dd, mm, yyyy] = nepDate.split('/');
-                                        return `${yyyy}-${mm}-${dd}`; // for input[type="date"]
+                                    const formatForInput = (date) => {
+                                        const value = date.trim();
+                                        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+                                        let match = value.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
+                                        if (match) {
+                                            const [, year, month, day] = match;
+                                            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                                        }
+
+                                        match = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+                                        if (match) {
+                                            const [, day, month, year] = match;
+                                            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                                        }
+
+                                        return '';
                                     };
 
                                     const formatForDisplay = (nepDate) => {
                                         const [dd, mm, yyyy] = nepDate.split('/');
-                                        return `${yyyy}/${mm}/${dd}`; // for display elements
+                                        return `${dd}/${yyyy}/${mm}/`; // for display elements
                                     };
 
                                     // Update all input fields with matching classes
-                                    document.querySelectorAll('.start-date-local' && '#setfiscalstartyear').forEach(input => {
+                                    document.querySelectorAll('.start-date-local').forEach(input => {
                                         if (input.tagName === 'INPUT') {
                                             input.value = formatForInput(startDate);
                                         }
@@ -26640,8 +26668,12 @@ async function loadEarningsData() {
                                         console.log('hh', formatForInput(startDate))
                                     });
 
-                                    document.querySelectorAll('.end-date-local' && '#setfiscalendyear').forEach(input => {
-                                        input.value = formatForInput(endDate);
+                                    document.querySelectorAll('.end-date-local').forEach(input => {
+                                        if (input.tagName === 'INPUT') {
+                                            input.value = formatForInput(endDate);
+                                        } else {
+                                            input.innerText = formatForInput(endDate);
+                                        }
                                     });
 
                                     // Optional: update display divs too
@@ -46471,10 +46503,18 @@ async function loadEarningsData() {
 
                     const markRowTypeDENew = (row, type) => {
                         row.cells[1].textContent = type;
-                        if (type === 'Dr') {
-                            row.cells[5].textContent = '';
-                        } else if (type === 'Cr') {
-                            row.cells[4].textContent = '';
+                    };
+
+                    const validateRowAmountsDENew = (row) => {
+                        const drValue = Number.parseFloat(row.cells[4]?.textContent.trim() || '0') || 0;
+                        const crValue = Number.parseFloat(row.cells[5]?.textContent.trim() || '0') || 0;
+
+                        if (drValue > 0 && crValue > 0 && Math.abs(drValue - crValue) > 0.005) {
+                            throw new Error('Dr and Cr value should be same.');
+                        }
+
+                        if ((drValue > 0 || crValue > 0) && Math.abs(drValue - crValue) > 0.005 && !(drValue === 0 || crValue === 0)) {
+                            throw new Error('Dr and Cr value should be same.');
                         }
                     };
 
@@ -46487,12 +46527,11 @@ async function loadEarningsData() {
                         const rowIndex = row.rowIndex - 1;
                         const tbody = row.parentElement;
 
-                        // Dr column (colIndex 1) → auto set Dr + serial number
+                        // Dr/Cr cell: allow user to choose row type while keeping both amount fields editable.
                         if (cellIndex === 1) {
-                            const nextType = cell.textContent.trim() === 'Cr' ? 'Dr' : 'Cr';
+                            const nextType = cell.textContent.trim() === 'Dr' ? 'Cr' : 'Dr';
                             markRowTypeDENew(row, nextType);
-                            row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
-                            ensureTrailingBlankRowDENew(tbody);
+                            row.cells[0].textContent = rowIndex + 1;
                             return;
                         }
 
@@ -46525,8 +46564,15 @@ async function loadEarningsData() {
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
                         }
                         if (cellIndex === 4 || cellIndex === 5) {
+                            const isDrCell = cellIndex === 4;
                             const oldValue = cell.textContent.trim();
-                            markRowTypeDENew(row, cellIndex === 4 ? 'Dr' : 'Cr');
+                            const otherCell = row.cells[isDrCell ? 5 : 4];
+
+                            if (!row.cells[1].textContent.trim()) {
+                                row.cells[1].textContent = isDrCell ? 'Dr' : 'Cr';
+                            }
+
+                            markRowTypeDENew(row, row.cells[1].textContent.trim() || (isDrCell ? 'Dr' : 'Cr'));
                             cell.innerHTML = `<input type="number" min="0" step="0.01" value="${oldValue}" style=" width: 30px;
                height: 2vh;
                padding: 2px;
@@ -46544,7 +46590,13 @@ async function loadEarningsData() {
 
                             // When user leaves input, save the value
                             input.addEventListener('blur', () => {
-                                cell.textContent = input.value || '';
+                                const rawValue = input.value.trim();
+                                cell.textContent = rawValue || '';
+                                try {
+                                    validateRowAmountsDENew(row);
+                                } catch (error) {
+                                    showCustomAlert ? showCustomAlert(error.message) : alert(error.message);
+                                }
                                 ensureTrailingBlankRowDENew(tbody);
                             });
 
@@ -46620,6 +46672,8 @@ async function loadEarningsData() {
                 // Initialize for both tables
                 initTableDropdownDENew('rv-new-table');
                 initTableDropdownDENew('jv-new-table');
+                initTableDropdownDENew('jv-new-table2');
+                initTableDropdownDENew('jv-new-table3');
                 initTableDropdownDENew('pv-new-table');
                 initTableDropdownDENew('mbv-new-table');
             </script>
@@ -48043,6 +48097,9 @@ async function loadEarningsData() {
 
             <script>
                 // Handle row selection in the results table
+                // Superseded by /js/journalVoucherActions.js. Kept here only to
+                // avoid changing unrelated legacy markup.
+                if (false) {
                 const tableForDEJVMEdit = document.getElementById('JVTablevalues');
                 const DEJVMEditButton = document.getElementById('toggleButton182');
                 let selectedRowForDEJVMEdit = null;  // To store the selected row data
@@ -48187,6 +48244,7 @@ async function loadEarningsData() {
                     editForm.style.display = 'none'; // Hide the form on cancel
                     console.log('Edit form closed.');
                 });
+                }
 
             </script>
             
@@ -50870,6 +50928,7 @@ async function loadEarningsData() {
 
             <script src="/js/date.js"></script>
             <script src="/js/searchData.js"></script>
+            <script src="/js/journalVoucherActions.js"></script>
 
             <script src="/js/search.js"></script>
             

@@ -135,6 +135,25 @@ document.addEventListener("DOMContentLoaded", () => {
     alert(message);
   }
 
+  function getDateFormatForType(dateType) {
+    return dateType === "LD" ? "DD/MM/YYYY" : "YYYY-MM-DD";
+  }
+
+  function syncDateFormatInput() {
+    const dateType = fields.dateLD?.checked ? "LD" : "AD";
+    const defaultFormat = getDateFormatForType(dateType);
+
+    if (!fields.dateFormat) return;
+    const currentValue = (fields.dateFormat.value || "").trim();
+
+    if (!currentValue || currentValue === "yyyy/MM/dd" || currentValue === "dd/MM/yyyy" || currentValue === "YYYY-MM-DD" || currentValue === "DD/MM/YYYY") {
+      fields.dateFormat.value = defaultFormat;
+      return;
+    }
+
+    fields.dateFormat.value = currentValue;
+  }
+
   function setChecked(element, checked) {
     if (element) element.checked = !!checked;
   }
@@ -253,9 +272,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function applySystemSettings(settings) {
-    setChecked(fields.dateAD, settings.DateType !== "LD");
-    setChecked(fields.dateLD, settings.DateType === "LD");
-    setValue(fields.dateFormat, settings.DateFormat || "yyyy/MM/dd");
+    const dateType = settings.DateType === "LD" ? "LD" : "AD";
+    setChecked(fields.dateAD, dateType !== "LD");
+    setChecked(fields.dateLD, dateType === "LD");
+    const configuredFormat = String(settings.DateFormat || "").trim();
+    setValue(fields.dateFormat, configuredFormat || getDateFormatForType(dateType));
+    syncDateFormatInput();
     setChecked(fields.showLastDate, settings.ShowLastDate);
     setChecked(fields.defaultHold, settings.DefaultVoucherAction !== "P");
     setChecked(fields.defaultPost, settings.DefaultVoucherAction === "P");
@@ -434,7 +456,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return {
       DateType: fields.dateLD?.checked ? "LD" : "AD",
-      DateFormat: fields.dateFormat?.value || "yyyy/MM/dd",
+      DateFormat: fields.dateFormat?.value || getDateFormatForType(fields.dateLD?.checked ? "LD" : "AD"),
       ShowLastDate: fields.showLastDate?.checked || false,
       DefaultVoucherAction: fields.defaultPost?.checked ? "P" : "H",
       LockNew: fields.lockNew?.checked || false,
@@ -651,6 +673,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   fields.lockDateEnabled?.addEventListener("change", toggleLockDates);
+  fields.dateAD?.addEventListener("change", syncDateFormatInput);
+  fields.dateLD?.addEventListener("change", syncDateFormatInput);
   mapping2Fields.dayClosing?.addEventListener("change", toggleDayCloseMode);
   miscFields.dayStart?.addEventListener("change", toggleDayStartAfter);
 

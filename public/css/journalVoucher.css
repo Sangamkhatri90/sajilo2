@@ -36,6 +36,14 @@
   background: transparent;
 }
 
+#JVTablevalues tbody tr[data-journal-id] {
+  cursor: pointer;
+}
+
+#JVTablevalues tbody tr.selected-row > td {
+  background-color: #9fd0ec !important;
+}
+
 #movableDiv97 {
   width: 650px;
   transition: width 0.3s ease, height 0.3s ease;

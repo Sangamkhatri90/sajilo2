@@ -373,6 +373,7 @@ document.getElementById("ccm-searchForm").addEventListener("submit", function (e
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID;
                 tr.innerHTML = `
                         <td>${index + 1}</td>
                         <td>${row.TransactionNo}</td>
@@ -3058,22 +3059,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const ld = document.getElementById("SSLD");
     const dateInput = document.getElementById("SSFormat");
 
-    // set initial value based on default checked
+    // set initial value based on selected date type
     if (ad.checked) {
-        dateInput.value = "DD/MM/YYYY";
+        dateInput.value = "YYYY-MM-DD";
     } else if (ld.checked) {
-        dateInput.value = "YYYY/MM/DD";
+        dateInput.value = "DD/MM/YYYY";
     }
 
     ad.addEventListener("change", () => {
         if (ad.checked) {
-            dateInput.value = "DD/MM/YYYY";
+            dateInput.value = "YYYY-MM-DD";
         }
     });
 
     ld.addEventListener("change", () => {
         if (ld.checked) {
-            dateInput.value = "YYYY/MM/DD";
+            dateInput.value = "DD/MM/YYYY";
         }
     });
 });

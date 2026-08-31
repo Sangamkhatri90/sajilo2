@@ -1,12 +1,28 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Retrieve the date from localStorage or use a default if not found
-    const startDateLocal = localStorage.getItem('selectedStartDateLocal') || 'No date found';
-    const endDateLocal = localStorage.getItem('selectedEndDateLocal') || 'No date found';
+    // Retrieve the date from localStorage.
+    const startDateLocal = localStorage.getItem('selectedStartDateLocal');
+    const endDateLocal = localStorage.getItem('selectedEndDateLocal');
 
-    // Function to convert YYYY-MM-DD to YYYY/MM/DD format
+    // input[type="date"] only accepts YYYY-MM-DD values.
     function convertDateFormat(date) {
-        const parts = date.split('-'); // Split the date into [YYYY, MM, DD]
-        return `${parts[0]}/${parts[1]}/${parts[2]}`;  // Return as YYYY/MM/DD
+        if (!date) return '';
+
+        const value = date.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+        let match = value.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
+        if (match) {
+            const [, year, month, day] = match;
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        match = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+        if (match) {
+            const [, day, month, year] = match;
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        return '';
     }
 
     // Update all elements with the class "start-date-local"
