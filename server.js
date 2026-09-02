@@ -29,6 +29,15 @@ const { encodeToBase64 } = require("./utils");
 const { start } = require("repl");
 
 const app = express();
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+});
+
 app.use(useragent.express());
 // If using express.json() or express.urlencoded(), increase the limit
 app.use(express.json({ limit: '50mb' }));
@@ -5212,7 +5221,7 @@ app.post("/copy-master", async (req, res) => {
 //Fetch all Ledger Master 
 app.get("/fetchLgrMaster", (req, res) => {
   // Query to get GLName and GLAlias from dbo.tbLedgerMaster
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster`;
+  const query = `SELECT GLID, GLName, GLAlias, Category FROM dbo.tbLedgerMaster`;
 
   const conn = req.session.conn;
 
@@ -32679,7 +32688,7 @@ app.post('/api/selectallpottablematuredacc', async (req, res) => {
 
 // Fetch sub head Ledger Group in journalvoucher for new
 app.get("/fetchPostingLedgerSubheadForNew", async (req, res) => {
-  const query = `SELECT SLName, SLAlias FROM dbo.tbSubLedgerMaster`;
+  const query = `SELECT GLID, SLName, SLAlias FROM dbo.tbSubLedgerMaster`;
   const conn = req.session.conn;
 
   // Check if the database connection exists
@@ -32949,18 +32958,31 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
     const formattedMiti = journalMiti.length === 3 ? `${journalMiti[2]}/${journalMiti[1]}/${journalMiti[0]}` : mitiRows[0].M_Miti;
     const resolvedDetails = [];
     for (const row of cleanRows) {
-      const ledgerRows = await query('SELECT TOP 1 GLID FROM tbLedgerMaster WHERE GLName = ? OR GlAlias = ?', [row.accountHead, row.accountHead]);
+      const ledgerRows = await query(`
+        SELECT TOP 1 GLID
+        FROM tbLedgerMaster
+        WHERE LTRIM(RTRIM(GLName)) = ? OR LTRIM(RTRIM(GlAlias)) = ?
+      `, [row.accountHead, row.accountHead]);
       if (!ledgerRows.length) {
         return res.status(400).json({ success: false, message: `Account head not found on row ${row.rowNo}.` });
       }
 
       let slid = null;
       if (row.subHead) {
-        const subLedgerRows = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE GLID = ? AND (SLName = ? OR SlAlias = ?)', [ledgerRows[0].GLID, row.subHead, row.subHead]);
+        const subLedgerRows = await query(`
+          SELECT TOP 1 SLID
+          FROM tbSubLedgerMaster
+          WHERE GLID = ?
+            AND (LTRIM(RTRIM(SLName)) = ? OR LTRIM(RTRIM(SlAlias)) = ?)
+        `, [ledgerRows[0].GLID, row.subHead, row.subHead]);
         if (!subLedgerRows.length) {
-          return res.status(400).json({ success: false, message: `Sub head not found on row ${row.rowNo}.` });
+          const accountSubLedgers = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE GLID = ?', [ledgerRows[0].GLID]);
+          if (accountSubLedgers.length) {
+            return res.status(400).json({ success: false, message: `Sub head not found on row ${row.rowNo}. Please choose a sub head that belongs to ${row.accountHead}, or leave it blank.` });
+          }
+        } else {
+          slid = subLedgerRows[0].SLID;
         }
-        slid = subLedgerRows[0].SLID;
       }
       resolvedDetails.push({ ...row, GLID: ledgerRows[0].GLID, SLID: slid });
     }

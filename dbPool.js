@@ -3,6 +3,7 @@ const sql = require("msnodesqlv8");
 const DEFAULT_QUERY_TIMEOUT_MS = Number(process.env.SQL_QUERY_TIMEOUT_MS || 30000);
 const QUERY_LEAK_WARNING_MS = Number(process.env.SQL_QUERY_LEAK_WARNING_MS || 60000);
 const MAX_POOL_SIZE = Number(process.env.SQL_POOL_SIZE || 5);
+const POOL_WAIT_WARNING_MS = Number(process.env.SQL_POOL_WAIT_WARNING_MS || 5000);
 
 const pools = new Map();
 
@@ -52,6 +53,11 @@ function release(pool, connection) {
   pool.idle.push(connection);
 }
 
+function serviceQueue(pool) {
+  const next = pool.queue.shift();
+  if (next) acquire(pool, next);
+}
+
 function discard(pool, connection) {
   pool.total = Math.max(0, pool.total - 1);
 
@@ -61,8 +67,20 @@ function discard(pool, connection) {
     console.warn("SQL pooled connection close failed:", closeErr.message);
   }
 
-  const next = pool.queue.shift();
-  if (next) acquire(pool, next);
+  serviceQueue(pool);
+}
+
+function retireTimedOutConnection(pool) {
+  pool.total = Math.max(0, pool.total - 1);
+  serviceQueue(pool);
+}
+
+function closeTimedOutConnection(connection) {
+  try {
+    connection.close();
+  } catch (closeErr) {
+    console.warn("SQL timed-out connection close failed:", closeErr.message);
+  }
 }
 
 function normalizeArgs(connectionString, queryText, params, callback) {
@@ -73,36 +91,70 @@ function normalizeArgs(connectionString, queryText, params, callback) {
   return { connectionString, queryText, params: params || [], callback };
 }
 
+function truncateForLog(text, max = 300) {
+  if (typeof text !== "string") return text;
+  return text.length > max ? `${text.slice(0, max)}... [truncated]` : text;
+}
+
 function executeQuery(connectionString, queryText, params, callback) {
   const args = normalizeArgs(connectionString, queryText, params, callback);
   const pool = getPool(args.connectionString);
   const queryId = pool.nextQueryId++;
-  const startedAt = Date.now();
+  const enqueuedAt = Date.now();
 
   acquire(pool, (acquireErr, connection) => {
     if (acquireErr) return args.callback(acquireErr);
 
+    const acquiredAt = Date.now();
+    const waitMs = acquiredAt - enqueuedAt;
+    if (waitMs > POOL_WAIT_WARNING_MS) {
+      console.warn(
+        `SQL pool wait: query ${queryId} waited ${waitMs}ms for a connection ` +
+        `(pool total=${pool.total}, idle=${pool.idle.length}, queued=${pool.queue.length}) ` +
+        `query=${truncateForLog(args.queryText)}`
+      );
+    }
+
     let finished = false;
+    let timedOut = false;
+    let closedAfterTimeout = false;
+
+    function closeOnceAfterTimeout() {
+      if (!timedOut || closedAfterTimeout) return;
+      closedAfterTimeout = true;
+      closeTimedOutConnection(connection);
+    }
 
     // Performance: pooled ODBC connections avoid repeated SQL login handshakes while
     // preserving session-selected database connection strings and existing callbacks.
     pool.inFlight.set(queryId, {
       queryText: args.queryText,
-      startedAt,
+      startedAt: acquiredAt,
+      waitMs,
     });
 
     const timeout = setTimeout(() => {
       if (finished) return;
       finished = true;
+      timedOut = true;
       pool.inFlight.delete(queryId);
-      discard(pool, connection);
-      const err = new Error(`SQL query timed out after ${DEFAULT_QUERY_TIMEOUT_MS}ms`);
+      retireTimedOutConnection(pool);
+      const err = new Error(
+        `SQL query timed out after ${DEFAULT_QUERY_TIMEOUT_MS}ms ` +
+        `(id=${queryId}, waitedForConnection=${waitMs}ms): ${truncateForLog(args.queryText)}`
+      );
       err.code = "ETIMEOUT";
+      err.queryId = queryId;
+      err.queryText = args.queryText;
+      err.waitMs = waitMs;
       args.callback(err);
     }, DEFAULT_QUERY_TIMEOUT_MS);
 
     connection.query(args.queryText, args.params, (queryErr, rows) => {
-      if (finished) return;
+      if (finished) {
+        closeOnceAfterTimeout();
+        return;
+      }
       finished = true;
       clearTimeout(timeout);
       pool.inFlight.delete(queryId);
@@ -125,7 +177,10 @@ setInterval(() => {
     for (const [queryId, query] of pool.inFlight.entries()) {
       const elapsed = now - query.startedAt;
       if (elapsed > QUERY_LEAK_WARNING_MS) {
-        console.warn(`Long running SQL query detected (${elapsed}ms, id=${queryId})`);
+        console.warn(
+          `Long running SQL query detected (${elapsed}ms, id=${queryId}): ` +
+          `${truncateForLog(query.queryText)}`
+        );
       }
     }
   }

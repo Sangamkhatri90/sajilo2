@@ -46470,12 +46470,24 @@ async function loadEarningsData() {
                     };
 
                     const markRowTypeDENew = (row, type) => {
+                        const previousType = row.cells[1].textContent.trim();
                         row.cells[1].textContent = type;
+                        if (previousType && previousType !== type) {
+                            row.cells[2].textContent = '';
+                            row.cells[3].textContent = '';
+                        }
                         if (type === 'Dr') {
                             row.cells[5].textContent = '';
                         } else if (type === 'Cr') {
                             row.cells[4].textContent = '';
                         }
+                    };
+
+                    const normalizeLedgerCategoryDENew = (value) => String(value || '').trim().toUpperCase();
+                    const ledgerMatchesRowTypeDENew = (ledger, rowType) => {
+                        const category = normalizeLedgerCategoryDENew(ledger.Category);
+                        if (rowType === 'Cr') return category === 'AT';
+                        return category === 'C' || category === 'B' || category === 'O' || category === 'CU';
                     };
 
                     table.addEventListener('click', async (e) => {
@@ -46492,6 +46504,8 @@ async function loadEarningsData() {
                             const nextType = cell.textContent.trim() === 'Cr' ? 'Dr' : 'Cr';
                             markRowTypeDENew(row, nextType);
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
+                            row.cells[2].textContent = '';
+                            row.cells[3].textContent = '';
                             ensureTrailingBlankRowDENew(tbody);
                             return;
                         }
@@ -46500,10 +46514,17 @@ async function loadEarningsData() {
                         if (cellIndex === 2) {
                             activeCellDENew = cell;
                             await loadPostingLedgersDENew();
-                            const opts = allPostingLedgersDENew.map(item => `${item.GLName}`);
+                            let rowType = row.cells[1].textContent.trim();
+                            if (rowType !== 'Cr') {
+                                rowType = 'Dr';
+                                row.cells[1].textContent = rowType;
+                            }
+                            const opts = allPostingLedgersDENew
+                                .filter(item => ledgerMatchesRowTypeDENew(item, rowType))
+                                .map(item => `${item.GLName}`);
                             showDropdownDENew(opts, cell);
-                            if (!row.cells[1].textContent.trim()) {
-                                row.cells[1].textContent = 'Dr';
+                            if (row.cells[3]) {
+                                row.cells[3].textContent = '';
                             }
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
                         }
@@ -46517,7 +46538,13 @@ async function loadEarningsData() {
                             }
                             activeCellDENew = cell;
                             await loadPostingLedgersDENew();
-                            const opts = allPostingLedgersSubDENew.map(item => `${item.SLName}`);
+                            const ledger = allPostingLedgersDENew.find(item =>
+                                String(item.GLName || '').trim().toLowerCase() === acchead.toLowerCase() ||
+                                String(item.GLAlias || item.GlAlias || '').trim().toLowerCase() === acchead.toLowerCase()
+                            );
+                            const opts = allPostingLedgersSubDENew
+                                .filter(item => ledger && String(item.GLID) === String(ledger.GLID))
+                                .map(item => `${item.SLName}`);
                             showDropdownDENew(opts, cell);
                             if (!row.cells[1].textContent.trim()) {
                                 row.cells[1].textContent = 'Dr';
