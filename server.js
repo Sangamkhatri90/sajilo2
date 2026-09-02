@@ -33030,6 +33030,66 @@ app.get('/api/nextReceiptVoucher', (req, res) => {
   });
 });
 
+// Generates voucher numbers for voucher forms that share the journal master.
+app.get('/api/next-voucher', (req, res) => {
+  const conn = req.session.conn;
+  const menuName = String(req.query.menuName || '').trim();
+  const supportedMenus = new Set([
+    'Payment Voucher',
+    'Collection',
+    'Distribution',
+    'Interest Posting',
+    'Mbank Voucher'
+  ]);
+
+  if (!conn) return res.status(401).json({ success: false, message: 'Database connection is not available.' });
+  if (!supportedMenus.has(menuName)) return res.status(400).json({ success: false, message: 'Unsupported voucher type.' });
+
+  sql.query(conn, 'SELECT TOP 1 UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?', [menuName], (udvError, udvRows) => {
+    if (udvError) {
+      console.error('Voucher configuration lookup failed:', udvError);
+      return res.status(500).json({ success: false, message: 'Unable to load voucher configuration.' });
+    }
+    if (!udvRows?.length) return res.status(404).json({ success: false, message: `${menuName} configuration was not found.` });
+
+    sql.query(conn, `
+      SELECT TOP 1 BodyLength, Prefix, Suffix, StartFrom, EndTo
+      FROM tbAutoNumberSetting
+      WHERE VoucherID = ?
+    `, [udvRows[0].UDVNo], (settingsError, settingsRows) => {
+      if (settingsError) {
+        console.error('Voucher auto-number lookup failed:', settingsError);
+        return res.status(500).json({ success: false, message: 'Unable to load auto-number settings.' });
+      }
+      if (!settingsRows?.length) return res.status(404).json({ success: false, message: `Auto-number settings for ${menuName} were not found.` });
+
+      const { BodyLength, Prefix = '', Suffix = '', StartFrom, EndTo } = settingsRows[0];
+      const numericLength = Number(BodyLength) - (String(Prefix).length + String(Suffix).length);
+      if (numericLength <= 0) return res.status(400).json({ success: false, message: 'Voucher body length must exceed its prefix and suffix length.' });
+
+      sql.query(conn, `
+        SELECT TOP 1 VoucherNo
+        FROM tbJournalMaster
+        WHERE VoucherNo LIKE ?
+        ORDER BY JournalID DESC
+      `, [`${Prefix}%${Suffix}`], (lastError, lastRows) => {
+        if (lastError) {
+          console.error('Last voucher lookup failed:', lastError);
+          return res.status(500).json({ success: false, message: 'Unable to generate the next voucher number.' });
+        }
+
+        let nextNumber = Number(StartFrom) || 1;
+        const lastVoucherNo = String(lastRows?.[0]?.VoucherNo || '');
+        const numericPart = lastVoucherNo.slice(String(Prefix).length, lastVoucherNo.length - String(Suffix).length);
+        if (/^\d+$/.test(numericPart)) nextNumber = Number(numericPart) + 1;
+        if (EndTo && nextNumber > Number(EndTo)) return res.status(400).json({ success: false, message: 'The voucher number has reached its configured end limit.' });
+
+        return res.json({ success: true, voucherNumber: `${Prefix}${String(nextNumber).padStart(numericLength, '0')}${Suffix}` });
+      });
+    });
+  });
+});
+
 app.post("/account/Transaction/ReceiptMaster100", async (req, res) => {
   const conn = req.session.conn;
   const {
@@ -33098,6 +33158,7 @@ app.post("/account/Transaction/ReceiptMaster100", async (req, res) => {
     return Number.isNaN(dt.getTime()) ? null : dt.toISOString().slice(0, 10);
   };
 
+  let createdJournalID = null;
   try {
     const duplicate = await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo]);
     if (duplicate.length) {
@@ -33166,12 +33227,23 @@ app.post("/account/Transaction/ReceiptMaster100", async (req, res) => {
       return res.status(400).json({ success: false, message: 'Voucher date is invalid.' });
     }
 
-    let resolvedMemberID = Number.parseInt(memberID, 10);
-    if (!Number.isInteger(resolvedMemberID) && memberName) {
+    let resolvedMemberID = null;
+    const memberIdentifier = String(memberID || '').trim();
+    if (memberIdentifier) {
+      // The form's "Member ID" field contains the member alias in normal use.
+      // Resolve it to the real primary key before inserting into tbJournalMaster.
+      let memberRows = await query('SELECT TOP 1 MemberID FROM tbMemberMaster WHERE MemberAlias = ?', [memberIdentifier]);
+      if (!memberRows.length && /^\d+$/.test(memberIdentifier)) {
+        memberRows = await query('SELECT TOP 1 MemberID FROM tbMemberMaster WHERE MemberID = ?', [Number(memberIdentifier)]);
+      }
+      if (!memberRows.length) {
+        return res.status(400).json({ success: false, message: 'Member ID/alias was not found. Select a valid member or leave the field blank.' });
+      }
+      resolvedMemberID = memberRows[0].MemberID;
+    } else if (memberName) {
       const memberRows = await query('SELECT TOP 1 MemberID FROM tbMemberMaster WHERE MemberName = ?', [memberName]);
       resolvedMemberID = memberRows.length ? memberRows[0].MemberID : null;
     }
-    if (!Number.isInteger(resolvedMemberID)) resolvedMemberID = null;
 
     let collectorID = null;
     if (collector) {
@@ -33227,15 +33299,24 @@ app.post("/account/Transaction/ReceiptMaster100", async (req, res) => {
     `, [voucherNo, slidPR, safeVoucherDate, formattedMiti, userRows[0].UserID, remarks || null, udvRows[0].UDVNo, resolvedMemberID, docClassRows[0].DocClassID, collectorID, cashLedgerRows[0].GLID, totalCr]);
 
     const journalID = masterRows[0].JournalID;
+    createdJournalID = journalID;
     for (const row of resolvedDetails) {
       await query(`
         INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital)
-        VALUES (?, ?, ?, ?, 0, ?, 0, 0)
-      `, [journalID, row.rowNo, row.SLID, row.GLID, row.crAmount]);
+        VALUES (?, ?, ?, ?, ?, ?, 0, 0)
+      `, [journalID, row.rowNo, row.SLID, row.GLID, 0, row.crAmount]);
     }
 
     return res.status(201).json({ success: true, message: 'Receipt voucher inserted successfully.', journalID });
   } catch (error) {
+    if (createdJournalID) {
+      try {
+        await query('DELETE FROM tbJournalDetails WHERE JournalID = ?', [createdJournalID]);
+        await query('DELETE FROM tbJournalMaster WHERE JournalID = ?', [createdJournalID]);
+      } catch (cleanupError) {
+        console.error('Receipt voucher cleanup failed:', cleanupError);
+      }
+    }
     console.error('Receipt voucher insert failed:', error);
     return res.status(500).json({ success: false, message: 'Database error while inserting receipt voucher.' });
   }
@@ -33272,19 +33353,13 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
     return res.status(400).json({ success: false, message: 'Voucher date, number, doc class, and at least one detail row are required.' });
   }
 
-  if (cleanRows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount < 0 || row.crAmount < 0 || (row.drAmount === 0 && row.crAmount === 0))) {
-    return res.status(400).json({ success: false, message: 'Each detail row must contain an account and at least one debit or credit amount.' });
-  }
-
-  const rowMismatch = cleanRows.find(row => (row.drAmount > 0 || row.crAmount > 0) && Math.abs(row.drAmount - row.crAmount) > 0.005);
-  if (rowMismatch) {
-    return res.status(400).json({ success: false, message: 'Dr and Cr value should be same.' });
+  if (cleanRows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount <= 0 || row.crAmount !== 0)) {
+    return res.status(400).json({ success: false, message: 'Each journal detail row must contain an account and Dr.Amount only.' });
   }
 
   const totalDr = cleanRows.reduce((total, row) => total + row.drAmount, 0);
-  const totalCr = cleanRows.reduce((total, row) => total + row.crAmount, 0);
-  if (Math.abs(totalDr - totalCr) > 0.005 || totalDr === 0) {
-    return res.status(400).json({ success: false, message: 'Total debit and credit amounts must be equal.' });
+  if (totalDr <= 0) {
+    return res.status(400).json({ success: false, message: 'Journal amount must be greater than zero.' });
   }
 
   const query = (text, params = []) => new Promise((resolve, reject) => {
@@ -33335,6 +33410,7 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
     return null;
   };
 
+  let createdJournalID = null;
   try {
     const duplicate = await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo]);
     if (duplicate.length) {
@@ -33411,13 +33487,22 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
       return res.status(400).json({ success: false, message: 'Voucher date is invalid.' });
     }
 
-    let resolvedMemberID = Number.parseInt(memberID, 10);
-    if (!Number.isInteger(resolvedMemberID) && memberName) {
+    let resolvedMemberID = null;
+    const memberIdentifier = String(memberID || '').trim();
+    if (memberIdentifier) {
+      // The form's "Member ID" field contains the member alias in normal use.
+      // Resolve it to the real primary key before inserting into tbJournalMaster.
+      let memberRows = await query('SELECT TOP 1 MemberID FROM tbMemberMaster WHERE MemberAlias = ?', [memberIdentifier]);
+      if (!memberRows.length && /^\d+$/.test(memberIdentifier)) {
+        memberRows = await query('SELECT TOP 1 MemberID FROM tbMemberMaster WHERE MemberID = ?', [Number(memberIdentifier)]);
+      }
+      if (!memberRows.length) {
+        return res.status(400).json({ success: false, message: 'Member ID/alias was not found. Select a valid member or leave the field blank.' });
+      }
+      resolvedMemberID = memberRows[0].MemberID;
+    } else if (memberName) {
       const memberRows = await query('SELECT TOP 1 MemberID FROM tbMemberMaster WHERE MemberName = ?', [memberName]);
       resolvedMemberID = memberRows.length ? memberRows[0].MemberID : null;
-    }
-    if (!Number.isInteger(resolvedMemberID)) {
-      resolvedMemberID = null;
     }
 
     let collectorID = null;
@@ -33469,15 +33554,24 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
     `, [voucherNo, safeVoucherDate, formattedMiti, userRows[0].UserID, JVRemarks || null, udvRows[0].UDVNo, resolvedMemberID, docClassRows[0].DocClassID, collectorID, totalDr]);
 
     const journalID = masterRows[0].JournalID;
+    createdJournalID = journalID;
     for (const row of resolvedDetails) {
       await query(`
         INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital)
         VALUES (?, ?, ?, ?, ?, ?, 0, 0)
-      `, [journalID, row.rowNo, row.SLID, row.GLID, row.drAmount || null, row.crAmount || null]);
+      `, [journalID, row.rowNo, row.SLID, row.GLID, row.drAmount, 0]);
     }
 
     return res.status(201).json({ success: true, message: 'Journal voucher inserted successfully.', journalID });
   } catch (error) {
+    if (createdJournalID) {
+      try {
+        await query('DELETE FROM tbJournalDetails WHERE JournalID = ?', [createdJournalID]);
+        await query('DELETE FROM tbJournalMaster WHERE JournalID = ?', [createdJournalID]);
+      } catch (cleanupError) {
+        console.error('Journal voucher cleanup failed:', cleanupError);
+      }
+    }
     console.error('Journal voucher insert failed:', error);
     return res.status(500).json({ success: false, message: 'Database error while inserting journal voucher.' });
   }

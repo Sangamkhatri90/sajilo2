@@ -759,7 +759,9 @@ function bindPrintShareCertificateButton(buttonId) {
 
 // Automatically initialize all movable divs by matching ID patterns
 function initializeMovableDivs() {
-    const movableDivs = document.querySelectorAll('.movableDiv[id^="movableDiv"]');
+    const movableDivs = document.querySelectorAll(
+        '.movableDiv[id^="movableDiv"], .dcm-movableDiv[id^="movableDiv"]'
+    );
     movableDivs.forEach((div) => {
         const match = div.id.match(/^movableDiv(\d+)$/);
         if (!match) {

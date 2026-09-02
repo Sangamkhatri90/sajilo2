@@ -11422,18 +11422,15 @@ async function loadEarningsData() {
                                     }))
                                     .filter((row) => row.accountHead || row.subHead || row.drAmount || row.crAmount);
 
-                                for (const row of details) {
-                                    const drValue = Number(row.drAmount || 0);
-                                    const crValue = Number(row.crAmount || 0);
-                                    if ((drValue > 0 || crValue > 0) && Math.abs(drValue - crValue) > 0.005) {
-                                        const msg = 'Dr and Cr value should be same.';
-                                        if (typeof showCustomAlert === 'function') {
-                                            showCustomAlert(msg);
-                                        } else {
-                                            alert(msg);
-                                        }
-                                        return;
+                                const invalidCreditRow = details.find((row) => Number(row.crAmount || 0) > 0 || Number(row.drAmount || 0) <= 0);
+                                if (invalidCreditRow) {
+                                    const msg = 'Journal voucher detail rows should use Dr.Amount only.';
+                                    if (typeof showCustomAlert === 'function') {
+                                        showCustomAlert(msg);
+                                    } else {
+                                        alert(msg);
                                     }
+                                    return;
                                 }
 
                                 const payload = {
@@ -13049,7 +13046,7 @@ async function loadEarningsData() {
                                 <div class="pv-form-style-horizontal3">
                                     <div>
                                         <label for="">Voucher No</label>
-                                        <input type="text" class="pv-text" name="" id="">
+                                        <input type="text" class="pv-text" name="voucherNo" id="paymentVoucherNo" readonly>
                                     </div>
                                     <div>
                                         <label for="">Ledger</label>
@@ -13349,7 +13346,7 @@ async function loadEarningsData() {
                                 <div class="nc-form-style-horizontal3">
                                     <div>
                                         <label for="">Voucher No</label>
-                                        <input type="text" class="nc-text" name="" id="">
+                                        <input type="text" class="nc-text" name="voucherNo" id="collectionVoucherNo" readonly>
                                     </div>
                                     <div>
                                         <label for="">Ledger</label>
@@ -13667,7 +13664,7 @@ async function loadEarningsData() {
                                 <div class="dis-form-style-horizontal3">
                                     <div>
                                         <label for="">Voucher No</label>
-                                        <input type="text" class="dis-text" name="" id="">
+                                        <input type="text" class="dis-text" name="voucherNo" id="distributionVoucherNo" readonly>
                                     </div>
                                     <div>
                                         <label for="">Ledger</label>
@@ -13979,7 +13976,7 @@ async function loadEarningsData() {
                                 <div class="ip-form-style-horizontal3">
                                     <div>
                                         <label for="">Voucher No</label>
-                                        <input type="text" class="ip-text" name="" id="">
+                                        <input type="text" class="ip-text" name="voucherNo" id="interestPostingVoucherNo" readonly>
                                     </div>
                                     <div>
                                         <label for="">Ledger</label>
@@ -14297,7 +14294,7 @@ async function loadEarningsData() {
                                 <div class="mv-form-style-horizontal3">
                                     <div>
                                         <label for="">Voucher No</label>
-                                        <input type="text" class="mv-text" name="" id="">
+                                        <input type="text" class="mv-text" name="voucherNo" id="mbankVoucherNo" readonly>
                                     </div>
                                     <div>
                                         <label for="">Ledger</label>
@@ -14369,6 +14366,40 @@ async function loadEarningsData() {
                         </form>
                     </div>
                 </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const voucherForms = [
+                            { buttonId: 'toggleButton107', inputId: 'paymentVoucherNo', menuName: 'Payment Voucher' },
+                            { buttonId: 'toggleButton109', inputId: 'collectionVoucherNo', menuName: 'Collection' },
+                            { buttonId: 'toggleButton111', inputId: 'distributionVoucherNo', menuName: 'Distribution' },
+                            { buttonId: 'toggleButton113', inputId: 'interestPostingVoucherNo', menuName: 'Interest Posting' },
+                            { buttonId: 'toggleButton115', inputId: 'mbankVoucherNo', menuName: 'Mbank Voucher' }
+                        ];
+
+                        voucherForms.forEach(({ buttonId, inputId, menuName }) => {
+                            const button = document.getElementById(buttonId);
+                            const input = document.getElementById(inputId);
+                            if (!button || !input) return;
+
+                            button.addEventListener('click', async () => {
+                                if (input.value || input.dataset.loading === 'true') return;
+                                input.dataset.loading = 'true';
+                                try {
+                                    const response = await fetch(`/api/next-voucher?menuName=${encodeURIComponent(menuName)}`);
+                                    const data = await response.json();
+                                    if (!response.ok || !data.success) throw new Error(data.message || 'Unable to generate voucher number.');
+                                    input.value = data.voucherNumber;
+                                } catch (error) {
+                                    input.placeholder = error.message;
+                                    if (typeof showCustomAlert === 'function') showCustomAlert(error.message);
+                                } finally {
+                                    delete input.dataset.loading;
+                                }
+                            });
+                        });
+                    });
+                </script>
 
 
                 <!--Share Transaction Master-->
@@ -46685,7 +46716,10 @@ async function loadEarningsData() {
                     const table = document.getElementById(tableId);
                     if (!table) return;
 
-                    const defaultRowTypeDENew = tableId === 'rv-new-table' ? 'Cr' : 'Dr';
+                    const isJournalVoucherTableDENew = tableId === 'jv-new-table';
+                    const isReceiptVoucherTableDENew = tableId === 'rv-new-table';
+                    const defaultRowTypeDENew = isReceiptVoucherTableDENew ? 'Cr' : 'Dr';
+                    const allowedAmountColumnDENew = isJournalVoucherTableDENew ? 4 : (isReceiptVoucherTableDENew ? 5 : null);
                     const isBlankRowDENew = (row) => Array.from(row.cells).every(cell => !cell.textContent.trim());
 
                     const ensureTrailingBlankRowDENew = (tbody) => {
@@ -46703,15 +46737,6 @@ async function loadEarningsData() {
                         row.cells[1].textContent = type;
                     };
 
-                    const validateRowAmountsDENew = (row) => {
-                        const drValue = Number.parseFloat(row.cells[4]?.textContent.trim() || '0') || 0;
-                        const crValue = Number.parseFloat(row.cells[5]?.textContent.trim() || '0') || 0;
-
-                        if ((drValue > 0 || crValue > 0) && Math.abs(drValue - crValue) > 0.005) {
-                            throw new Error('Dr and Cr value should be same.');
-                        }
-                    };
-
                     table.addEventListener('click', async (e) => {
                         const cell = e.target.closest('td');
                         if (!cell) return;
@@ -46721,9 +46746,9 @@ async function loadEarningsData() {
                         const rowIndex = row.rowIndex - 1;
                         const tbody = row.parentElement;
 
-                        // Dr/Cr column is fixed to Dr for this form.
+                        // Keep the row type fixed to the form default: Journal = Dr, Receipt = Cr.
                         if (cellIndex === 1) {
-                            markRowTypeDENew(row, 'Dr');
+                            markRowTypeDENew(row, defaultRowTypeDENew);
                             row.cells[0].textContent = rowIndex + 1;
                             return;
                         }
@@ -46732,16 +46757,9 @@ async function loadEarningsData() {
                         if (cellIndex === 2) {
                             activeCellDENew = cell;
                             await loadPostingLedgersDENew();
-                            let rowType = row.cells[1].textContent.trim();
-                            if (rowType !== 'Cr') {
-                                rowType = 'Dr';
-                                row.cells[1].textContent = rowType;
-                            }
-                            const opts = allPostingLedgersDENew
-                                .filter(item => ledgerMatchesRowTypeDENew(item, rowType))
-                                .map(item => `${item.GLName}`);
+                            row.cells[1].textContent = row.cells[1].textContent.trim() || defaultRowTypeDENew;
+                            const opts = allPostingLedgersDENew.map(item => `${item.GLName}`);
                             showDropdownDENew(opts, cell);
-                            row.cells[1].textContent = 'Dr';
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
                         }
 
@@ -46768,15 +46786,24 @@ async function loadEarningsData() {
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
                         }
                         if (cellIndex === 4 || cellIndex === 5) {
+                            if (allowedAmountColumnDENew !== null && cellIndex !== allowedAmountColumnDENew) {
+                                markRowTypeDENew(row, defaultRowTypeDENew);
+                                const msg = isJournalVoucherTableDENew
+                                    ? 'Journal voucher entries can only be entered in Dr.Amount.'
+                                    : 'Receipt voucher entries can only be entered in Cr.Amount.';
+                                if (typeof showCustomAlert === 'function') showCustomAlert(msg); else alert(msg);
+                                return;
+                            }
+
                             const isDrCell = cellIndex === 4;
                             const oldValue = cell.textContent.trim();
                             const otherCell = row.cells[isDrCell ? 5 : 4];
 
                             if (!row.cells[1].textContent.trim()) {
-                                row.cells[1].textContent = isDrCell ? 'Dr' : 'Cr';
+                                row.cells[1].textContent = defaultRowTypeDENew;
                             }
 
-                            markRowTypeDENew(row, row.cells[1].textContent.trim() || (isDrCell ? 'Dr' : 'Cr'));
+                            markRowTypeDENew(row, row.cells[1].textContent.trim() || defaultRowTypeDENew);
                             cell.innerHTML = `<input type="number" min="0" step="0.01" value="${oldValue}" style=" width: 30px;
                height: 2vh;
                padding: 2px;
@@ -46796,11 +46823,7 @@ async function loadEarningsData() {
                             input.addEventListener('blur', () => {
                                 const rawValue = input.value.trim();
                                 cell.textContent = rawValue || '';
-                                try {
-                                    validateRowAmountsDENew(row);
-                                } catch (error) {
-                                    showCustomAlert ? showCustomAlert(error.message) : alert(error.message);
-                                }
+                                if (allowedAmountColumnDENew !== null) otherCell.textContent = '';
                                 ensureTrailingBlankRowDENew(tbody);
                             });
 
