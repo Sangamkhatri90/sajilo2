@@ -637,6 +637,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     await postJson("/api/system-settings/system", getSystemPayload(), "Unable to save system settings");
+    await window.refreshDateIndicators?.();
+    await window.refreshFiscalYearList?.();
   }
 
   systemLinks.forEach((link) => {

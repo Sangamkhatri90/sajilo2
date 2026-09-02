@@ -4592,76 +4592,45 @@ function convertNepaliToEnglishDate(nepaliDateInput) {
   }
 }
 
-app.get("/fiscal-master-years", (req, res) => {
-
+app.get("/fiscal-master-years", async (req, res) => {
   const conn = req.session.conn;
-  const fiscalYearQuery = `
-      SELECT StartDate, EndDate 
-      FROM tbFiscalYearMaster 
-      ORDER BY StartDate;
-  `;
+  if (!conn) return res.status(401).json({ error: 'Database connection is not available.' });
 
-  sql.query(conn, fiscalYearQuery, (err, fiscalYears) => {
-    if (err) {
-      console.error("Error retrieving fiscal years:", err.message);
-      return res.status(500).json({ error: "Error retrieving fiscal years" });
-    }
-
-
-
-    if (!fiscalYears.length) {
-      console.log("No fiscal years found in tbFiscalYearMaster.");
-      return res.json([]);
-    }
-
-    const mitiPromises = fiscalYears.map((fiscalYear, index) => {
-      const { StartDate, EndDate } = fiscalYear;
-
-
-      // Convert StartDate and EndDate to smalldatetime format if needed
-      const formattedStartDate = new Date(StartDate)
-        .toISOString()
-        .slice(0, 19)
-        .replace("T", " "); // YYYY-MM-DD HH:MM:SS
-      const formattedEndDate = new Date(EndDate)
-        .toISOString()
-        .slice(0, 19)
-        .replace("T", " "); // YYYY-MM-DD HH:MM:SS
-
-      return new Promise((resolve, reject) => {
-        const localDateQuery = `
-                  SELECT 
-                      (SELECT M_Miti FROM tbLocalDate WHERE M_date = '${formattedStartDate}') AS StartMiti,
-                      (SELECT M_Miti FROM tbLocalDate WHERE M_date = '${formattedEndDate}') AS EndMiti
-              `;
-
-
-
-        sql.query(connectionString, localDateQuery, (err, result) => {
-          if (err) {
-            console.error(
-              `Error retrieving M_Miti for fiscal year ${index + 1}:`,
-              err.message
-            );
-            return reject(err);
-          }
-
-          const startMiti = result[0]?.StartMiti || "N/A";
-          const endMiti = result[0]?.EndMiti || "N/A";
-          resolve(`${startMiti} - ${endMiti}`);
-        });
-      });
-    });
-
-    Promise.all(mitiPromises)
-      .then((results) => {
-        res.json(results);
-      })
-      .catch((err) => {
-        console.error("Error resolving M_Miti promises:", err.message);
-        res.status(500).json({ error: "Error processing M_Miti data" });
-      });
+  const query = (connection, text, params = []) => new Promise((resolve, reject) => {
+    sql.query(connection, text, params, (error, rows) => error ? reject(error) : resolve(rows || []));
   });
+  const formatAdDate = (value) => new Date(value).toISOString().slice(0, 10);
+
+  try {
+    const [settingsRows, fiscalYears] = await Promise.all([
+      query(conn, 'SELECT TOP 1 DateType FROM dbo.tbSystemSettings'),
+      query(conn, 'SELECT StartDate, EndDate FROM dbo.tbFiscalYearMaster ORDER BY StartDate')
+    ]);
+    if (!fiscalYears.length) return res.json([]);
+
+    const dateType = String(settingsRows[0]?.DateType || 'AD').trim().toUpperCase();
+    if (dateType !== 'LD') {
+      return res.json(fiscalYears.map(row => `${formatAdDate(row.StartDate)} - ${formatAdDate(row.EndDate)}`));
+    }
+
+    const results = await Promise.all(fiscalYears.map(async (fiscalYear) => {
+      const startDate = formatAdDate(fiscalYear.StartDate);
+      const endDate = formatAdDate(fiscalYear.EndDate);
+      const localRows = await query(connectionString, `
+        SELECT M_Miti, CONVERT(varchar(10), M_date, 23) AS M_date
+        FROM dbo.tbLocalDate
+        WHERE CONVERT(date, M_date) IN (CONVERT(date, ?), CONVERT(date, ?))
+      `, [startDate, endDate]);
+      const startMiti = localRows.find(row => row.M_date === startDate)?.M_Miti || 'N/A';
+      const endMiti = localRows.find(row => row.M_date === endDate)?.M_Miti || 'N/A';
+      return `${startMiti} - ${endMiti}`;
+    }));
+
+    return res.json(results);
+  } catch (error) {
+    console.error('Error retrieving fiscal years:', error);
+    return res.status(500).json({ error: 'Error retrieving fiscal years' });
+  }
 });
 
 // Endpoint to fetch CodeName and Alias from tbTACodeMaster
@@ -34925,29 +34894,74 @@ app.post("/api/selectbsdateusingAddate", (req, res) => {
   const conn = req.session.conn;   // ✅ from session
   const { nowAD } = req.body;      // frontend sends YYYY-MM-DD string
 
-  if (!nowAD) {
+  if (!conn || !/^\d{4}-\d{2}-\d{2}$/.test(String(nowAD || ''))) {
     return res.status(400).json({ error: "Missing AD date" });
   }
 
-  // build query
-  const query = `
-    SELECT M_Miti 
-    FROM dbo.tbLocalDate 
-    WHERE M_date = '${nowAD}'
-  `;
-
-  sql.query(connectionString, query, (err, result) => {
-    if (err) {
-      console.error("Error fetching BS date:", err);
-      return res.status(500).json({ error: "Internal server error" });
+  sql.query(conn, 'SELECT TOP 1 DateType FROM dbo.tbSystemSettings', (settingsError, settingsRows) => {
+    if (settingsError) {
+      console.error('Error fetching DateType:', settingsError);
+      return res.status(500).json({ error: 'Unable to read date settings' });
     }
 
-    if (!result || result.length === 0) {
-      return res.status(404).json({ error: "No matching BS date found" });
+    const dateType = String(settingsRows?.[0]?.DateType || 'AD').trim().toUpperCase();
+    if (dateType !== 'LD') {
+      return res.json({ dateType: 'AD', adDate: nowAD });
     }
 
-    // ✅ send back BS date
-    res.json({ bsDate: result[0].M_Miti });
+    sql.query(connectionString, `
+      SELECT TOP 1 M_Miti
+      FROM dbo.tbLocalDate
+      WHERE CONVERT(date, M_date) = CONVERT(date, ?)
+    `, [nowAD], (dateError, result) => {
+      if (dateError) {
+        console.error('Error fetching BS date:', dateError);
+        return res.status(500).json({ error: 'Unable to convert the date to BS' });
+      }
+      if (!result?.length) {
+        return res.status(404).json({ error: 'No matching BS date found' });
+      }
+      return res.json({ dateType: 'LD', bsDate: result[0].M_Miti });
+    });
+  });
+});
+
+app.get('/api/indicator-fiscal-dates', (req, res) => {
+  const conn = req.session.conn;
+  const startDate = String(req.session.selectedStartDateLocal || '').trim();
+  const endDate = String(req.session.selectedEndDateLocal || '').trim();
+  if (!conn || !startDate || !endDate) {
+    return res.status(400).json({ success: false, message: 'Selected fiscal-year dates are not available.' });
+  }
+
+  sql.query(conn, 'SELECT TOP 1 DateType FROM dbo.tbSystemSettings', (settingsError, settingsRows) => {
+    if (settingsError) return res.status(500).json({ success: false, message: 'Unable to read date settings.' });
+    const dateType = String(settingsRows?.[0]?.DateType || 'AD').trim().toUpperCase();
+    const normalizedStartBS = startDate.replace(/-/g, '/');
+    const normalizedEndBS = endDate.replace(/-/g, '/');
+
+    sql.query(connectionString, `
+      SELECT M_Miti, CONVERT(varchar(10), M_date, 23) AS M_date
+      FROM dbo.tbLocalDate
+      WHERE M_Miti IN (?, ?)
+         OR CONVERT(varchar(10), M_date, 23) IN (?, ?)
+    `, [normalizedStartBS, normalizedEndBS, startDate, endDate], (dateError, dateRows) => {
+      if (dateError) return res.status(500).json({ success: false, message: 'Unable to convert fiscal-year dates.' });
+
+      const resolveDate = (source) => {
+        const normalizedBS = source.replace(/-/g, '/');
+        const row = dateRows.find(item => item.M_Miti === normalizedBS || item.M_date === source);
+        if (!row) return source;
+        return dateType === 'LD' ? row.M_Miti : row.M_date;
+      };
+
+      return res.json({
+        success: true,
+        dateType: dateType === 'LD' ? 'LD' : 'AD',
+        startDate: resolveDate(startDate),
+        endDate: resolveDate(endDate)
+      });
+    });
   });
 });
 

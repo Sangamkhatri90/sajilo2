@@ -123,9 +123,29 @@ setInterval(updateTime, 1000); // Update the time every second
 updateTime(); // Initial call to display the time immediately
 
 document.addEventListener('DOMContentLoaded', () => {
-    const nowAD = new Date().toISOString().split("T")[0]; 
-    fetchCurrentBSDate(nowAD);
+    refreshDateIndicators();
 });
+
+async function refreshFiscalDateIndicators() {
+    const response = await fetch('/api/indicator-fiscal-dates');
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.message || 'Unable to refresh fiscal-year dates.');
+
+    document.getElementById('startDateInput').textContent = `Fiscal Start Date: ${data.startDate}`;
+    document.getElementById('endDateInput').textContent = `Fiscal End Date: ${data.endDate}`;
+    const fiscalStart = document.getElementById('setfiscalstartyear');
+    const fiscalEnd = document.getElementById('setfiscalendyear');
+    if (fiscalStart) fiscalStart.textContent = `Fiscal Year : ${data.startDate}`;
+    if (fiscalEnd) fiscalEnd.textContent = `To : ${data.endDate}`;
+}
+
+async function refreshDateIndicators() {
+    const nowAD = new Date().toISOString().split("T")[0];
+    const results = await Promise.allSettled([fetchCurrentBSDate(nowAD), refreshFiscalDateIndicators()]);
+    results.filter(result => result.status === 'rejected').forEach(result => console.error(result.reason));
+}
+
+window.refreshDateIndicators = refreshDateIndicators;
 
 async function fetchCurrentBSDate(nowAD) {
     if (!nowAD) {
@@ -143,6 +163,11 @@ async function fetchCurrentBSDate(nowAD) {
         if (!res.ok) throw new Error('Failed to fetch BS date value');
         const data = await res.json();
         console.log("Received date is", data);
+
+       if (data.dateType === 'AD' && data.adDate) {
+  document.getElementById('current-bs-date').innerText = `Date: ${data.adDate}`;
+  return;
+}
 
        if (data.bsDate) {
   let [day, month, year] = data.bsDate.split("/");

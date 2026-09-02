@@ -26842,8 +26842,8 @@ async function loadEarningsData() {
 
     </script>-->
             <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    fetch('/fiscal-master-years')
+                async function refreshFiscalYearList() {
+                    return fetch('/fiscal-master-years')
                         .then(response => {
                             if (!response.ok) throw new Error('Network response was not ok');
                             return response.json();
@@ -26879,10 +26879,7 @@ async function loadEarningsData() {
                                         return '';
                                     };
 
-                                    const formatForDisplay = (nepDate) => {
-                                        const [dd, mm, yyyy] = nepDate.split('/');
-                                        return `${dd}/${yyyy}/${mm}/`; // for display elements
-                                    };
+                                    const formatForDisplay = (date) => date.trim();
 
                                     // Update all input fields with matching classes
                                     document.querySelectorAll('.start-date-local').forEach(input => {
@@ -26944,6 +26941,11 @@ async function loadEarningsData() {
                             document.getElementById('fiscalYearLists').textContent = 'error fetching fiscal years';
                         });
 
+                }
+
+                window.refreshFiscalYearList = refreshFiscalYearList;
+                document.addEventListener('DOMContentLoaded', () => {
+                    refreshFiscalYearList();
                 });
 
             </script>
