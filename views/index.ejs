@@ -11246,7 +11246,104 @@ async function loadEarningsData() {
                 </div>
 
 
+                
+                <!--New Receipt Voucher Master-->
+                <div class="movableDiv" id="movableDiv192">
+                    <button id="closeButton192">&times;</button>
+                    <div class="jv-container">
+                        <form action="" id="myForm192">
+                            <fieldset class="jv-fieldset">
+                                <input type="hidden" name="" id="JVUserName" class="org-user-master">
+                                <legend class="jv-legend">Receipt Voucher</legend>
+                                <div class="jv-form-style-horizontal3">
+                                    <div style="margin-left:10px; margin-top: 20px;">
+                                        <input type="checkbox" name="" id="">
+                                        <label for="">Journal Voucher</label>
+                                    </div>
+                                    <div style="margin-left: 20px; max-width: 40px;">
+                                        <label for="">Voucher Date</label>
+                                        <input type="date" class="currentlocaldate" name="JVVoucherDate" id="JVVoucherDate">
+                                    </div>
+                                </div>
+                                <div class="jv-form-style-horizontal3">
+                                    <div>
+                                        <label for="">Voucher No</label>
+                                        <input type="text" class="jv-text" name="voucherNumberJVM"
+                                            id="voucherNumberJVM">
+                                    </div>
 
+                                    <div>
+                                        <label for="">Doc Class</label>
+                                        <input type="text" class="benchods" name="docClassJVM" id="DEJVMNewDocclass"
+                                            placeholder="Type or Click to get List">
+                                    </div>
+                                    <div id="DocClassDEJVMNew" class="suggestions-list2" style="display: none;">
+                                    </div>
+                                </div>
+                                <div class="jv-form-style-horizontal3">
+                                    <div>
+                                        <label for="">Member ID</label>
+                                        <input type="text" class="jv-text" name="JVMemberID" id="JVMemberID">
+                                    </div>
+                                    <div>
+                                        <input type="text" class="jv-text" name="JVMemberName" id="JVMemberName"
+                                            style="margin-top: 20px;">
+                                    </div>
+                                    <div>
+                                        <label for="Collector">Collector</label>
+                                        <input type="text" class="jv-text" name="JVCollector" id="DEJVnewCollector"
+                                            placeholder="Type or Click to get lists">
+                                    </div>
+                                    <div id="collectorClassDEJVMnew" class="suggestions-list2" style="display: none;">
+                                    </div>
+                                    <div>
+                                        <label for="">Sub Ledger Alias</label>
+                                        <input type="text" class="jv-text" name="JVSubLedger" id="JVSubLedger">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="">Remarks</label>
+                                    <textarea class="jv-text" name="JVRemarks" id="JVRemarks"></textarea>
+                                </div>
+                                <fieldset>
+                                    <div class="jv-table-container">
+                                        <table id="jv-new-table" class="ledger-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>S.No</th>
+                                                    <th>Dr/Cr</th>
+                                                    <th>Account Head</th>
+                                                    <th>Sub Head</th>
+                                                    <th>Dr.Amount</th>
+                                                    <th>Cr.Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <!-- Reusable dropdown -->
+                                    <div id="accountDropdown" class="suggestions-list2"
+                                        style="position:absolute; display:none; z-index:1000;"></div>
+
+                                </fieldset>
+                                <div class="jv-button-row">
+                                    <button type="submit" class="jv-button">Save</button>
+                                    <button type="button" class="jv-button" id="cancelButton192">Cancel</button>
+                                    <button class="jv-button">Import</button>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
 
 
 
@@ -11858,17 +11955,17 @@ async function loadEarningsData() {
                                     </div>
                                     <div style="margin-left: 20px; max-width: 40px;">
                                         <label for="">Voucher Date</label>
-                                        <input type="date" class="rv-date" name="" id="">
+                                        <input type="date" class="currentlocaldate" name="RVVoucherDate" id="RVVoucherDate">
                                     </div>
                                 </div>
                                 <div class="rv-form-style-horizontal3">
                                     <div>
                                         <label for="">Voucher No</label>
-                                        <input type="text" class="rv-text" name="" id="voucherNumberRVM">
+                                        <input type="text" class="rv-text" name="voucherNo" id="voucherNumberRVM">
                                     </div>
                                     <div>
                                         <label for="">Ledger</label>
-                                        <input type="text" class="rv-text" name="" id="DERVMnewLedger"
+                                        <input type="text" class="rv-text" name="RVLedger" id="DERVMnewLedger"
                                             placeholder="Type or Click to get lists">
                                     </div>
                                     <div id="ledgerClassDERVMnew" class="suggestions-list2" style="display: none;">
@@ -11888,27 +11985,28 @@ async function loadEarningsData() {
                                 <div class="rv-form-style-horizontal3">
                                     <div>
                                         <label for="">Member ID</label>
-                                        <input type="text" class="rv-text" name="" id="RVMemberID">
+                                        <input type="text" class="rv-text" name="RVMemberID" id="RVMemberID">
                                     </div>
                                     <div>
-                                        <input type="text" class="rv-text" name="" id="RVMemberName"
+                                        <input type="text" class="rv-text" name="RVMemberName" id="RVMemberName"
                                             style="margin-top: 20px;">
                                     </div>
                                     <div>
                                         <label for="">Collector</label>
-                                        <input type="text" class="rv-text" name="" id="DERVMnewCollector"
+                                        <input type="text" class="rv-text" name="RVCollector" id="DERVMnewCollector"
                                             placeholder="Type or Click to get lists">
                                     </div>
                                     <div id="collectorClassDERVMnew" class="suggestions-list2" style="display: none;">
                                     </div>
                                     <div>
                                         <label for="">Sub Ledger Alias</label>
-                                        <input type="text" class="rv-text" name="" id="">
+                                        <input type="text" class="rv-text" name="RVSubLedgerAlias" id="RVSubLedgerAlias">
                                     </div>
                                 </div>
                                 <div>
                                     <label for="">Remarks</label>
-                                    <textarea class="jv-text" name="" id=""></textarea>
+                                    <textarea class="jv-text" name="RVRemarks" id="RVRemarks"></textarea>
+                                    <input type="hidden" name="RVUserName" id="RVUserName" class="org-user-master">
                                 </div>
                                 <fieldset>
                                     <div class="rv-table-container2">
@@ -11940,13 +12038,112 @@ async function loadEarningsData() {
                                 </fieldset>
                                 <div class="rv-buttons">
                                     <button type="submit" class="rv-button">Save</button>
-                                    <button class="rv-button">Import</button>
+                                    <button type="button" class="rv-button">Import</button>
                                     <button type="button" class="rv-button" id="cancelButton100">Cancel</button>
                                 </div>
                             </fieldset>
                         </form>
                     </div>
                 </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Make movableDiv100 draggable with z-index management
+                        makeMovable('movableDiv100', 'closeButton100', 'cancelButton100', 'toggleButton100', 'r');
+                    });
+                </script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const receiptVoucherDiv = document.getElementById('movableDiv100');
+                        const receiptVoucherForm = receiptVoucherDiv?.querySelector('#myForm100');
+                        const detailTable = receiptVoucherDiv?.querySelector('#rv-new-table');
+
+                        if (!receiptVoucherForm || !detailTable) {
+                            return;
+                        }
+
+                        const getCellValue = (cell) => {
+                            const control = cell?.querySelector('input, select, textarea');
+                            return (control ? control.value : cell?.textContent || '').trim();
+                        };
+
+                        const loadNextReceiptVoucherNo = async () => {
+                            try {
+                                const response = await fetch('/api/nextReceiptVoucher');
+                                const data = await response.json();
+                                if (response.ok && data.voucherNumber) {
+                                    receiptVoucherDiv.querySelector('#voucherNumberRVM').value = data.voucherNumber;
+                                }
+                            } catch (error) {
+                                console.error('Unable to fetch next receipt voucher number:', error);
+                            }
+                        };
+
+                        const resetReceiptVoucherTable = () => {
+                            const tbody = detailTable.tBodies[0];
+                            if (!tbody) return;
+                            tbody.innerHTML = '';
+                            const row = tbody.insertRow();
+                            for (let i = 0; i < 6; i += 1) {
+                                row.insertCell();
+                            }
+                        };
+
+                        receiptVoucherForm.addEventListener('submit', async (event) => {
+                            event.preventDefault();
+
+                            const details = Array.from(detailTable.tBodies[0]?.rows || [])
+                                .map((row) => ({
+                                    accountHead: getCellValue(row.cells[2]),
+                                    subHead: getCellValue(row.cells[3]),
+                                    drAmount: getCellValue(row.cells[4]),
+                                    crAmount: getCellValue(row.cells[5])
+                                }))
+                                .filter((row) => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+
+                            const invalidDebitRow = details.find((row) => Number(row.drAmount || 0) > 0);
+                            if (invalidDebitRow) {
+                                const msg = 'Receipt voucher detail rows should use Cr.Amount.';
+                                if (typeof showCustomAlert === 'function') showCustomAlert(msg); else alert(msg);
+                                return;
+                            }
+
+                            const payload = {
+                                voucherNo: receiptVoucherDiv.querySelector('#voucherNumberRVM')?.value.trim(),
+                                ledger: receiptVoucherDiv.querySelector('#DERVMnewLedger')?.value.trim(),
+                                docClass: receiptVoucherDiv.querySelector('#doc-class-receipt-voucher')?.value.trim(),
+                                voucherDate: receiptVoucherDiv.querySelector('#RVVoucherDate')?.value,
+                                collector: receiptVoucherDiv.querySelector('#DERVMnewCollector')?.value.trim(),
+                                subLedgerAlias: receiptVoucherDiv.querySelector('#RVSubLedgerAlias')?.value.trim(),
+                                remarks: receiptVoucherDiv.querySelector('#RVRemarks')?.value.trim(),
+                                userName: receiptVoucherDiv.querySelector('#RVUserName')?.value.trim(),
+                                memberID: receiptVoucherDiv.querySelector('#RVMemberID')?.value.trim(),
+                                memberName: receiptVoucherDiv.querySelector('#RVMemberName')?.value.trim(),
+                                details
+                            };
+
+                            try {
+                                const response = await fetch('/account/Transaction/ReceiptMaster100', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                });
+                                const result = await response.json();
+                                if (!response.ok || !result.success) {
+                                    throw new Error(result.message || 'Unable to insert receipt voucher.');
+                                }
+
+                                if (typeof showCustomAlert === 'function') showCustomAlert(result.message); else alert(result.message);
+                                receiptVoucherForm.reset();
+                                resetReceiptVoucherTable();
+                                await loadNextReceiptVoucherNo();
+                                document.getElementById('rvsearchForm')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                            } catch (error) {
+                                if (typeof showCustomAlert === 'function') showCustomAlert(error.message); else alert(error.message);
+                            }
+                        });
+                    });
+                </script>
 
                 <!--New Account Type-->
                 <div class="movableDiv" id="movableDiv101">
@@ -46488,6 +46685,7 @@ async function loadEarningsData() {
                     const table = document.getElementById(tableId);
                     if (!table) return;
 
+                    const defaultRowTypeDENew = tableId === 'rv-new-table' ? 'Cr' : 'Dr';
                     const isBlankRowDENew = (row) => Array.from(row.cells).every(cell => !cell.textContent.trim());
 
                     const ensureTrailingBlankRowDENew = (tbody) => {
@@ -46552,8 +46750,8 @@ async function loadEarningsData() {
                             activeCellDENew = cell;
                             await loadPostingLedgersDENew();
                             let rowType = row.cells[1].textContent.trim();
-                            if (rowType !== 'Cr') {
-                                rowType = 'Dr';
+                            if (rowType !== 'Dr' && rowType !== 'Cr') {
+                                rowType = defaultRowTypeDENew;
                                 row.cells[1].textContent = rowType;
                             }
                             const opts = allPostingLedgersDENew
@@ -46584,7 +46782,7 @@ async function loadEarningsData() {
                                 .map(item => `${item.SLName}`);
                             showDropdownDENew(opts, cell);
                             if (!row.cells[1].textContent.trim()) {
-                                row.cells[1].textContent = 'Dr';
+                                row.cells[1].textContent = defaultRowTypeDENew;
                             }
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
                         }
