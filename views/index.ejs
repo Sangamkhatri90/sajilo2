@@ -46502,32 +46502,16 @@ async function loadEarningsData() {
                     };
 
                     const markRowTypeDENew = (row, type) => {
-                        const previousType = row.cells[1].textContent.trim();
                         row.cells[1].textContent = type;
-                        if (previousType && previousType !== type) {
-                            row.cells[2].textContent = '';
-                            row.cells[3].textContent = '';
-                        }
                     };
 
                     const validateRowAmountsDENew = (row) => {
                         const drValue = Number.parseFloat(row.cells[4]?.textContent.trim() || '0') || 0;
                         const crValue = Number.parseFloat(row.cells[5]?.textContent.trim() || '0') || 0;
 
-                        if (drValue > 0 && crValue > 0 && Math.abs(drValue - crValue) > 0.005) {
+                        if ((drValue > 0 || crValue > 0) && Math.abs(drValue - crValue) > 0.005) {
                             throw new Error('Dr and Cr value should be same.');
                         }
-
-                        if ((drValue > 0 || crValue > 0) && Math.abs(drValue - crValue) > 0.005 && !(drValue === 0 || crValue === 0)) {
-                            throw new Error('Dr and Cr value should be same.');
-                        }
-                    };
-
-                    const normalizeLedgerCategoryDENew = (value) => String(value || '').trim().toUpperCase();
-                    const ledgerMatchesRowTypeDENew = (ledger, rowType) => {
-                        const category = normalizeLedgerCategoryDENew(ledger.Category);
-                        if (rowType === 'Cr') return category === 'AT';
-                        return category === 'C' || category === 'B' || category === 'O' || category === 'CU';
                     };
 
                     table.addEventListener('click', async (e) => {
@@ -46539,30 +46523,20 @@ async function loadEarningsData() {
                         const rowIndex = row.rowIndex - 1;
                         const tbody = row.parentElement;
 
-                        // Dr/Cr cell: allow user to choose row type while keeping both amount fields editable.
+                        // Dr/Cr column is fixed to Dr for this form.
                         if (cellIndex === 1) {
-                            const nextType = cell.textContent.trim() === 'Dr' ? 'Cr' : 'Dr';
-                            markRowTypeDENew(row, nextType);
+                            markRowTypeDENew(row, 'Dr');
                             row.cells[0].textContent = rowIndex + 1;
                             return;
                         }
 
-                        // Account Head column (index 2)
+                        // Account Head column (index 2): show all accounts, no Dr/Cr filtering.
                         if (cellIndex === 2) {
                             activeCellDENew = cell;
                             await loadPostingLedgersDENew();
-                            let rowType = row.cells[1].textContent.trim();
-                            if (rowType !== 'Cr') {
-                                rowType = 'Dr';
-                                row.cells[1].textContent = rowType;
-                            }
-                            const opts = allPostingLedgersDENew
-                                .filter(item => ledgerMatchesRowTypeDENew(item, rowType))
-                                .map(item => `${item.GLName}`);
+                            const opts = allPostingLedgersDENew.map(item => `${item.GLName}`);
                             showDropdownDENew(opts, cell);
-                            if (row.cells[3]) {
-                                row.cells[3].textContent = '';
-                            }
+                            row.cells[1].textContent = 'Dr';
                             row.cells[0].textContent = rowIndex + 1; // Auto serial number in colIndex 0
                         }
 
