@@ -373,7 +373,6 @@ document.getElementById("ccm-searchForm").addEventListener("submit", function (e
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
-                tr.dataset.journalId = row.JournalID;
                 tr.innerHTML = `
                         <td>${index + 1}</td>
                         <td>${row.TransactionNo}</td>
@@ -2356,6 +2355,7 @@ document.getElementById("rvsearchForm").addEventListener("submit", function (eve
 
 document.getElementById("pvmsearchForm").addEventListener("submit", function (event) {
     event.preventDefault();
+    window.dispatchEvent(new CustomEvent('payment-voucher-search-start'));
 
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
@@ -2423,6 +2423,7 @@ document.getElementById("pvmsearchForm").addEventListener("submit", function (ev
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     // ✅ Show full log columns
@@ -2430,7 +2431,7 @@ document.getElementById("pvmsearchForm").addEventListener("submit", function (ev
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${row.TotalDrAmount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.Creator || ''}</td>
                     <td>${row.CreatedDate || ''}</td>
@@ -2450,14 +2451,14 @@ document.getElementById("pvmsearchForm").addEventListener("submit", function (ev
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${row.TotalDrAmount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.DocClassName || ''}</td>
                 `;
                 }
 
                 tbody.appendChild(tr);
-                totalAmount += parseFloat(row.TotalCrAmount) || 0;
+                totalAmount += parseFloat(row.TotalDrAmount) || 0;
             });
 
             // ✅ Add total row
@@ -2480,7 +2481,8 @@ document.getElementById("pvmsearchForm").addEventListener("submit", function (ev
 
             tbody.appendChild(totalRow);
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => console.error("Error fetching results:", err))
+        .finally(() => window.dispatchEvent(new CustomEvent('payment-voucher-search-finished')));
 });
 
 
@@ -2556,6 +2558,7 @@ document.getElementById("colmsearchForm").addEventListener("submit", function (e
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     // ✅ Checked: full log columns
@@ -2815,6 +2818,7 @@ document.getElementById("ipmsearchForm").addEventListener("submit", function (ev
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     tr.innerHTML = `

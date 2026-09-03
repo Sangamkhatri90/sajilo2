@@ -21,7 +21,26 @@ document.addEventListener('DOMContentLoaded', () => {
     row.dataset.journalId = data.journalID;
     return row.dataset.journalId;
   };
-  const refresh = () => document.getElementById('jvSearchForm')?.requestSubmit();
+  const searchForm = document.getElementById('jvSearchForm');
+  let trashMode = false;
+  const refresh = () => searchForm?.requestSubmit();
+  const setTrashMode = (value) => {
+    trashMode = value;
+    if (!searchForm) return;
+    let field = searchForm.querySelector('[name="JVTrash"]');
+    if (!field) {
+      field = document.createElement('input');
+      field.type = 'hidden';
+      field.name = 'JVTrash';
+      searchForm.appendChild(field);
+    }
+    field.value = value ? '1' : '0';
+    const button = document.getElementById('trash-button');
+    if (button) button.innerHTML = value ? '<i class="fas fa-list"></i> Active' : '<i class="fas fa-recycle"></i> Trash';
+    selectedRow?.classList.remove('selected-row');
+    selectedRow = null;
+    refresh();
+  };
   const cellValue = (cell) => (cell?.querySelector('input, select, textarea')?.value ?? cell?.textContent ?? '').trim();
 
   const bindMemberLookup = (form) => {
@@ -54,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedRow.classList.add('selected-row');
   });
 
-  const actionButtons = ['toggleButton182', 'toggleButton183', 'delete-button', 'print-button', 'export-button', 'trash-button', 'reverse-button'];
+  const actionButtons = ['toggleButton182', 'toggleButton183', 'delete-button', 'print-button', 'export-button', 'reverse-button'];
   actionButtons.forEach((id) => document.getElementById(id)?.addEventListener('click', (event) => {
     if (!selectedRow) {
       event.preventDefault();
@@ -104,8 +123,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('delete-button')?.addEventListener('click', async (event) => {
-    event.preventDefault(); let id; try { id = await selectedId(); } catch (error) { notify(error.message); return; } if (!id || !confirm('Delete the selected journal voucher? This cannot be undone.')) return;
-    try { const response = await fetch(`/api/journal-vouchers/${id}`, { method: 'DELETE' }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Unable to delete journal voucher.'); notify(data.message); selectedRow = null; refresh(); } catch (error) { notify(error.message); }
+    event.preventDefault();
+    if (trashMode) return notify('Open Active vouchers before moving a voucher to Trash.');
+    let id; try { id = await selectedId(); } catch (error) { notify(error.message); return; }
+    if (!id || !confirm('Move the selected journal voucher to Trash?')) return;
+    try { const response = await fetch(`/api/vouchers/${id}/trash`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: 'Journal Voucher' }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Unable to move journal voucher to Trash.'); notify(data.message); selectedRow = null; refresh(); } catch (error) { notify(error.message); }
   });
 
   document.getElementById('toggleButton183')?.addEventListener('click', async (event) => {
@@ -116,5 +138,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('print-button')?.addEventListener('click', (event) => { event.preventDefault(); const row = selected(); if (!row) return; const popup = window.open('', '_blank'); popup.document.write(`<table border="1"><thead>${table.tHead.innerHTML}</thead><tbody>${row.outerHTML}</tbody></table>`); popup.document.close(); popup.print(); });
   document.getElementById('export-button')?.addEventListener('click', (event) => { event.preventDefault(); const row = selected(); if (!row) return; const values = Array.from(row.cells, cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([values.join(',')], { type: 'text/csv' })); a.download = 'journal-voucher.csv'; a.click(); URL.revokeObjectURL(a.href); });
-  ['trash-button', 'reverse-button'].forEach((buttonId) => document.getElementById(buttonId)?.addEventListener('click', (event) => { event.preventDefault(); if (selected()) notify('This action requires the voucher posting/reversal rules to be configured; no database entry was changed.'); }));
+  document.getElementById('trash-button')?.addEventListener('click', (event) => { event.preventDefault(); setTrashMode(!trashMode); });
+  document.getElementById('reverse-button')?.addEventListener('click', async (event) => {
+    event.preventDefault();
+    if (!trashMode) return notify('Open Trash first, then select a voucher to restore.');
+    let id; try { id = await selectedId(); } catch (error) { notify(error.message); return; }
+    if (!id) return;
+    try { const response = await fetch(`/api/vouchers/${id}/restore`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: 'Journal Voucher' }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Unable to restore journal voucher.'); notify(data.message); selectedRow = null; refresh(); } catch (error) { notify(error.message); }
+  });
 });

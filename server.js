@@ -29854,7 +29854,7 @@ app.get('/api/get-last-ad-date/:bsYear', (req, res) => {
 });
 
 //Journal voucher Backend
-app.post("/search-journal-voucher", (req, res) => {
+app.post("/search-journal-voucher", async (req, res) => {
   const {
     JVDateFrom,
     JVDateTo,
@@ -29868,7 +29868,8 @@ app.post("/search-journal-voucher", (req, res) => {
     JVDocClass,
     JVCollector,
     JVAmountOperator,
-    JVAmount
+    JVAmount,
+    JVTrash
   } = req.body;
 
   // LD values are stored in JV_Miti as YYYY/MM/DD.  AD values are sent by the
@@ -29878,6 +29879,12 @@ app.post("/search-journal-voucher", (req, res) => {
   const normalizeAdDate = (value) => value ? String(value).trim().replace(/\//g, '-') : null;
 
   const conn = req.session.conn;
+  try {
+    await ensurePaymentVoucherTrashColumn(conn);
+  } catch (error) {
+    console.error('Unable to prepare Journal Voucher Trash:', error);
+    return res.status(500).json({ error: 'Unable to prepare voucher search.' });
+  }
 
   // Fetch DateType and DateFormat
   const systemSettingsQuery = "SELECT TOP 1 DateType, DateFormat FROM tbSystemSettings";
@@ -29961,7 +29968,8 @@ app.post("/search-journal-voucher", (req, res) => {
     `;
 
     const params = [];
-    let fromToFilter = `WHERE 1=1 AND m.UDVNo = 1`;
+    let fromToFilter = `WHERE 1=1 AND m.UDVNo = 1 AND ISNULL(m.IsTrashed, 0) = ?`;
+    params.push(String(JVTrash) === '1' ? 1 : 0);
 
     if (dateType === 'LD') {
       joinClauses += `
@@ -30505,7 +30513,7 @@ sl.SLName,
 });
 
 //Receipt Voucher backend
-app.post("/search-receipt-voucher", (req, res) => {
+app.post("/search-receipt-voucher", async (req, res) => {
   const {
     RVDateFrom,
     RVDateTo,
@@ -30518,13 +30526,15 @@ app.post("/search-receipt-voucher", (req, res) => {
     RVLedger,
     RVSubLedger,
     RVSavingorLoan,
-    RVDocClass
+    RVDocClass,
+    RVTrash
   } = req.body;
 
   const RVDateFromm = RVDateFrom ? RVDateFrom.replace(/-/g, '/') : null;
   const RVDateToo = RVDateTo ? RVDateTo.replace(/-/g, '/') : null;
 
   const conn = req.session.conn;
+  try { await ensurePaymentVoucherTrashColumn(conn); } catch (error) { return res.status(500).json({ error: 'Unable to prepare voucher trash.' }); }
 
   // Fetch DateType and DateFormat
   const systemSettingsQuery = "SELECT TOP 1 DateType, DateFormat FROM tbSystemSettings";
@@ -30622,7 +30632,8 @@ sl.SLName,
     `;
 
     const params = [];
-    let fromToFilter = `WHERE 1=1 AND m.UDVNo = 2`;
+    let fromToFilter = `WHERE 1=1 AND m.UDVNo = 2 AND ISNULL(m.IsTrashed, 0) = ?`;
+    params.push(String(RVTrash) === '1' ? 1 : 0);
 
     if (dateType === 'LD') {
       joinClauses += `
@@ -30769,8 +30780,13 @@ sl.SLName,
   });
 });
 
+// Payment vouchers are soft-deleted so their journal and detail entries can be restored.
+async function ensurePaymentVoucherTrashColumn(conn) {
+  await sql.promises.query(conn, `IF COL_LENGTH('dbo.tbJournalMaster', 'IsTrashed') IS NULL ALTER TABLE dbo.tbJournalMaster ADD IsTrashed BIT NOT NULL CONSTRAINT DF_tbJournalMaster_IsTrashed DEFAULT (0);`);
+}
+
 //Payment Voucher backend
-app.post("/search-payment-voucher", (req, res) => {
+app.post("/search-payment-voucher", async (req, res) => {
   const {
     PVMDateFrom,
     PVMDateTo,
@@ -30783,13 +30799,22 @@ app.post("/search-payment-voucher", (req, res) => {
     PVMLedger,
     PVMSubLedger,
     PVMSavingorLoan,
-    PVMDocClass
+    PVMDocClass,
+    PVMTrash
   } = req.body;
 
   const PVMDateFromm = PVMDateFrom ? PVMDateFrom.replace(/-/g, '/') : null;
   const PVMDateToo = PVMDateTo ? PVMDateTo.replace(/-/g, '/') : null;
 
   const conn = req.session.conn;
+
+  try {
+    if (!conn) return res.status(401).json({ error: 'Database connection is not available' });
+    await ensurePaymentVoucherTrashColumn(conn);
+  } catch (error) {
+    console.error('Unable to prepare payment voucher trash:', error);
+    return res.status(500).json({ error: 'Unable to prepare payment voucher trash.' });
+  }
 
   // Fetch DateType and DateFormat
   const systemSettingsQuery = "SELECT TOP 1 DateType, DateFormat FROM tbSystemSettings";
@@ -30887,7 +30912,8 @@ sl.SLName,
     `;
 
     const params = [];
-    let fromToFilter = `WHERE 1=1 AND m.UDVNo = 3`;
+    let fromToFilter = `WHERE 1=1 AND m.UDVNo = 3 AND ISNULL(m.IsTrashed, 0) = ?`;
+    params.push(String(PVMTrash) === '1' ? 1 : 0);
 
     if (dateType === 'LD') {
       joinClauses += `
@@ -31022,7 +31048,7 @@ sl.SLName,
 });
 
 //collection voucher backend
-app.post("/search-collection-voucher", (req, res) => {
+app.post("/search-collection-voucher", async (req, res) => {
   const {
     CVMDateFrom,
     CVMDateTo,
@@ -31036,7 +31062,8 @@ app.post("/search-collection-voucher", (req, res) => {
     CVMAmount,
     CVMAmountOP,
     CVMShowlog,
-    CVMCollector
+    CVMCollector,
+    CVMTrash
 
   } = req.body;
 
@@ -31044,6 +31071,7 @@ app.post("/search-collection-voucher", (req, res) => {
   const CVMDateToo = CVMDateTo ? CVMDateTo.replace(/-/g, '/') : null;
 
   const conn = req.session.conn;
+  try { await ensurePaymentVoucherTrashColumn(conn); } catch (error) { return res.status(500).json({ error: 'Unable to prepare voucher trash.' }); }
 
   // Fetch DateType and DateFormat
   const systemSettingsQuery = "SELECT TOP 1 DateType, DateFormat FROM tbSystemSettings";
@@ -31141,7 +31169,8 @@ sl.SLName,
     `;
 
     const params = [];
-    let fromToFilter = `WHERE 1=1 AND m.UDVNo = 7`;
+    let fromToFilter = `WHERE 1=1 AND m.UDVNo = 7 AND ISNULL(m.IsTrashed, 0) = ?`;
+    params.push(String(CVMTrash) === '1' ? 1 : 0);
 
     if (dateType === 'LD') {
       joinClauses += `
@@ -31537,7 +31566,7 @@ sl.SLName,
 
 
 // Interest posting voucher backend
-app.post("/search-interest-posting-voucher", (req, res) => {
+app.post("/search-interest-posting-voucher", async (req, res) => {
   const {
     IPVMDateFrom,
     IPVMDateTo,
@@ -31551,7 +31580,8 @@ app.post("/search-interest-posting-voucher", (req, res) => {
     IPVMAmountOP,
     IPVMShowLog,
     IPVMSubLedger,
-    IPVMCollector
+    IPVMCollector,
+    IPVMTrash
 
   } = req.body;
 
@@ -31559,6 +31589,7 @@ app.post("/search-interest-posting-voucher", (req, res) => {
   const IPVMDateToo = IPVMDateTo ? IPVMDateTo.replace(/-/g, '/') : null;
 
   const conn = req.session.conn;
+  try { await ensurePaymentVoucherTrashColumn(conn); } catch (error) { return res.status(500).json({ error: 'Unable to prepare voucher trash.' }); }
 
   // Fetch DateType and DateFormat
   const systemSettingsQuery = "SELECT TOP 1 DateType, DateFormat FROM tbSystemSettings";
@@ -31656,7 +31687,8 @@ sl.SLName,
     `;
 
     const params = [];
-    let fromToFilter = `WHERE 1=1 AND m.UDVNo = 9`;
+    let fromToFilter = `WHERE 1=1 AND m.UDVNo = 9 AND ISNULL(m.IsTrashed, 0) = ?`;
+    params.push(String(IPVMTrash) === '1' ? 1 : 0);
 
     if (dateType === 'LD') {
       joinClauses += `
@@ -33057,6 +33089,218 @@ app.get('/api/next-voucher', (req, res) => {
       });
     });
   });
+});
+
+app.post('/account/Transaction/PaymentMaster106', async (req, res) => {
+  const conn = req.session.conn;
+  const { voucherNo, ledger, docClass, voucherDate, collector, subLedgerAlias, remarks, memberID, memberName, journalVoucher, details } = req.body || {};
+  const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountHead: String(row.accountHead || '').trim(), subHead: String(row.subHead || '').trim(), drAmount: Number(row.drAmount || 0), crAmount: Number(row.crAmount || 0) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+  if (!conn || !voucherNo || !voucherDate || !ledger || !docClass || !rows.length) return res.status(400).json({ success: false, message: 'Voucher date, number, cash/bank ledger, doc class, and at least one detail row are required.' });
+  if (rows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount <= 0 || row.crAmount !== 0)) return res.status(400).json({ success: false, message: 'Each payment detail row must contain an account head and Dr.Amount only.' });
+  const query = (text, params = []) => new Promise((resolve, reject) => sql.query(conn, text, params, (error, result) => error ? reject(error) : resolve(result || [])));
+  let journalID;
+  try {
+    if ((await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo])).length) return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
+    const [cash, doc, udv] = await Promise.all([
+      query("SELECT TOP 1 GLID FROM tbLedgerMaster WHERE Category IN ('B', 'C') AND (LTRIM(RTRIM(GLName)) = ? OR LTRIM(RTRIM(GlAlias)) = ?)", [ledger, ledger]),
+      query('SELECT TOP 1 DocClassID FROM tbDocClassMaster WHERE DocClassName = ? OR DocClassAlias = ?', [docClass, docClass]),
+      query('SELECT TOP 1 UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?', ['Payment Voucher'])
+    ]);
+    if (!cash.length) return res.status(400).json({ success: false, message: 'Selected ledger must be a valid cash or bank ledger.' });
+    if (!doc.length) return res.status(400).json({ success: false, message: 'Doc class not found.' });
+    if (!udv.length) return res.status(400).json({ success: false, message: 'Payment Voucher configuration not found.' });
+    const sqlDate = new Date(voucherDate);
+    if (Number.isNaN(sqlDate.getTime())) return res.status(400).json({ success: false, message: 'Voucher date is invalid.' });
+    let collectorID = null, slidPR = null, resolvedMemberID = null;
+    if (collector) { const result = await query('SELECT TOP 1 CollectorID FROM tbCollectorMaster WHERE CollectorName = ? OR CollectorAlias = ?', [collector, collector]); if (!result.length) return res.status(400).json({ success: false, message: 'Collector not found.' }); collectorID = result[0].CollectorID; }
+    if (subLedgerAlias) { const result = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE SLName = ? OR SlAlias = ?', [subLedgerAlias, subLedgerAlias]); if (!result.length) return res.status(400).json({ success: false, message: 'Sub ledger alias not found.' }); slidPR = result[0].SLID; }
+    if (memberID || memberName) { let result; if (memberID) { result = await query('SELECT TOP 1 MemberID FROM tbMemberMaster WHERE MemberAlias = ?', [memberID]); if (!result.length && /^\d+$/.test(String(memberID))) result = await query('SELECT TOP 1 MemberID FROM tbMemberMaster WHERE MemberID = ?', [Number(memberID)]); } else result = await query('SELECT TOP 1 MemberID FROM tbMemberMaster WHERE MemberName = ?', [memberName]); if (!result.length) return res.status(400).json({ success: false, message: 'Member was not found.' }); resolvedMemberID = result[0].MemberID; }
+    const resolved = [];
+    for (const row of rows) {
+      const accounts = await query('SELECT TOP 1 GLID FROM tbLedgerMaster WHERE LTRIM(RTRIM(GLName)) = ? OR LTRIM(RTRIM(GlAlias)) = ?', [row.accountHead, row.accountHead]);
+      if (!accounts.length) return res.status(400).json({ success: false, message: `Account head not found on row ${row.rowNo}.` });
+      let slid = null;
+      if (row.subHead) { const subs = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE GLID = ? AND (LTRIM(RTRIM(SLName)) = ? OR LTRIM(RTRIM(SlAlias)) = ?)', [accounts[0].GLID, row.subHead, row.subHead]); if (!subs.length) return res.status(400).json({ success: false, message: `Sub head not found on row ${row.rowNo}.` }); slid = subs[0].SLID; }
+      resolved.push({ ...row, GLID: accounts[0].GLID, SLID: slid });
+    }
+    const total = resolved.reduce((sum, row) => sum + row.drAmount, 0);
+    const master = await query(`INSERT INTO tbJournalMaster (VoucherNo, SLIDPR, JV_Date, CreatedDate, CreatedUserID, Remarks, UDVNo, Prov, MemberID, DocClassID, CollectorID, GLIDCashDC, TotalAmountDC, TransType)
+      OUTPUT INSERTED.JournalID VALUES (?, ?, ?, GETDATE(), ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`, [voucherNo, slidPR, sqlDate.toISOString().slice(0, 10), req.session.userID || null, remarks || null, udv[0].UDVNo, resolvedMemberID, doc[0].DocClassID, collectorID, cash[0].GLID, total, journalVoucher ? 'Journal Voucher' : 'Payment Voucher']);
+    journalID = master[0].JournalID;
+    for (const row of resolved) await query('INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, ?, ?, ?, 0, 0, 0)', [journalID, row.rowNo, row.SLID, row.GLID, row.drAmount]);
+    return res.status(201).json({ success: true, message: 'Payment voucher inserted successfully.', journalID });
+  } catch (error) {
+    if (journalID) { try { await query('DELETE FROM tbJournalDetails WHERE JournalID = ?', [journalID]); await query('DELETE FROM tbJournalMaster WHERE JournalID = ?', [journalID]); } catch (cleanupError) { console.error('Payment voucher cleanup failed:', cleanupError); } }
+    console.error('Payment voucher insert failed:', error);
+    return res.status(500).json({ success: false, message: 'Database error while inserting payment voucher.' });
+  }
+});
+
+app.post('/api/payment-vouchers/:journalID/trash', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10);
+  if (!req.session.conn || !Number.isInteger(journalID)) return res.status(400).json({ success: false, message: 'Invalid payment voucher.' });
+  try {
+    await ensurePaymentVoucherTrashColumn(req.session.conn);
+    const active = await sql.promises.query(req.session.conn, `SELECT TOP 1 JournalID FROM tbJournalMaster WHERE JournalID = ? AND UDVNo = (SELECT TOP 1 UDVNo FROM tbUserDefinedVoucher WHERE MenuName = 'Payment Voucher') AND ISNULL(IsTrashed, 0) = 0`, [journalID]);
+    if (!active.length) return res.status(400).json({ success: false, message: 'The selected active payment voucher was not found.' });
+    await sql.promises.query(req.session.conn, 'UPDATE tbJournalMaster SET IsTrashed = 1, ModifiedDate = GETDATE(), ModifiedUserID = ? WHERE JournalID = ?', [req.session.userID || null, journalID]);
+    res.json({ success: true, message: 'Payment voucher moved to Trash.' });
+  } catch (error) { console.error('Payment voucher trash failed:', error); res.status(500).json({ success: false, message: 'Unable to move payment voucher to Trash.' }); }
+});
+
+app.post('/api/payment-vouchers/:journalID/restore', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10);
+  if (!req.session.conn || !Number.isInteger(journalID)) return res.status(400).json({ success: false, message: 'Invalid payment voucher.' });
+  try {
+    await ensurePaymentVoucherTrashColumn(req.session.conn);
+    const deleted = await sql.promises.query(req.session.conn, `SELECT TOP 1 JournalID FROM tbJournalMaster WHERE JournalID = ? AND UDVNo = (SELECT TOP 1 UDVNo FROM tbUserDefinedVoucher WHERE MenuName = 'Payment Voucher') AND IsTrashed = 1`, [journalID]);
+    if (!deleted.length) return res.status(404).json({ success: false, message: 'Deleted payment voucher was not found.' });
+    await sql.promises.query(req.session.conn, 'UPDATE tbJournalMaster SET IsTrashed = 0, ModifiedDate = GETDATE(), ModifiedUserID = ? WHERE JournalID = ?', [req.session.userID || null, journalID]);
+    res.json({ success: true, message: 'Payment voucher restored.' });
+  } catch (error) { console.error('Payment voucher restore failed:', error); res.status(500).json({ success: false, message: 'Unable to restore payment voucher.' }); }
+});
+
+// Shared soft-delete, restore, load, and copy operations for voucher masters.
+async function resolveVoucherType(conn, menuName) {
+  const rows = await sql.promises.query(conn, 'SELECT TOP 1 UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?', [menuName]);
+  return rows[0]?.UDVNo || null;
+}
+
+app.get('/api/vouchers/:journalID', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10), menuName = String(req.query.menuName || '').trim();
+  if (!req.session.conn || !Number.isInteger(journalID) || !menuName) return res.status(400).json({ success: false, message: 'Voucher type and selected voucher are required.' });
+  try {
+    const udvNo = await resolveVoucherType(req.session.conn, menuName);
+    const [master, details] = await Promise.all([
+      sql.promises.query(req.session.conn, `SELECT m.JournalID, m.VoucherNo, CONVERT(varchar(10), m.JV_Date, 23) AS JV_Date, m.Remarks, ISNULL(m.IsTrashed, 0) AS IsTrashed, m.PostUserID, dc.DocClassName, cc.CollectorName, lm.GLName AS CashLedger, sl.SlAlias AS SubLedgerAlias FROM tbJournalMaster m LEFT JOIN tbDocClassMaster dc ON dc.DocClassID = m.DocClassID LEFT JOIN tbCollectorMaster cc ON cc.CollectorID = m.CollectorID LEFT JOIN tbLedgerMaster lm ON lm.GLID = m.GLIDCashDC LEFT JOIN tbSubLedgerMaster sl ON sl.SLID = m.SLIDPR WHERE m.JournalID = ? AND m.UDVNo = ?`, [journalID, udvNo]),
+      sql.promises.query(req.session.conn, `SELECT jd.SNo, lm.GLName AS AccountHead, sl.SLName AS SubHead, jd.DrAmount, jd.CrAmount FROM tbJournalDetails jd LEFT JOIN tbLedgerMaster lm ON lm.GLID = jd.GLID LEFT JOIN tbSubLedgerMaster sl ON sl.SLID = jd.SLID WHERE jd.JournalID = ? ORDER BY jd.SNo`, [journalID])
+    ]);
+    if (!master.length) return res.status(404).json({ success: false, message: 'Voucher was not found.' });
+    res.json({ success: true, voucher: master[0], details });
+  } catch (error) { console.error('Voucher load failed:', error); res.status(500).json({ success: false, message: 'Unable to load voucher.' }); }
+});
+
+app.post('/api/vouchers/:journalID/trash', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10), menuName = String(req.body?.menuName || '').trim();
+  if (!req.session.conn || !Number.isInteger(journalID) || !menuName) return res.status(400).json({ success: false, message: 'Invalid voucher.' });
+  try {
+    await ensurePaymentVoucherTrashColumn(req.session.conn); const udvNo = await resolveVoucherType(req.session.conn, menuName);
+    const rows = await sql.promises.query(req.session.conn, 'SELECT TOP 1 JournalID FROM tbJournalMaster WHERE JournalID = ? AND UDVNo = ? AND ISNULL(IsTrashed, 0) = 0', [journalID, udvNo]);
+    if (!rows.length) return res.status(404).json({ success: false, message: 'Active voucher was not found.' });
+    await sql.promises.query(req.session.conn, 'UPDATE tbJournalMaster SET IsTrashed = 1, ModifiedDate = GETDATE(), ModifiedUserID = ? WHERE JournalID = ?', [req.session.userID || null, journalID]);
+    res.json({ success: true, message: `${menuName} moved to Trash.` });
+  } catch (error) { console.error('Voucher trash failed:', error); res.status(500).json({ success: false, message: 'Unable to move voucher to Trash.' }); }
+});
+
+app.post('/api/vouchers/:journalID/restore', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10), menuName = String(req.body?.menuName || '').trim();
+  if (!req.session.conn || !Number.isInteger(journalID) || !menuName) return res.status(400).json({ success: false, message: 'Invalid voucher.' });
+  try {
+    await ensurePaymentVoucherTrashColumn(req.session.conn); const udvNo = await resolveVoucherType(req.session.conn, menuName);
+    const rows = await sql.promises.query(req.session.conn, 'SELECT TOP 1 JournalID FROM tbJournalMaster WHERE JournalID = ? AND UDVNo = ? AND IsTrashed = 1', [journalID, udvNo]);
+    if (!rows.length) return res.status(404).json({ success: false, message: 'Deleted voucher was not found.' });
+    await sql.promises.query(req.session.conn, 'UPDATE tbJournalMaster SET IsTrashed = 0, ModifiedDate = GETDATE(), ModifiedUserID = ? WHERE JournalID = ?', [req.session.userID || null, journalID]);
+    res.json({ success: true, message: `${menuName} restored.` });
+  } catch (error) { console.error('Voucher restore failed:', error); res.status(500).json({ success: false, message: 'Unable to restore voucher.' }); }
+});
+
+app.post('/api/vouchers/:journalID/copy', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10), { menuName, voucherNo } = req.body || {};
+  if (!req.session.conn || !Number.isInteger(journalID) || !menuName || !voucherNo) return res.status(400).json({ success: false, message: 'Voucher type and new voucher number are required.' });
+  try {
+    const udvNo = await resolveVoucherType(req.session.conn, menuName);
+    if ((await sql.promises.query(req.session.conn, 'SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo])).length) return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
+    const master = await sql.promises.query(req.session.conn, `INSERT INTO tbJournalMaster (VoucherNo, SLIDPR, JV_Date, JV_Miti, CreatedDate, CreatedUserID, Remarks, UDVNo, Prov, MemberID, DocClassID, CollectorID, GLIDCashDC, TotalAmountDC, TransType) OUTPUT INSERTED.JournalID SELECT ?, SLIDPR, JV_Date, JV_Miti, GETDATE(), ?, Remarks, UDVNo, Prov, MemberID, DocClassID, CollectorID, GLIDCashDC, TotalAmountDC, TransType FROM tbJournalMaster WHERE JournalID = ? AND UDVNo = ?`, [voucherNo, req.session.userID || null, journalID, udvNo]);
+    if (!master.length) return res.status(404).json({ success: false, message: 'Voucher was not found.' });
+    await sql.promises.query(req.session.conn, 'INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) SELECT ?, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital FROM tbJournalDetails WHERE JournalID = ?', [master[0].JournalID, journalID]);
+    res.status(201).json({ success: true, message: `${menuName} copied successfully.`, journalID: master[0].JournalID });
+  } catch (error) { console.error('Voucher copy failed:', error); res.status(500).json({ success: false, message: 'Unable to copy voucher.' }); }
+});
+
+app.patch('/api/vouchers/:journalID', async (req, res) => {
+  const journalID = Number.parseInt(req.params.journalID, 10);
+  const { menuName, voucherNo, voucherDate, ledger, docClass, collector, subLedgerAlias, remarks, details } = req.body || {};
+  if (!req.session.conn || !Number.isInteger(journalID) || !menuName || !voucherNo || !voucherDate || !ledger || !docClass) return res.status(400).json({ success: false, message: 'Voucher number, date, ledger, and doc class are required.' });
+  const query = (text, params = []) => new Promise((resolve, reject) => sql.query(req.session.conn, text, params, (error, result) => error ? reject(error) : resolve(result || [])));
+  try {
+    await ensurePaymentVoucherTrashColumn(req.session.conn); const udvNo = await resolveVoucherType(req.session.conn, menuName);
+    const current = await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE JournalID = ? AND UDVNo = ? AND ISNULL(IsTrashed, 0) = 0 AND PostUserID IS NULL', [journalID, udvNo]);
+    if (!current.length) return res.status(400).json({ success: false, message: 'Only active, unposted vouchers can be edited.' });
+    const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountHead: String(row.accountHead || row.accountType || '').trim(), subHead: String(row.subHead || '').trim(), drAmount: Number(row.drAmount || 0), crAmount: Number(row.crAmount || 0) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+    if (!rows.length || rows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount < 0 || row.crAmount < 0)) return res.status(400).json({ success: false, message: 'Enter valid account details and amounts.' });
+    const [cash, doc, collectorRows] = await Promise.all([query("SELECT TOP 1 GLID FROM tbLedgerMaster WHERE Category IN ('B', 'C') AND (GLName = ? OR GlAlias = ?)", [ledger, ledger]), query('SELECT TOP 1 DocClassID FROM tbDocClassMaster WHERE DocClassName = ? OR DocClassAlias = ?', [docClass, docClass]), collector ? query('SELECT TOP 1 CollectorID FROM tbCollectorMaster WHERE CollectorName = ? OR CollectorAlias = ?', [collector, collector]) : Promise.resolve([])]);
+    if (!cash.length || !doc.length || (collector && !collectorRows.length)) return res.status(400).json({ success: false, message: 'Ledger, document class, or collector was not found.' });
+    let slidPR = null; if (subLedgerAlias) { const sub = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE SLName = ? OR SlAlias = ?', [subLedgerAlias, subLedgerAlias]); if (!sub.length) return res.status(400).json({ success: false, message: 'Sub ledger alias was not found.' }); slidPR = sub[0].SLID; }
+    const resolved = []; for (const row of rows) { const accounts = await query('SELECT TOP 1 GLID FROM tbLedgerMaster WHERE GLName = ? OR GlAlias = ?', [row.accountHead, row.accountHead]); if (!accounts.length) return res.status(400).json({ success: false, message: `Account head not found on row ${row.rowNo}.` }); let slid = null; if (row.subHead) { const sub = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE GLID = ? AND (SLName = ? OR SlAlias = ?)', [accounts[0].GLID, row.subHead, row.subHead]); if (!sub.length) return res.status(400).json({ success: false, message: `Sub head not found on row ${row.rowNo}.` }); slid = sub[0].SLID; } resolved.push({ ...row, GLID: accounts[0].GLID, SLID: slid }); }
+    if ((await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ? AND JournalID <> ?', [voucherNo, journalID])).length) return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
+    await query('UPDATE tbJournalMaster SET VoucherNo = ?, JV_Date = CONVERT(date, ?, 23), Remarks = ?, DocClassID = ?, CollectorID = ?, SLIDPR = ?, GLIDCashDC = ?, TotalAmountDC = ?, ModifiedDate = GETDATE(), ModifiedUserID = ? WHERE JournalID = ?', [voucherNo, String(voucherDate).replace(/\//g, '-'), remarks || null, doc[0].DocClassID, collectorRows[0]?.CollectorID || null, slidPR, cash[0].GLID, resolved.reduce((sum, row) => sum + (row.drAmount || row.crAmount), 0), req.session.userID || null, journalID]);
+    await query('DELETE FROM tbJournalDetails WHERE JournalID = ?', [journalID]); for (const row of resolved) await query('INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, ?, ?, ?, ?, 0, 0)', [journalID, row.rowNo, row.SLID, row.GLID, row.drAmount, row.crAmount]);
+    res.json({ success: true, message: `${menuName} updated successfully.` });
+  } catch (error) { console.error('Voucher update failed:', error); res.status(500).json({ success: false, message: 'Unable to update voucher.' }); }
+});
+
+app.post('/account/Transaction/CollectionMaster109', async (req, res) => {
+  const conn = req.session.conn;
+  const { voucherNo, voucherDate, ledger, docClass, collector, subLedgerAlias, remarks, journalVoucher, details } = req.body || {};
+  const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountType: String(row.accountType || '').trim(), subHead: String(row.subHead || '').trim(), crAmount: Number(row.crAmount || 0) })).filter(row => row.accountType || row.subHead || row.crAmount);
+  if (!conn || !voucherNo || !voucherDate || !ledger || !docClass || !rows.length) return res.status(400).json({ success: false, message: 'Voucher date, number, cash/bank ledger, doc class, and at least one credit row are required.' });
+  if (rows.some(row => !row.accountType || !Number.isFinite(row.crAmount) || row.crAmount <= 0)) return res.status(400).json({ success: false, message: 'Each collection row needs an account type and a Cr.Amount greater than zero.' });
+  const query = (text, params = []) => new Promise((resolve, reject) => sql.query(conn, text, params, (error, result) => error ? reject(error) : resolve(result || [])));
+  let journalID;
+  try {
+    if ((await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo])).length) return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
+    const [cash, doc, udv] = await Promise.all([
+      query("SELECT TOP 1 GLID FROM tbLedgerMaster WHERE Category IN ('B', 'C') AND (GLName = ? OR GlAlias = ?)", [ledger, ledger]),
+      query('SELECT TOP 1 DocClassID FROM tbDocClassMaster WHERE DocClassName = ? OR DocClassAlias = ?', [docClass, docClass]),
+      query('SELECT TOP 1 UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?', ['Collection'])
+    ]);
+    if (!cash.length) return res.status(400).json({ success: false, message: 'Selected ledger must be a valid cash or bank ledger.' });
+    if (!doc.length) return res.status(400).json({ success: false, message: 'Doc class not found.' });
+    if (!udv.length) return res.status(400).json({ success: false, message: 'Collection voucher configuration not found.' });
+    const date = new Date(voucherDate); if (Number.isNaN(date.getTime())) return res.status(400).json({ success: false, message: 'Voucher date is invalid.' });
+    let collectorID = null, slidPR = null;
+    if (collector) { const result = await query('SELECT TOP 1 CollectorID FROM tbCollectorMaster WHERE CollectorName = ? OR CollectorAlias = ?', [collector, collector]); if (!result.length) return res.status(400).json({ success: false, message: 'Collector not found.' }); collectorID = result[0].CollectorID; }
+    if (subLedgerAlias) { const result = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE SLName = ? OR SlAlias = ?', [subLedgerAlias, subLedgerAlias]); if (!result.length) return res.status(400).json({ success: false, message: 'Sub ledger alias not found.' }); slidPR = result[0].SLID; }
+    const resolved = [];
+    for (const row of rows) { const accounts = await query('SELECT TOP 1 GLID FROM tbLedgerMaster WHERE GLName = ? OR GlAlias = ?', [row.accountType, row.accountType]); if (!accounts.length) return res.status(400).json({ success: false, message: `Account type not found on row ${row.rowNo}.` }); let slid = null; if (row.subHead) { const subs = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE GLID = ? AND (SLName = ? OR SlAlias = ?)', [accounts[0].GLID, row.subHead, row.subHead]); if (!subs.length) return res.status(400).json({ success: false, message: `Sub head not found on row ${row.rowNo}.` }); slid = subs[0].SLID; } resolved.push({ ...row, GLID: accounts[0].GLID, SLID: slid }); }
+    const total = resolved.reduce((sum, row) => sum + row.crAmount, 0);
+    const master = await query(`INSERT INTO tbJournalMaster (VoucherNo, SLIDPR, JV_Date, CreatedDate, CreatedUserID, Remarks, UDVNo, Prov, DocClassID, CollectorID, GLIDCashDC, TotalAmountDC, TransType) OUTPUT INSERTED.JournalID VALUES (?, ?, ?, GETDATE(), ?, ?, ?, 0, ?, ?, ?, ?, ?)`, [voucherNo, slidPR, date.toISOString().slice(0, 10), req.session.userID || null, remarks || null, udv[0].UDVNo, doc[0].DocClassID, collectorID, cash[0].GLID, total, journalVoucher ? 'Journal Voucher' : 'Collection']);
+    journalID = master[0].JournalID;
+    for (const row of resolved) await query('INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, ?, ?, 0, ?, 0, 0)', [journalID, row.rowNo, row.SLID, row.GLID, row.crAmount]);
+    return res.status(201).json({ success: true, message: 'Collection voucher inserted successfully.', journalID });
+  } catch (error) { if (journalID) { try { await query('DELETE FROM tbJournalDetails WHERE JournalID = ?', [journalID]); await query('DELETE FROM tbJournalMaster WHERE JournalID = ?', [journalID]); } catch (cleanupError) { console.error('Collection cleanup failed:', cleanupError); } } console.error('Collection insert failed:', error); return res.status(500).json({ success: false, message: 'Database error while inserting collection voucher.' }); }
+});
+
+app.post('/account/Transaction/InterestPosting113', async (req, res) => {
+  const conn = req.session.conn;
+  const { voucherNo, voucherDate, ledger, docClass, collector, subLedgerAlias, remarks, journalVoucher, details } = req.body || {};
+  const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountHead: String(row.accountHead || '').trim(), subHead: String(row.subHead || '').trim(), drAmount: Number(row.drAmount || 0), crAmount: Number(row.crAmount || 0) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+  if (!conn || !voucherNo || !voucherDate || !ledger || !docClass || !rows.length) return res.status(400).json({ success: false, message: 'Voucher date, number, ledger, doc class, and detail rows are required.' });
+  if (rows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount <= 0 || row.crAmount !== 0)) return res.status(400).json({ success: false, message: 'Each Interest Posting row needs an account head and Dr.Amount only.' });
+  const totalDr = rows.reduce((sum, row) => sum + row.drAmount, 0);
+  const query = (text, params = []) => new Promise((resolve, reject) => sql.query(conn, text, params, (error, result) => error ? reject(error) : resolve(result || [])));
+  let journalID;
+  try {
+    if ((await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo])).length) return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
+    const [cash, doc, udv] = await Promise.all([
+      query("SELECT TOP 1 GLID FROM tbLedgerMaster WHERE Category IN ('B', 'C') AND (GLName = ? OR GlAlias = ?)", [ledger, ledger]),
+      query('SELECT TOP 1 DocClassID FROM tbDocClassMaster WHERE DocClassName = ? OR DocClassAlias = ?', [docClass, docClass]),
+      query('SELECT TOP 1 UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?', ['Interest Posting'])
+    ]);
+    if (!cash.length) return res.status(400).json({ success: false, message: 'Selected ledger must be a valid cash or bank ledger.' });
+    if (!doc.length) return res.status(400).json({ success: false, message: 'Doc class not found.' });
+    if (!udv.length) return res.status(400).json({ success: false, message: 'Interest Posting configuration not found.' });
+    const date = new Date(voucherDate); if (Number.isNaN(date.getTime())) return res.status(400).json({ success: false, message: 'Voucher date is invalid.' });
+    let collectorID = null, slidPR = null;
+    if (collector) { const result = await query('SELECT TOP 1 CollectorID FROM tbCollectorMaster WHERE CollectorName = ? OR CollectorAlias = ?', [collector, collector]); if (!result.length) return res.status(400).json({ success: false, message: 'Collector not found.' }); collectorID = result[0].CollectorID; }
+    if (subLedgerAlias) { const result = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE SLName = ? OR SlAlias = ?', [subLedgerAlias, subLedgerAlias]); if (!result.length) return res.status(400).json({ success: false, message: 'Sub ledger alias not found.' }); slidPR = result[0].SLID; }
+    const resolved = [];
+    for (const row of rows) { const accounts = await query('SELECT TOP 1 GLID FROM tbLedgerMaster WHERE GLName = ? OR GlAlias = ?', [row.accountHead, row.accountHead]); if (!accounts.length) return res.status(400).json({ success: false, message: `Account head not found on row ${row.rowNo}.` }); let slid = null; if (row.subHead) { const subs = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE GLID = ? AND (SLName = ? OR SlAlias = ?)', [accounts[0].GLID, row.subHead, row.subHead]); if (!subs.length) return res.status(400).json({ success: false, message: `Sub head not found on row ${row.rowNo}.` }); slid = subs[0].SLID; } resolved.push({ ...row, GLID: accounts[0].GLID, SLID: slid }); }
+    const master = await query(`INSERT INTO tbJournalMaster (VoucherNo, SLIDPR, JV_Date, CreatedDate, CreatedUserID, Remarks, UDVNo, Prov, DocClassID, CollectorID, GLIDCashDC, TotalAmountDC, TransType) OUTPUT INSERTED.JournalID VALUES (?, ?, ?, GETDATE(), ?, ?, ?, 0, ?, ?, ?, ?, ?)`, [voucherNo, slidPR, date.toISOString().slice(0, 10), req.session.userID || null, remarks || null, udv[0].UDVNo, doc[0].DocClassID, collectorID, cash[0].GLID, totalDr, journalVoucher ? 'Journal Voucher' : 'Interest Posting']);
+    journalID = master[0].JournalID;
+    for (const row of resolved) await query('INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, ?, ?, ?, ?, 0, 0)', [journalID, row.rowNo, row.SLID, row.GLID, row.drAmount, row.crAmount]);
+    return res.status(201).json({ success: true, message: 'Interest Posting inserted successfully.', journalID });
+  } catch (error) { if (journalID) { try { await query('DELETE FROM tbJournalDetails WHERE JournalID = ?', [journalID]); await query('DELETE FROM tbJournalMaster WHERE JournalID = ?', [journalID]); } catch (cleanupError) { console.error('Interest Posting cleanup failed:', cleanupError); } } console.error('Interest Posting insert failed:', error); return res.status(500).json({ success: false, message: 'Database error while inserting Interest Posting.' }); }
 });
 
 app.post("/account/Transaction/ReceiptMaster100", async (req, res) => {

@@ -11542,7 +11542,7 @@ async function loadEarningsData() {
                                     <!-- Left Panel -->
                                     <fieldset>
                                         <div class="rv-table-container">
-                                            <table class="rv-table" id="RMTablevalues">
+                                            <table class="highlight-table" id="RMTablevalues">
                                                 <thead>
                                                     <tr>
                                                         <th>S.No</th>
@@ -12120,8 +12120,10 @@ async function loadEarningsData() {
                             };
 
                             try {
-                                const response = await fetch('/account/Transaction/ReceiptMaster100', {
-                                    method: 'POST',
+                                const editJournalID = receiptVoucherForm.dataset.editJournalId;
+                                if (editJournalID) payload.menuName = 'Receipt Voucher';
+                                const response = await fetch(editJournalID ? `/api/vouchers/${editJournalID}` : '/account/Transaction/ReceiptMaster100', {
+                                    method: editJournalID ? 'PATCH' : 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(payload)
                                 });
@@ -12132,8 +12134,9 @@ async function loadEarningsData() {
 
                                 if (typeof showCustomAlert === 'function') showCustomAlert(result.message); else alert(result.message);
                                 receiptVoucherForm.reset();
+                                delete receiptVoucherForm.dataset.editJournalId;
                                 resetReceiptVoucherTable();
-                                await loadNextReceiptVoucherNo();
+                                if (!editJournalID) await loadNextReceiptVoucherNo();
                                 document.getElementById('rvsearchForm')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
                             } catch (error) {
                                 if (typeof showCustomAlert === 'function') showCustomAlert(error.message); else alert(error.message);
@@ -12841,7 +12844,7 @@ async function loadEarningsData() {
                                     <a href="" style="text-decoration: none;"><button type="button" class="edit-button"
                                             id="edit-button"><i class="fas fa-edit" alt=""></i>Edit</button></a>
                                     <a href="" style="text-decoration: none;"><button type="button"
-                                            class="delete-button" id="delete-button"><i
+                                            class="delete-button" id="pvm-delete-button"><i
                                                 class="fas fa-trash-alt"></i>Delete</button></a>
                                     <a href="" style="text-decoration: none;"><button type="button" class="copy-button"
                                             id="copy-button"><i class="fas fa-copy"></i>Copy</button></a>
@@ -12855,11 +12858,11 @@ async function loadEarningsData() {
                                                 alt=""></i>Exit</button></a>
                                     </a>
                                     <a href="#" style="text-decoration: none;">
-                                        <button type="button" class="trash-button" id="trash-button"><i
+                                        <button type="button" class="trash-button" id="pvm-trash-button"><i
                                                 class="fas fa-recycle"></i>Trash</button>
                                     </a>
                                     <a href="#" style="text-decoration: none;">
-                                        <button type="button" class="reverse-button" id="reverse-button"><i
+                                        <button type="button" class="reverse-button" id="pvm-reverse-button"><i
                                                 class="fas fa-undo-alt"></i>Reverse</button>
                                     </a>
                                     <a href="#" style="text-decoration: none;" class="toggle-link">
@@ -12870,7 +12873,7 @@ async function loadEarningsData() {
                                 </div>
                                 <div class="pvm-table-container">
                                     <fieldset>
-                                        <table id="PVMTablevalues">
+                                        <table class="highlight-table" id="PVMTablevalues">
                                             <thead>
                                                 <tr>
                                                     <th>S.No</th>
@@ -13040,7 +13043,7 @@ async function loadEarningsData() {
                                     </div>
                                     <div style="margin-left: 20px; max-width: 40px;">
                                         <label for="">Voucher Date</label>
-                                        <input type="date" class="pv-date" name="" id="">
+                                        <input type="date" class="pv-date" name="" id="paymentVoucherDate" required>
                                     </div>
                                 </div>
                                 <div class="pv-form-style-horizontal3">
@@ -13065,10 +13068,10 @@ async function loadEarningsData() {
                                 <div class="pv-form-style-horizontal3">
                                     <div>
                                         <label for="">Member ID</label>
-                                        <input type="text" class="pv-text" name="" id="">
+                                        <input type="text" class="pv-text" name="" id="paymentVoucherMemberID">
                                     </div>
                                     <div>
-                                        <input type="text" class="pv-text" name="" id="" style="margin-top: 20px;">
+                                        <input type="text" class="pv-text" name="" id="paymentVoucherMemberName" style="margin-top: 20px;">
                                     </div>
                                     <div>
                                         <label for="">Collector</label>
@@ -13079,12 +13082,12 @@ async function loadEarningsData() {
                                     </div>
                                     <div>
                                         <label for="">Sub Ledger Alias</label>
-                                        <input type="text" class="pv-text" name="" id="">
+                                        <input type="text" class="pv-text" name="" id="paymentVoucherSubLedgerAlias">
                                     </div>
                                 </div>
                                 <div>
                                     <label for="">Remarks</label>
-                                    <textarea class="jv-text" name="" id=""></textarea>
+                                    <textarea class="jv-text" name="" id="paymentVoucherRemarks"></textarea>
                                 </div>
                                 <fieldset>
                                     <div class="pv-table-container2">
@@ -13116,7 +13119,7 @@ async function loadEarningsData() {
                                 </fieldset>
                                 <div class="pv-buttons">
                                     <button type="submit" class="pv-button">Save</button>
-                                    <button class="pv-button">Import</button>
+                                    <button type="button" class="pv-button">Import</button>
                                     <button type="button" class="pv-button" id="cancelButton107">Cancel</button>
                                 </div>
                             </fieldset>
@@ -13166,7 +13169,7 @@ async function loadEarningsData() {
                                 </div>
                                 <fieldset>
                                     <div class="colm-table-container">
-                                        <table id="CVMTablevalues">
+                                        <table class="highlight-table" id="CVMTablevalues">
                                             <thead>
                                                 <tr>
                                                     <th>S.No</th>
@@ -13335,12 +13338,12 @@ async function loadEarningsData() {
                                 <legend class="nc-legend">Collection</legend>
                                 <div class="nc-form-style-horizontal3">
                                     <div style="margin-left:10px; margin-top: 20px;">
-                                        <input type="checkbox" name="" id="">
+                                        <input type="checkbox" name="" id="collectionJournalVoucher">
                                         <label for="">Journal Voucher</label>
                                     </div>
                                     <div style="margin-left: 20px; max-width: 40px;">
                                         <label for="">Voucher Date</label>
-                                        <input type="date" class="nc-date" name="" id="">
+                                        <input type="date" class="nc-date" name="" id="collectionVoucherDate" required>
                                     </div>
                                 </div>
                                 <div class="nc-form-style-horizontal3">
@@ -13373,21 +13376,21 @@ async function loadEarningsData() {
 
                                     <div>
                                         <label for="">Code Start</label>
-                                        <input type="text" class="nc-text" name="" id="">
+                                        <input type="text" class="nc-text" name="" id="collectionCodeStart">
                                     </div>
                                     <div>
                                         <label for="">Sub Ledger Alias</label>
-                                        <input type="text" class="nc-text" name="" id="">
+                                        <input type="text" class="nc-text" name="" id="collectionSubLedgerAlias">
                                     </div>
                                 </div>
                                 <div>
                                     <label for="">Remarks</label>
-                                    <textarea class="jv-text" name="" id=""></textarea>
+                                    <textarea class="jv-text" name="" id="collectionRemarks"></textarea>
                                 </div>
                                 <fieldset>
                                     <div class="nc-table-container2">
-                                        <table>
-                                            <tr>
+                                        <table id="collection-new-table">
+                                            <thead><tr>
                                                 <th>S.No</th>
                                                 <th>Account #</th>
                                                 <th>Account Type</th>
@@ -13395,8 +13398,8 @@ async function loadEarningsData() {
                                                 <th></th>
                                                 <th></th>
                                                 <th>Cr.Amount</th>
-                                            </tr>
-                                            <tr>
+                                            </tr></thead>
+                                            <tbody><tr>
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
@@ -13404,13 +13407,13 @@ async function loadEarningsData() {
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
-                                            </tr>
+                                            </tr></tbody>
                                         </table>
                                     </div>
                                 </fieldset>
                                 <div class="nc-buttons">
                                     <button type="submit" class="nc-button">Save</button>
-                                    <button class="nc-button">Import</button>
+                                    <button type="button" class="nc-button">Import</button>
                                     <button type="button" class="nc-button" id="cancelButton109">Cancel</button>
                                 </div>
                             </fieldset>
@@ -13418,6 +13421,34 @@ async function loadEarningsData() {
                     </div>
                 </div>
 
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const panel = document.getElementById('movableDiv109');
+                        const form = panel?.querySelector('#myForm109');
+                        const table = panel?.querySelector('#collection-new-table');
+                        if (!form || !table) return;
+                        const tbody = table.tBodies[0];
+                        const value = cell => String(cell?.querySelector('input')?.value ?? cell?.textContent ?? '').trim();
+                        const blankRow = () => '<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+                        const numberRows = () => Array.from(tbody.rows).forEach((row, index) => row.cells[0].textContent = (row.cells[1].textContent || row.cells[2].textContent || row.cells[3].textContent || row.cells[6].textContent) ? index + 1 : '');
+                        const ensureBlankRow = () => { const last = tbody.rows[tbody.rows.length - 1]; if (!last || Array.from(last.cells).some(cell => value(cell))) tbody.insertAdjacentHTML('beforeend', blankRow()); numberRows(); };
+                        table.addEventListener('click', event => {
+                            const cell = event.target.closest('td'); if (!cell || cell.cellIndex === 0 || cell.cellIndex === 4 || cell.cellIndex === 5 || cell.querySelector('input')) return;
+                            const oldValue = cell.textContent.trim(); const isAmount = cell.cellIndex === 6;
+                            cell.innerHTML = `<input type="${isAmount ? 'number' : 'text'}" ${isAmount ? 'min="0" step="0.01"' : ''} value="${oldValue.replace(/"/g, '&quot;')}" style="width:100%;box-sizing:border-box;border:0;background:transparent;text-align:center">`;
+                            const input = cell.querySelector('input'); input.focus(); input.select();
+                            input.addEventListener('blur', () => { cell.textContent = input.value.trim(); ensureBlankRow(); });
+                            input.addEventListener('keydown', key => { if (key.key === 'Enter') input.blur(); });
+                        });
+                        form.addEventListener('submit', async event => {
+                            event.preventDefault();
+                            const details = Array.from(tbody.rows).map(row => ({ accountNo: value(row.cells[1]), accountType: value(row.cells[2]), subHead: value(row.cells[3]), crAmount: value(row.cells[6]) })).filter(row => row.accountNo || row.accountType || row.subHead || row.crAmount);
+                            const payload = { voucherNo: panel.querySelector('#collectionVoucherNo')?.value.trim(), voucherDate: panel.querySelector('#collectionVoucherDate')?.value, ledger: panel.querySelector('#DECMnewLedger')?.value.trim(), docClass: panel.querySelector('#DECnewDocclass')?.value.trim(), collector: panel.querySelector('#DECMnewCollector')?.value.trim(), subLedgerAlias: panel.querySelector('#collectionSubLedgerAlias')?.value.trim(), remarks: panel.querySelector('#collectionRemarks')?.value.trim(), journalVoucher: panel.querySelector('#collectionJournalVoucher')?.checked, details };
+                            try { const editJournalID = form.dataset.editJournalId; if (editJournalID) payload.menuName = 'Collection'; const response = await fetch(editJournalID ? `/api/vouchers/${editJournalID}` : '/account/Transaction/CollectionMaster109', { method: editJournalID ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json(); if (!response.ok || !result.success) throw new Error(result.message || 'Unable to save collection voucher.'); if (typeof showCustomAlert === 'function') showCustomAlert(result.message); else alert(result.message); form.reset(); delete form.dataset.editJournalId; tbody.innerHTML = blankRow(); if (!editJournalID) await window.generateNextVoucherNumber?.('Collection', 'collectionVoucherNo'); document.getElementById('colmsearchForm')?.requestSubmit(); } catch (error) { if (typeof showCustomAlert === 'function') showCustomAlert(error.message); else alert(error.message); }
+                        });
+                    });
+                </script>
 
                 <!--Distribution Master-->
                 <div class="movableDiv" id="movableDiv110">
@@ -13483,7 +13514,7 @@ async function loadEarningsData() {
                                     <!-- Left Panel -->
                                     <fieldset>
                                         <div class="dim-table-container">
-                                            <table class="dim-table" id="DVMTablevalues">
+                                            <table class="highlight-table" id="DVMTablevalues">
                                                 <thead>
                                                     <tr>
                                                         <th>S.NO</th>
@@ -13797,7 +13828,7 @@ async function loadEarningsData() {
                                     <!-- Left Panel -->
                                     <fieldset>
                                         <div class="ipm-table-container">
-                                            <table class="ipm-table" id="IPVMTablevalues">
+                                            <table class="highlight-table" id="IPVMTablevalues">
                                                 <thead>
                                                     <tr>
                                                         <th>S.NO</th>
@@ -13965,12 +13996,12 @@ async function loadEarningsData() {
                                 <legend class="ip-legend">Interest Posting</legend>
                                 <div class="ip-form-style-horizontal3">
                                     <div style="margin-left:10px; margin-top: 20px;">
-                                        <input type="checkbox" name="" id="">
+                                        <input type="checkbox" name="" id="interestPostingJournalVoucher">
                                         <label for="">Journal Voucher</label>
                                     </div>
                                     <div style="margin-left: 20px; max-width: 40px;">
                                         <label for="">Voucher Date</label>
-                                        <input type="date" class="ip-date" name="" id="">
+                                        <input type="date" class="ip-date" name="" id="interestPostingVoucherDate" required>
                                     </div>
                                 </div>
                                 <div class="ip-form-style-horizontal3">
@@ -13993,56 +14024,92 @@ async function loadEarningsData() {
                                 </div>
                                 <div class="ip-form-style-horizontal3">
                                     <div>
+                                        <label for="">Member ID</label>
+                                        <input type="text" class="jv-text" name="INMemberID" id="INMemberID" data-lookup-bound="true">
+                                    </div>
+                                    <div>
+                                        <input type="text" class="jv-text" name="INMemberName" id="INMemberName" style="margin-top: 20px;">
+                                    </div>
+                                    <div>
                                         <label for="">Collector</label>
                                         <input type="text" class="ip-text" name="" id="DEIPnewCollector"
                                             placeholder="Type or Click to get lists">
                                     </div>
                                     <div id="collectorClassDEIPnew" class="suggestions-list2" style="display: none;">
                                     </div>
-                                    <div>
-                                        <label for="">Code Start</label>
-                                        <input type="text" class="ip-text" name="" id="">
-                                    </div>
+
                                     <div>
                                         <label for="">Sub Ledger Alias</label>
-                                        <input type="text" class="ip-text" name="" id="">
+                                        <input type="text" class="ip-text" name="" id="interestPostingSubLedgerAlias">
                                     </div>
                                 </div>
                                 <div>
                                     <label for="">Remarks</label>
-                                    <textarea class="ip-text" name="" id=""></textarea>
+                                    <textarea class="ip-text" name="" id="interestPostingRemarks"></textarea>
                                 </div>
                                 <fieldset>
                                     <div class="ip-table-container2">
-                                        <table>
-                                            <tr>
+                                        <table id="interest-posting-new-table">
+                                            <thead><tr>
                                                 <th>S.No</th>
                                                 <th>Dr/Cr</th>
                                                 <th>Account Head</th>
                                                 <th>Sub Head</th>
                                                 <th>Dr.Amount</th>
                                                 <th>Cr.Amount</th>
-                                            </tr>
-                                            <tr>
+                                            </tr></thead>
+                                            <tbody><tr>
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
-                                            </tr>
+                                            </tr></tbody>
                                         </table>
                                     </div>
                                 </fieldset>
                                 <div class="ip-buttons">
                                     <button type="submit" class="ip-button">Save</button>
-                                    <button class="ip-button">Import</button>
+                                    <button type="button" class="ip-button">Import</button>
                                     <button type="button" class="ip-button" id="cancelButton113">Cancel</button>
                                 </div>
                             </fieldset>
                         </form>
                     </div>
                 </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const panel = document.getElementById('movableDiv113');
+                        const form = panel?.querySelector('#myForm113');
+                        const table = panel?.querySelector('#interest-posting-new-table');
+                        if (!form || !table) return;
+                        const tbody = table.tBodies[0];
+                        const value = cell => String(cell?.querySelector('input')?.value ?? cell?.textContent ?? '').trim();
+                        const blankRow = () => '<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+                        const renumber = () => Array.from(tbody.rows).forEach((row, index) => { if (Array.from(row.cells).slice(1).some(cell => value(cell))) row.cells[0].textContent = index + 1; });
+                        const ensureBlank = () => { const last = tbody.rows[tbody.rows.length - 1]; if (!last || Array.from(last.cells).slice(1).some(cell => value(cell))) tbody.insertAdjacentHTML('beforeend', blankRow()); renumber(); };
+                        table.addEventListener('click', event => {
+                            if (table.dataset.sharedDropdown === 'true') return;
+                            const cell = event.target.closest('td'); if (!cell || cell.cellIndex === 0 || cell.querySelector('input')) return;
+                            const row = cell.parentElement;
+                            if (cell.cellIndex === 1) { cell.textContent = cell.textContent.trim() === 'Dr' ? 'Cr' : 'Dr'; return; }
+                            const amountCell = cell.cellIndex === 4 || cell.cellIndex === 5;
+                            if (!row.cells[1].textContent.trim()) row.cells[1].textContent = 'Dr';
+                            const old = cell.textContent.trim();
+                            cell.innerHTML = `<input type="${amountCell ? 'number' : 'text'}" ${amountCell ? 'min="0" step="0.01"' : ''} value="${old.replace(/"/g, '&quot;')}" style="width:100%;box-sizing:border-box;border:0;background:transparent;text-align:center">`;
+                            const input = cell.querySelector('input'); input.focus(); input.select();
+                            input.addEventListener('blur', () => { cell.textContent = input.value.trim(); if (amountCell && input.value.trim()) { row.cells[1].textContent = cell.cellIndex === 4 ? 'Dr' : 'Cr'; row.cells[cell.cellIndex === 4 ? 5 : 4].textContent = ''; } ensureBlank(); });
+                            input.addEventListener('keydown', key => { if (key.key === 'Enter') input.blur(); });
+                        });
+                        form.addEventListener('submit', async event => {
+                            event.preventDefault(); const details = Array.from(tbody.rows).map(row => ({ accountHead: value(row.cells[2]), subHead: value(row.cells[3]), drAmount: value(row.cells[4]), crAmount: value(row.cells[5]) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+                            const payload = { voucherNo: panel.querySelector('#interestPostingVoucherNo')?.value.trim(), voucherDate: panel.querySelector('#interestPostingVoucherDate')?.value, ledger: panel.querySelector('#DEIPnewLedger')?.value.trim(), docClass: panel.querySelector('#DEIPnewDocclass')?.value.trim(), collector: panel.querySelector('#DEIPnewCollector')?.value.trim(), subLedgerAlias: panel.querySelector('#interestPostingSubLedgerAlias')?.value.trim(), remarks: panel.querySelector('#interestPostingRemarks')?.value.trim(), journalVoucher: panel.querySelector('#interestPostingJournalVoucher')?.checked, details };
+                            try { const editJournalID = form.dataset.editJournalId; if (editJournalID) payload.menuName = 'Interest Posting'; const response = await fetch(editJournalID ? `/api/vouchers/${editJournalID}` : '/account/Transaction/InterestPosting113', { method: editJournalID ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json(); if (!response.ok || !result.success) throw new Error(result.message || 'Unable to save Interest Posting.'); if (typeof showCustomAlert === 'function') showCustomAlert(result.message); else alert(result.message); form.reset(); delete form.dataset.editJournalId; tbody.innerHTML = blankRow(); if (!editJournalID) await window.generateNextVoucherNumber?.('Interest Posting', 'interestPostingVoucherNo'); document.getElementById('ipmsearchForm')?.requestSubmit(); } catch (error) { if (typeof showCustomAlert === 'function') showCustomAlert(error.message); else alert(error.message); }
+                        });
+                    });
+                </script>
 
                 <!--Mbank Voucher Master-->
                 <div class="movableDiv" id="movableDiv114">
@@ -14108,7 +14175,7 @@ async function loadEarningsData() {
                                     <!-- Left Panel -->
                                     <fieldset>
                                         <div class="mvm-table-container">
-                                            <table class="mvm-table" id="MbVMTablevalues">
+                                            <table class="highlight-table" id="MbVMTablevalues">
                                                 <thead>
                                                     <tr>
                                                         <th>S.NO</th>
@@ -14377,30 +14444,123 @@ async function loadEarningsData() {
                             { buttonId: 'toggleButton115', inputId: 'mbankVoucherNo', menuName: 'Mbank Voucher' }
                         ];
 
+                        window.generateNextVoucherNumber = async (menuName, inputId) => {
+                            const input = document.getElementById(inputId);
+                            if (!input || input.dataset.loading === 'true') return;
+                            input.dataset.loading = 'true';
+                            try {
+                                const response = await fetch(`/api/next-voucher?menuName=${encodeURIComponent(menuName)}`);
+                                const data = await response.json();
+                                if (!response.ok || !data.success) throw new Error(data.message || 'Unable to generate voucher number.');
+                                input.value = data.voucherNumber;
+                                input.placeholder = '';
+                            } catch (error) {
+                                input.value = '';
+                                input.placeholder = error.message;
+                                if (typeof showCustomAlert === 'function') showCustomAlert(error.message);
+                            } finally { delete input.dataset.loading; }
+                        };
+
                         voucherForms.forEach(({ buttonId, inputId, menuName }) => {
                             const button = document.getElementById(buttonId);
                             const input = document.getElementById(inputId);
                             if (!button || !input) return;
 
-                            button.addEventListener('click', async () => {
-                                if (input.value || input.dataset.loading === 'true') return;
-                                input.dataset.loading = 'true';
-                                try {
-                                    const response = await fetch(`/api/next-voucher?menuName=${encodeURIComponent(menuName)}`);
-                                    const data = await response.json();
-                                    if (!response.ok || !data.success) throw new Error(data.message || 'Unable to generate voucher number.');
-                                    input.value = data.voucherNumber;
-                                } catch (error) {
-                                    input.placeholder = error.message;
-                                    if (typeof showCustomAlert === 'function') showCustomAlert(error.message);
-                                } finally {
-                                    delete input.dataset.loading;
-                                }
-                            });
+                            button.addEventListener('click', () => { if (!input.value) window.generateNextVoucherNumber(menuName, inputId); });
                         });
                     });
                 </script>
 
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const panel = document.getElementById('movableDiv107'), form = panel?.querySelector('#myForm107'), table = panel?.querySelector('#pv-new-table');
+                        if (!form || !table) return;
+                        const val = c => String(c?.querySelector('input')?.value ?? c?.textContent ?? '').trim();
+                        form.addEventListener('submit', async event => { event.preventDefault(); const details = Array.from(table.tBodies[0]?.rows || []).map(r => ({ accountHead: val(r.cells[2]), subHead: val(r.cells[3]), drAmount: val(r.cells[4]), crAmount: val(r.cells[5]) })).filter(r => r.accountHead || r.subHead || r.drAmount || r.crAmount); const payload = { voucherNo: panel.querySelector('#paymentVoucherNo')?.value.trim(), ledger: panel.querySelector('#DEPVMnewLedger')?.value.trim(), docClass: panel.querySelector('#DEPVnewDocclass')?.value.trim(), voucherDate: panel.querySelector('#paymentVoucherDate')?.value, collector: panel.querySelector('#DEPVnewCollector')?.value.trim(), subLedgerAlias: panel.querySelector('#paymentVoucherSubLedgerAlias')?.value.trim(), remarks: panel.querySelector('#paymentVoucherRemarks')?.value.trim(), memberID: panel.querySelector('#paymentVoucherMemberID')?.value.trim(), memberName: panel.querySelector('#paymentVoucherMemberName')?.value.trim(), journalVoucher: panel.querySelector('#paymentVoucherJournal')?.checked, details }; try { const response = await fetch('/account/Transaction/PaymentMaster106', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json(); if (!response.ok || !result.success) throw new Error(result.message || 'Unable to insert payment voucher.'); if (typeof showCustomAlert === 'function') showCustomAlert(result.message); else alert(result.message); form.reset(); table.tBodies[0].innerHTML = '<tr><td></td><td></td><td></td><td></td><td></td></tr>'; await window.generateNextVoucherNumber?.('Payment Voucher', 'paymentVoucherNo'); } catch (error) { if (typeof showCustomAlert === 'function') showCustomAlert(error.message); else alert(error.message); } });
+                    });
+                </script>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const panel = document.getElementById('movableDiv106');
+                        const table = panel?.querySelector('#PVMTablevalues');
+                        const form = panel?.querySelector('#pvmsearchForm');
+                        const trash = panel?.querySelector('#pvm-trash-button');
+                        const remove = panel?.querySelector('#pvm-delete-button');
+                        const restore = panel?.querySelector('#pvm-reverse-button');
+                        if (!panel || !table || !form || !trash || !remove || !restore) return;
+                        let selectedRow = null;
+                        let loading = false;
+                        let progress = 0;
+                        let progressTimer = null;
+                        const notify = message => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
+                        const isTrash = () => form.querySelector('[name="PVMTrash"]')?.value === '1';
+                        const overlay = document.createElement('div');
+                        overlay.style.cssText = 'display:none;position:absolute;inset:0;z-index:1000;background:rgba(255,255,255,.82);align-items:center;justify-content:center;color:#075caf;';
+                        overlay.innerHTML = '<span><i class="fas fa-spinner fa-spin"></i> Loading vouchers…</span>';
+                        panel.style.position = panel.style.position || 'relative'; panel.appendChild(overlay);
+                        const progressText = document.createElement('span');
+                        let progressBar = document.createElement('div');
+                        overlay.innerHTML = '<div style="width:260px;text-align:center;font-size:16px;font-weight:600"><div style="margin-bottom:10px"><i class="fas fa-spinner fa-spin"></i> Loading vouchers </div><div style="height:12px;border-radius:8px;background:#d7e6f5;overflow:hidden"><div style="height:100%;width:1%;background:#218838;transition:width .15s ease"></div></div></div>';
+                        overlay.querySelector('div > div').appendChild(progressText); progressBar = overlay.querySelector('div > div:last-child > div');
+                        const drawProgress = value => { progress = Math.min(100, Math.max(1, value)); progressText.textContent = `${Math.round(progress)}%`; progressBar.style.width = `${progress}%`; };
+                        const setLoading = value => { loading = value; [trash, remove, restore].forEach(button => button.disabled = value); clearInterval(progressTimer); if (value) { drawProgress(1); overlay.style.display = 'flex'; progressTimer = setInterval(() => { if (progress < 92) drawProgress(progress + Math.max(1, (92 - progress) / 9)); }, 140); } else { drawProgress(100); setTimeout(() => { overlay.style.display = 'none'; drawProgress(1); }, 180); } };
+                        const reload = () => new Promise(resolve => { const done = () => { window.removeEventListener('payment-voucher-search-finished', done); resolve(); }; window.addEventListener('payment-voucher-search-finished', done); form.requestSubmit(); });
+                        const id = () => selectedRow?.dataset.journalId || null;
+                        window.addEventListener('payment-voucher-search-start', () => setLoading(true));
+                        window.addEventListener('payment-voucher-search-finished', () => setLoading(false));
+                        table.addEventListener('click', event => {
+                            const row = event.target.closest('tbody tr');
+                            if (!row?.dataset.journalId) return;
+                            selectedRow?.classList.remove('selected-row'); selectedRow = row; row.classList.add('selected-row');
+                        });
+                        trash.addEventListener('click', event => {
+                            event.preventDefault(); if (loading) return; let input = form.querySelector('[name="PVMTrash"]');
+                            if (!input) { input = document.createElement('input'); input.type = 'hidden'; input.name = 'PVMTrash'; form.appendChild(input); }
+                            input.value = isTrash() ? '0' : '1'; trash.innerHTML = input.value === '1' ? '<i class="fas fa-list"></i> Active' : '<i class="fas fa-recycle"></i> Trash'; selectedRow = null; reload();
+                        });
+                        remove.addEventListener('click', async event => {
+                            event.preventDefault(); if (loading) return; const journalID = id(); if (!journalID) return notify('Select an active payment voucher first.');
+                            if (isTrash()) return notify('This grid is showing Trash. Select a row and click Reverse to restore it.');
+                            if (!confirm('Move the selected payment voucher to Trash?')) return;
+                            try { setLoading(true); const response = await fetch(`/api/payment-vouchers/${journalID}/trash`, { method: 'POST' }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); selectedRow = null; await reload(); notify(data.message); } catch (error) { notify(error.message || 'Unable to move payment voucher to Trash.'); } finally { setLoading(false); }
+                        });
+                        restore.addEventListener('click', async event => {
+                            event.preventDefault(); if (loading) return; const journalID = id(); if (!journalID) return notify('Select a deleted payment voucher first.');
+                            if (!isTrash()) return notify('Open Trash first, select the deleted voucher, then click Reverse to restore it.');
+                            try { setLoading(true); const response = await fetch(`/api/payment-vouchers/${journalID}/restore`, { method: 'POST' }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); selectedRow = null; await reload(); notify(data.message); } catch (error) { notify(error.message || 'Unable to restore payment voucher.'); } finally { setLoading(false); }
+                        });
+                    });
+                </script>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const voucherMasters = [
+                            { panel: 'movableDiv98', table: 'RMTablevalues', search: 'rvsearchForm', menu: 'Receipt Voucher' },
+                            { panel: 'movableDiv108', table: 'CVMTablevalues', search: 'colmsearchForm', menu: 'Collection' },
+                            { panel: 'movableDiv112', table: 'IPVMTablevalues', search: 'ipmsearchForm', menu: 'Interest Posting' }
+                        ];
+                        const notify = message => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
+                        voucherMasters.forEach(config => {
+                            const panel = document.getElementById(config.panel), table = document.getElementById(config.table), search = document.getElementById(config.search);
+                            if (!panel || !table || !search) return;
+                            let selectedRow = null, trashMode = false;
+                            const buttons = Array.from(panel.querySelectorAll('button'));
+                            const button = text => buttons.find(item => item.textContent.trim().toLowerCase().includes(text));
+                            const edit = button('edit'), remove = button('delete'), copy = button('copy'), trash = button('trash'), reverse = button('reverse');
+                            const selectedID = () => selectedRow?.dataset.journalId || null;
+                            const reload = () => search.requestSubmit();
+                            const setTrash = value => { trashMode = value; let field = search.querySelector('[name$="Trash"]'); if (!field) { field = document.createElement('input'); field.type = 'hidden'; field.name = config.menu === 'Receipt Voucher' ? 'RVTrash' : config.menu === 'Collection' ? 'CVMTrash' : 'IPVMTrash'; search.appendChild(field); } field.value = value ? '1' : '0'; trash.innerHTML = value ? '<i class="fas fa-list"></i> Active' : '<i class="fas fa-recycle"></i> Trash'; selectedRow = null; reload(); };
+                            table.addEventListener('click', event => { const row = event.target.closest('tbody tr'); if (!row?.dataset.journalId) return; selectedRow?.classList.remove('selected-row'); selectedRow = row; row.classList.add('selected-row'); });
+                            trash?.addEventListener('click', event => { event.preventDefault(); setTrash(!trashMode); });
+                            remove?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a voucher row first.'); if (trashMode) return notify('Open Active vouchers to delete.'); if (!confirm('Move the selected voucher to Trash?')) return; try { const response = await fetch(`/api/vouchers/${journalID}/trash`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: config.menu }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); notify(data.message); selectedRow = null; reload(); } catch (error) { notify(error.message || 'Unable to move voucher to Trash.'); } });
+                            reverse?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a deleted voucher row first.'); if (!trashMode) return notify('Open Trash first, then select the voucher to restore.'); try { const response = await fetch(`/api/vouchers/${journalID}/restore`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: config.menu }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); notify(data.message); selectedRow = null; reload(); } catch (error) { notify(error.message || 'Unable to restore voucher.'); } });
+                            copy?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a voucher row first.'); try { const response = await fetch(`/api/next-voucher?menuName=${encodeURIComponent(config.menu)}`); const next = await response.json(); if (!response.ok || !next.success) throw new Error(next.message || 'Unable to generate voucher number.'); const copied = await fetch(`/api/vouchers/${journalID}/copy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: config.menu, voucherNo: next.voucherNumber }) }); const data = await copied.json(); if (!copied.ok || !data.success) throw new Error(data.message); notify(`${data.message} New voucher: ${next.voucherNumber}`); reload(); } catch (error) { notify(error.message || 'Unable to copy voucher.'); } });
+                            edit?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a voucher row first.'); if (trashMode) return notify('Restore the voucher before editing.'); try { const response = await fetch(`/api/vouchers/${journalID}?menuName=${encodeURIComponent(config.menu)}`); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); const v = data.voucher; if (config.menu === 'Collection') { const form = document.getElementById('myForm109'); form.dataset.editJournalId = journalID; document.getElementById('collectionVoucherNo').value = v.VoucherNo || ''; document.getElementById('collectionVoucherDate').value = v.JV_Date || ''; document.getElementById('DECMnewLedger').value = v.CashLedger || ''; document.getElementById('DECnewDocclass').value = v.DocClassName || ''; document.getElementById('DECMnewCollector').value = v.CollectorName || ''; document.getElementById('collectionSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('collectionRemarks').value = v.Remarks || ''; document.querySelector('#collection-new-table tbody').innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td></td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td></td><td></td><td>${d.CrAmount || ''}</td></tr>`).join(''); document.getElementById('movableDiv109').style.display = 'block'; return; } if (config.menu === 'Interest Posting') { const form = document.getElementById('myForm113'); form.dataset.editJournalId = journalID; document.getElementById('interestPostingVoucherNo').value = v.VoucherNo || ''; document.getElementById('interestPostingVoucherDate').value = v.JV_Date || ''; document.getElementById('DEIPnewLedger').value = v.CashLedger || ''; document.getElementById('DEIPnewDocclass').value = v.DocClassName || ''; document.getElementById('DEIPnewCollector').value = v.CollectorName || ''; document.getElementById('interestPostingSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('interestPostingRemarks').value = v.Remarks || ''; document.querySelector('#interest-posting-new-table tbody').innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td>Dr</td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td>${d.DrAmount || ''}</td><td></td></tr>`).join(''); document.getElementById('movableDiv113').style.display = 'block'; return; } const form = document.getElementById('myForm100'); form.dataset.editJournalId = journalID; document.getElementById('voucherNumberRVM').value = v.VoucherNo || ''; document.getElementById('RVVoucherDate').value = v.JV_Date || ''; document.getElementById('DERVMnewLedger').value = v.CashLedger || ''; document.getElementById('doc-class-receipt-voucher').value = v.DocClassName || ''; document.getElementById('DERVMnewCollector').value = v.CollectorName || ''; document.getElementById('RVSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('RVRemarks').value = v.Remarks || ''; document.querySelector('#rv-new-table tbody').innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td>Cr</td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td></td><td>${d.CrAmount || ''}</td></tr>`).join(''); document.getElementById('movableDiv100').style.display = 'block'; } catch (error) { notify(error.message || 'Unable to load voucher.'); } });
+                        });
+                    });
+                </script>
 
                 <!--Share Transaction Master-->
                 <div class="movableDiv" id="movableDiv116">
@@ -46618,6 +46778,25 @@ async function loadEarningsData() {
                 });
             </script>
             <script>
+                document.getElementById('INMemberID')?.addEventListener('blur', function () {
+                    const alias = this.value.trim();
+                    const memberName = document.getElementById('INMemberName');
+                    if (!alias) { memberName.value = ''; return; }
+
+                    fetch('/get-member-name-2', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ alias }),
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) memberName.value = data.memberName || '';
+                            else { memberName.value = ''; showCustomAlert(data.message || 'Member not found'); }
+                        })
+                        .catch(error => { memberName.value = ''; console.error('Error:', error); });
+                });
+            </script>
+            <script>
                 document.getElementById('JVMemberID').addEventListener('blur', function () {
                     const alias = this.value;
                     if (alias.trim() === '') {
@@ -46720,8 +46899,11 @@ async function loadEarningsData() {
 
                     const isJournalVoucherTableDENew = tableId === 'jv-new-table';
                     const isReceiptVoucherTableDENew = tableId === 'rv-new-table';
+                    const isPaymentVoucherTableDENew = tableId === 'pv-new-table';
+                    const isInterestPostingTableDENew = tableId === 'interest-posting-new-table';
                     const defaultRowTypeDENew = isReceiptVoucherTableDENew ? 'Cr' : 'Dr';
-                    const allowedAmountColumnDENew = isJournalVoucherTableDENew ? 4 : (isReceiptVoucherTableDENew ? 5 : null);
+                    const allowedAmountColumnDENew = (isJournalVoucherTableDENew || isPaymentVoucherTableDENew || isInterestPostingTableDENew) ? 4 : (isReceiptVoucherTableDENew ? 5 : null);
+                    table.dataset.sharedDropdown = 'true';
                     const isBlankRowDENew = (row) => Array.from(row.cells).every(cell => !cell.textContent.trim());
 
                     const ensureTrailingBlankRowDENew = (tbody) => {
@@ -46790,9 +46972,9 @@ async function loadEarningsData() {
                         if (cellIndex === 4 || cellIndex === 5) {
                             if (allowedAmountColumnDENew !== null && cellIndex !== allowedAmountColumnDENew) {
                                 markRowTypeDENew(row, defaultRowTypeDENew);
-                                const msg = isJournalVoucherTableDENew
-                                    ? 'Journal voucher entries can only be entered in Dr.Amount.'
-                                    : 'Receipt voucher entries can only be entered in Cr.Amount.';
+                                const msg = isReceiptVoucherTableDENew
+                                    ? 'Receipt voucher entries can only be entered in Cr.Amount.'
+                                    : 'Journal, payment, and interest posting entries can only be entered in Dr.Amount.';
                                 if (typeof showCustomAlert === 'function') showCustomAlert(msg); else alert(msg);
                                 return;
                             }
@@ -46904,6 +47086,7 @@ async function loadEarningsData() {
                 initTableDropdownDENew('jv-new-table2');
                 initTableDropdownDENew('jv-new-table3');
                 initTableDropdownDENew('pv-new-table');
+                initTableDropdownDENew('interest-posting-new-table');
                 initTableDropdownDENew('mbv-new-table');
             </script>
 
