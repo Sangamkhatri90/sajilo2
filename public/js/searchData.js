@@ -2026,6 +2026,7 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     // ✅ Show full log columns
@@ -2157,6 +2158,7 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
                 if (checkbox.checked) {
                     tr.innerHTML = `
                     <td>${index + 1}</td>
@@ -2289,6 +2291,7 @@ document.getElementById("rvsearchForm").addEventListener("submit", function (eve
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     // ✅ Show full log columns
@@ -2690,6 +2693,7 @@ document.getElementById("dimsearchForm").addEventListener("submit", function (ev
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     tr.innerHTML = `
@@ -2945,6 +2949,7 @@ document.getElementById("mvmsearchForm").addEventListener("submit", function (ev
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
                 if (checkbox.checked) {
                     tr.innerHTML = `
                     <td>${index + 1}</td>

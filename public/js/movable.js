@@ -101,6 +101,9 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
 
     // Dragging functionality
     draggable.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) {
+            return;
+        }
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
             return;
         }
@@ -126,18 +129,28 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
 
         function onMouseMove(e) {
             e.preventDefault();
+            // Browsers can miss mouseup when the pointer leaves a modal or the window.
+            // Never keep moving a dialog after the mouse button has been released.
+            if (!e.buttons) {
+                stopDragging();
+                return;
+            }
             if (isDragging) {
                 moveAt(e.clientX, e.clientY);
             }
         }
 
-        document.addEventListener('mousemove', onMouseMove);
-
-        document.onmouseup = function () {
+        function stopDragging() {
+            if (!isDragging) return;
             isDragging = false;
             clampMovableToViewport(draggable);
             document.removeEventListener('mousemove', onMouseMove);
-        };
+            document.removeEventListener('mouseup', stopDragging);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+
+        document.addEventListener('mouseup', stopDragging);
     });
 
     draggable.ondragstart = function () {

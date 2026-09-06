@@ -23,6 +23,17 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const searchForm = document.getElementById('jvSearchForm');
   let trashMode = false;
+  let loading = false;
+  const loadingOverlay = document.createElement('div');
+  loadingOverlay.style.cssText = 'display:none;position:absolute;inset:0;z-index:9999;background:rgba(255,255,255,.82);align-items:center;justify-content:center;color:#075caf;';
+  loadingOverlay.innerHTML = '<div style="width:280px;padding:20px 22px;border-radius:10px;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18);text-align:center;font-weight:600"><div style="margin-bottom:12px"><i class="fas fa-spinner fa-spin"></i> Loading vouchers</div><div style="height:12px;border-radius:8px;background:#d7e6f5;overflow:hidden"><div class="jv-loading-bar" style="height:100%;width:8%;background:#218838"></div></div><div class="jv-loading-percent" style="margin-top:9px">8%</div></div>';
+  const master = document.getElementById('movableDiv38');
+  master?.appendChild(loadingOverlay);
+  const loadingBar = loadingOverlay.querySelector('.jv-loading-bar'), loadingPercent = loadingOverlay.querySelector('.jv-loading-percent');
+  const setLoading = value => { loading = value; clearInterval(setLoading.timer); if (value) { let progress = 8; loadingOverlay.style.display = 'flex'; loadingPercent.textContent = '8%'; loadingBar.style.width = '8%'; setLoading.timer = setInterval(() => { progress = Math.min(92, progress + 4); loadingPercent.textContent = `${progress}%`; loadingBar.style.width = `${progress}%`; }, 160); } else { loadingPercent.textContent = '100%'; loadingBar.style.width = '100%'; setTimeout(() => { loadingOverlay.style.display = 'none'; }, 220); } };
+  const jvBody = table.tBodies[0];
+  jvBody && new MutationObserver(() => { if (loading && Array.from(jvBody.rows).some(row => row.cells.length > 1 && !row.cells[0]?.colSpan)) setLoading(false); }).observe(jvBody, { childList: true, subtree: true });
+  searchForm?.addEventListener('submit', () => { setLoading(true); setTimeout(() => { if (loading) setLoading(false); }, 30000); }, true);
   const refresh = () => searchForm?.requestSubmit();
   const setTrashMode = (value) => {
     trashMode = value;
@@ -35,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
       searchForm.appendChild(field);
     }
     field.value = value ? '1' : '0';
-    const button = document.getElementById('trash-button');
+    const button = master?.querySelector('#trash-button');
     if (button) button.innerHTML = value ? '<i class="fas fa-list"></i> Active' : '<i class="fas fa-recycle"></i> Trash';
     selectedRow?.classList.remove('selected-row');
     selectedRow = null;
@@ -71,10 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedRow?.classList.remove('selected-row');
     selectedRow = row;
     selectedRow.classList.add('selected-row');
-  });
+  }, true);
 
   const actionButtons = ['toggleButton182', 'toggleButton183', 'delete-button', 'print-button', 'export-button', 'reverse-button'];
-  actionButtons.forEach((id) => document.getElementById(id)?.addEventListener('click', (event) => {
+  actionButtons.forEach((id) => master?.querySelector(`#${id}`)?.addEventListener('click', (event) => {
     if (!selectedRow) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -122,11 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) { notify(error.message); }
   });
 
-  document.getElementById('delete-button')?.addEventListener('click', async (event) => {
+  master?.querySelector('#delete-button')?.addEventListener('click', async (event) => {
     event.preventDefault();
     if (trashMode) return notify('Open Active vouchers before moving a voucher to Trash.');
     let id; try { id = await selectedId(); } catch (error) { notify(error.message); return; }
-    if (!id || !confirm('Move the selected journal voucher to Trash?')) return;
+    if (!id) return;
+    const confirmed = await window.showVoucherDeleteConfirm('Move the selected journal voucher to Trash?');
+    if (!confirmed) return;
     try { const response = await fetch(`/api/vouchers/${id}/trash`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: 'Journal Voucher' }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Unable to move journal voucher to Trash.'); notify(data.message); selectedRow = null; refresh(); } catch (error) { notify(error.message); }
   });
 
@@ -136,10 +149,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try { const response = await fetch(`/api/journal-vouchers/${id}/copy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voucherNo: voucherNo.trim() }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Unable to copy journal voucher.'); notify(data.message); refresh(); } catch (error) { notify(error.message); }
   });
 
-  document.getElementById('print-button')?.addEventListener('click', (event) => { event.preventDefault(); const row = selected(); if (!row) return; const popup = window.open('', '_blank'); popup.document.write(`<table border="1"><thead>${table.tHead.innerHTML}</thead><tbody>${row.outerHTML}</tbody></table>`); popup.document.close(); popup.print(); });
-  document.getElementById('export-button')?.addEventListener('click', (event) => { event.preventDefault(); const row = selected(); if (!row) return; const values = Array.from(row.cells, cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([values.join(',')], { type: 'text/csv' })); a.download = 'journal-voucher.csv'; a.click(); URL.revokeObjectURL(a.href); });
-  document.getElementById('trash-button')?.addEventListener('click', (event) => { event.preventDefault(); setTrashMode(!trashMode); });
-  document.getElementById('reverse-button')?.addEventListener('click', async (event) => {
+  master?.querySelector('#print-button')?.addEventListener('click', (event) => { event.preventDefault(); const row = selected(); if (!row) return; const popup = window.open('', '_blank'); popup.document.write(`<table border="1"><thead>${table.tHead.innerHTML}</thead><tbody>${row.outerHTML}</tbody></table>`); popup.document.close(); popup.print(); });
+  master?.querySelector('#export-button')?.addEventListener('click', (event) => { event.preventDefault(); const row = selected(); if (!row) return; const values = Array.from(row.cells, cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([values.join(',')], { type: 'text/csv' })); a.download = 'journal-voucher.csv'; a.click(); URL.revokeObjectURL(a.href); });
+  master?.querySelector('#trash-button')?.addEventListener('click', (event) => { event.preventDefault(); setTrashMode(!trashMode); });
+  master?.querySelector('#reverse-button')?.addEventListener('click', async (event) => {
     event.preventDefault();
     if (!trashMode) return notify('Open Trash first, then select a voucher to restore.');
     let id; try { id = await selectedId(); } catch (error) { notify(error.message); return; }
