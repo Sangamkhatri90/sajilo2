@@ -33103,6 +33103,15 @@ app.get('/api/next-voucher', (req, res) => {
 });
 
 // Resolve the entered voucher date into both accounting date columns.
+function normalizeJVMiti(miti) {
+  const parts = String(miti || '').trim().replace(/-/g, '/').split('/');
+  if (parts.length !== 3) return String(miti || '').trim();
+  const [first, second, third] = parts.map(part => part.trim());
+  if (/^\d{4}$/.test(first)) return `${first}/${second.padStart(2, '0')}/${third.padStart(2, '0')}`;
+  if (/^\d{4}$/.test(third)) return `${third}/${second.padStart(2, '0')}/${first.padStart(2, '0')}`;
+  return String(miti || '').trim();
+}
+
 async function resolveVoucherDatePair(conn, value) {
   const raw = String(value || '').trim();
   if (!raw) throw new Error('Voucher date is required.');
@@ -33112,12 +33121,12 @@ async function resolveVoucherDatePair(conn, value) {
     const candidates = [raw, raw.replace(/-/g, '/'), raw.replace(/\//g, '-')];
     const rows = await sql.promises.query(conn, `SELECT TOP 1 CONVERT(varchar(10), M_date, 23) AS M_date, M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE REPLACE(M_Miti, '/', '-') IN (?, ?)`, [candidates[1], candidates[2]]);
     if (!rows.length) throw new Error('The local date was not found in SAJILODB.dbo.tbLocalDate.');
-    return { jvDate: rows[0].M_date, jvMiti: String(rows[0].M_Miti || '').trim() };
+    return { jvDate: rows[0].M_date, jvMiti: normalizeJVMiti(rows[0].M_Miti) };
   }
   const ad = raw.replace(/\//g, '-');
   const rows = await sql.promises.query(conn, `SELECT TOP 1 CONVERT(varchar(10), M_date, 23) AS M_date, M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE CONVERT(date, M_date) = CONVERT(date, ?, 23)`, [ad]);
   if (!rows.length) throw new Error('The voucher date was not found in SAJILODB.dbo.tbLocalDate.');
-  return { jvDate: rows[0].M_date, jvMiti: String(rows[0].M_Miti || '').trim() };
+  return { jvDate: rows[0].M_date, jvMiti: normalizeJVMiti(rows[0].M_Miti) };
 }
 
 app.post('/account/Transaction/PaymentMaster106', async (req, res) => {

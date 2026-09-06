@@ -165,7 +165,11 @@ async function fetchCurrentBSDate(nowAD) {
         console.log("Received date is", data);
 
        if (data.dateType === 'AD' && data.adDate) {
-  document.getElementById('current-bs-date').innerText = `Date: ${data.adDate}`;
+  const formattedForInput = String(data.adDate).slice(0, 10);
+  document.getElementById('current-bs-date').innerText = `Date: ${formattedForInput}`;
+  document.querySelectorAll(".currentlocaldate").forEach(el => {
+    el.value = formattedForInput;
+  });
   return;
 }
 
