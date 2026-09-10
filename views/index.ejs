@@ -11515,7 +11515,7 @@ async function loadEarningsData() {
                                         </button>
                                     </a>
                                     <a href="#" style="text-decoration: none;">
-                                        <button type="button" class="copy-button" id="">
+                                        <button type="button" class="copy-button" id="toggleButtonReceiptCopy">
                                             <i class="fas fa-copy"></i>Copy
                                         </button>
                                     </a>
@@ -12056,10 +12056,100 @@ async function loadEarningsData() {
                     </div>
                 </div>
 
+                <!-- Copy Receipt Voucher -->
+                <div class="dcm-movableDiv" id="movableDivReceiptCopy">
+                    <button id="closeButtonReceiptCopy">&times;</button>
+                    <div class="rv-container">
+                        <form action="" id="myFormReceiptCopy">
+                            <fieldset class="rv-fieldset">
+                                <legend class="rv-legend">Receipt Voucher</legend>
+                                <div class="rv-form-style-horizontal3">
+                                    <div style="margin-left:10px; margin-top:20px;"><input type="checkbox"><label>Receipt Voucher</label></div>
+                                    <div style="margin-left:20px; max-width:40px;"><label>Voucher Date</label><input type="date" class="currentlocaldate" name="RVVoucherDate"></div>
+                                </div>
+                                <div class="rv-form-style-horizontal3">
+                                    <div><label>Voucher No</label><input type="text" class="rv-text" name="voucherNo"></div>
+                                    <div><label>Ledger</label><input type="text" class="rv-text" name="RVLedger" id="DERVMcopyLedger" placeholder="Type or Click to get lists"></div>
+                                    <div id="ledgerClassDERVMcopy" class="suggestions-list2" style="display: none;"></div>
+                                    <div><label>Doc Class</label><input type="text" class="benchods" name="docClassTrans" id="doc-class-receipt-copy" placeholder="Type or Click to get lists"></div>
+                                    <div id="docClassesListforReceiptCopy" class="suggestions-list2" style="display: none;"></div>
+                                </div>
+                                <div class="rv-form-style-horizontal3">
+                                    <div><label>Member ID</label><input type="text" class="rv-text" name="RVMemberID"></div>
+                                    <div><input type="text" class="rv-text" name="RVMemberName" style="margin-top:20px;"></div>
+                                    <div><label>Collector</label><input type="text" class="rv-text" name="RVCollector" id="DERVMcopyCollector" placeholder="Type or Click to get lists"></div>
+                                    <div id="collectorClassDERVMcopy" class="suggestions-list2" style="display: none;"></div>
+                                    <div><label>Sub Ledger Alias</label><input type="text" class="rv-text" name="RVSubLedgerAlias"></div>
+                                </div>
+                                <div><label>Remarks</label><textarea class="jv-text" name="RVRemarks"></textarea><input type="hidden" name="RVUserName" class="org-user-master"></div>
+                                <fieldset><div class="rv-table-container2"><table id="rv-copy-table" class="ledger-table"><thead><tr><th>S.No</th><th>Dr/Cr</th><th>Account Head</th><th>Sub Head</th><th>Dr.Amount</th><th>Cr.Amount</th></tr></thead><tbody><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table></div></fieldset>
+                                <div class="rv-buttons"><button type="submit" class="rv-button">Save</button><button type="button" class="rv-button">Import</button><button type="button" class="rv-button" id="cancelButtonReceiptCopy">Cancel</button></div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const masterTable = document.getElementById('RMTablevalues');
+                        const copyButton = document.getElementById('toggleButtonReceiptCopy');
+                        const copyDiv = document.getElementById('movableDivReceiptCopy');
+                        const copyForm = document.getElementById('myFormReceiptCopy');
+                        const detailTable = document.getElementById('rv-copy-table');
+                        const notify = message => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
+                        const value = name => copyForm.querySelector(`[name="${name}"]`)?.value.trim() || '';
+                        const cellValue = cell => (cell?.querySelector('input, select, textarea')?.value ?? cell?.textContent ?? '').trim();
+                        const resetDetails = () => { detailTable.tBodies[0].innerHTML = '<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>'; };
+
+                        copyButton?.addEventListener('click', async event => {
+                            event.preventDefault(); event.stopImmediatePropagation();
+                            const journalID = masterTable?.querySelector('tbody tr.selected-row')?.dataset.journalId;
+                            if (!journalID) return notify('Select a receipt voucher row first.');
+                            try {
+                                const [numberResponse, voucherResponse] = await Promise.all([fetch('/api/nextReceiptVoucher'), fetch(`/api/vouchers/${journalID}?menuName=Receipt%20Voucher`)]);
+                                const [numberData, voucherData] = await Promise.all([numberResponse.json(), voucherResponse.json()]);
+                                if (!numberResponse.ok || !numberData.voucherNumber) throw new Error(numberData.message || 'Unable to get the next receipt voucher number.');
+                                if (!voucherResponse.ok || !voucherData.success) throw new Error(voucherData.message || 'Unable to load receipt voucher.');
+                                const voucher = voucherData.voucher;
+                                copyForm.reset(); copyForm.dataset.sourceJournalId = journalID;
+                                copyForm.querySelector('[name="voucherNo"]').value = numberData.voucherNumber;
+                                copyForm.querySelector('[name="RVVoucherDate"]').value = voucher.JV_Date || '';
+                                copyForm.querySelector('[name="RVLedger"]').value = voucher.CashLedger || '';
+                                copyForm.querySelector('[name="docClassTrans"]').value = voucher.DocClassName || '';
+                                copyForm.querySelector('[name="RVMemberID"]').value = voucher.MemberID || '';
+                                copyForm.querySelector('[name="RVMemberName"]').value = voucher.MemberName || '';
+                                copyForm.querySelector('[name="RVCollector"]').value = voucher.CollectorName || '';
+                                copyForm.querySelector('[name="RVSubLedgerAlias"]').value = voucher.SubLedgerAlias || '';
+                                copyForm.querySelector('[name="RVRemarks"]').value = voucher.Remarks || '';
+                                detailTable.tBodies[0].innerHTML = voucherData.details.map((detail, index) => `<tr><td>${index + 1}</td><td>Cr</td><td>${detail.AccountHead || detail.accountHead || ''}</td><td>${detail.SubHead || detail.subHead || ''}</td><td></td><td>${detail.CrAmount || ''}</td></tr>`).join('') || '<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+                                copyDiv.style.zIndex = '10000'; copyDiv.style.display = 'block';
+                            } catch (error) { notify(error.message); }
+                        }, true);
+
+                        copyForm?.addEventListener('submit', async event => {
+                            event.preventDefault();
+                            const details = Array.from(detailTable.tBodies[0]?.rows || []).map(row => ({ accountHead: cellValue(row.cells[2]), subHead: cellValue(row.cells[3]), drAmount: cellValue(row.cells[4]), crAmount: cellValue(row.cells[5]) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+                            const voucherDate = value('RVVoucherDate');
+                            const formattedVoucherDate = /^\d{4}-\d{2}-\d{2}$/.test(voucherDate) ? voucherDate.split('-').reverse().join('/') : voucherDate;
+                            if (details.some(row => Number(row.drAmount || 0) > 0)) return notify('Receipt voucher detail rows should use Cr.Amount.');
+                            try {
+                                const response = await fetch('/account/Transaction/ReceiptMaster100', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voucherNo: value('voucherNo'), ledger: value('RVLedger'), docClass: value('docClassTrans'), voucherDate: formattedVoucherDate, collector: value('RVCollector'), subLedgerAlias: value('RVSubLedgerAlias'), remarks: value('RVRemarks'), userName: value('RVUserName'), memberID: value('RVMemberID'), memberName: value('RVMemberName'), details }) });
+                                const data = await response.json();
+                                if (!response.ok || !data.success) throw new Error(data.message || 'Unable to insert receipt voucher.');
+                                notify(data.message); copyForm.reset(); resetDetails(); copyDiv.style.display = 'none'; document.getElementById('rvsearchForm')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                            } catch (error) { notify(error.message); }
+                        });
+                        ['closeButtonReceiptCopy', 'cancelButtonReceiptCopy'].forEach(id => document.getElementById(id)?.addEventListener('click', event => { event.preventDefault(); copyDiv.style.display = 'none'; }));
+                    });
+                </script>
+
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
-                        // Make movableDiv100 draggable with z-index management
-                        makeMovable('movableDiv100', 'closeButton100', 'cancelButton100', 'toggleButton100', 'r');
+                        // movableDiv100 is initialized automatically by movable.js.
+                        makeMovable('movableDivReceiptCopy', 'closeButtonReceiptCopy', 'cancelButtonReceiptCopy', 'toggleButtonReceiptCopy');
+                        document.getElementById('movableDivReceiptCopy')?.addEventListener('mousedown', function () {
+                            this.style.zIndex = '10000';
+                        });
                     });
                 </script>
                 <script>
@@ -13056,7 +13146,7 @@ async function loadEarningsData() {
                                     </div>
                                     <div style="margin-left: 20px; max-width: 40px;">
                                         <label for="">Voucher Date</label>
-                                        <input type="date" class="pv-date" name="" id="paymentVoucherDate" required>
+                                        <input type="date" class="pv-date currentlocaldate" name="" id="paymentVoucherDate" required>
                                     </div>
                                 </div>
                                 <div class="pv-form-style-horizontal3">
@@ -14538,7 +14628,8 @@ async function loadEarningsData() {
                         const remove = panel?.querySelector('#pvm-delete-button');
                         const restore = panel?.querySelector('#pvm-reverse-button');
                         const edit = panel?.querySelector('#pvm-edit-button');
-                        if (!panel || !table || !form || !trash || !remove || !restore || !edit) return;
+                        const copy = panel?.querySelector('#copy-button');
+                        if (!panel || !table || !form || !trash || !remove || !restore || !edit || !copy) return;
                         let selectedRow = null;
                         let loading = false;
                         let progress = 0;
@@ -14562,6 +14653,90 @@ async function loadEarningsData() {
                             const row = event.target.closest('tbody tr');
                             if (!row?.dataset.journalId) return;
                             selectedRow?.classList.remove('selected-row'); selectedRow = row; row.classList.add('selected-row');
+                        }, true);
+                        const copyDialog = () => {
+                            let dialog = document.getElementById('movableDiv107Copy');
+                            if (dialog) return dialog;
+                            const source = document.getElementById('movableDiv107');
+                            if (!source) return null;
+                            dialog = source.cloneNode(true);
+                            dialog.querySelectorAll('[id]').forEach(element => { element.id += 'Copy'; });
+                            dialog.id = 'movableDiv107Copy';
+                            dialog.querySelector('legend').textContent = 'Payment Voucher Copy';
+                            dialog.style.display = 'none';
+                            document.body.appendChild(dialog);
+                            dialog.addEventListener('mousedown', event => {
+                                if (event.button !== 0 || event.target.closest('input, button, textarea, select, a')) return;
+                                const rect = dialog.getBoundingClientRect();
+                                const offsetX = event.clientX - rect.left, offsetY = event.clientY - rect.top;
+                                dialog.style.zIndex = '998';
+                                const move = moveEvent => {
+                                    const bounds = dialog.getBoundingClientRect();
+                                    dialog.style.left = `${Math.min(Math.max(moveEvent.clientX - offsetX, 8), Math.max(8, window.innerWidth - bounds.width - 8))}px`;
+                                    dialog.style.top = `${Math.min(Math.max(moveEvent.clientY - offsetY, 8), Math.max(8, window.innerHeight - bounds.height - 8))}px`;
+                                };
+                                const stop = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', stop); };
+                                document.addEventListener('mousemove', move); document.addEventListener('mouseup', stop);
+                            });
+                            dialog.ondragstart = () => false;
+                            initTableDropdownDENew('pv-new-tableCopy');
+                            attachLedgerforBandCAutocomplete('DEPVMnewLedgerCopy', 'ledgerClassDEPVMnewCopy', '/fetchGLNames');
+                            attachDocClassAutocomplete('DEPVnewDocclassCopy', 'DocClassDEPVMnewCopy', '/fetchDocClasses');
+                            attachCollectorAutocomplete('DEPVnewCollectorCopy', 'collectorClassDEPVMnewCopy', '/fetchCollectors');
+                            const memberID = dialog.querySelector('#paymentVoucherMemberIDCopy');
+                            const memberName = dialog.querySelector('#paymentVoucherMemberNameCopy');
+                            memberID.addEventListener('blur', async () => {
+                                const alias = memberID.value.trim();
+                                if (!alias) { memberName.value = ''; return; }
+                                try {
+                                    const response = await fetch('/get-member-name-2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ alias }) });
+                                    const data = await response.json();
+                                    if (!response.ok || !data.success) throw new Error(data.message || 'Member not found.');
+                                    memberName.value = data.memberName || '';
+                                } catch (error) { memberName.value = ''; notify(error.message); }
+                            });
+                            dialog.querySelector('#closeButton107Copy').addEventListener('click', event => { event.preventDefault(); dialog.style.display = 'none'; });
+                            dialog.querySelector('#cancelButton107Copy').addEventListener('click', event => { event.preventDefault(); dialog.style.display = 'none'; });
+                            dialog.querySelector('#myForm107Copy').addEventListener('submit', async event => {
+                                event.preventDefault();
+                                const value = id => dialog.querySelector(`#${id}Copy`)?.value.trim() || '';
+                                const details = Array.from(dialog.querySelectorAll('#pv-new-tableCopy tbody tr')).map(row => ({ accountHead: row.cells[2]?.textContent.trim(), subHead: row.cells[3]?.textContent.trim(), drAmount: row.cells[4]?.querySelector('input')?.value || row.cells[4]?.textContent.trim(), crAmount: row.cells[5]?.querySelector('input')?.value || row.cells[5]?.textContent.trim() })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+                                try {
+                                    const response = await fetch('/account/Transaction/PaymentMaster106', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voucherNo: value('paymentVoucherNo'), ledger: value('DEPVMnewLedger'), docClass: value('DEPVnewDocclass'), voucherDate: dialog.querySelector('#paymentVoucherDateCopy')?.value, collector: value('DEPVnewCollector'), subLedgerAlias: value('paymentVoucherSubLedgerAlias'), remarks: value('paymentVoucherRemarks'), memberID: value('paymentVoucherMemberID'), memberName: value('paymentVoucherMemberName'), journalVoucher: dialog.querySelector('#paymentVoucherJournalCopy')?.checked, details }) });
+                                    const result = await response.json();
+                                    if (!response.ok || !result.success) throw new Error(result.message || 'Unable to copy payment voucher.');
+                                    notify(result.message); dialog.style.display = 'none'; form.requestSubmit();
+                                } catch (error) { notify(error.message); }
+                            });
+                            return dialog;
+                        };
+                        copy.addEventListener('click', async event => {
+                            event.preventDefault();
+                            if (loading) return;
+                            const journalID = id();
+                            if (!journalID) return notify('Select a payment voucher row first.');
+                            if (isTrash()) return notify('Restore the payment voucher before copying.');
+                            try {
+                                setLoading(true);
+                                const response = await fetch(`/api/vouchers/${journalID}?menuName=Payment%20Voucher`);
+                                const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Unable to load payment voucher.');
+                                const dialog = copyDialog(); if (!dialog) throw new Error('Unable to open the payment voucher copy form.');
+                                const voucher = data.voucher, field = id => dialog.querySelector(`#${id}Copy`);
+                                field('paymentVoucherJournal').checked = voucher.TransType === 'Journal Voucher';
+                                const websiteDate = document.getElementById('current-bs-date')?.textContent.match(/\d{4}[/-]\d{2}[/-]\d{2}/)?.[0].replaceAll('/', '-');
+                                field('paymentVoucherDate').value = websiteDate || '';
+                                field('DEPVMnewLedger').value = voucher.CashLedger || '';
+                                field('DEPVnewDocclass').value = voucher.DocClassName || '';
+                                field('paymentVoucherMemberID').value = voucher.MemberID || '';
+                                field('paymentVoucherMemberName').value = voucher.MemberName || '';
+                                field('DEPVnewCollector').value = voucher.CollectorName || '';
+                                field('paymentVoucherSubLedgerAlias').value = voucher.SubLedgerAlias || '';
+                                field('paymentVoucherRemarks').value = voucher.Remarks || '';
+                                field('pv-new-table').tBodies[0].innerHTML = data.details.map((detail, index) => `<tr><td>${index + 1}</td><td>Dr</td><td>${detail.AccountHead || detail.accountHead || ''}</td><td>${detail.SubHead || detail.subHead || ''}</td><td>${detail.DrAmount || detail.drAmount || ''}</td><td></td></tr>`).join('') || '<tr><td></td><td>Dr</td><td></td><td></td><td></td><td></td></tr>';
+                                await window.generateNextVoucherNumber?.('Payment Voucher', 'paymentVoucherNoCopy');
+                                dialog.style.zIndex = '998'; dialog.style.display = 'block';
+                            } catch (error) { notify(error.message || 'Unable to copy payment voucher.'); }
+                            finally { setLoading(false); }
                         }, true);
                         edit.addEventListener('click', async event => {
                             event.preventDefault();
@@ -47106,7 +47281,7 @@ async function loadEarningsData() {
 
                     const isJournalVoucherTableDENew = tableId === 'jv-new-table';
                     const isReceiptVoucherTableDENew = tableId === 'rv-new-table';
-                    const isPaymentVoucherTableDENew = tableId === 'pv-new-table';
+                    const isPaymentVoucherTableDENew = tableId === 'pv-new-table' || tableId === 'pv-new-tableCopy';
                     const isDistributionTableDENew = tableId === 'distribution-new-table';
                     const isInterestPostingTableDENew = tableId === 'interest-posting-new-table';
                     const defaultRowTypeDENew = (isReceiptVoucherTableDENew || isDistributionTableDENew) ? 'Cr' : 'Dr';
@@ -47290,6 +47465,7 @@ async function loadEarningsData() {
 
                 // Initialize for both tables
                 initTableDropdownDENew('rv-new-table');
+                initTableDropdownDENew('rv-copy-table');
                 initTableDropdownDENew('jv-new-table');
                 initTableDropdownDENew('jv-new-table2');
                 initTableDropdownDENew('jv-new-table3');

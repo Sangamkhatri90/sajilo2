@@ -113,7 +113,9 @@
                 const ledgersforBandCFields = [
 
                     { inputId: 'DERVMnewLedger', listId: 'ledgerClassDERVMnew' },
+                    { inputId: 'DERVMcopyLedger', listId: 'ledgerClassDERVMcopy' },
                     { inputId: 'DEPVMnewLedger', listId: 'ledgerClassDEPVMnew' },
+                    { inputId: 'DEPVMnewLedgerCopy', listId: 'ledgerClassDEPVMnewCopy' },
                     { inputId: 'DECMnewLedger', listId: 'ledgerClassDECMnew' },
                     { inputId: 'DEDMnewLedger', listId: 'ledgerClassDEDMnew' },
                     { inputId: 'DEIPnewLedger', listId: 'ledgerClassDEIPnew' },

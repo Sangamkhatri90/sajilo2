@@ -112,6 +112,7 @@
         // List of all Doc Class fields
         const docClassFields = [
             { inputId: 'DEPVnewDocclass', listId: 'DocClassDEPVMnew' },
+            { inputId: 'DEPVnewDocclassCopy', listId: 'DocClassDEPVMnewCopy' },
             { inputId: 'DECnewDocclass', listId: 'DocClassDECMnew' },
             { inputId: 'DEDMnewDocclass', listId: 'DocClassDEDMnew' },
             { inputId: 'DEIPnewDocclass', listId: 'DocClassDEIPnew' },
@@ -160,6 +161,8 @@
             { inputId: 'doc-class-acc-als-tna', listId: 'docClassesListforAccAlsTNA' },
             { inputId: 'doc-class-acc-als-ttr', listId: 'docClassesListforAccAlsTTR' },
             { inputId: 'OpeningBalDocClassInput', listId: 'OpeningBalDocClassDiv' },
+            { inputId: 'DEJVMcopyDocclass', listId: 'DocClassDEJVMcopy' },
+            { inputId: 'doc-class-receipt-copy', listId: 'docClassesListforReceiptCopy' },
         ];
 
         // Attach events for all fields (single fetch for all)
@@ -167,4 +170,3 @@
             attachDocClassAutocomplete(field.inputId, field.listId, '/fetchDocClasses');
         });
 
-  

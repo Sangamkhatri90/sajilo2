@@ -30,6 +30,7 @@ const { start } = require("repl");
 
 const app = express();
 
+
 process.on("unhandledRejection", (reason) => {
   console.error("Unhandled promise rejection:", reason);
 });
@@ -27228,16 +27229,6 @@ function sqlQuery(conn, query, params = []) {
 
 
 
-// Utility: Promisified query
-function queryAsync(conn, query, params) {
-  return new Promise((resolve, reject) => {
-    sql.query(conn, query, params, (err, result) => {
-      if (err) return reject(err);
-      resolve(result);
-    });
-  });
-}
-
 // POST /api/gs/SelectAllTablePop
 app.post("/api/gs/SelectAllTablePop", async (req, res) => {
   const conn = req.session.conn;
@@ -33118,8 +33109,16 @@ async function resolveVoucherDatePair(conn, value) {
   const settings = await sql.promises.query(conn, 'SELECT TOP 1 DateType FROM dbo.tbSystemSettings');
   const dateType = String(settings[0]?.DateType || 'AD').trim().toUpperCase();
   if (dateType === 'LD') {
-    const candidates = [raw, raw.replace(/-/g, '/'), raw.replace(/\//g, '-')];
-    const rows = await sql.promises.query(conn, `SELECT TOP 1 CONVERT(varchar(10), M_date, 23) AS M_date, M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE REPLACE(M_Miti, '/', '-') IN (?, ?)`, [candidates[1], candidates[2]]);
+    const parts = raw.replace(/-/g, '/').split('/').map(part => part.trim());
+    const candidates = new Set([raw.replace(/\//g, '-')]);
+    if (parts.length === 3) {
+      const [first, month, third] = parts;
+      const [year, day] = /^\d{4}$/.test(first) ? [first, third] : [third, first];
+      candidates.add(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+      candidates.add(`${day.padStart(2, '0')}-${month.padStart(2, '0')}-${year}`);
+    }
+    const dateCandidates = [...candidates];
+    const rows = await sql.promises.query(conn, `SELECT TOP 1 CONVERT(varchar(10), M_date, 23) AS M_date, M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE REPLACE(LTRIM(RTRIM(M_Miti)), '/', '-') IN (${dateCandidates.map(() => '?').join(', ')})`, dateCandidates);
     if (!rows.length) throw new Error('The local date was not found in SAJILODB.dbo.tbLocalDate.');
     return { jvDate: rows[0].M_date, jvMiti: normalizeJVMiti(rows[0].M_Miti) };
   }
@@ -33132,7 +33131,7 @@ async function resolveVoucherDatePair(conn, value) {
 app.post('/account/Transaction/PaymentMaster106', async (req, res) => {
   const conn = req.session.conn;
   const { voucherNo, ledger, docClass, voucherDate, collector, subLedgerAlias, remarks, memberID, memberName, journalVoucher, details } = req.body || {};
-  const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountHead: String(row.accountHead || '').trim(), subHead: String(row.subHead || '').trim(), drAmount: Number(row.drAmount || 0), crAmount: Number(row.crAmount || 0) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+  const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountHead: String(row.accountHead || '').trim(), subHead: String(row.subHead || '').trim(), drAmount: Number(row.drAmount || 0), crAmount: Number(row.crAmount || 0) })).filter(row => row.drAmount !== 0 || row.crAmount !== 0);
   if (!conn || !voucherNo || !voucherDate || !ledger || !docClass || !rows.length) return res.status(400).json({ success: false, message: 'Voucher date, number, cash/bank ledger, doc class, and at least one detail row are required.' });
   if (rows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount <= 0 || row.crAmount !== 0)) return res.status(400).json({ success: false, message: 'Each payment detail row must contain an account head and Dr.Amount only.' });
   const query = (text, params = []) => new Promise((resolve, reject) => sql.query(conn, text, params, (error, result) => error ? reject(error) : resolve(result || [])));
@@ -33162,7 +33161,7 @@ app.post('/account/Transaction/PaymentMaster106', async (req, res) => {
     }
     const total = resolved.reduce((sum, row) => sum + row.drAmount, 0);
     const master = await query(`INSERT INTO tbJournalMaster (VoucherNo, SLIDPR, JV_Date, JV_Miti, CreatedDate, CreatedUserID, Remarks, UDVNo, Prov, MemberID, DocClassID, CollectorID, GLIDCashDC, TotalAmountDC, TransType)
-      OUTPUT INSERTED.JournalID VALUES (?, ?, ?, ?, GETDATE(), ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`, [voucherNo, slidPR, voucherDates.jvDate, voucherDates.jvMiti, req.session.userID || null, remarks || null, udv[0].UDVNo, resolvedMemberID, doc[0].DocClassID, collectorID, cash[0].GLID, total, journalVoucher ? 'Journal Voucher' : 'Payment Voucher']);
+      OUTPUT INSERTED.JournalID VALUES (?, ?, ?, ?, GETDATE(), ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`, [voucherNo, slidPR, voucherDates.jvDate, voucherDates.jvMiti, req.session.userID || null, remarks || null, udv[0].UDVNo, resolvedMemberID, doc[0].DocClassID, collectorID, cash[0].GLID, total, journalVoucher ? 'Journal Voucher' : 'Payment Voucher']);
     journalID = master[0].JournalID;
     for (const row of resolved) await query('INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, ?, ?, ?, 0, 0, 0)', [journalID, row.rowNo, row.SLID, row.GLID, row.drAmount]);
     return res.status(201).json({ success: true, message: 'Payment voucher inserted successfully.', journalID });
@@ -33340,6 +33339,7 @@ app.post('/account/Transaction/DistributionMaster111', async (req, res) => {
 app.post('/account/Transaction/InterestPosting113', async (req, res) => {
   const conn = req.session.conn;
   const { voucherNo, voucherDate, ledger, docClass, collector, subLedgerAlias, remarks, journalVoucher, details } = req.body || {};
+  console.log('Received Interest Posting request:', { voucherNo, voucherDate, ledger, docClass, collector, subLedgerAlias, remarks, journalVoucher, details });
   const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountHead: String(row.accountHead || '').trim(), subHead: String(row.subHead || '').trim(), drAmount: Number(row.drAmount || 0), crAmount: Number(row.crAmount || 0) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
   if (!conn || !voucherNo || !voucherDate || !ledger || !docClass || !rows.length) return res.status(400).json({ success: false, message: 'Voucher date, number, ledger, doc class, and detail rows are required.' });
   if (rows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount <= 0 || row.crAmount !== 0)) return res.status(400).json({ success: false, message: 'Each Interest Posting row needs an account head and Dr.Amount only.' });
@@ -33384,6 +33384,8 @@ app.post("/account/Transaction/ReceiptMaster100", async (req, res) => {
     memberName,
     details
   } = req.body || {};
+
+  console.log('Received Receipt Voucher data:', req.body);
 
   const rows = Array.isArray(details) ? details : [];
   const cleanRows = rows
@@ -33485,8 +33487,8 @@ app.post("/account/Transaction/ReceiptMaster100", async (req, res) => {
       let localDateRows = [];
       for (const candidate of dateCandidates) {
         const candidateRows = await query(
-          'SELECT TOP 1 M_Miti, M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ? OR CONVERT(date, M_date) = CONVERT(date, ?)',
-          [candidate, candidate]
+          "SELECT TOP 1 M_Miti, M_date FROM SAJILODB.dbo.tbLocalDate WHERE REPLACE(LTRIM(RTRIM(M_Miti)), '/', '-') = ?",
+          [candidate.replace(/\//g, '-')]
         );
         if (candidateRows.length) {
           localDateRows = candidateRows;
@@ -33739,8 +33741,8 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
       let localDateRows = [];
       for (const candidate of dateCandidates) {
         const candidateRows = await query(
-          'SELECT TOP 1 M_Miti, M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ? OR CONVERT(date, M_date) = CONVERT(date, ?)',
-          [candidate, candidate]
+          "SELECT TOP 1 M_Miti, M_date FROM SAJILODB.dbo.tbLocalDate WHERE REPLACE(LTRIM(RTRIM(M_Miti)), '/', '-') = ?",
+          [candidate.replace(/\//g, '-')]
         );
 
         if (candidateRows.length) {

@@ -53,10 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
     refresh();
   };
   const cellValue = (cell) => (cell?.querySelector('input, select, textarea')?.value ?? cell?.textContent ?? '').trim();
+  const columnValue = (row, heading) => {
+    const headings = Array.from(table.tHead?.rows || []).flatMap((headerRow) => Array.from(headerRow.cells));
+    const column = headings.findIndex((cell) => cell.textContent.trim().toLowerCase() === heading.toLowerCase());
+    return column >= 0 ? cellValue(row.cells[column]) : '';
+  };
 
   const bindMemberLookup = (form) => {
-    const memberID = form.querySelector('[name="JVMemberID"]');
-    const memberName = form.querySelector('[name="JVMemberName"]');
+    const memberID = form.querySelector('[name="JVMemberID"], #paymentVoucherMemberID');
+    const memberName = form.querySelector('[name="JVMemberName"], #paymentVoucherMemberName');
     if (!memberID || !memberName || memberID.dataset.lookupBound) return;
     memberID.dataset.lookupBound = 'true';
     memberID.addEventListener('blur', async () => {
@@ -71,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  ['myForm97', 'myForm182', 'myForm183'].forEach((formId) => {
+  ['myForm97', 'myForm107', 'myForm182', 'myForm183'].forEach((formId) => {
     const form = document.getElementById(formId);
     if (form) bindMemberLookup(form);
   });
@@ -144,10 +149,57 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('toggleButton183')?.addEventListener('click', async (event) => {
-    event.preventDefault(); let id; try { id = await selectedId(); } catch (error) { notify(error.message); return; } if (!id) return;
-    const voucherNo = prompt('Enter the voucher number for the copy:'); if (!voucherNo?.trim()) return;
-    try { const response = await fetch(`/api/journal-vouchers/${id}/copy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voucherNo: voucherNo.trim() }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Unable to copy journal voucher.'); notify(data.message); refresh(); } catch (error) { notify(error.message); }
+    event.preventDefault();
+    let id; try { id = await selectedId(); } catch (error) { notify(error.message); return; } if (!id) return;
+    try {
+      const response = await fetch('/api/nextJournalVoucher');
+      const data = await response.json();
+      if (!response.ok || !data.voucherNumber) throw new Error(data.message || 'Unable to get the next journal voucher number.');
+      const form = document.getElementById('myForm183');
+      form.dataset.sourceJournalId = id;
+      form.querySelector('[name="voucherNumberJVM"]').value = data.voucherNumber;
+      form.querySelector('#DEJVMcopyDocclass').value = columnValue(selectedRow, 'Doc Class');
+      document.getElementById('movableDiv183').style.display = 'block';
+    } catch (error) { notify(error.message); }
   });
+
+  document.getElementById('myForm183')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const value = (name) => form.querySelector(`[name="${name}"]`)?.value.trim() || '';
+    const details = Array.from(form.querySelectorAll('#jv-new-table3 tbody tr')).map((row) => ({
+      accountHead: cellValue(row.cells[2]), subHead: cellValue(row.cells[3]), drAmount: cellValue(row.cells[4]), crAmount: cellValue(row.cells[5])
+    })).filter((row) => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+    const voucherDate = value('JVVoucherDate');
+    const formattedVoucherDate = /^\d{4}-\d{2}-\d{2}$/.test(voucherDate)
+      ? voucherDate.split('-').reverse().join('/')
+      : voucherDate;
+    const invalidCreditRow = details.find((row) => Number(row.crAmount || 0) > 0 || Number(row.drAmount || 0) <= 0);
+    if (invalidCreditRow) return notify('Journal voucher detail rows should use Dr.Amount only.');
+    try {
+      const response = await fetch('/account/Transaction/JournalMaster97', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voucherNo: value('voucherNumberJVM'), docClass: value('docClassJVM'),
+          JVVoucherDate: formattedVoucherDate, JVCollector: value('JVCollector'),
+          JVRemarks: value('JVRemarks'), JVUserName: form.querySelector('#JVUserName')?.value.trim() || '',
+          memberID: value('JVMemberID'), memberName: value('JVMemberName'), details
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Unable to insert journal voucher.');
+      notify(data.message); form.reset(); document.getElementById('movableDiv183').style.display = 'none'; refresh();
+    } catch (error) { notify(error.message); }
+  });
+
+  [['closeButton97', 'movableDiv97'], ['closeButton182', 'movableDiv182'], ['closeButton183', 'movableDiv183']].forEach(([buttonId, divId]) => {
+    document.getElementById(buttonId)?.addEventListener('click', (event) => {
+      event.preventDefault();
+      document.getElementById(divId).style.display = 'none';
+    });
+  });
+
+  document.querySelector('#myForm183 button.jv-button:not([type])')?.setAttribute('type', 'button');
 
   master?.querySelector('#print-button')?.addEventListener('click', (event) => { event.preventDefault(); const row = selected(); if (!row) return; const popup = window.open('', '_blank'); popup.document.write(`<table border="1"><thead>${table.tHead.innerHTML}</thead><tbody>${row.outerHTML}</tbody></table>`); popup.document.close(); popup.print(); });
   master?.querySelector('#export-button')?.addEventListener('click', (event) => { event.preventDefault(); const row = selected(); if (!row) return; const values = Array.from(row.cells, cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([values.join(',')], { type: 'text/csv' })); a.download = 'journal-voucher.csv'; a.click(); URL.revokeObjectURL(a.href); });
