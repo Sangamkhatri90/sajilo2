@@ -2822,6 +2822,7 @@ document.getElementById("ipmsearchForm").addEventListener("submit", function (ev
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                const amount = Number(row.TotalDrAmount) || Number(row.TotalCrAmount) || 0;
                 tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
@@ -2829,7 +2830,7 @@ document.getElementById("ipmsearchForm").addEventListener("submit", function (ev
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${amount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.Creator || ''}</td>
                     <td>${row.CreatedDate || ''}</td>
@@ -2848,14 +2849,14 @@ document.getElementById("ipmsearchForm").addEventListener("submit", function (ev
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${amount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.DocClassName || ''}</td>
                 `;
                 }
 
                 tbody.appendChild(tr);
-                totalAmount += parseFloat(row.TotalCrAmount) || 0;
+                totalAmount += amount;
             });
 
             // ✅ Add total row
@@ -2949,13 +2950,14 @@ document.getElementById("mvmsearchForm").addEventListener("submit", function (ev
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                const amount = Number(row.TotalDrAmount) || Number(row.TotalCrAmount) || 0;
                 tr.dataset.journalId = row.JournalID || '';
                 if (checkbox.checked) {
                     tr.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${amount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.Creator || ''}</td>
                     <td>${row.CreatedDate || ''}</td>
@@ -2974,14 +2976,14 @@ document.getElementById("mvmsearchForm").addEventListener("submit", function (ev
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${amount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.DocClassName || ''}</td>
                 `;
                 }
                 tbody.appendChild(tr);
 
-                totalAmount += parseFloat(row.TotalCrAmount) || 0;
+                totalAmount += amount;
             });
 
             // Append total row
