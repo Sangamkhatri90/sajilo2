@@ -14833,6 +14833,34 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                     editButton.dispatchEvent(new CustomEvent('click', { bubbles: true, cancelable: true, detail: { postedValidated: true } }));
                                 } catch (error) { notify(error.message || 'Unable to load voucher.'); }
                             }, true);
+                            copy?.addEventListener('click', async event => {
+                                if (config.menu !== 'Interest Posting') return;
+                                const journalID = selectedID();
+                                if (!journalID) return;
+                                event.preventDefault();
+                                event.stopImmediatePropagation();
+                                try {
+                                    const response = await fetch(`/api/vouchers/${journalID}?menuName=${encodeURIComponent(config.menu)}`);
+                                    const data = await response.json();
+                                    if (!response.ok || !data.success) throw new Error(data.message);
+                                    const v = data.voucher;
+                                    const form = document.getElementById('myForm113');
+                                    form.reset();
+                                    delete form.dataset.editJournalId;
+                                    document.getElementById('interestPostingVoucherDate').value = v.JV_Date || '';
+                                    document.getElementById('DEIPnewLedger').value = v.CashLedger || '';
+                                    document.getElementById('DEIPnewDocclass').value = v.DocClassName || '';
+                                    document.getElementById('INMemberID').value = v.MemberID || '';
+                                    document.getElementById('INMemberName').value = v.MemberName || '';
+                                    document.getElementById('DEIPnewCollector').value = v.CollectorName || '';
+                                    document.getElementById('interestPostingSubLedgerAlias').value = v.SubLedgerAlias || '';
+                                    document.getElementById('interestPostingRemarks').value = v.Remarks || '';
+                                    document.getElementById('interestPostingJournalVoucher').checked = v.TransType === 'Journal Voucher';
+                                    document.querySelector('#interest-posting-new-table tbody').innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td>${d.DrAmount ? 'Dr' : 'Cr'}</td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td>${d.DrAmount || ''}</td><td>${d.CrAmount || ''}</td></tr>`).join('');
+                                    await window.generateNextVoucherNumber?.('Interest Posting', 'interestPostingVoucherNo');
+                                    document.getElementById('movableDiv113').style.display = 'block';
+                                } catch (error) { notify(error.message || 'Unable to load voucher.'); }
+                            }, true);
                             const reload = () => search.requestSubmit();
                             const setTrash = value => { trashMode = value; let field = search.querySelector('[name$="Trash"]'); if (!field) { field = document.createElement('input'); field.type = 'hidden'; field.name = config.menu === 'Receipt Voucher' ? 'RVTrash' : config.menu === 'Collection' ? 'CVMTrash' : config.menu === 'Distribution' ? 'DVMTrash' : 'IPVMTrash'; search.appendChild(field); } field.value = value ? '1' : '0'; trash.innerHTML = value ? '<i class="fas fa-list"></i> Active' : '<i class="fas fa-recycle"></i> Trash'; selectedRow = null; reload(); };
                             table.addEventListener('click', event => { const row = event.target.closest('tbody tr'); if (!row?.dataset.journalId) return; selectedRow?.classList.remove('selected-row'); selectedRow = row; row.classList.add('selected-row'); }, true);
