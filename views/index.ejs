@@ -14125,7 +14125,7 @@ async function loadEarningsData() {
                                     </div>
                                     <div style="margin-left: 20px; max-width: 40px;">
                                         <label for="">Voucher Date</label>
-                                        <input type="date" class="ip-date" name="" id="interestPostingVoucherDate" required>
+                                        <input type="date" class="ip-date currentlocaldate" name="" id="interestPostingVoucherDate" required>
                                     </div>
                                 </div>
                                 <div class="ip-form-style-horizontal3">
@@ -14209,6 +14209,7 @@ async function loadEarningsData() {
                         const form = panel?.querySelector('#myForm113');
                         const table = panel?.querySelector('#interest-posting-new-table');
                         if (!form || !table) return;
+                        document.getElementById('toggleButton113')?.addEventListener('click', () => delete form.dataset.closeAfterSave);
                         const tbody = table.tBodies[0];
                         const value = cell => String(cell?.querySelector('input')?.value ?? cell?.textContent ?? '').trim();
                         const blankRow = () => '<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
@@ -14847,7 +14848,9 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                     const form = document.getElementById('myForm113');
                                     form.reset();
                                     delete form.dataset.editJournalId;
-                                    document.getElementById('interestPostingVoucherDate').value = v.JV_Date || '';
+                                    form.dataset.closeAfterSave = 'true';
+                                    const currentDate = document.getElementById('current-bs-date')?.textContent.match(/\d{4}[/-]\d{1,2}[/-]\d{1,2}/)?.[0]?.replaceAll('/', '-');
+                                    document.getElementById('interestPostingVoucherDate').value = currentDate || '';
                                     document.getElementById('DEIPnewLedger').value = v.CashLedger || '';
                                     document.getElementById('DEIPnewDocclass').value = v.DocClassName || '';
                                     document.getElementById('INMemberID').value = v.MemberID || '';
@@ -14861,6 +14864,13 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                     document.getElementById('movableDiv113').style.display = 'block';
                                 } catch (error) { notify(error.message || 'Unable to load voucher.'); }
                             }, true);
+                            search.addEventListener('submit', () => {
+                                const copyForm = document.getElementById('myForm113');
+                                if (config.menu === 'Interest Posting' && copyForm?.dataset.closeAfterSave === 'true') {
+                                    delete copyForm.dataset.closeAfterSave;
+                                    document.getElementById('movableDiv113').style.display = 'none';
+                                }
+                            });
                             const reload = () => search.requestSubmit();
                             const setTrash = value => { trashMode = value; let field = search.querySelector('[name$="Trash"]'); if (!field) { field = document.createElement('input'); field.type = 'hidden'; field.name = config.menu === 'Receipt Voucher' ? 'RVTrash' : config.menu === 'Collection' ? 'CVMTrash' : config.menu === 'Distribution' ? 'DVMTrash' : 'IPVMTrash'; search.appendChild(field); } field.value = value ? '1' : '0'; trash.innerHTML = value ? '<i class="fas fa-list"></i> Active' : '<i class="fas fa-recycle"></i> Trash'; selectedRow = null; reload(); };
                             table.addEventListener('click', event => { const row = event.target.closest('tbody tr'); if (!row?.dataset.journalId) return; selectedRow?.classList.remove('selected-row'); selectedRow = row; row.classList.add('selected-row'); }, true);
