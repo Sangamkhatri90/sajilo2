@@ -33371,7 +33371,7 @@ app.post('/account/Transaction/InterestPosting113', async (req, res) => {
 
 app.post('/account/Transaction/MbankVoucher115', async (req, res) => {
   const conn = req.session.conn;
-  const { voucherNo, voucherDate, ledger, docClass, collector, subLedgerAlias, remarks, journalVoucher, details } = req.body || {};
+  const { voucherNo, voucherDate, ledger, docClass, collector, remarks, journalVoucher, details } = req.body || {};
   const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountHead: String(row.accountHead || '').trim(), subHead: String(row.subHead || '').trim(), drAmount: Number(row.drAmount || 0), crAmount: Number(row.crAmount || 0) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
   if (!conn || !voucherNo || !voucherDate || !ledger || !docClass || !rows.length) return res.status(400).json({ success: false, message: 'Voucher date, number, ledger, doc class, and detail rows are required.' });
   if (rows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount < 0 || row.crAmount < 0 || (!row.drAmount && !row.crAmount))) return res.status(400).json({ success: false, message: 'Each Mbank detail row needs an account head and a debit or credit amount.' });
@@ -33390,7 +33390,6 @@ app.post('/account/Transaction/MbankVoucher115', async (req, res) => {
     const voucherDates = await resolveVoucherDatePair(conn, voucherDate);
     let collectorID = null, slidPR = null;
     if (collector) { const result = await query('SELECT TOP 1 CollectorID FROM tbCollectorMaster WHERE CollectorName = ? OR CollectorAlias = ?', [collector, collector]); if (!result.length) return res.status(400).json({ success: false, message: 'Collector not found.' }); collectorID = result[0].CollectorID; }
-    if (subLedgerAlias) { const result = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE SLName = ? OR SlAlias = ?', [subLedgerAlias, subLedgerAlias]); if (!result.length) return res.status(400).json({ success: false, message: 'Sub ledger alias not found.' }); slidPR = result[0].SLID; }
     const resolved = [];
     for (const row of rows) { const accounts = await query('SELECT TOP 1 GLID FROM tbLedgerMaster WHERE GLName = ? OR GlAlias = ?', [row.accountHead, row.accountHead]); if (!accounts.length) return res.status(400).json({ success: false, message: `Account head not found on row ${row.rowNo}.` }); let slid = null; if (row.subHead) { const subs = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE GLID = ? AND (SLName = ? OR SlAlias = ?)', [accounts[0].GLID, row.subHead, row.subHead]); if (!subs.length) return res.status(400).json({ success: false, message: `Sub head not found on row ${row.rowNo}.` }); slid = subs[0].SLID; } resolved.push({ ...row, GLID: accounts[0].GLID, SLID: slid }); }
     const total = resolved.reduce((sum, row) => sum + (row.drAmount || row.crAmount), 0);
