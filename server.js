@@ -33369,6 +33369,42 @@ app.post('/account/Transaction/InterestPosting113', async (req, res) => {
   } catch (error) { if (journalID) { try { await query('DELETE FROM tbJournalDetails WHERE JournalID = ?', [journalID]); await query('DELETE FROM tbJournalMaster WHERE JournalID = ?', [journalID]); } catch (cleanupError) { console.error('Interest Posting cleanup failed:', cleanupError); } } console.error('Interest Posting insert failed:', error); return res.status(500).json({ success: false, message: 'Database error while inserting Interest Posting.' }); }
 });
 
+app.post('/account/Transaction/MbankVoucher115', async (req, res) => {
+  const conn = req.session.conn;
+  const { voucherNo, voucherDate, ledger, docClass, collector, subLedgerAlias, remarks, journalVoucher, details } = req.body || {};
+  const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountHead: String(row.accountHead || '').trim(), subHead: String(row.subHead || '').trim(), drAmount: Number(row.drAmount || 0), crAmount: Number(row.crAmount || 0) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
+  if (!conn || !voucherNo || !voucherDate || !ledger || !docClass || !rows.length) return res.status(400).json({ success: false, message: 'Voucher date, number, ledger, doc class, and detail rows are required.' });
+  if (rows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount < 0 || row.crAmount < 0 || (!row.drAmount && !row.crAmount))) return res.status(400).json({ success: false, message: 'Each Mbank detail row needs an account head and a debit or credit amount.' });
+  const query = (text, params = []) => new Promise((resolve, reject) => sql.query(conn, text, params, (error, result) => error ? reject(error) : resolve(result || [])));
+  let journalID;
+  try {
+    if ((await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE VoucherNo = ?', [voucherNo])).length) return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
+    const [cash, doc, udv] = await Promise.all([
+      query("SELECT TOP 1 GLID FROM tbLedgerMaster WHERE Category IN ('B', 'C') AND (GLName = ? OR GlAlias = ?)", [ledger, ledger]),
+      query('SELECT TOP 1 DocClassID FROM tbDocClassMaster WHERE DocClassName = ? OR DocClassAlias = ?', [docClass, docClass]),
+      query('SELECT TOP 1 UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?', ['Mbank Voucher'])
+    ]);
+    if (!cash.length) return res.status(400).json({ success: false, message: 'Selected ledger must be a valid cash or bank ledger.' });
+    if (!doc.length) return res.status(400).json({ success: false, message: 'Doc class not found.' });
+    if (!udv.length) return res.status(400).json({ success: false, message: 'Mbank Voucher configuration was not found.' });
+    const voucherDates = await resolveVoucherDatePair(conn, voucherDate);
+    let collectorID = null, slidPR = null;
+    if (collector) { const result = await query('SELECT TOP 1 CollectorID FROM tbCollectorMaster WHERE CollectorName = ? OR CollectorAlias = ?', [collector, collector]); if (!result.length) return res.status(400).json({ success: false, message: 'Collector not found.' }); collectorID = result[0].CollectorID; }
+    if (subLedgerAlias) { const result = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE SLName = ? OR SlAlias = ?', [subLedgerAlias, subLedgerAlias]); if (!result.length) return res.status(400).json({ success: false, message: 'Sub ledger alias not found.' }); slidPR = result[0].SLID; }
+    const resolved = [];
+    for (const row of rows) { const accounts = await query('SELECT TOP 1 GLID FROM tbLedgerMaster WHERE GLName = ? OR GlAlias = ?', [row.accountHead, row.accountHead]); if (!accounts.length) return res.status(400).json({ success: false, message: `Account head not found on row ${row.rowNo}.` }); let slid = null; if (row.subHead) { const subs = await query('SELECT TOP 1 SLID FROM tbSubLedgerMaster WHERE GLID = ? AND (SLName = ? OR SlAlias = ?)', [accounts[0].GLID, row.subHead, row.subHead]); if (!subs.length) return res.status(400).json({ success: false, message: `Sub head not found on row ${row.rowNo}.` }); slid = subs[0].SLID; } resolved.push({ ...row, GLID: accounts[0].GLID, SLID: slid }); }
+    const total = resolved.reduce((sum, row) => sum + (row.drAmount || row.crAmount), 0);
+    const master = await query(`INSERT INTO tbJournalMaster (VoucherNo, SLIDPR, JV_Date, JV_Miti, CreatedDate, CreatedUserID, Remarks, UDVNo, Prov, DocClassID, CollectorID, GLIDCashDC, TotalAmountDC, TransType) OUTPUT INSERTED.JournalID VALUES (?, ?, ?, ?, GETDATE(), ?, ?, ?, 0, ?, ?, ?, ?, ?)`, [voucherNo, slidPR, voucherDates.jvDate, voucherDates.jvMiti, req.session.userID || null, remarks || null, udv[0].UDVNo, doc[0].DocClassID, collectorID, cash[0].GLID, total, journalVoucher ? 'Journal Voucher' : 'Mbank Voucher']);
+    journalID = master[0].JournalID;
+    for (const row of resolved) await query('INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, ?, ?, ?, ?, 0, 0)', [journalID, row.rowNo, row.SLID, row.GLID, row.drAmount, row.crAmount]);
+    return res.status(201).json({ success: true, message: 'Mbank voucher inserted successfully.', journalID });
+  } catch (error) {
+    if (journalID) { try { await query('DELETE FROM tbJournalDetails WHERE JournalID = ?', [journalID]); await query('DELETE FROM tbJournalMaster WHERE JournalID = ?', [journalID]); } catch (cleanupError) { console.error('Mbank voucher cleanup failed:', cleanupError); } }
+    console.error('Mbank voucher insert failed:', error);
+    return res.status(500).json({ success: false, message: 'Database error while inserting Mbank voucher.' });
+  }
+});
+
 app.post("/account/Transaction/ReceiptMaster100", async (req, res) => {
   const conn = req.session.conn;
   const {
