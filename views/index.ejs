@@ -14818,6 +14818,21 @@ const edit = panel?.querySelector('#pvm-edit-button');
                             const button = text => buttons.find(item => item.textContent.trim().toLowerCase().includes(text));
                             const edit = button('edit'), remove = button('delete'), copy = button('copy'), print = button('print'), exportButton = button('export'), trash = button('trash'), reverse = button('reverse');
                             const selectedID = () => selectedRow?.dataset.journalId || null;
+                            panel.querySelector('.edit-button')?.addEventListener('click', async event => {
+                                if (config.menu !== 'Interest Posting' || event.detail?.postedValidated) return;
+                                const journalID = selectedID();
+                                if (!journalID) return;
+                                const editButton = event.currentTarget;
+                                event.preventDefault();
+                                event.stopImmediatePropagation();
+                                try {
+                                    const response = await fetch(`/api/vouchers/${journalID}?menuName=${encodeURIComponent(config.menu)}`);
+                                    const data = await response.json();
+                                    if (!response.ok || !data.success) throw new Error(data.message);
+                                    if (data.voucher.PostUserID != null || data.voucher.PostDate != null) return notify('This voucher has been posted and you cant modify it.');
+                                    editButton.dispatchEvent(new CustomEvent('click', { bubbles: true, cancelable: true, detail: { postedValidated: true } }));
+                                } catch (error) { notify(error.message || 'Unable to load voucher.'); }
+                            }, true);
                             const reload = () => search.requestSubmit();
                             const setTrash = value => { trashMode = value; let field = search.querySelector('[name$="Trash"]'); if (!field) { field = document.createElement('input'); field.type = 'hidden'; field.name = config.menu === 'Receipt Voucher' ? 'RVTrash' : config.menu === 'Collection' ? 'CVMTrash' : config.menu === 'Distribution' ? 'DVMTrash' : 'IPVMTrash'; search.appendChild(field); } field.value = value ? '1' : '0'; trash.innerHTML = value ? '<i class="fas fa-list"></i> Active' : '<i class="fas fa-recycle"></i> Trash'; selectedRow = null; reload(); };
                             table.addEventListener('click', event => { const row = event.target.closest('tbody tr'); if (!row?.dataset.journalId) return; selectedRow?.classList.remove('selected-row'); selectedRow = row; row.classList.add('selected-row'); }, true);

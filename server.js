@@ -33260,8 +33260,8 @@ app.patch('/api/vouchers/:journalID', async (req, res) => {
   const query = (text, params = []) => new Promise((resolve, reject) => sql.query(req.session.conn, text, params, (error, result) => error ? reject(error) : resolve(result || [])));
   try {
     await ensurePaymentVoucherTrashColumn(req.session.conn); const udvNo = await resolveVoucherType(req.session.conn, menuName);
-    const current = await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE JournalID = ? AND UDVNo = ? AND ISNULL(IsTrashed, 0) = 0 AND PostUserID IS NULL', [journalID, udvNo]);
-    if (!current.length) return res.status(400).json({ success: false, message: 'Only active, unposted vouchers can be edited.' });
+    const current = await query('SELECT TOP 1 JournalID FROM tbJournalMaster WHERE JournalID = ? AND UDVNo = ? AND ISNULL(IsTrashed, 0) = 0 AND PostUserID IS NULL AND PostDate IS NULL', [journalID, udvNo]);
+    if (!current.length) return res.status(400).json({ success: false, message: 'This voucher has been posted and you cant modify it.' });
     const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountHead: String(row.accountHead || row.accountType || '').trim(), subHead: String(row.subHead || '').trim(), drAmount: Number(row.drAmount || 0), crAmount: Number(row.crAmount || 0) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount);
     if (!rows.length || rows.some(row => !row.accountHead || !Number.isFinite(row.drAmount) || !Number.isFinite(row.crAmount) || row.drAmount < 0 || row.crAmount < 0)) return res.status(400).json({ success: false, message: 'Enter valid account details and amounts.' });
     const [cash, doc, collectorRows] = await Promise.all([query("SELECT TOP 1 GLID FROM tbLedgerMaster WHERE Category IN ('B', 'C') AND (GLName = ? OR GlAlias = ?)", [ledger, ledger]), query('SELECT TOP 1 DocClassID FROM tbDocClassMaster WHERE DocClassName = ? OR DocClassAlias = ?', [docClass, docClass]), collector ? query('SELECT TOP 1 CollectorID FROM tbCollectorMaster WHERE CollectorName = ? OR CollectorAlias = ?', [collector, collector]) : Promise.resolve([])]);
