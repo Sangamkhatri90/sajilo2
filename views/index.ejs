@@ -14627,8 +14627,10 @@ async function loadEarningsData() {
                         const trash = panel?.querySelector('#pvm-trash-button');
                         const remove = panel?.querySelector('#pvm-delete-button');
                         const restore = panel?.querySelector('#pvm-reverse-button');
-                        const edit = panel?.querySelector('#pvm-edit-button');
+const edit = panel?.querySelector('#pvm-edit-button');
                         const copy = panel?.querySelector('#copy-button');
+                        const print = panel?.querySelector('#print-button');
+                        const exportButton = panel?.querySelector('#export-button');
                         if (!panel || !table || !form || !trash || !remove || !restore || !edit || !copy) return;
                         let selectedRow = null;
                         let loading = false;
@@ -14782,6 +14784,8 @@ async function loadEarningsData() {
                             if (!isTrash()) return notify('Open Trash first, select the deleted voucher, then click Reverse to restore it.');
                             try { setLoading(true); const response = await fetch(`/api/payment-vouchers/${journalID}/restore`, { method: 'POST' }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); selectedRow = null; await reload(); notify(data.message); } catch (error) { notify(error.message || 'Unable to restore payment voucher.'); } finally { setLoading(false); }
                         });
+                        print.addEventListener('click', event => { event.preventDefault(); const row = selectedRow; if (!row) return notify('Select a payment voucher row first.'); const popup = window.open('', '_blank'); popup.document.write(`<table border="1"><thead>${table.tHead.innerHTML}</thead><tbody>${row.outerHTML}</tbody></table>`); popup.document.close(); popup.print(); });
+                        exportButton.addEventListener('click', event => { event.preventDefault(); const row = selectedRow; if (!row) return notify('Select a payment voucher row first.'); const values = Array.from(row.cells, cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([values.join(',')], { type: 'text/csv' })); link.download = 'payment-voucher.csv'; link.click(); URL.revokeObjectURL(link.href); });
                     });
                 </script>
 
@@ -14812,7 +14816,7 @@ async function loadEarningsData() {
                             search.addEventListener('submit', () => { setLoading(true); setTimeout(() => { if (loading) setLoading(false); }, 30000); }, true);
                             const buttons = Array.from(panel.querySelectorAll('button'));
                             const button = text => buttons.find(item => item.textContent.trim().toLowerCase().includes(text));
-                            const edit = button('edit'), remove = button('delete'), copy = button('copy'), trash = button('trash'), reverse = button('reverse');
+                            const edit = button('edit'), remove = button('delete'), copy = button('copy'), print = button('print'), exportButton = button('export'), trash = button('trash'), reverse = button('reverse');
                             const selectedID = () => selectedRow?.dataset.journalId || null;
                             const reload = () => search.requestSubmit();
                             const setTrash = value => { trashMode = value; let field = search.querySelector('[name$="Trash"]'); if (!field) { field = document.createElement('input'); field.type = 'hidden'; field.name = config.menu === 'Receipt Voucher' ? 'RVTrash' : config.menu === 'Collection' ? 'CVMTrash' : config.menu === 'Distribution' ? 'DVMTrash' : 'IPVMTrash'; search.appendChild(field); } field.value = value ? '1' : '0'; trash.innerHTML = value ? '<i class="fas fa-list"></i> Active' : '<i class="fas fa-recycle"></i> Trash'; selectedRow = null; reload(); };
@@ -14821,6 +14825,8 @@ async function loadEarningsData() {
                             remove?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a voucher row first.'); if (trashMode) return notify('Open Active vouchers to delete.'); const confirmed = await window.showVoucherDeleteConfirm('Move the selected voucher to Trash?'); if (!confirmed) return; try { const response = await fetch(`/api/vouchers/${journalID}/trash`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: config.menu }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); notify(data.message); selectedRow = null; reload(); } catch (error) { notify(error.message || 'Unable to move voucher to Trash.'); } });
                             reverse?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a deleted voucher row first.'); if (!trashMode) return notify('Open Trash first, then select the voucher to restore.'); try { const response = await fetch(`/api/vouchers/${journalID}/restore`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: config.menu }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); notify(data.message); selectedRow = null; reload(); } catch (error) { notify(error.message || 'Unable to restore voucher.'); } });
                             copy?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a voucher row first.'); try { const response = await fetch(`/api/next-voucher?menuName=${encodeURIComponent(config.menu)}`); const next = await response.json(); if (!response.ok || !next.success) throw new Error(next.message || 'Unable to generate voucher number.'); const copied = await fetch(`/api/vouchers/${journalID}/copy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: config.menu, voucherNo: next.voucherNumber }) }); const data = await copied.json(); if (!copied.ok || !data.success) throw new Error(data.message); notify(`${data.message} New voucher: ${next.voucherNumber}`); reload(); } catch (error) { notify(error.message || 'Unable to copy voucher.'); } });
+                            print?.addEventListener('click', event => { event.preventDefault(); if (!selectedRow) return notify('Select a voucher row first.'); const popup = window.open('', '_blank'); popup.document.write(`<table border="1"><thead>${table.tHead.innerHTML}</thead><tbody>${selectedRow.outerHTML}</tbody></table>`); popup.document.close(); popup.print(); });
+                            exportButton?.addEventListener('click', event => { event.preventDefault(); if (!selectedRow) return notify('Select a voucher row first.'); const values = Array.from(selectedRow.cells, cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([values.join(',')], { type: 'text/csv' })); link.download = `${config.menu.toLowerCase().replace(/\s+/g, '-')}.csv`; link.click(); URL.revokeObjectURL(link.href); });
                             edit?.addEventListener('click', async event => { event.preventDefault(); if (config.menu === 'Distribution') return; const journalID = selectedID(); if (!journalID) return notify('Select a voucher row first.'); if (trashMode) return notify('Restore the voucher before editing.'); try { const response = await fetch(`/api/vouchers/${journalID}?menuName=${encodeURIComponent(config.menu)}`); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); const v = data.voucher; if (config.menu === 'Collection') { const form = document.getElementById('myForm109'); form.dataset.editJournalId = journalID; document.getElementById('collectionVoucherNo').value = v.VoucherNo || ''; document.getElementById('collectionVoucherDate').value = v.JV_Date || ''; document.getElementById('DECMnewLedger').value = v.CashLedger || ''; document.getElementById('DECnewDocclass').value = v.DocClassName || ''; document.getElementById('DECMnewCollector').value = v.CollectorName || ''; document.getElementById('collectionSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('collectionRemarks').value = v.Remarks || ''; document.querySelector('#collection-new-table tbody').innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td></td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td></td><td></td><td>${d.CrAmount || ''}</td></tr>`).join(''); document.getElementById('movableDiv109').style.display = 'block'; return; } if (config.menu === 'Interest Posting') { const form = document.getElementById('myForm113'); form.dataset.editJournalId = journalID; document.getElementById('interestPostingVoucherNo').value = v.VoucherNo || ''; document.getElementById('interestPostingVoucherDate').value = v.JV_Date || ''; document.getElementById('DEIPnewLedger').value = v.CashLedger || ''; document.getElementById('DEIPnewDocclass').value = v.DocClassName || ''; document.getElementById('DEIPnewCollector').value = v.CollectorName || ''; document.getElementById('interestPostingSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('interestPostingRemarks').value = v.Remarks || ''; document.querySelector('#interest-posting-new-table tbody').innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td>Dr</td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td>${d.DrAmount || ''}</td><td></td></tr>`).join(''); document.getElementById('movableDiv113').style.display = 'block'; return; } const form = document.getElementById('myForm100'); form.dataset.editJournalId = journalID; document.getElementById('voucherNumberRVM').value = v.VoucherNo || ''; document.getElementById('RVVoucherDate').value = v.JV_Date || ''; document.getElementById('DERVMnewLedger').value = v.CashLedger || ''; document.getElementById('doc-class-receipt-voucher').value = v.DocClassName || ''; document.getElementById('DERVMnewCollector').value = v.CollectorName || ''; document.getElementById('RVSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('RVRemarks').value = v.Remarks || ''; document.querySelector('#rv-new-table tbody').innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td>Cr</td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td></td><td>${d.CrAmount || ''}</td></tr>`).join(''); document.getElementById('movableDiv100').style.display = 'block'; } catch (error) { notify(error.message || 'Unable to load voucher.'); } });
                         });
                     });
@@ -14923,7 +14929,7 @@ async function loadEarningsData() {
                         if (!panel || !dialog || !form || !masterTable || !entryTable || !search) return;
                         const notify = message => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
                         const buttons = Array.from(panel.querySelectorAll('button')), button = text => buttons.find(item => item.textContent.trim().toLowerCase().includes(text));
-                        const edit = button('edit'), remove = button('delete'), trash = button('trash'), reverse = button('reverse');
+                        const edit = button('edit'), remove = button('delete'), trash = button('trash'), reverse = button('reverse'), print = button('print'), exportButton = button('export');
                         let selectedRow = null, trashMode = false, loadingTimer = null;
                         const overlay = document.createElement('div');
                         overlay.style.cssText = 'display:none;position:absolute;inset:0;z-index:9999;background:rgba(255,255,255,.82);align-items:center;justify-content:center;color:#075caf;';
@@ -14939,6 +14945,8 @@ async function loadEarningsData() {
                         trash?.addEventListener('click', event => { event.preventDefault(); setTrashMode(!trashMode); });
                         remove?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select an Mbank voucher row first.'); if (trashMode) return notify('Open Active vouchers to delete.'); const confirmed = await window.showVoucherDeleteConfirm('Move the selected Mbank voucher to Trash?'); if (!confirmed) return; try { const response = await fetch(`/api/vouchers/${journalID}/trash`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: 'Mbank Voucher' }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); notify(data.message); selectedRow = null; reload(); } catch (error) { notify(error.message || 'Unable to move Mbank voucher to Trash.'); } });
                         reverse?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a deleted Mbank voucher first.'); if (!trashMode) return notify('Open Trash first, then select the voucher to restore.'); try { const response = await fetch(`/api/vouchers/${journalID}/restore`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: 'Mbank Voucher' }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); notify(data.message); selectedRow = null; reload(); } catch (error) { notify(error.message || 'Unable to restore Mbank voucher.'); } });
+                        print?.addEventListener('click', event => { event.preventDefault(); if (!selectedRow) return notify('Select an Mbank voucher row first.'); const popup = window.open('', '_blank'); popup.document.write(`<table border="1"><thead>${masterTable.tHead.innerHTML}</thead><tbody>${selectedRow.outerHTML}</tbody></table>`); popup.document.close(); popup.print(); });
+                        exportButton?.addEventListener('click', event => { event.preventDefault(); if (!selectedRow) return notify('Select an Mbank voucher row first.'); const values = Array.from(selectedRow.cells, cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([values.join(',')], { type: 'text/csv' })); link.download = 'mbank-voucher.csv'; link.click(); URL.revokeObjectURL(link.href); });
                         edit?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select an Mbank voucher row first.'); if (trashMode) return notify('Restore the voucher before editing.'); try { const response = await fetch(`/api/vouchers/${journalID}?menuName=Mbank%20Voucher`), data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Unable to load Mbank voucher.'); const v = data.voucher; form.dataset.editJournalId = journalID; document.getElementById('mbankVoucherNo').value = v.VoucherNo || ''; document.getElementById('mbankVoucherDate').value = v.JV_Date || ''; document.getElementById('DEMBVnewLedger').value = v.CashLedger || ''; document.getElementById('DEMBVnewDocclass').value = v.DocClassName || ''; document.getElementById('DEMBVnewCollector').value = v.CollectorName || ''; document.getElementById('mbankVoucherSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('mbankVoucherRemarks').value = v.Remarks || ''; entryTable.tBodies[0].innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td>${Number(d.DrAmount || 0) > 0 ? 'Dr' : 'Cr'}</td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td>${d.DrAmount || ''}</td><td>${d.CrAmount || ''}</td></tr>`).join('') || '<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>'; dialog.style.zIndex = '10000'; dialog.style.display = 'block'; } catch (error) { notify(error.message || 'Unable to load Mbank voucher.'); } });
                         form.addEventListener('submit', async event => { const journalID = form.dataset.editJournalId; if (!journalID) return; event.preventDefault(); event.stopImmediatePropagation(); const details = Array.from(entryTable.tBodies[0].rows).map(row => ({ accountHead: value(row.cells[2]), subHead: value(row.cells[3]), drAmount: value(row.cells[4]), crAmount: value(row.cells[5]) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount); const payload = { menuName: 'Mbank Voucher', voucherNo: document.getElementById('mbankVoucherNo').value.trim(), voucherDate: document.getElementById('mbankVoucherDate').value, ledger: document.getElementById('DEMBVnewLedger').value.trim(), docClass: document.getElementById('DEMBVnewDocclass').value.trim(), collector: document.getElementById('DEMBVnewCollector').value.trim(), subLedgerAlias: document.getElementById('mbankVoucherSubLedgerAlias').value.trim(), remarks: document.getElementById('mbankVoucherRemarks').value.trim(), details }; try { const response = await fetch(`/api/vouchers/${journalID}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }), result = await response.json(); if (!response.ok || !result.success) throw new Error(result.message || 'Unable to update Mbank voucher.'); notify(result.message); form.reset(); delete form.dataset.editJournalId; dialog.style.display = 'none'; reload(); } catch (error) { notify(error.message || 'Unable to update Mbank voucher.'); } }, true);
                     });
@@ -37612,6 +37620,42 @@ async function loadEarningsData() {
                 });
             </script>
             <script>
+                // Share Transaction Master print/export (same behavior as Journal Voucher)
+                const panelForShareTransmas = document.getElementById('movableDiv116');
+                const tableForShareTransmas = document.getElementById('resultstables1');
+                let selectedRowForShareTransmasPrint = null;
+                if (panelForShareTransmas && tableForShareTransmas) {
+                    const notifyShareTransmas = message => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
+                    tableForShareTransmas.addEventListener('click', function (event) {
+                        const row = event.target.closest('tbody tr');
+                        if (!row || row.cells.length < 2 || row.cells[0].colSpan > 1) return;
+                        selectedRowForShareTransmasPrint?.classList.remove('selected-row');
+                        selectedRowForShareTransmasPrint = row;
+                        row.classList.add('selected-row');
+                    }, true);
+                    panelForShareTransmas.querySelector('#print-button')?.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        const row = selectedRowForShareTransmasPrint;
+                        if (!row) return notifyShareTransmas('Select the row you want to print.');
+                        const popup = window.open('', '_blank');
+                        popup.document.write(`<table border="1"><thead>${tableForShareTransmas.tHead.innerHTML}</thead><tbody>${row.outerHTML}</tbody></table>`);
+                        popup.document.close();
+                        popup.print();
+                    });
+                    panelForShareTransmas.querySelector('#export-button')?.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        const row = selectedRowForShareTransmasPrint;
+                        if (!row) return notifyShareTransmas('Select the row you want to export.');
+                        const values = Array.from(row.cells, cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`);
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(new Blob([values.join(',')], { type: 'text/csv' }));
+                        link.download = 'share-task.csv';
+                        link.click();
+                        URL.revokeObjectURL(link.href);
+                    });
+                }
+            </script>
+            <script>
                 // Handle row selection in the results table
                 const tableForShareTransSetmasEdit = document.getElementById('resultstables1');
                 const ShareTransSetmasEditButton = document.getElementById('toggleButton175');
@@ -38909,6 +38953,42 @@ async function loadEarningsData() {
                         showCustomAlert('Please select a row to delete.');
                     }
                 });
+            </script>
+            <script>
+                // Collection Cheque Master print/export (same behavior as Journal Voucher)
+                const panelForCollChequemas = document.getElementById('movableDiv119');
+                const tableForCollChequemasPrint = document.getElementById('CCTablevalues');
+                let selectedRowForCollChequemasPrint = null;
+                if (panelForCollChequemas && tableForCollChequemasPrint) {
+                    const notifyCollChequemas = message => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
+                    tableForCollChequemasPrint.addEventListener('click', function (event) {
+                        const row = event.target.closest('tbody tr');
+                        if (!row || row.cells.length < 2 || row.cells[0].colSpan > 1) return;
+                        selectedRowForCollChequemasPrint?.classList.remove('selected-row');
+                        selectedRowForCollChequemasPrint = row;
+                        row.classList.add('selected-row');
+                    }, true);
+                    panelForCollChequemas.querySelector('#print-button')?.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        const row = selectedRowForCollChequemasPrint;
+                        if (!row) return notifyCollChequemas('Select the row you want to print.');
+                        const popup = window.open('', '_blank');
+                        popup.document.write(`<table border="1"><thead>${tableForCollChequemasPrint.tHead.innerHTML}</thead><tbody>${row.outerHTML}</tbody></table>`);
+                        popup.document.close();
+                        popup.print();
+                    });
+                    panelForCollChequemas.querySelector('#export-button')?.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        const row = selectedRowForCollChequemasPrint;
+                        if (!row) return notifyCollChequemas('Select the row you want to export.');
+                        const values = Array.from(row.cells, cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`);
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(new Blob([values.join(',')], { type: 'text/csv' }));
+                        link.download = 'collection-cheque.csv';
+                        link.click();
+                        URL.revokeObjectURL(link.href);
+                    });
+                }
             </script>
             <script>
                 // Handle row selection in the results table
