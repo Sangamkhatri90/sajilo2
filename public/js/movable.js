@@ -104,7 +104,7 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
         if (e.button !== 0) {
             return;
         }
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+        if (e.target.closest('input, button, textarea, select, table')) {
             return;
         }
 
