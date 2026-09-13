@@ -31314,6 +31314,7 @@ app.post("/search-distribution-voucher", async (req, res) => {
   const {
     DVMDateFrom,
     DVMDateTo,
+    DVMUseDateRange,
     DVMVoucherNo,
     DVRemarks,
     DVMDocClass,
@@ -31329,6 +31330,7 @@ app.post("/search-distribution-voucher", async (req, res) => {
 
   } = req.body;
 
+  const useDVMDateRange = ['on', '1', 'true'].includes(String(DVMUseDateRange || '').toLowerCase());
   const DVMDateFromm = DVMDateFrom ? DVMDateFrom.replace(/-/g, '/') : null;
   const DVMDateToo = DVMDateTo ? DVMDateTo.replace(/-/g, '/') : null;
 
@@ -31459,7 +31461,7 @@ sl.SLName,
         m.JV_Date
       `;
 
-      if (DVMDateFromm && DVMDateToo) {
+      if (useDVMDateRange && DVMDateFromm && DVMDateToo) {
         fromToFilter += " AND m.JV_Miti BETWEEN ? AND ? ";
         params.push(DVMDateFromm, DVMDateToo);
       }
@@ -31473,7 +31475,7 @@ sl.SLName,
         FORMAT(m.PostDate, '${dateFormat}') AS PostDate
       `;
 
-      if (DVMDateFrom && DVMDateTo) {
+      if (useDVMDateRange && DVMDateFrom && DVMDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(DVMDateFrom, DVMDateTo);
       }
@@ -31495,7 +31497,7 @@ sl.SLName,
         REPLACE(lPost.M_Miti, '/', '${separator}') AS PostDate
       `;
 
-      if (DVMDateFrom && DVMDateTo) {
+      if (useDVMDateRange && DVMDateFrom && DVMDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(DVMDateFrom, DVMDateTo);
       }

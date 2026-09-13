@@ -13577,7 +13577,7 @@ async function loadEarningsData() {
                                         </button>
                                     </a>
                                     <a href="#" style="text-decoration: none;">
-                                        <button type="button" class="copy-button" id="">
+                                        <button type="button" class="copy-button" id="distribution-copy-button">
                                             <i class="fas fa-copy"></i>Copy
                                         </button>
                                     </a>
@@ -13685,7 +13685,7 @@ async function loadEarningsData() {
                                     <div class="dim-form-style-horizontal3">
                                         <div>
                                             <label for="">Date From</label>
-                                            <input type="checkbox" name="" id="DIMCheckbox">
+                                            <input type="checkbox" name="DVMUseDateRange" id="DIMCheckbox">
                                             <input type="date" class="start-date-local" name="DVMDateFrom"
                                                 id="DIMDateFrom" style="pointer-events: none; color: gray;">
                                         </div>
@@ -14877,7 +14877,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                             trash?.addEventListener('click', event => { event.preventDefault(); setTrash(!trashMode); });
                             remove?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a voucher row first.'); if (trashMode) return notify('Open Active vouchers to delete.'); const confirmed = await window.showVoucherDeleteConfirm('Move the selected voucher to Trash?'); if (!confirmed) return; try { const response = await fetch(`/api/vouchers/${journalID}/trash`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: config.menu }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); notify(data.message); selectedRow = null; reload(); } catch (error) { notify(error.message || 'Unable to move voucher to Trash.'); } });
                             reverse?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a deleted voucher row first.'); if (!trashMode) return notify('Open Trash first, then select the voucher to restore.'); try { const response = await fetch(`/api/vouchers/${journalID}/restore`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: config.menu }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); notify(data.message); selectedRow = null; reload(); } catch (error) { notify(error.message || 'Unable to restore voucher.'); } });
-                            copy?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a voucher row first.'); try { const response = await fetch(`/api/next-voucher?menuName=${encodeURIComponent(config.menu)}`); const next = await response.json(); if (!response.ok || !next.success) throw new Error(next.message || 'Unable to generate voucher number.'); const copied = await fetch(`/api/vouchers/${journalID}/copy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: config.menu, voucherNo: next.voucherNumber }) }); const data = await copied.json(); if (!copied.ok || !data.success) throw new Error(data.message); notify(`${data.message} New voucher: ${next.voucherNumber}`); reload(); } catch (error) { notify(error.message || 'Unable to copy voucher.'); } });
+                            copy?.addEventListener('click', async event => { if (config.menu === 'Distribution') return; event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select a voucher row first.'); try { const response = await fetch(`/api/next-voucher?menuName=${encodeURIComponent(config.menu)}`); const next = await response.json(); if (!response.ok || !next.success) throw new Error(next.message || 'Unable to generate voucher number.'); const copied = await fetch(`/api/vouchers/${journalID}/copy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: config.menu, voucherNo: next.voucherNumber }) }); const data = await copied.json(); if (!copied.ok || !data.success) throw new Error(data.message); notify(`${data.message} New voucher: ${next.voucherNumber}`); reload(); } catch (error) { notify(error.message || 'Unable to copy voucher.'); } });
                             print?.addEventListener('click', event => { event.preventDefault(); if (!selectedRow) return notify('Select a voucher row first.'); const popup = window.open('', '_blank'); popup.document.write(`<table border="1"><thead>${table.tHead.innerHTML}</thead><tbody>${selectedRow.outerHTML}</tbody></table>`); popup.document.close(); popup.print(); });
                             exportButton?.addEventListener('click', event => { event.preventDefault(); if (!selectedRow) return notify('Select a voucher row first.'); const values = Array.from(selectedRow.cells, cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([values.join(',')], { type: 'text/csv' })); link.download = `${config.menu.toLowerCase().replace(/\s+/g, '-')}.csv`; link.click(); URL.revokeObjectURL(link.href); });
                             edit?.addEventListener('click', async event => { event.preventDefault(); if (config.menu === 'Distribution') return; const journalID = selectedID(); if (!journalID) return notify('Select a voucher row first.'); if (trashMode) return notify('Restore the voucher before editing.'); try { const response = await fetch(`/api/vouchers/${journalID}?menuName=${encodeURIComponent(config.menu)}`); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); const v = data.voucher; if (config.menu === 'Collection') { const form = document.getElementById('myForm109'); form.dataset.editJournalId = journalID; document.getElementById('collectionVoucherNo').value = v.VoucherNo || ''; document.getElementById('collectionVoucherDate').value = v.JV_Date || ''; document.getElementById('DECMnewLedger').value = v.CashLedger || ''; document.getElementById('DECnewDocclass').value = v.DocClassName || ''; document.getElementById('DECMnewCollector').value = v.CollectorName || ''; document.getElementById('collectionSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('collectionRemarks').value = v.Remarks || ''; document.querySelector('#collection-new-table tbody').innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td></td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td></td><td></td><td>${d.CrAmount || ''}</td></tr>`).join(''); document.getElementById('movableDiv109').style.display = 'block'; return; } if (config.menu === 'Interest Posting') { const form = document.getElementById('myForm113'); form.dataset.editJournalId = journalID; document.getElementById('interestPostingVoucherNo').value = v.VoucherNo || ''; document.getElementById('interestPostingVoucherDate').value = v.JV_Date || ''; document.getElementById('DEIPnewLedger').value = v.CashLedger || ''; document.getElementById('DEIPnewDocclass').value = v.DocClassName || ''; document.getElementById('DEIPnewCollector').value = v.CollectorName || ''; document.getElementById('interestPostingSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('interestPostingRemarks').value = v.Remarks || ''; document.querySelector('#interest-posting-new-table tbody').innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td>Dr</td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td>${d.DrAmount || ''}</td><td></td></tr>`).join(''); document.getElementById('movableDiv113').style.display = 'block'; return; } const form = document.getElementById('myForm100'); form.dataset.editJournalId = journalID; document.getElementById('voucherNumberRVM').value = v.VoucherNo || ''; document.getElementById('RVVoucherDate').value = v.JV_Date || ''; document.getElementById('DERVMnewLedger').value = v.CashLedger || ''; document.getElementById('doc-class-receipt-voucher').value = v.DocClassName || ''; document.getElementById('DERVMnewCollector').value = v.CollectorName || ''; document.getElementById('RVSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('RVRemarks').value = v.Remarks || ''; document.querySelector('#rv-new-table tbody').innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td>Cr</td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td></td><td>${d.CrAmount || ''}</td></tr>`).join(''); document.getElementById('movableDiv100').style.display = 'block'; } catch (error) { notify(error.message || 'Unable to load voucher.'); } });
@@ -14936,6 +14936,74 @@ const edit = panel?.querySelector('#pvm-edit-button');
                             selectedDistributionRow?.classList.remove('selected-row');
                             selectedDistributionRow = row;
                             row.classList.add('selected-row');
+                        }, true);
+                        const currentVoucherDate = () => document.getElementById('current-bs-date')?.textContent.match(/\d{4}[/-]\d{1,2}[/-]\d{1,2}/)?.[0]?.replaceAll('/', '-') || '';
+                        const copyButton = document.getElementById('distribution-copy-button');
+                        const getCopyDialog = () => {
+                            let copyDialog = document.getElementById('movableDiv111Copy');
+                            if (copyDialog) return copyDialog;
+                            copyDialog = dialog.cloneNode(true);
+                            copyDialog.id = 'movableDiv111Copy';
+                            copyDialog.querySelectorAll('[id]').forEach(element => { element.id += 'Copy'; });
+                            copyDialog.querySelectorAll('label[for]').forEach(label => { label.htmlFor += 'Copy'; });
+                            copyDialog.querySelector('legend').textContent = 'Distribution Copy';
+                            copyDialog.style.display = 'none';
+                            document.body.appendChild(copyDialog);
+                            const copyForm = copyDialog.querySelector('#myForm111Copy');
+                            const copyTable = copyDialog.querySelector('#distribution-new-tableCopy');
+                            const close = () => { copyDialog.style.display = 'none'; };
+                            copyDialog.querySelector('#closeButton111Copy')?.addEventListener('click', event => { event.preventDefault(); close(); });
+                            copyDialog.querySelector('#cancelButton111Copy')?.addEventListener('click', event => { event.preventDefault(); close(); });
+                            copyDialog.addEventListener('mousedown', event => {
+                                if (event.button !== 0 || event.target.closest('input, button, textarea, select, a')) return;
+                                const rect = copyDialog.getBoundingClientRect();
+                                const offsetX = event.clientX - rect.left, offsetY = event.clientY - rect.top;
+                                const move = moveEvent => {
+                                    copyDialog.style.left = `${Math.max(8, moveEvent.clientX - offsetX)}px`;
+                                    copyDialog.style.top = `${Math.max(8, moveEvent.clientY - offsetY)}px`;
+                                };
+                                const stop = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', stop); };
+                                document.addEventListener('mousemove', move); document.addEventListener('mouseup', stop);
+                            });
+                            copyDialog.ondragstart = () => false;
+                            window.initTableDropdownDENew?.('distribution-new-tableCopy');
+                            window.attachLedgerforBandCAutocomplete?.('DEDMnewLedgerCopy', 'ledgerClassDEDMnewCopy', '/fetchGLNames');
+                            window.attachDocClassAutocomplete?.('DEDMnewDocclassCopy', 'DocClassDEDMnewCopy', '/fetchDocClasses');
+                            window.attachCollectorAutocomplete?.('DEDMnewCollectorCopy', 'collectorClassDEDMnewCopy', '/fetchCollectors');
+                            copyForm.addEventListener('submit', async event => {
+                                event.preventDefault();
+                                const details = Array.from(copyTable.tBodies[0].rows).map(row => ({ accountHead: value(row.cells[2]), subHead: value(row.cells[3]), crAmount: value(row.cells[5]) })).filter(row => row.accountHead || row.subHead || row.crAmount);
+                                const payload = { voucherNo: copyForm.querySelector('#distributionVoucherNoCopy').value.trim(), voucherDate: copyForm.querySelector('#distributionVoucherDateCopy').value, ledger: copyForm.querySelector('#DEDMnewLedgerCopy').value.trim(), docClass: copyForm.querySelector('#DEDMnewDocclassCopy').value.trim(), collector: copyForm.querySelector('#DEDMnewCollectorCopy').value.trim(), subLedgerAlias: copyForm.querySelector('#distributionSubLedgerAliasCopy').value.trim(), remarks: copyForm.querySelector('#distributionRemarksCopy').value.trim(), journalVoucher: copyForm.querySelector('#distributionJournalVoucherCopy').checked, details };
+                                try {
+                                    const response = await fetch('/account/Transaction/DistributionMaster111', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                                    const result = await response.json();
+                                    if (!response.ok || !result.success) throw new Error(result.message || 'Unable to copy distribution voucher.');
+                                    notify(result.message); close(); document.getElementById('dimsearchForm')?.requestSubmit();
+                                } catch (error) { notify(error.message || 'Unable to copy distribution voucher.'); }
+                            });
+                            return copyDialog;
+                        };
+                        copyButton?.addEventListener('click', async event => {
+                            event.preventDefault(); event.stopImmediatePropagation();
+                            const journalID = selectedDistributionRow?.dataset.journalId || masterTable.querySelector('tbody tr.selected-row')?.dataset.journalId;
+                            if (!journalID) return notify('Select a distribution voucher row first.');
+                            try {
+                                const response = await fetch(`/api/vouchers/${journalID}?menuName=Distribution`);
+                                const data = await response.json();
+                                if (!response.ok || !data.success) throw new Error(data.message || 'Unable to load distribution voucher.');
+                                const copyDialog = getCopyDialog(), copyForm = copyDialog.querySelector('#myForm111Copy'), copyTable = copyDialog.querySelector('#distribution-new-tableCopy'), v = data.voucher;
+                                copyForm.reset(); delete copyForm.dataset.editJournalId;
+                                copyForm.querySelector('#distributionVoucherDateCopy').value = currentVoucherDate();
+                                copyForm.querySelector('#DEDMnewLedgerCopy').value = v.CashLedger || '';
+                                copyForm.querySelector('#DEDMnewDocclassCopy').value = v.DocClassName || '';
+                                copyForm.querySelector('#DEDMnewCollectorCopy').value = v.CollectorName || '';
+                                copyForm.querySelector('#distributionSubLedgerAliasCopy').value = v.SubLedgerAlias || '';
+                                copyForm.querySelector('#distributionRemarksCopy').value = v.Remarks || '';
+                                copyForm.querySelector('#distributionJournalVoucherCopy').checked = v.TransType === 'Journal Voucher';
+                                copyTable.tBodies[0].innerHTML = data.details.map((detail, index) => `<tr><td>${index + 1}</td><td>Cr</td><td>${detail.AccountHead || ''}</td><td>${detail.SubHead || ''}</td><td></td><td>${detail.CrAmount || ''}</td></tr>`).join('') || '<tr><td></td><td>Cr</td><td></td><td></td><td></td><td></td></tr>';
+                                await window.generateNextVoucherNumber?.('Distribution', 'distributionVoucherNoCopy');
+                                copyDialog.style.zIndex = dialog.style.zIndex || '10000'; copyDialog.style.display = 'block';
+                            } catch (error) { notify(error.message || 'Unable to load distribution voucher for copying.'); }
                         }, true);
                         const editButton = Array.from(panel.querySelectorAll('button')).find(button => button.textContent.trim().toLowerCase().includes('edit'));
                         editButton?.addEventListener('click', async event => {
@@ -47456,7 +47524,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                     const isJournalVoucherTableDENew = tableId === 'jv-new-table';
                     const isReceiptVoucherTableDENew = tableId === 'rv-new-table';
                     const isPaymentVoucherTableDENew = tableId === 'pv-new-table' || tableId === 'pv-new-tableCopy';
-                    const isDistributionTableDENew = tableId === 'distribution-new-table';
+                    const isDistributionTableDENew = tableId === 'distribution-new-table' || tableId === 'distribution-new-tableCopy';
                     const isInterestPostingTableDENew = tableId === 'interest-posting-new-table';
                     const defaultRowTypeDENew = (isReceiptVoucherTableDENew || isDistributionTableDENew) ? 'Cr' : 'Dr';
                     const allowedAmountColumnDENew = (isJournalVoucherTableDENew || isPaymentVoucherTableDENew || isInterestPostingTableDENew) ? 4 : ((isReceiptVoucherTableDENew || isDistributionTableDENew) ? 5 : null);
