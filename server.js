@@ -8755,6 +8755,7 @@ app.post("/search-collection-cheque", (req, res) => {
     CCaccountNo,
     CCdateFrom,
     CCdateTo,
+    CCUseDateRange,
     CCdraweeBank,
     CCbranch,
     CCchequeNo,
@@ -8762,6 +8763,7 @@ app.post("/search-collection-cheque", (req, res) => {
     CCposted,
     CCdocClass,
   } = req.body;
+  const useCCDateRange = ['on', '1', 'true'].includes(String(CCUseDateRange || '').toLowerCase());
   const conn = req.session.conn;
 
   let query = `
@@ -8816,7 +8818,7 @@ WHERE 1=1
     params.push(CCaccountNo);
   }
 
-  if (CCdateFrom && CCdateTo) {
+  if (useCCDateRange && CCdateFrom && CCdateTo) {
     query += " AND stm.TransactionDate BETWEEN ? AND ?";
     params.push(CCdateFrom, CCdateTo);
   }
@@ -29849,6 +29851,7 @@ app.post("/search-journal-voucher", async (req, res) => {
   const {
     JVDateFrom,
     JVDateTo,
+    JVUseDateRange,
     JVVoucherNO,
     JVEnteredBy,
     JVRemarks,
@@ -29862,6 +29865,8 @@ app.post("/search-journal-voucher", async (req, res) => {
     JVAmount,
     JVTrash
   } = req.body;
+
+  const useJVDateRange = ['on', '1', 'true'].includes(String(JVUseDateRange || '').toLowerCase());
 
   // LD values are stored in JV_Miti as YYYY/MM/DD.  AD values are sent by the
   // date input as YYYY-MM-DD and must be compared with the datetime JV_Date.
@@ -29981,7 +29986,7 @@ app.post("/search-journal-voucher", async (req, res) => {
         m.JV_Date
       `;
 
-      if (JVDateFromm && JVDateToo) {
+      if (useJVDateRange && JVDateFromm && JVDateToo) {
         fromToFilter += " AND m.JV_Miti BETWEEN ? AND ? ";
         params.push(JVDateFromm, JVDateToo);
       }
@@ -29995,7 +30000,7 @@ app.post("/search-journal-voucher", async (req, res) => {
         FORMAT(m.PostDate, '${dateFormat}') AS PostDate
       `;
 
-      if (JVDateFrom && JVDateTo) {
+      if (useJVDateRange && JVDateFrom && JVDateTo) {
         // An end value such as 2025-04-17 means the whole calendar day, not
         // only 2025-04-17 00:00:00.  The half-open range also keeps the
         // datetime column index usable.
@@ -30023,7 +30028,7 @@ app.post("/search-journal-voucher", async (req, res) => {
         REPLACE(lPost.M_Miti, '/', '${separator}') AS PostDate
       `;
 
-      if (JVDateFrom && JVDateTo) {
+      if (useJVDateRange && JVDateFrom && JVDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(JVDateFrom, JVDateTo);
       }
@@ -30508,6 +30513,7 @@ app.post("/search-receipt-voucher", async (req, res) => {
   const {
     RVDateFrom,
     RVDateTo,
+    RVUseDateRange,
     RVVoucherNo,
     RVEnterBy,
     RVRemarks,
@@ -30520,6 +30526,8 @@ app.post("/search-receipt-voucher", async (req, res) => {
     RVDocClass,
     RVTrash
   } = req.body;
+
+  const useRVDateRange = ['on', '1', 'true'].includes(String(RVUseDateRange || '').toLowerCase());
 
   const RVDateFromm = RVDateFrom ? RVDateFrom.replace(/-/g, '/') : null;
   const RVDateToo = RVDateTo ? RVDateTo.replace(/-/g, '/') : null;
@@ -30645,7 +30653,7 @@ sl.SLName,
         m.JV_Date
       `;
 
-      if (RVDateFromm && RVDateToo) {
+      if (useRVDateRange && RVDateFromm && RVDateToo) {
         fromToFilter += " AND m.JV_Miti BETWEEN ? AND ? ";
         params.push(RVDateFromm, RVDateToo);
       }
@@ -30659,7 +30667,7 @@ sl.SLName,
         FORMAT(m.PostDate, '${dateFormat}') AS PostDate
       `;
 
-      if (RVDateFrom && RVDateTo) {
+      if (useRVDateRange && RVDateFrom && RVDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(RVDateFrom, RVDateTo);
       }
@@ -30681,7 +30689,7 @@ sl.SLName,
         REPLACE(lPost.M_Miti, '/', '${separator}') AS PostDate
       `;
 
-      if (RVDateFrom && RVDateTo) {
+      if (useRVDateRange && RVDateFrom && RVDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(RVDateFrom, RVDateTo);
       }
@@ -30781,6 +30789,7 @@ app.post("/search-payment-voucher", async (req, res) => {
   const {
     PVMDateFrom,
     PVMDateTo,
+    PVMUseDateRange,
     PVMVoucherNo,
     PVMEnterBy,
     PVRemarks,
@@ -30793,6 +30802,8 @@ app.post("/search-payment-voucher", async (req, res) => {
     PVMDocClass,
     PVMTrash
   } = req.body;
+
+  const usePVMDateRange = ['on', '1', 'true'].includes(String(PVMUseDateRange || '').toLowerCase());
 
   const PVMDateFromm = PVMDateFrom ? PVMDateFrom.replace(/-/g, '/') : null;
   const PVMDateToo = PVMDateTo ? PVMDateTo.replace(/-/g, '/') : null;
@@ -30925,7 +30936,7 @@ sl.SLName,
         m.JV_Date
       `;
 
-      if (PVMDateFromm && PVMDateToo) {
+      if (usePVMDateRange && PVMDateFromm && PVMDateToo) {
         fromToFilter += " AND m.JV_Miti BETWEEN ? AND ? ";
         params.push(PVMDateFromm, PVMDateToo);
       }
@@ -30939,7 +30950,7 @@ sl.SLName,
         FORMAT(m.PostDate, '${dateFormat}') AS PostDate
       `;
 
-      if (PVMDateFrom && PVMDateTo) {
+      if (usePVMDateRange && PVMDateFrom && PVMDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(PVMDateFrom, PVMDateTo);
       }
@@ -30961,7 +30972,7 @@ sl.SLName,
         REPLACE(lPost.M_Miti, '/', '${separator}') AS PostDate
       `;
 
-      if (PVMDateFrom && PVMDateTo) {
+      if (usePVMDateRange && PVMDateFrom && PVMDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(PVMDateFrom, PVMDateTo);
       }
@@ -31570,6 +31581,7 @@ app.post("/search-interest-posting-voucher", async (req, res) => {
   const {
     IPVMDateFrom,
     IPVMDateTo,
+    IPVMUseDateRange,
     IPVMVoucherNo,
     IPVRemarks,
     IPVMDocClass,
@@ -31584,6 +31596,8 @@ app.post("/search-interest-posting-voucher", async (req, res) => {
     IPVMTrash
 
   } = req.body;
+
+  const useIPVMDateRange = ['on', '1', 'true'].includes(String(IPVMUseDateRange || '').toLowerCase());
 
   const IPVMDateFromm = IPVMDateFrom ? IPVMDateFrom.replace(/-/g, '/') : null;
   const IPVMDateToo = IPVMDateTo ? IPVMDateTo.replace(/-/g, '/') : null;
@@ -31709,7 +31723,7 @@ sl.SLName,
         m.JV_Date
       `;
 
-      if (IPVMDateFromm && IPVMDateToo) {
+      if (useIPVMDateRange && IPVMDateFromm && IPVMDateToo) {
         fromToFilter += " AND m.JV_Miti BETWEEN ? AND ? ";
         params.push(IPVMDateFromm, IPVMDateToo);
       }
@@ -31723,7 +31737,7 @@ sl.SLName,
         FORMAT(m.PostDate, '${dateFormat}') AS PostDate
       `;
 
-      if (IPVMDateFrom && IPVMDateTo) {
+      if (useIPVMDateRange && IPVMDateFrom && IPVMDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(IPVMDateFrom, IPVMDateTo);
       }
@@ -31745,7 +31759,7 @@ sl.SLName,
         REPLACE(lPost.M_Miti, '/', '${separator}') AS PostDate
       `;
 
-      if (IPVMDateFrom && IPVMDateTo) {
+      if (useIPVMDateRange && IPVMDateFrom && IPVMDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(IPVMDateFrom, IPVMDateTo);
       }
