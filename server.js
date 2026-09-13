@@ -31831,6 +31831,7 @@ app.post("/search-mbank-voucher", (req, res) => {
   const {
     MbVMDateFrom,
     MbVMDateTo,
+    MbVMUseDateRange,
     MbVMVoucherNo,
     MbVRemarks,
     MbVMDocClass,
@@ -31845,6 +31846,8 @@ app.post("/search-mbank-voucher", (req, res) => {
     MbVMTrash
 
   } = req.body;
+
+  const useDateRange = ['on', '1', 'true'].includes(String(MbVMUseDateRange || '').toLowerCase());
 
   const MbVMDateFromm = MbVMDateFrom ? MbVMDateFrom.replace(/-/g, '/') : null;
   const MbVMDateToo = MbVMDateTo ? MbVMDateTo.replace(/-/g, '/') : null;
@@ -31969,7 +31972,7 @@ sl.SLName,
         m.JV_Date
       `;
 
-      if (MbVMDateFromm && MbVMDateToo) {
+      if (useDateRange && MbVMDateFromm && MbVMDateToo) {
         fromToFilter += " AND m.JV_Miti BETWEEN ? AND ? ";
         params.push(MbVMDateFromm, MbVMDateToo);
       }
@@ -31983,7 +31986,7 @@ sl.SLName,
         FORMAT(m.PostDate, '${dateFormat}') AS PostDate
       `;
 
-      if (MbVMDateFrom && MbVMDateTo) {
+      if (useDateRange && MbVMDateFrom && MbVMDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(MbVMDateFrom, MbVMDateTo);
       }
@@ -32005,7 +32008,7 @@ sl.SLName,
         REPLACE(lPost.M_Miti, '/', '${separator}') AS PostDate
       `;
 
-      if (MbVMDateFrom && MbVMDateTo) {
+      if (useDateRange && MbVMDateFrom && MbVMDateTo) {
         fromToFilter += " AND m.JV_Date BETWEEN ? AND ? ";
         params.push(MbVMDateFrom, MbVMDateTo);
       }
