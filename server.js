@@ -33330,7 +33330,7 @@ app.post('/account/Transaction/DistributionMaster111', async (req, res) => {
   const { voucherNo, voucherDate, ledger, docClass, collector, subLedgerAlias, remarks, journalVoucher, details } = req.body || {};
   const rows = (Array.isArray(details) ? details : []).map((row, index) => ({ rowNo: index + 1, accountHead: String(row.accountHead || '').trim(), subHead: String(row.subHead || '').trim(), crAmount: Number(row.crAmount || 0) })).filter(row => row.accountHead || row.subHead || row.crAmount);
   if (!conn || !voucherNo || !voucherDate || !ledger || !docClass || !rows.length) return res.status(400).json({ success: false, message: 'Voucher date, number, ledger, doc class, and at least one credit row are required.' });
-  if (rows.some(row => !row.accountHead || !Number.isFinite(row.crAmount) || row.crAmount <= 0)) return res.status(400).json({ success: false, message: 'Each distribution row needs an account head and Cr.Amount greater than zero.' });
+  if (rows.some(row => !row.accountHead || !Number.isFinite(row.crAmount))) return res.status(400).json({ success: false, message: 'Each distribution row needs an account head and a valid Cr.Amount.' });
   const query = (text, params = []) => new Promise((resolve, reject) => sql.query(conn, text, params, (error, result) => error ? reject(error) : resolve(result || [])));
   let journalID;
   try {
