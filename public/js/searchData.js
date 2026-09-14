@@ -2026,6 +2026,7 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     // ✅ Show full log columns
@@ -2157,6 +2158,7 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
                 if (checkbox.checked) {
                     tr.innerHTML = `
                     <td>${index + 1}</td>
@@ -2289,6 +2291,7 @@ document.getElementById("rvsearchForm").addEventListener("submit", function (eve
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     // ✅ Show full log columns
@@ -2355,6 +2358,7 @@ document.getElementById("rvsearchForm").addEventListener("submit", function (eve
 
 document.getElementById("pvmsearchForm").addEventListener("submit", function (event) {
     event.preventDefault();
+    window.dispatchEvent(new CustomEvent('payment-voucher-search-start'));
 
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
@@ -2422,6 +2426,7 @@ document.getElementById("pvmsearchForm").addEventListener("submit", function (ev
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     // ✅ Show full log columns
@@ -2429,7 +2434,7 @@ document.getElementById("pvmsearchForm").addEventListener("submit", function (ev
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${row.TotalDrAmount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.Creator || ''}</td>
                     <td>${row.CreatedDate || ''}</td>
@@ -2449,14 +2454,14 @@ document.getElementById("pvmsearchForm").addEventListener("submit", function (ev
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${row.TotalDrAmount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.DocClassName || ''}</td>
                 `;
                 }
 
                 tbody.appendChild(tr);
-                totalAmount += parseFloat(row.TotalCrAmount) || 0;
+                totalAmount += parseFloat(row.TotalDrAmount) || 0;
             });
 
             // ✅ Add total row
@@ -2479,7 +2484,8 @@ document.getElementById("pvmsearchForm").addEventListener("submit", function (ev
 
             tbody.appendChild(totalRow);
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => console.error("Error fetching results:", err))
+        .finally(() => window.dispatchEvent(new CustomEvent('payment-voucher-search-finished')));
 });
 
 
@@ -2555,6 +2561,7 @@ document.getElementById("colmsearchForm").addEventListener("submit", function (e
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     // ✅ Checked: full log columns
@@ -2686,6 +2693,7 @@ document.getElementById("dimsearchForm").addEventListener("submit", function (ev
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     tr.innerHTML = `
@@ -2814,13 +2822,15 @@ document.getElementById("ipmsearchForm").addEventListener("submit", function (ev
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                const amount = Number(row.TotalDrAmount) || Number(row.TotalCrAmount) || 0;
+                tr.dataset.journalId = row.JournalID || '';
 
                 if (checkbox.checked) {
                     tr.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${amount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.Creator || ''}</td>
                     <td>${row.CreatedDate || ''}</td>
@@ -2839,14 +2849,14 @@ document.getElementById("ipmsearchForm").addEventListener("submit", function (ev
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${amount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.DocClassName || ''}</td>
                 `;
                 }
 
                 tbody.appendChild(tr);
-                totalAmount += parseFloat(row.TotalCrAmount) || 0;
+                totalAmount += amount;
             });
 
             // ✅ Add total row
@@ -2940,12 +2950,14 @@ document.getElementById("mvmsearchForm").addEventListener("submit", function (ev
 
             results.forEach((row, index) => {
                 const tr = document.createElement("tr");
+                const amount = Number(row.TotalDrAmount) || Number(row.TotalCrAmount) || 0;
+                tr.dataset.journalId = row.JournalID || '';
                 if (checkbox.checked) {
                     tr.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${amount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.Creator || ''}</td>
                     <td>${row.CreatedDate || ''}</td>
@@ -2964,14 +2976,14 @@ document.getElementById("mvmsearchForm").addEventListener("submit", function (ev
                     <td>${index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
-                    <td>${row.TotalCrAmount}</td>
+                    <td>${amount}</td>
                     <td>${row.DetailsCount}</td>
                     <td>${row.DocClassName || ''}</td>
                 `;
                 }
                 tbody.appendChild(tr);
 
-                totalAmount += parseFloat(row.TotalCrAmount) || 0;
+                totalAmount += amount;
             });
 
             // Append total row
@@ -3058,22 +3070,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const ld = document.getElementById("SSLD");
     const dateInput = document.getElementById("SSFormat");
 
-    // set initial value based on default checked
+    // set initial value based on selected date type
     if (ad.checked) {
-        dateInput.value = "DD/MM/YYYY";
+        dateInput.value = "YYYY-MM-DD";
     } else if (ld.checked) {
-        dateInput.value = "YYYY/MM/DD";
+        dateInput.value = "DD/MM/YYYY";
     }
 
     ad.addEventListener("change", () => {
         if (ad.checked) {
-            dateInput.value = "DD/MM/YYYY";
+            dateInput.value = "YYYY-MM-DD";
         }
     });
 
     ld.addEventListener("change", () => {
         if (ld.checked) {
-            dateInput.value = "YYYY/MM/DD";
+            dateInput.value = "DD/MM/YYYY";
         }
     });
 });

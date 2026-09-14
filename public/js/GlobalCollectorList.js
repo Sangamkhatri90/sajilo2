@@ -115,6 +115,7 @@
                     { inputId: 'DECMnewCollector', listId: 'collectorClassDECMnew' },
                     { inputId: 'DERVMnewCollector', listId: 'collectorClassDERVMnew' },
                     { inputId: 'DEPVnewCollector', listId: 'collectorClassDEPVMnew' },
+                    { inputId: 'DEPVnewCollectorCopy', listId: 'collectorClassDEPVMnewCopy' },
                     { inputId: 'DEDMnewCollector', listId: 'collectorClassDEDMnew' },
                     { inputId: 'DEIPnewCollector', listId: 'collectorClassDEIPnew' },
                     { inputId: 'DEMBVnewCollector', listId: 'collectorClassDEMBVnew' },
@@ -123,6 +124,8 @@
                     { inputId: 'cc-apBillPCollector', listId: 'cc-apBillPCollectorsList' },
                     { inputId: 'de-jvm-coll-searchinput', listId: 'CollectorsListForDEJVMsearchDIV' },
                     { inputId: 'collmastersearchcollector', listId: 'collmastersearchcollectordiv' },
+                    { inputId: 'DEJVcopyCollector', listId: 'collectorClassDEJVMcopy' },
+                    { inputId: 'DERVMcopyCollector', listId: 'collectorClassDERVMcopy' },
                 ];
 
                 // Attach events for all fields (single fetch for all)

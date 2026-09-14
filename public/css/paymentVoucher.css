@@ -1,7 +1,28 @@
-#movableDiv107 {
+#movableDiv107,
+#movableDiv107Copy {
     width: 553px;
     transition: width 0.3s ease, height 0.3s ease;
   }
+
+#movableDiv107Copy {
+    background-color: #f4f4f4;
+    position: absolute;
+    top: 100px;
+    left: 50px;
+    display: none;
+    padding: 10px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+#closeButton107Copy {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fa0606;
+}
   
   .pv-container {
     padding: 8px;
@@ -150,4 +171,3 @@
       background-color: #dc3545;
       max-width: 80px;
   }
-  

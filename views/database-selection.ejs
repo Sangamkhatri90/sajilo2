@@ -249,8 +249,18 @@
                 row.setAttribute('data-enddate', org.endDate);
                 row.setAttribute('data-orgname', org.orgName);
 
-                const startYear = org.startDate.includes('-') ? org.startDate.split('-')[0] : 'Unknown';
-                const endYear = org.endDate.includes('-') ? org.endDate.split('-')[0] : 'Unknown';
+                const getFiscalYear = (date) => {
+                    if (!date || date === 'No date found') return 'Unknown';
+
+                    const parts = String(date).trim().split(/[/-]/);
+                    if (parts.length !== 3) return 'Unknown';
+
+                    // Supports YYYY-MM-DD and DD/MM/YYYY values returned by the API.
+                    return parts[0].length === 4 ? parts[0] : parts[2];
+                };
+
+                const startYear = getFiscalYear(org.startDate);
+                const endYear = getFiscalYear(org.endDate);
                 const fiscalYear = `${startYear}-${endYear}`;
 
                 row.innerHTML = `

@@ -9,3 +9,7 @@ node_modules/
 
 # Uploads
 uploads/*
+
+# Database backups
+backups/
+restoreUploads/

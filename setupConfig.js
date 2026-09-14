@@ -1,7 +1,7 @@
 module.exports = {
   user: 'sa',
   password: '123',
-  server: 'localhost',
+  server: 'localhost\\SQLEXPRESS',
   database: 'master', // Always use master when creating new DBs
  
   

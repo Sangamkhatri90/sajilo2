@@ -209,3 +209,33 @@
     background-color: #dc3545;
     max-width: 80px;
   }
+
+#bill-setup table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+#bill-setup th,
+#bill-setup td {
+  border: 1px solid #777;
+  padding: 2px;
+}
+
+#bill-setup th {
+  background: #d8ecec;
+  text-align: center;
+}
+
+#bill-setup .ss-bill-sno {
+  width: 40px;
+  text-align: right;
+  background: #e9f1f1;
+}
+
+#bill-setup .ss-text {
+  box-sizing: border-box;
+  margin: 0;
+  border: 0;
+  background: #f7f5ff;
+}

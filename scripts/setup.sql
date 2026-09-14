@@ -927,7 +927,8 @@ CREATE TABLE dbo.tbJournalMaster (
     TenderAmount MONEY,
     RefundAmount MONEY,
     ReceivedAmount MONEY,
-    DraweePayeeForSMS VARCHAR(50)
+    DraweePayeeForSMS VARCHAR(50),
+    IsTrashed BIT NOT NULL DEFAULT (0)
 );
 GO
 -- 49. tbJournalUnitBillingDetails table

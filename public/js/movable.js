@@ -31,6 +31,22 @@ function resetFormFields(movableDivId) {
 // Function to keep track of the highest z-index value
 let highestZIndex = 1;
 
+function clampMovableToViewport(element) {
+    if (!element || window.getComputedStyle(element).display === 'none') {
+        return;
+    }
+
+    const margin = 8;
+    const rect = element.getBoundingClientRect();
+    const maxLeft = Math.max(margin, window.innerWidth - rect.width - margin);
+    const maxTop = Math.max(margin, window.innerHeight - rect.height - margin);
+    const currentLeft = Number.parseFloat(element.style.left) || rect.left;
+    const currentTop = Number.parseFloat(element.style.top) || rect.top;
+
+    element.style.left = `${Math.min(Math.max(currentLeft, margin), maxLeft)}px`;
+    element.style.top = `${Math.min(Math.max(currentTop, margin), maxTop)}px`;
+}
+
 function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId, toggleKey) {
     const draggable = document.getElementById(movableDivId);
     const closeButton = document.getElementById(closeButtonId);
@@ -55,6 +71,7 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
         draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
         if (currentDisplay === 'none') {
             bringToFront(draggable);
+            clampMovableToViewport(draggable);
         }
     });
 
@@ -77,13 +94,17 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
             draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
             if (currentDisplay === 'none') {
                 bringToFront(draggable);
+                clampMovableToViewport(draggable);
             }
         }
     });
 
     // Dragging functionality
     draggable.addEventListener('mousedown', function (e) {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+        if (e.button !== 0) {
+            return;
+        }
+        if (e.target.closest('input, button, textarea, select, table')) {
             return;
         }
 
@@ -95,23 +116,41 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
         let offsetY = e.clientY - draggable.getBoundingClientRect().top;
 
         function moveAt(clientX, clientY) {
-            draggable.style.left = clientX - offsetX + 'px';
-            draggable.style.top = clientY - offsetY + 'px';
+            const rect = draggable.getBoundingClientRect();
+            const margin = 8;
+            const maxLeft = Math.max(margin, window.innerWidth - rect.width - margin);
+            const maxTop = Math.max(margin, window.innerHeight - rect.height - margin);
+            const nextLeft = Math.min(Math.max(clientX - offsetX, margin), maxLeft);
+            const nextTop = Math.min(Math.max(clientY - offsetY, margin), maxTop);
+
+            draggable.style.left = nextLeft + 'px';
+            draggable.style.top = nextTop + 'px';
         }
 
         function onMouseMove(e) {
             e.preventDefault();
+            // Browsers can miss mouseup when the pointer leaves a modal or the window.
+            // Never keep moving a dialog after the mouse button has been released.
+            if (!e.buttons) {
+                stopDragging();
+                return;
+            }
             if (isDragging) {
                 moveAt(e.clientX, e.clientY);
             }
         }
 
+        function stopDragging() {
+            if (!isDragging) return;
+            isDragging = false;
+            clampMovableToViewport(draggable);
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', stopDragging);
+        }
+
         document.addEventListener('mousemove', onMouseMove);
 
-        document.onmouseup = function () {
-            isDragging = false;
-            document.removeEventListener('mousemove', onMouseMove);
-        };
+        document.addEventListener('mouseup', stopDragging);
     });
 
     draggable.ondragstart = function () {
@@ -733,7 +772,9 @@ function bindPrintShareCertificateButton(buttonId) {
 
 // Automatically initialize all movable divs by matching ID patterns
 function initializeMovableDivs() {
-    const movableDivs = document.querySelectorAll('.movableDiv[id^="movableDiv"]');
+    const movableDivs = document.querySelectorAll(
+        '.movableDiv[id^="movableDiv"], .dcm-movableDiv[id^="movableDiv"]'
+    );
     movableDivs.forEach((div) => {
         const match = div.id.match(/^movableDiv(\d+)$/);
         if (!match) {
@@ -754,9 +795,16 @@ function initializeMovableDivs() {
         }
 
         makeMovable(div.id, `closeButton${id}`, `cancelButton${id}`, `toggleButton${id}`);
+        clampMovableToViewport(div);
+
+        const observer = new MutationObserver(() => clampMovableToViewport(div));
+        observer.observe(div, { attributes: true, attributeFilter: ['style', 'class'] });
     });
 }
 
+window.addEventListener('resize', () => {
+    document.querySelectorAll('.movableDiv, .dcm-movableDiv').forEach(clampMovableToViewport);
+});
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeMovableDivs);
 } else {

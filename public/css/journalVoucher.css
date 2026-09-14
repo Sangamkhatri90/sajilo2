@@ -2,12 +2,46 @@
     position: absolute;
     top: 60px;
     left: 30px;
-    width: 90vw;
-    max-width: 1027px;
-    max-height: 90vh;
-    overflow-y: auto;
+    width: min(90vw, 1027px);
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 72px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     box-sizing: border-box;
-    padding-right: 460px;
+    padding: 0;
+}
+
+#movableDiv38 > *,
+#movableDiv38 form {
+  max-width: 100%;
+}
+
+#movableDiv38 fieldset {
+  max-width: 100%;
+  min-width: 0;
+}
+
+#movableDiv38 input,
+#movableDiv38 select,
+#movableDiv38 textarea {
+  max-width: 100%;
+}
+
+#closeButton38 {
+  top: 0;
+  right: 4px;
+  z-index: 10;
+  cursor: pointer;
+  background: transparent;
+}
+
+#JVTablevalues tbody tr[data-journal-id] {
+  cursor: pointer;
+}
+
+#JVTablevalues tbody tr.selected-row > td {
+  background-color: #9fd0ec !important;
 }
 
 #movableDiv97 {
@@ -18,28 +52,43 @@
 #jv-search {
   display: none; /* Hidden by default */
   position: absolute;
-  top: 70px;
-  right: 15px;
-  width: min(420px, calc(100% - 30px));
+  top: 76px;
+  right: 20px;
+  width: 410px;
+  max-width: calc(100% - 430px);
+  max-height: calc(90vh - 150px);
+  box-sizing: border-box;
   background: #f4f4f4;
-  padding: 20px;
+  padding: 10px;
   margin: 0;
   opacity: 0; /* Invisible by default */
-  transform: translateX(100%);
-  transition: all 0.3s ease-in-out;
-  z-index: 20;
+  transform: none;
+  transition: opacity 0.2s ease-in-out;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
   border-radius: 8px;
+  overflow-y: auto;
 }
 
 #jv-search[style*="display: block"] {
   opacity: 1; /* Fully visible */
-  transform: translateX(0);
+}
+
+#movableDiv38.jv-search-open .jv-table-section {
+  width: calc(100% - 440px);
+  max-width: none;
+  min-width: 0;
+}
+
+#movableDiv38.jv-search-open .jv-table-section > fieldset {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .jv-container {
-    padding: 8px;
-    max-width: 1008px;
+  padding: 10px 8px 0;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .jv-fieldset {
@@ -97,7 +146,12 @@
     width: 100%;
     max-width: 970px;
     margin: 0 auto;
-    overflow-x: auto;
+    overflow: auto;
+}
+
+#movableDiv38.jv-search-open .jv-table-container {
+  max-width: none;
+  max-height: calc(100vh - 220px);
 }
 
 .jv-table-container table {
@@ -111,16 +165,37 @@
 .jv-table-container td {
   padding: 12px 15px;
   border: 1px solid #000000; /* Bolder border */
+  white-space: nowrap;
+}
+
+.jv-table-container thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .jv-button-row {
   display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  display: flex;
-  flex-direction:row;
-  gap:15px;
-  margin-bottom: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 10px 0;
+  padding: 0;
+}
+
+.jv-button-row a {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.jv-button-row button {
+  width: auto;
+  justify-content: center;
+  padding: 0 8px;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 /* Button styles */
@@ -153,5 +228,52 @@
 .jv-button[type="button"] {
   background-color: #dc3545;
   max-width: 80px;
+}
+
+#jv-search .jv-search-actions {
+  justify-content: space-between;
+  gap: 0;
+  margin: 18px 0 10px;
+}
+
+#jv-search .jv-search-actions > div {
+  flex: 0 0 auto;
+}
+
+#jv-search .jv-search-actions .jv-button {
+  min-width: 92px;
+  max-width: none;
+  min-height: 30px;
+  padding: 6px 18px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  #movableDiv38 {
+    left: 10px !important;
+    top: 10px !important;
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 48px);
+  }
+
+  #movableDiv38.jv-search-open .jv-table-section {
+    width: 100%;
+  }
+
+  #jv-search {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    margin-top: 10px;
+  }
+
+  #movableDiv38 .jv-form-style-horizontal3,
+  #movableDiv38 .rv-form-style-horizontal3 {
+    flex-wrap: wrap;
+  }
 }
 

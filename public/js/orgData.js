@@ -37,8 +37,8 @@ function selectRow(rowIndex) {
         
         
         document.getElementById('organization-name1').value = orgName;
-        document.getElementById('startDateInput').value = startDate;
-        document.getElementById('endDateInput').value = endDate;
+        document.getElementById('startDateInput').textContent = `Fiscal Start Date: ${startDate}`;
+        document.getElementById('endDateInput').textContent = `Fiscal End Date: ${endDate}`;
         document.getElementById('dbNameInputs').value = dbName;
         document.getElementById('orgID').value = orgID;
         document.getElementById('orgarnizationremarkmp').value = Remarks;
@@ -57,16 +57,18 @@ async function fetchOrgData() {
             const startDate = item.startDate || 'No date found';
             const endDate = item.endDate || 'No date found';
 
-            let startYear = 'Unknown';
-            let endYear = 'Unknown';
+            const getFiscalYear = (date) => {
+                if (!date || date === 'No date found') return 'Unknown';
 
-            // Extract the year from the date strings if they are valid
-            if (startDate.includes('-')) {
-                startYear = startDate.split('-')[0]; // Get the first part of the date
-            }
-            if (endDate.includes('-')) {
-                endYear = endDate.split('-')[0]; // Get the first part of the date
-            }
+                const parts = date.trim().split(/[/-]/);
+                if (parts.length !== 3) return 'Unknown';
+
+                // Supports both YYYY-MM-DD and DD/MM/YYYY fiscal-date formats.
+                return parts[0].length === 4 ? parts[0] : parts[2];
+            };
+
+            const startYear = getFiscalYear(startDate);
+            const endYear = getFiscalYear(endDate);
 
             const fiscalYear = `${startYear}-${endYear}`; // Combine extracted years
 
@@ -137,8 +139,8 @@ document.getElementById('orgTableBody-p').addEventListener('click', (event) => {
         document.getElementById('organization-name').value = orgName;
         document.getElementById('dbNameInputs').value = dbName;
         document.getElementById('organization-name1').value = orgName;
-        document.getElementById('startDateInput').value = startDate;
-        document.getElementById('endDateInput').value = endDate;
+        document.getElementById('startDateInput').textContent = `Fiscal Start Date: ${startDate}`;
+        document.getElementById('endDateInput').textContent = `Fiscal End Date: ${endDate}`;
         document.getElementById('dbNameInputs').value = dbName;
         document.getElementById('orgID').value = orgID;
         document.getElementById('orgarnizationremarkmp').value = Remarks;
@@ -157,8 +159,8 @@ window.onload = () => {
     if (savedOrgName && savedStartDate && savedEndDate) {
          document.getElementById('organization-name').value = savedOrgName;
         document.getElementById('organization-name1').value = savedOrgName;
-        document.getElementById('startDateInput').value = savedStartDateLocal;
-        document.getElementById('endDateInput').value = savedEndDateLocal;
+        document.getElementById('startDateInput').textContent = `Fiscal Start Date: ${savedStartDateLocal}`;
+        document.getElementById('endDateInput').textContent = `Fiscal End Date: ${savedEndDateLocal}`;
     }
 };
 
@@ -205,8 +207,8 @@ if (fiscalYearForm) {
             }
 
             // Update the hidden login fields so the site can continue without refresh
-            document.getElementById('startDateInput').value = fiscalYearStart;
-            document.getElementById('endDateInput').value = fiscalYearEnd;
+            document.getElementById('startDateInput').textContent = `Fiscal Start Date: ${fiscalYearStart}`;
+            document.getElementById('endDateInput').textContent = `Fiscal End Date: ${fiscalYearEnd}`;
             localStorage.setItem('selectedStartDateLocal', fiscalYearStart);
             localStorage.setItem('selectedEndDateLocal', fiscalYearEnd);
 
