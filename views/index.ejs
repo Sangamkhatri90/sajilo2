@@ -674,11 +674,41 @@
 
                 <fieldset class="pvm-fieldset">
                     <legend class="search-result">Searched Results</legend>
-                    <div class="choose-transaction">
-                        <div>
-                            <button type="button" id="closeSearchedDataForm" class="close-x" title="Close">&times;</button>
-                        </div>
-                        <div>
+                    <button type="button" id="closeSearchedDataForm" class="close-x" title="Close search results">&times;</button>
+
+
+                    <div class="display-table">
+                        <% if (memberName) { %>
+                            <fieldset id="searched-member-details">
+                                <legend>Member Details</legend>
+                                <div id="searched-member-header">
+                                <div>
+                                    <h2 id="membervalue">Member Name: <%= memberName %></h2>
+                                </div>
+                                <div id="searched-member-media">
+                                    <div class="searched-member-media-item">
+                                        <span>Photo</span>
+                                        <% if (data[0] && data[0].Photo && data[0].Photo !== 'No Photo Available') { %>
+                                            <img src="<%= data[0].Photo %>" alt="Member photo">
+                                        <% } else { %>
+                                            <div class="searched-member-media-fallback">No photo available</div>
+                                        <% } %>
+                                    </div>
+                                    <div class="searched-member-media-item">
+                                        <span>Signature</span>
+                                        <% if (data[0] && data[0].Sign1 && data[0].Sign1 !== 'No Photo Available') { %>
+                                            <img src="<%= data[0].Sign1 %>" alt="Member signature">
+                                        <% } else { %>
+                                            <div class="searched-member-media-fallback">No signature available</div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                            </fieldset>
+                        <% } else { %>
+                            <h2>No member found.</h2>
+                        <% } %>
+                        <div class="choose-transaction">
                             <label for="actionSelect">Choose an action:</label>
                             <select id="actionSelect" style="background-color: #dedada; border: 1px solid #ccc;">
                                 <option value="transaction">Transaction</option>
@@ -686,10 +716,8 @@
                                 <option value="openingBalance">Opening Balance</option>
                             </select>
                         </div>
-                    </div>
-
-
-                    <div class="display-table">
+                        <fieldset id="searched-account-details">
+                            <legend>Account Details</legend>
                         <table border="1" id="selectedTable" class="highlight-table">
                             <thead>
                                 <tr>
@@ -701,14 +729,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <% if (memberName) { %>
-                                    <h2 id="membervalue">Member Name: <%= memberName %>
-                                    </h2> <!-- Display the Member Name -->
-
-                                    <% } else { %>
-                                        <h2>No member found.</h2>
-                                        <% } %>
-
                                             <% data.forEach(item=> { %>
                                                 <tr ondblclick="handleRowClick( 
                     '<%= item.SlAlias %>', 
@@ -759,6 +779,7 @@
                                                 <% }) %>
                             </tbody>
                         </table>
+                        </fieldset>
 
                     </div>
                 </fieldset>

@@ -658,7 +658,8 @@ input[type="number"]::-webkit-inner-spin-button {
   text-align: center; 
   background-color: #e7e7e7;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  max-width: 595px;
+  width: 720px;
+  max-width: calc(100vw - 40px);
   margin-top: -20px;
   padding: 13px;
   border-radius: 6px;
@@ -666,7 +667,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 #searcheddataform{
   height: 550px;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 #RemoveTable {
   background-color: #d32f2f; /* A slightly darker red for better contrast */
@@ -688,17 +689,24 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 /* Close button for searched data form */
-.close-x {
-  background: transparent;
+#searcheddataform .pvm-fieldset {
+  position: relative;
+}
+#searcheddataform .close-x {
+  position: absolute;
+  top: -22px;
+  right: 8px;
+  z-index: 1;
+  background: #d32f2f;
   border: none;
   font-size: 22px;
   line-height: 1;
-  color: #333;
+  color: #fff;
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
 }
-.close-x:hover { background: rgba(0,0,0,0.05); }
+#searcheddataform .close-x:hover { background: #b71c1c; }
 
 .fieldset {
   border: 1px solid black;
@@ -728,23 +736,100 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 .choose-transaction{
   display: flex;
-  flex-wrap: wrap;
-  gap: 135px;
-  margin-bottom: 40px;
-  margin-top: 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 22px 0;
+  font-weight: bold;
+}
+.choose-transaction label {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.choose-transaction select {
+  min-width: 320px;
 }
 #membervalue{
-  font-size: 20px;
+  font-size: 16px;
   font-weight: bold;
+  color: #000;
+  margin: 0;
+}
+#searched-member-details {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #a7a7a7;
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 16px;
+}
+#searched-member-details legend {
   color: green;
-  margin-top: -33px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: left;
+}
+#searched-member-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+#searched-member-media {
+  display: flex;
+  gap: 10px;
+}
+.searched-member-media-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+.searched-member-media-item img {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  border: 1px solid #999;
+  background: #fff;
+}
+.searched-member-media-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  padding: 4px;
+  box-sizing: border-box;
+  border: 1px solid #999;
+  background: #fff;
+  color: #666;
+  font-size: 11px;
+  font-weight: normal;
+  text-align: center;
+}
+#searched-account-details {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 22px 0 0;
+  padding: 5px;
+  border: 1px solid #a7a7a7;
+  border-radius: 5px;
+}
+#searched-account-details legend {
+  color: green;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: left;
 }
 #selectedTable {
-  width: 40%; /* Reduced width to 40% */
-  float: right; /* Align the table to the right side */
-  margin-right: 20px; /* Add a small gap from the right edge */
+  width: 100%;
+  float: none;
+  margin: 0;
   border-collapse: collapse;
   font-family: Arial, sans-serif;
+  table-layout: auto;
 }
 .display-table-th{
   
@@ -753,7 +838,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #selectedTable th, #selectedTable td {
-  padding: 12px 15px;
+  padding: 8px 10px;
   text-align: left;
   border: 1px solid #000000;
   
@@ -763,10 +848,12 @@ input[type="number"]::-webkit-inner-spin-button {
 .display-table-th {
   text-transform: uppercase;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 #selectedTable td {
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .table-wrapper::-webkit-scrollbar {
