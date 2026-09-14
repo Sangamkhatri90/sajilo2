@@ -1,8 +1,8 @@
--- Create the first database (SAJILODB) database
-CREATE DATABASE SAJILODB;
+-- Create the first database (SAJILODBSukunda) database
+CREATE DATABASE SAJILODBSukunda;
 GO
 
-USE SAJILODB;
+USE SAJILODBSukunda;
 GO
 
 -- 1. tbFieldMaster

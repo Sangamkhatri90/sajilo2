@@ -8,7 +8,7 @@ console.log("hello bhaiu")
     const confirmCheck =  await showCustomConfirm(
       `Check the following before proceding:\n
 1️⃣ MSSQL is installed\n
-2️⃣ No existing DB named SAJILODB and ${secondDBName}\n
+2️⃣ No existing DB named SAJILODBSukunda and ${secondDBName}\n
 3️⃣ Proceed with setup?\n`
     );
 

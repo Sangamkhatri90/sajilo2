@@ -204,7 +204,7 @@ app.get("/fetch-fiscal-data", (req, res) => {
             if (dateType === "LD") {
               const localDateQuery = `
                 SELECT M_date, M_Miti
-                FROM SAJILODB.dbo.tbLocalDate
+                FROM SAJILODBSukunda.dbo.tbLocalDate
                 WHERE M_date IN (?, ?);
               `;
 
@@ -4877,11 +4877,11 @@ app.get("/api/fiscal-year", (req, res) => {
           if (fiscalRows.length > 0) {
             const { StartDate, EndDate } = fiscalRows[0];
 
-            // Step 3: Fetch M_Miti from SAJILODB
+            // Step 3: Fetch M_Miti from SAJILODBSukunda
             const mitiQuery = `
             SELECT 
-              (SELECT M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE M_Date = ?) AS StartMiti,
-              (SELECT M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE M_Date = ?) AS EndMiti`;
+              (SELECT M_Miti FROM SAJILODBSukunda.dbo.tbLocalDate WHERE M_Date = ?) AS StartMiti,
+              (SELECT M_Miti FROM SAJILODBSukunda.dbo.tbLocalDate WHERE M_Date = ?) AS EndMiti`;
 
             sql.query(
               connectionString,
@@ -8040,7 +8040,7 @@ VALUES
     ]);
     console.log("Fiscal Year data inserted successfully");
 
-    // Step 4: Insert data into tbOrgMaster in SAJILODB
+    // Step 4: Insert data into tbOrgMaster in SAJILODBSukunda
     await sql.promises.query(connectionString, insertOrgMasterSQL, [
       name,
       alias,
@@ -8677,7 +8677,7 @@ app.post("/search-transactions", (req, res) => {
     stm.SLIDTransferTo,
     slm2.SLName AS AccountName2,         -- Account name from tbSubLedgerMaster (second alias)
     stm.CreatedBy,
-    um.UserName AS CreatedUser,          -- Created user from SAJILODB.dbo.tbUserMaster
+    um.UserName AS CreatedUser,          -- Created user from SAJILODBSukunda.dbo.tbUserMaster
     stm.CreatedDateTime
 FROM tbShareTransactionMaster stm
     LEFT JOIN tbSubLedgerMaster stm4 ON stm.SLID = stm4.SLID               -- Join to get AccountAlias from tbSubLedgerMaster
@@ -8685,7 +8685,7 @@ FROM tbShareTransactionMaster stm
     LEFT JOIN tbLedgerMaster stm0 ON stm.GLID = stm0.GLID                   -- Join to get AccountType from tbLedgerMaster
     LEFT JOIN tbSubLedgerMaster slm ON stm.SLID = slm.SLID                  -- Join to get AccountName1 from tbSubLedgerMaster
     LEFT JOIN tbSubLedgerMaster slm2 ON stm.SLIDTransferTo = slm2.SLID      -- Join to get AccountName2 from tbSubLedgerMaster
-    LEFT JOIN SAJILODB.dbo.tbUserMaster um ON stm.CreatedBy = um.UserID      -- Cross-database join for CreatedBy
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON stm.CreatedBy = um.UserID      -- Cross-database join for CreatedBy
 WHERE 1=1
 
 
@@ -8796,7 +8796,7 @@ FROM tbCollectionChequeMaster stm
     LEFT JOIN tbLedgerMaster stm0 ON stm.GLID = stm0.GLID 
     LEFT JOIN tbSubLedgerMaster slm ON stm.SLID = slm.SLID
     LEFT JOIN tbLedgerMaster slm2 ON stm.GLIDDraweeBank = slm2.GLID
-    LEFT JOIN SAJILODB.dbo.tbUserMaster um ON stm.CreatedBy = um.UserID 
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON stm.CreatedBy = um.UserID 
 WHERE 1=1
 
 
@@ -10131,8 +10131,8 @@ app.post("/search-interest-method", (req, res) => {
       FROM tbInterestCalculationMethods stm
       LEFT JOIN tbLedgerMaster stm0 ON stm.GLID = stm0.GLID
       LEFT JOIN tbInterestCalculationMethodsDetails stm1 ON stm.MethodID = stm1.MethodID  
-      LEFT JOIN SAJILODB.dbo.tbUserMaster um ON stm.CreatedBy = um.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster um1 ON stm.LastSavedBy = um1.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON stm.CreatedBy = um.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um1 ON stm.LastSavedBy = um1.UserID 
       WHERE 1=1
   `;
   const params = [];
@@ -10185,8 +10185,8 @@ app.post("/search-penalty-setting", (req, res) => {
       stm.Remarks
     FROM tbPenaltyCalculationMethods stm
     LEFT JOIN tbLedgerMaster stm1 ON stm.GLID = stm1.GLID
-    LEFT JOIN SAJILODB.dbo.tbUserMaster um ON stm.CreatedBy = um.UserID
-    LEFT JOIN SAJILODB.dbo.tbUserMaster um1 ON stm.LastSavedBy = um1.UserID
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON stm.CreatedBy = um.UserID
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um1 ON stm.LastSavedBy = um1.UserID
     WHERE 1=1
   `;
   const params = []; // Array to store query parameters
@@ -10232,8 +10232,8 @@ app.post("/search-rebate-setting", (req, res) => {
       stm.Remarks
     FROM tbRebateCalculationMethods stm
     LEFT JOIN tbLedgerMaster stm1 ON stm.GLID = stm1.GLID
-    LEFT JOIN SAJILODB.dbo.tbUserMaster um ON stm.CreatedBy = um.UserID
-    LEFT JOIN SAJILODB.dbo.tbUserMaster um1 ON stm.LastSavedBy = um1.UserID
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON stm.CreatedBy = um.UserID
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um1 ON stm.LastSavedBy = um1.UserID
     WHERE 1=1
   `;
   const params = []; // Array to store query parameters
@@ -10535,8 +10535,8 @@ app.post("/search-cheque-issue", (req, res) => {
     LEFT JOIN tbSubLedgerMaster stm1 ON stm.SLID = stm1.SLID
     LEFT JOIN tbSubLedgerMaster stm2 ON stm.SLID = stm2.SLID
     LEFT JOIN tbLedgerMaster lm ON stm2.GLID = lm.GLID -- Join with tbLedgerMaster
-    LEFT JOIN SAJILODB.dbo.tbUserMaster um0 ON stm.CreatedBy = um0.UserID
-    LEFT JOIN SAJILODB.dbo.tbUserMaster um1 ON stm.LastSavedBy = um1.UserID
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um0 ON stm.CreatedBy = um0.UserID
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um1 ON stm.LastSavedBy = um1.UserID
     WHERE 1=1
   ;`
 
@@ -13410,8 +13410,8 @@ app.post("/search-mobile-alert", (req, res) => {
      FROM tbLedgerMaster l
      JOIN tbSubLedgerMaster s ON l.GLID = s.GLID
      JOIN tbMobileAlertSetting m ON s.SLID = m.SLID
-     LEFT JOIN SAJILODB.dbo.tbUserMaster um ON m.CreatedBy = um.UserID 
-     LEFT JOIN SAJILODB.dbo.tbUserMaster um1 ON m.LastSavedBy = um1.UserID 
+     LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON m.CreatedBy = um.UserID 
+     LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um1 ON m.LastSavedBy = um1.UserID 
      WHERE 1=1
   `;
 
@@ -13876,9 +13876,9 @@ SELECT
   u.UserName,
   d.CloseOpenDatetime  -- Display the full CloseOpenDatetime with time
 FROM tbDayCloseLog d
-LEFT JOIN SAJILODB.dbo.tbUserMaster u ON d.CloseOpenUserID = u.UserID
-LEFT JOIN SAJILODB.dbo.tbLocalDate ld1 ON CONVERT(VARCHAR, d.ClosedOpenedDate, 23) = ld1.M_date
-LEFT JOIN SAJILODB.dbo.tbLocalDate ld2 ON CONVERT(VARCHAR, CAST(d.CloseOpenDatetime AS DATETIME), 23) = ld2.M_date;  -- Match only the date portion
+LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster u ON d.CloseOpenUserID = u.UserID
+LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate ld1 ON CONVERT(VARCHAR, d.ClosedOpenedDate, 23) = ld1.M_date
+LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate ld2 ON CONVERT(VARCHAR, CAST(d.CloseOpenDatetime AS DATETIME), 23) = ld2.M_date;  -- Match only the date portion
 `;
 
   sql.query(conn, query, (err, rows) => {
@@ -13956,7 +13956,7 @@ app.post("/display-show-status-logs", (req, res) => {
             ld.M_Miti,
             ld.M_date
           FROM tbDayCloseLog d
-          LEFT JOIN SAJILODB.dbo.tbLocalDate ld 
+          LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate ld 
             ON CONVERT(VARCHAR, d.ClosedOpenedDate, 23) = ld.M_date
           WHERE d.ClosedOpenedDate BETWEEN ? AND ?
             AND d.CloseOpenUserID = ?
@@ -16267,7 +16267,7 @@ app.post("/updateAccTypePenaltyMas", (req, res) => {
 
         const methodID = methodResult[0].MethodID;
         console.log(`Retrieved MethodID: ${methodID}`);
-        // Step 4: Retrieve the UserID for the provided username from SAJILODB using the second connection
+        // Step 4: Retrieve the UserID for the provided username from SAJILODBSukunda using the second connection
         const queryGetUserID = `SELECT UserID
       FROM dbo.tbUserMaster
       WHERE UserName = ?`;
@@ -16623,7 +16623,7 @@ app.post("/CopyAccTypePenaltyMas", (req, res) => {
     const glIDNew = accResult[0].GLID;
     console.log(`Retrieved GLID for CopyPeanltyAcc: ${glIDNew}`);
 
-    // Step 3: Retrieve the UserID for the provided username from SAJILODB using the second connection
+    // Step 3: Retrieve the UserID for the provided username from SAJILODBSukunda using the second connection
     const queryGetUserID = `
       SELECT UserID
       FROM dbo.tbUserMaster
@@ -17082,7 +17082,7 @@ app.post("/updateAccTypeRebateMas", (req, res) => {
 
         const methodID = methodResult[0].MethodID;
         console.log(`Retrieved MethodID: ${methodID}`);
-        // Step 4: Retrieve the UserID for the provided username from SAJILODB using the second connection
+        // Step 4: Retrieve the UserID for the provided username from SAJILODBSukunda using the second connection
         const queryGetUserID = `SELECT UserID
       FROM dbo.tbUserMaster
       WHERE UserName = ?`;
@@ -17306,7 +17306,7 @@ app.post("/CopyAccTypeRebateMas", (req, res) => {
     const glIDNew = accResult[0].GLID;
     console.log(`Retrieved GLID for CopyPeanltyAcc: ${glIDNew}`);
 
-    // Step 3: Retrieve the UserID for the provided username from SAJILODB using the second connection
+    // Step 3: Retrieve the UserID for the provided username from SAJILODBSukunda using the second connection
     const queryGetUserID = `
       SELECT UserID
       FROM dbo.tbUserMaster
@@ -17633,7 +17633,7 @@ app.post("/updateChequeIssueMas", (req, res) => {
     const chequeIssuedIDSelected = result[0].ChequeIssueID;
     console.log(`Retrieved ChequeIssueID for selected ChequeIssue: ${chequeIssuedIDSelected}`);
 
-    // Step 3: Retrieve the UserID for the provided username from SAJILODB using the second connection
+    // Step 3: Retrieve the UserID for the provided username from SAJILODBSukunda using the second connection
     const queryGetUserID = `SELECT UserID
       FROM dbo.tbUserMaster
       WHERE UserName = ?`;
@@ -21866,7 +21866,7 @@ app.post('/checkIfInUse', (req, res) => {
 
 const connectionStringForDB = {
   server: 'localhost',
-  database: 'SAJILODB',
+  database: 'SAJILODBSukunda',
   user: 'sa',
   password: '123',
   options: {
@@ -22410,8 +22410,8 @@ app.post('/search-fiscal-year', (req, res) => {
           fy.CurrentFiscal,
           fy.YearID
         FROM tbFiscalYearMaster fy
-        LEFT JOIN SAJILODB.dbo.tbLocalDate ld1 ON fy.StartDate = ld1.M_date
-        LEFT JOIN SAJILODB.dbo.tbLocalDate ld2 ON fy.EndDate = ld2.M_date
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate ld1 ON fy.StartDate = ld1.M_date
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate ld2 ON fy.EndDate = ld2.M_date
         WHERE 1=1
       `;
     }
@@ -22597,7 +22597,7 @@ app.post('/getVoucherApproved', (req, res) => {
       ISNULL(SUM(D.CrAmount), 0) AS TotalCrAmount
     FROM tbJournalMaster J
     LEFT JOIN tbUserDefinedVoucher U ON J.UDVNo = U.UDVNo
-    LEFT JOIN SAJILODB.dbo.tbUserMaster UM ON J.CreatedUserID = UM.UserID
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster UM ON J.CreatedUserID = UM.UserID
     LEFT JOIN tbJournalDetails D ON J.JournalID = D.JournalID
     WHERE J.JV_Date BETWEEN ? AND ?
   `;
@@ -22766,7 +22766,7 @@ app.post('/getVoucherCheckedAndVerified', (req, res) => {
       ISNULL(SUM(D.CrAmount), 0) AS TotalCrAmount
     FROM tbJournalMaster J
     LEFT JOIN tbUserDefinedVoucher U ON J.UDVNo = U.UDVNo
-    LEFT JOIN SAJILODB.dbo.tbUserMaster UM ON J.CreatedUserID = UM.UserID
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster UM ON J.CreatedUserID = UM.UserID
     LEFT JOIN tbJournalDetails D ON J.JournalID = D.JournalID
     WHERE J.JV_Date BETWEEN ? AND ?
   `;
@@ -22935,7 +22935,7 @@ app.post('/getVoucherPostNUPost', (req, res) => {
       ISNULL(SUM(D.CrAmount), 0) AS TotalCrAmount
     FROM tbJournalMaster J
     LEFT JOIN tbUserDefinedVoucher U ON J.UDVNo = U.UDVNo
-    LEFT JOIN SAJILODB.dbo.tbUserMaster UM ON J.CreatedUserID = UM.UserID
+    LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster UM ON J.CreatedUserID = UM.UserID
     LEFT JOIN tbJournalDetails D ON J.JournalID = D.JournalID
     LEFT JOIN tbSubledgerMaster S ON S.SLID = D.SLID
     LEFT JOIN tbLedgerMaster L ON L.GLID = D.GLID
@@ -23657,7 +23657,7 @@ app.get('/check-setup', async (req, res) => {
   try {
     const pool = await sqlq.connect(setupConfig);
     const result = await pool.request().query(`
-      SELECT name FROM sys.databases WHERE name IN ('SAJILODB', '${secondDb}');
+      SELECT name FROM sys.databases WHERE name IN ('SAJILODBSukunda', '${secondDb}');
     `);
     await pool.close();
 
@@ -29944,10 +29944,10 @@ app.post("/search-journal-voucher", async (req, res) => {
           FROM tbJournalDetails
           GROUP BY JournalID
       ) d ON m.JournalID = d.JournalID
-      LEFT JOIN SAJILODB.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster up ON m.PostUserID = up.UserID
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster up ON m.PostUserID = up.UserID
       LEFT JOIN tbDocClassMaster dc ON m.DocClassID = dc.DocClassID
       LEFT JOIN tbCollectorMaster cc ON m.CollectorID = cc.CollectorID
       OUTER APPLY (
@@ -29969,10 +29969,10 @@ app.post("/search-journal-voucher", async (req, res) => {
 
     if (dateType === 'LD') {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
        
 
       `;
@@ -30013,11 +30013,11 @@ app.post("/search-journal-voucher", async (req, res) => {
 
     } else {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
       `;
 
       query += `
@@ -30357,10 +30357,10 @@ sl.SLName,
           FROM tbJournalDetails
           GROUP BY JournalID
       ) d ON m.JournalID = d.JournalID
-      LEFT JOIN SAJILODB.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster up ON m.PostUserID = up.UserID
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster up ON m.PostUserID = up.UserID
       LEFT JOIN tbDocClassMaster dc ON m.DocClassID = dc.DocClassID
       LEFT JOIN tbCollectorMaster cc ON m.CollectorID = cc.CollectorID
       LEFT JOIN tbSubledgerMaster sl ON m.SLIDPR = sl.SLID
@@ -30375,10 +30375,10 @@ sl.SLName,
 
     if (dateType === 'LD') {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
        
 
       `;
@@ -30413,11 +30413,11 @@ sl.SLName,
 
     } else {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
       `;
 
       query += `
@@ -30617,10 +30617,10 @@ sl.SLName,
           FROM tbJournalDetails
           GROUP BY JournalID
       ) d ON m.JournalID = d.JournalID
-      LEFT JOIN SAJILODB.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster up ON m.PostUserID = up.UserID
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster up ON m.PostUserID = up.UserID
       LEFT JOIN tbDocClassMaster dc ON m.DocClassID = dc.DocClassID
       LEFT JOIN tbCollectorMaster cc ON m.CollectorID = cc.CollectorID
       LEFT JOIN tbSubledgerMaster sl ON m.SLIDPR = sl.SLID
@@ -30636,10 +30636,10 @@ sl.SLName,
 
     if (dateType === 'LD') {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
        
 
       `;
@@ -30674,11 +30674,11 @@ sl.SLName,
 
     } else {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
       `;
 
       query += `
@@ -30900,10 +30900,10 @@ sl.SLName,
           FROM tbJournalDetails
           GROUP BY JournalID
       ) d ON m.JournalID = d.JournalID
-      LEFT JOIN SAJILODB.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster up ON m.PostUserID = up.UserID
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster up ON m.PostUserID = up.UserID
       LEFT JOIN tbDocClassMaster dc ON m.DocClassID = dc.DocClassID
       LEFT JOIN tbCollectorMaster cc ON m.CollectorID = cc.CollectorID
       LEFT JOIN tbSubledgerMaster sl ON m.SLIDPR = sl.SLID
@@ -30919,10 +30919,10 @@ sl.SLName,
 
     if (dateType === 'LD') {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
        
 
       `;
@@ -30957,11 +30957,11 @@ sl.SLName,
 
     } else {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
       `;
 
       query += `
@@ -31157,10 +31157,10 @@ sl.SLName,
           FROM tbJournalDetails
           GROUP BY JournalID
       ) d ON m.JournalID = d.JournalID
-      LEFT JOIN SAJILODB.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster up ON m.PostUserID = up.UserID
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster up ON m.PostUserID = up.UserID
       LEFT JOIN tbDocClassMaster dc ON m.DocClassID = dc.DocClassID
       LEFT JOIN tbCollectorMaster cc ON m.CollectorID = cc.CollectorID
       LEFT JOIN tbSubledgerMaster sl ON m.SLIDPR = sl.SLID
@@ -31176,10 +31176,10 @@ sl.SLName,
 
     if (dateType === 'LD') {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
        
 
       `;
@@ -31214,11 +31214,11 @@ sl.SLName,
 
     } else {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
       `;
 
       query += `
@@ -31425,10 +31425,10 @@ sl.SLName,
           FROM tbJournalDetails
           GROUP BY JournalID
       ) d ON m.JournalID = d.JournalID
-      LEFT JOIN SAJILODB.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster up ON m.PostUserID = up.UserID
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster up ON m.PostUserID = up.UserID
       LEFT JOIN tbDocClassMaster dc ON m.DocClassID = dc.DocClassID
       LEFT JOIN tbCollectorMaster cc ON m.CollectorID = cc.CollectorID
       LEFT JOIN tbSubledgerMaster sl ON m.SLIDPR = sl.SLID
@@ -31444,10 +31444,10 @@ sl.SLName,
 
     if (dateType === 'LD') {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
        
 
       `;
@@ -31482,11 +31482,11 @@ sl.SLName,
 
     } else {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
       `;
 
       query += `
@@ -31689,10 +31689,10 @@ sl.SLName,
           FROM tbJournalDetails
           GROUP BY JournalID
       ) d ON m.JournalID = d.JournalID
-      LEFT JOIN SAJILODB.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster up ON m.PostUserID = up.UserID
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster up ON m.PostUserID = up.UserID
       LEFT JOIN tbDocClassMaster dc ON m.DocClassID = dc.DocClassID
       LEFT JOIN tbCollectorMaster cc ON m.CollectorID = cc.CollectorID
       LEFT JOIN tbSubledgerMaster sl ON m.SLIDPR = sl.SLID
@@ -31708,10 +31708,10 @@ sl.SLName,
 
     if (dateType === 'LD') {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
        
 
       `;
@@ -31746,11 +31746,11 @@ sl.SLName,
 
     } else {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
       `;
 
       query += `
@@ -31949,10 +31949,10 @@ sl.SLName,
           FROM tbJournalDetails
           GROUP BY JournalID
       ) d ON m.JournalID = d.JournalID
-      LEFT JOIN SAJILODB.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
-      LEFT JOIN SAJILODB.dbo.tbUserMaster up ON m.PostUserID = up.UserID
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster um ON m.ModifiedUserID = um.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster uc ON m.CreatedUserID = uc.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster ua ON m.ApprovedUserID = ua.UserID 
+      LEFT JOIN SAJILODBSukunda.dbo.tbUserMaster up ON m.PostUserID = up.UserID
       LEFT JOIN tbDocClassMaster dc ON m.DocClassID = dc.DocClassID
       LEFT JOIN tbCollectorMaster cc ON m.CollectorID = cc.CollectorID
       LEFT JOIN tbSubledgerMaster sl ON m.SLIDPR = sl.SLID
@@ -31968,10 +31968,10 @@ sl.SLName,
 
     if (dateType === 'LD') {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
        
 
       `;
@@ -32006,11 +32006,11 @@ sl.SLName,
 
     } else {
       joinClauses += `
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
-        LEFT JOIN SAJILODB.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lJV ON CONVERT(date, lJV.M_Date) = CONVERT(date, m.JV_Date)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lApproved ON CONVERT(date, lApproved.M_Date) = CONVERT(date, m.ApprovedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lCreated ON CONVERT(date, lCreated.M_Date) = CONVERT(date, m.CreatedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lModified ON CONVERT(date, lModified.M_Date) = CONVERT(date, m.ModifiedDate)
+        LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate lPost ON CONVERT(date, lPost.M_Date) = CONVERT(date, m.PostDate)
       `;
 
       query += `
@@ -33134,13 +33134,13 @@ async function resolveVoucherDatePair(conn, value) {
       candidates.add(`${day.padStart(2, '0')}-${month.padStart(2, '0')}-${year}`);
     }
     const dateCandidates = [...candidates];
-    const rows = await sql.promises.query(conn, `SELECT TOP 1 CONVERT(varchar(10), M_date, 23) AS M_date, M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE REPLACE(LTRIM(RTRIM(M_Miti)), '/', '-') IN (${dateCandidates.map(() => '?').join(', ')})`, dateCandidates);
-    if (!rows.length) throw new Error('The local date was not found in SAJILODB.dbo.tbLocalDate.');
+    const rows = await sql.promises.query(conn, `SELECT TOP 1 CONVERT(varchar(10), M_date, 23) AS M_date, M_Miti FROM SAJILODBSukunda.dbo.tbLocalDate WHERE REPLACE(LTRIM(RTRIM(M_Miti)), '/', '-') IN (${dateCandidates.map(() => '?').join(', ')})`, dateCandidates);
+    if (!rows.length) throw new Error('The local date was not found in SAJILODBSukunda.dbo.tbLocalDate.');
     return { jvDate: rows[0].M_date, jvMiti: normalizeJVMiti(rows[0].M_Miti) };
   }
   const ad = raw.replace(/\//g, '-');
-  const rows = await sql.promises.query(conn, `SELECT TOP 1 CONVERT(varchar(10), M_date, 23) AS M_date, M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE CONVERT(date, M_date) = CONVERT(date, ?, 23)`, [ad]);
-  if (!rows.length) throw new Error('The voucher date was not found in SAJILODB.dbo.tbLocalDate.');
+  const rows = await sql.promises.query(conn, `SELECT TOP 1 CONVERT(varchar(10), M_date, 23) AS M_date, M_Miti FROM SAJILODBSukunda.dbo.tbLocalDate WHERE CONVERT(date, M_date) = CONVERT(date, ?, 23)`, [ad]);
+  if (!rows.length) throw new Error('The voucher date was not found in SAJILODBSukunda.dbo.tbLocalDate.');
   return { jvDate: rows[0].M_date, jvMiti: normalizeJVMiti(rows[0].M_Miti) };
 }
 
@@ -33501,7 +33501,7 @@ app.post("/account/Transaction/ReceiptMaster100", async (req, res) => {
       query(`SELECT TOP 1 GLID FROM tbLedgerMaster WHERE Category IN ('B', 'C') AND (LTRIM(RTRIM(GLName)) = ? OR LTRIM(RTRIM(GlAlias)) = ?)`, [ledger, ledger]),
       query('SELECT TOP 1 DocClassID FROM tbDocClassMaster WHERE DocClassName = ? OR DocClassAlias = ?', [docClass, docClass]),
       query('SELECT TOP 1 UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?', ['Receipt Voucher']),
-      query('SELECT TOP 1 UserID FROM SAJILODB.dbo.tbUserMaster WHERE UserName = ?', [userName]),
+      query('SELECT TOP 1 UserID FROM SAJILODBSukunda.dbo.tbUserMaster WHERE UserName = ?', [userName]),
       query('SELECT TOP 1 DateType FROM dbo.tbSystemSettings')
     ]);
 
@@ -33538,7 +33538,7 @@ app.post("/account/Transaction/ReceiptMaster100", async (req, res) => {
       let localDateRows = [];
       for (const candidate of dateCandidates) {
         const candidateRows = await query(
-          "SELECT TOP 1 M_Miti, M_date FROM SAJILODB.dbo.tbLocalDate WHERE REPLACE(LTRIM(RTRIM(M_Miti)), '/', '-') = ?",
+          "SELECT TOP 1 M_Miti, M_date FROM SAJILODBSukunda.dbo.tbLocalDate WHERE REPLACE(LTRIM(RTRIM(M_Miti)), '/', '-') = ?",
           [candidate.replace(/\//g, '-')]
         );
         if (candidateRows.length) {
@@ -33757,7 +33757,7 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
       return res.status(400).json({ success: false, message: 'Journal Voucher configuration not found.' });
     }
 
-    const userRows = await query('SELECT TOP 1 UserID FROM SAJILODB.dbo.tbUserMaster WHERE UserName = ?', [JVUserName]);
+    const userRows = await query('SELECT TOP 1 UserID FROM SAJILODBSukunda.dbo.tbUserMaster WHERE UserName = ?', [JVUserName]);
     if (!userRows.length) {
       return res.status(400).json({ success: false, message: 'User not found.' });
     }
@@ -33792,7 +33792,7 @@ app.post("/account/Transaction/JournalMaster97", async (req, res) => {
       let localDateRows = [];
       for (const candidate of dateCandidates) {
         const candidateRows = await query(
-          "SELECT TOP 1 M_Miti, M_date FROM SAJILODB.dbo.tbLocalDate WHERE REPLACE(LTRIM(RTRIM(M_Miti)), '/', '-') = ?",
+          "SELECT TOP 1 M_Miti, M_date FROM SAJILODBSukunda.dbo.tbLocalDate WHERE REPLACE(LTRIM(RTRIM(M_Miti)), '/', '-') = ?",
           [candidate.replace(/\//g, '-')]
         );
 
@@ -34281,7 +34281,7 @@ app.post("/fetchccapeditmemdetails", (req, res) => {
         mm.DOR,
         mm.DocumentIssueDate,
 
-        -- Nepali Dates from SAJILODB
+        -- Nepali Dates from SAJILODBSukunda
         dob_bs.M_Miti AS DateOfBirth_NP,
         dor_bs.M_Miti AS DOR_NP,
         doc_bs.M_Miti AS DocumentIssueDate_NP,
@@ -34330,14 +34330,14 @@ app.post("/fetchccapeditmemdetails", (req, res) => {
     LEFT JOIN dbo.tbDocClassMaster dcm 
         ON mm.DocClassID = dcm.DocClassID
 
-    -- 🔹 Nepali date joins from SAJILODB
-    LEFT JOIN SAJILODB.dbo.tbLocalDate dob_bs
+    -- 🔹 Nepali date joins from SAJILODBSukunda
+    LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate dob_bs
         ON dob_bs.M_Date = mm.DateOfBirth
 
-    LEFT JOIN SAJILODB.dbo.tbLocalDate dor_bs
+    LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate dor_bs
         ON dor_bs.M_Date = mm.DOR
 
-    LEFT JOIN SAJILODB.dbo.tbLocalDate doc_bs
+    LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate doc_bs
         ON doc_bs.M_Date = mm.DocumentIssueDate
 
     WHERE mm.MemberAlias = ?;
@@ -34471,7 +34471,7 @@ app.post("/fetchccapeditmemaccdetails", async (req, res) => {
         dob_bs.M_Miti AS AccountOpenDate_NP
       FROM dbo.tbSubLedgerMaster slm 
       INNER JOIN dbo.tbLedgerMaster lm ON slm.GLID = lm.GLID
-      LEFT JOIN SAJILODB.dbo.tbLocalDate dob_bs ON dob_bs.M_Date = slm.AccountOpenDate
+      LEFT JOIN SAJILODBSukunda.dbo.tbLocalDate dob_bs ON dob_bs.M_Date = slm.AccountOpenDate
       WHERE slm.MemberID = ?;
     `;
     const rows = await runQuery(conn, query, [MemID]);
@@ -38057,9 +38057,9 @@ app.post("/get-openingBalance-MasterEntry", (req, res) => {
             FROM tbJournalDetails JD
             INNER JOIN tbJournalMaster JM
                 ON JM.JournalID = JD.JournalID
-            INNER JOIN SAJILODB.dbo.tbUserMaster UM
+            INNER JOIN SAJILODBSukunda.dbo.tbUserMaster UM
                 ON UM.UserID = JM.CreatedUserID
-            INNER JOIN SAJILODB.dbo.tbUserMaster UM1
+            INNER JOIN SAJILODBSukunda.dbo.tbUserMaster UM1
                 ON UM1.UserID = JM.PostUserID
             WHERE JM.VoucherNo = 'OB1';
         `;
