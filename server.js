@@ -142,7 +142,7 @@ app.get("/fetch-fiscal-data", (req, res) => {
   // Get all organizations
   const orgQuery = `
     SELECT OrgId, OrgName, DBName, Address1, Address2, Phone1, Phone2, Fax, Email, LastSavedDateTime, Remarks
-    FROM SAJILODB.dbo.tbOrgMaster
+    FROM SAJILODBSukunda.dbo.tbOrgMaster
     ORDER BY LastSavedDateTime;
   `;
 
@@ -7544,7 +7544,7 @@ USE [${CDBName}];
 
     const insertOrgMasterSQL = `
 
-        INSERT INTO SAJILODB.dbo.tbOrgMaster 
+        INSERT INTO SAJILODBSukunda.dbo.tbOrgMaster 
     (OrgName, OrgAlias, Address1, Address2, Phone1, Phone2, Fax, Email, Pan, Status, DBName, Drive, Remarks, LastSavedBy, LastSavedDateTime)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, GETDATE());
 `;

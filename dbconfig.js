@@ -1,5 +1,5 @@
 const DEFAULT_DRIVER = "ODBC Driver 17 for SQL Server";
-const connectionString = `Server=localhost;Database=SAJILODB;UID=sa;PWD=123;Driver={${DEFAULT_DRIVER}};`;
+const connectionString = `Server=localhost;Database=SAJILODBSukunda;UID=sa;PWD=123;Driver={${DEFAULT_DRIVER}};`;
 const connectionString1 = `Server=localhost;Database=Cha79080_DB;UID=sa;PWD=123;Driver={${DEFAULT_DRIVER}};`;
 
 const createConnectionString = (databaseName) => {
