@@ -54,6 +54,10 @@
         .hide-searched-data-form #searcheddataform {
             display: none !important;
         }
+
+        .hide-searched-data-form .body1 {
+            display: none !important;
+        }
     </style>
 
     <script>
@@ -28041,12 +28045,14 @@ const edit = panel?.querySelector('#pvm-edit-button');
                     // Utility to hide the searched data form and persist choice
                     function hideSearchedDataForm() {
                         const form = document.getElementById('searcheddataform');
+                        document.documentElement.classList.add('hide-searched-data-form');
                         if (form) form.style.display = 'none';
                         try { localStorage.setItem('hideSearchedDataForm', 'true'); } catch (e) {}
                     }
 
                     function showSearchedDataForm() {
                         const form = document.getElementById('searcheddataform');
+                        document.documentElement.classList.remove('hide-searched-data-form');
                         if (form) form.style.display = '';
                         try { localStorage.removeItem('hideSearchedDataForm'); } catch (e) {}
                     }
@@ -28072,6 +28078,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         try {
                             if (localStorage.getItem('hideSearchedDataForm') === 'true') {
                                 const form = document.getElementById('searcheddataform');
+                                document.documentElement.classList.add('hide-searched-data-form');
                                 if (form) form.style.display = 'none';
                             }
                         } catch (e) {}
@@ -28082,6 +28089,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         try {
                             if (localStorage.getItem('hideSearchedDataForm') === 'true') {
                                 const form = document.getElementById('searcheddataform');
+                                document.documentElement.classList.add('hide-searched-data-form');
                                 if (form) form.style.display = 'none';
                             }
                         } catch (e) {}
