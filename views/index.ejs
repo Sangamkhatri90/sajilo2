@@ -47616,7 +47616,10 @@ const edit = panel?.querySelector('#pvm-edit-button');
                             );
                             const opts = allPostingLedgersSubDENew
                                 .filter(item => ledger && String(item.GLID) === String(ledger.GLID))
-                                .map(item => `${item.SLName}`);
+                                .map(item => ({
+                                    name: String(item.SLName || ''),
+                                    alias: String(item.SlAlias || item.SLAlias || '')
+                                }));
                             showDropdownDENew(opts, cell);
                             if (!row.cells[1].textContent.trim()) {
                                 row.cells[1].textContent = defaultRowTypeDENew;
@@ -47689,7 +47692,9 @@ const edit = panel?.querySelector('#pvm-edit-button');
                     const rect = cell.getBoundingClientRect();
                     dropdownDENew.style.top = `${rect.bottom + window.scrollY}px`;
                     dropdownDENew.style.left = `${rect.left + window.scrollX}px`;
-                    dropdownDENew.style.width = `${rect.width}px`;
+                    dropdownDENew.style.width = options.some(option => typeof option === 'object')
+                        ? '360px'
+                        : `${rect.width}px`;
                     dropdownDENew.style.display = 'block';
 
                     searchDENew.value = '';
@@ -47698,15 +47703,35 @@ const edit = panel?.querySelector('#pvm-edit-button');
 
                 function renderDropdownOptionsDENew(options) {
                     optionsContainerDENew.innerHTML = '';
+                    const isSubHeadList = currentOptionsDENew.some(item => typeof item === 'object');
+
+                    if (isSubHeadList) {
+                        const header = document.createElement('div');
+                        header.style.cssText = 'display:grid; grid-template-columns:1fr 120px; gap:8px; padding:6px; font-weight:bold; border-bottom:1px solid #ccc;';
+                        header.innerHTML = '<span>Account Head</span><span>Acc Alias</span>';
+                        optionsContainerDENew.appendChild(header);
+                    }
+
                     options.forEach(item => {
                         const div = document.createElement('div');
                         div.className = 'suggestion-item';
-                        div.textContent = item;
-                        div.title = item;
+                        const isSubHead = typeof item === 'object';
+                        const value = isSubHead ? item.name : item;
+                        div.title = isSubHead ? `${item.name} (${item.alias})` : item;
                         div.style.padding = '6px';
                         div.style.cursor = 'pointer';
+                        if (isSubHead) {
+                            div.style.cssText += 'display:grid; grid-template-columns:1fr 120px; gap:8px; border-bottom:1px solid #eee;';
+                            const name = document.createElement('span');
+                            const alias = document.createElement('span');
+                            name.textContent = item.name;
+                            alias.textContent = item.alias;
+                            div.append(name, alias);
+                        } else {
+                            div.textContent = item;
+                        }
                         div.addEventListener('click', () => {
-                            activeCellDENew.textContent = item;
+                            activeCellDENew.textContent = value;
                             dropdownDENew.style.display = 'none';
                         });
                         div.addEventListener('mouseover', () => div.style.background = '#f1f1f1');
@@ -47718,7 +47743,12 @@ const edit = panel?.querySelector('#pvm-edit-button');
                 // Search filter
                 searchDENew.addEventListener('input', () => {
                     const query = searchDENew.value.toLowerCase();
-                    const filtered = currentOptionsDENew.filter(opt => opt.toLowerCase().includes(query));
+                    const filtered = currentOptionsDENew.filter(opt => {
+                        if (typeof opt === 'object') {
+                            return opt.name.toLowerCase().includes(query) || opt.alias.toLowerCase().includes(query);
+                        }
+                        return opt.toLowerCase().includes(query);
+                    });
                     renderDropdownOptionsDENew(filtered);
                 });
 
