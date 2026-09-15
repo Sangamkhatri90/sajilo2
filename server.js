@@ -30149,11 +30149,17 @@ app.get('/api/journal-vouchers/:journalID', async (req, res) => {
       sql.promises.query(req.session.conn, `
         SELECT m.JournalID, m.VoucherNo, CONVERT(varchar(10), m.JV_Date, 23) AS JV_Date,
                m.JV_Miti, m.Remarks, dc.DocClassName, cc.CollectorName,
-               m.MemberID, mm.MemberName
+               m.MemberID, mm.MemberName, m.CreatedDate, m.PostDate, m.CheckDate, m.ApprovedDate,
+               entered.UserName AS EnteredBy, posted.UserName AS PostedBy,
+               checked.UserName AS CheckedBy, approved.UserName AS ApprovedBy
         FROM tbJournalMaster m
         LEFT JOIN tbDocClassMaster dc ON dc.DocClassID = m.DocClassID
         LEFT JOIN tbCollectorMaster cc ON cc.CollectorID = m.CollectorID
         LEFT JOIN tbMemberMaster mm ON mm.MemberID = m.MemberID
+        LEFT JOIN SAJILODB.dbo.tbUserMaster entered ON entered.UserID = m.CreatedUserID
+        LEFT JOIN SAJILODB.dbo.tbUserMaster posted ON posted.UserID = m.PostUserID
+        LEFT JOIN SAJILODB.dbo.tbUserMaster checked ON checked.UserID = m.CheckUserID
+        LEFT JOIN SAJILODB.dbo.tbUserMaster approved ON approved.UserID = m.ApprovedUserID
         WHERE m.JournalID = ?`, [journalID]),
       sql.promises.query(req.session.conn, `
         SELECT jd.SNo, lm.GLName AS accountHead, sl.SLName AS subHead, jd.DrAmount, jd.CrAmount
