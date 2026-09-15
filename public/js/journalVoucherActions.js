@@ -30,9 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const master = document.getElementById('movableDiv38');
   master?.appendChild(loadingOverlay);
   const loadingBar = loadingOverlay.querySelector('.jv-loading-bar'), loadingPercent = loadingOverlay.querySelector('.jv-loading-percent');
-  const setLoading = value => { loading = value; clearInterval(setLoading.timer); if (value) { let progress = 8; loadingOverlay.style.display = 'flex'; loadingPercent.textContent = '8%'; loadingBar.style.width = '8%'; setLoading.timer = setInterval(() => { progress = Math.min(92, progress + 4); loadingPercent.textContent = `${progress}%`; loadingBar.style.width = `${progress}%`; }, 160); } else { loadingPercent.textContent = '100%'; loadingBar.style.width = '100%'; setTimeout(() => { loadingOverlay.style.display = 'none'; }, 220); } };
+  const setLoading = value => { loading = value; clearInterval(setLoading.timer); if (value) { let progress = 8; loadingOverlay.style.display = 'flex'; loadingPercent.textContent = '8%'; loadingBar.style.width = '8%'; setLoading.timer = setInterval(() => { progress = Math.min(88, progress + 4); loadingPercent.textContent = `${progress}%`; loadingBar.style.width = `${progress}%`; }, 160); } else { loadingPercent.textContent = '100%'; loadingBar.style.width = '100%'; setTimeout(() => { loadingOverlay.style.display = 'none'; }, 120); } };
   const jvBody = table.tBodies[0];
   jvBody && new MutationObserver(() => { if (loading && Array.from(jvBody.rows).some(row => row.cells.length > 1 && !row.cells[0]?.colSpan)) setLoading(false); }).observe(jvBody, { childList: true, subtree: true });
+  window.addEventListener('journal-voucher-search-finished', () => setLoading(false));
   searchForm?.addEventListener('submit', () => { setLoading(true); setTimeout(() => { if (loading) setLoading(false); }, 30000); }, true);
   const refresh = () => searchForm?.requestSubmit();
   const setTrashMode = (value) => {

@@ -348,7 +348,8 @@ document.getElementById("stm-searchForm").addEventListener("submit", function (e
                 tableBody.appendChild(tr);
             });
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => console.error("Error fetching results:", err))
+        .finally(() => window.dispatchEvent(new CustomEvent('share-task-search-finished')));
 });
 
 
@@ -396,7 +397,8 @@ document.getElementById("ccm-searchForm").addEventListener("submit", function (e
                 tableBody.appendChild(tr);
             });
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => console.error("Error fetching results:", err))
+        .finally(() => window.dispatchEvent(new CustomEvent('collection-cheques-search-finished')));
 });
 
 document.getElementById("atm-searchForm").addEventListener('submit', function (event) {
@@ -2084,7 +2086,8 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
 
             tbody.appendChild(totalRow);
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => console.error("Error fetching results:", err))
+        .finally(() => window.dispatchEvent(new CustomEvent('journal-voucher-search-finished')));
 });
 
 
@@ -2349,7 +2352,8 @@ document.getElementById("rvsearchForm").addEventListener("submit", function (eve
 
             tbody.appendChild(totalRow);
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => console.error("Error fetching results:", err))
+        .finally(() => window.dispatchEvent(new CustomEvent('receipt-voucher-search-finished')));
 });
 
 
@@ -2619,7 +2623,8 @@ document.getElementById("colmsearchForm").addEventListener("submit", function (e
 
             tbody.appendChild(totalRow);
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => console.error("Error fetching results:", err))
+        .finally(() => window.dispatchEvent(new CustomEvent('collection-voucher-search-finished')));
 });
 
 
@@ -2749,7 +2754,8 @@ document.getElementById("dimsearchForm").addEventListener("submit", function (ev
 
             tbody.appendChild(totalRow);
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => console.error("Error fetching results:", err))
+        .finally(() => window.dispatchEvent(new CustomEvent('distribution-voucher-search-finished')));
 });
 
 
@@ -2879,7 +2885,8 @@ document.getElementById("ipmsearchForm").addEventListener("submit", function (ev
 
             tbody.appendChild(totalRow);
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => console.error("Error fetching results:", err))
+        .finally(() => window.dispatchEvent(new CustomEvent('interest-posting-voucher-search-finished')));
 });
 
 
@@ -3004,7 +3011,8 @@ document.getElementById("mvmsearchForm").addEventListener("submit", function (ev
             }
             tbody.appendChild(totalRow);
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => console.error("Error fetching results:", err))
+        .finally(() => window.dispatchEvent(new CustomEvent('mbank-voucher-search-finished')));
 });
 
 window.addEventListener("DOMContentLoaded", async () => {

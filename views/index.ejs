@@ -4575,6 +4575,8 @@
                     }
 
                     document.addEventListener('DOMContentLoaded', () => {
+                        const documentPrintingForm = document.getElementById('myForm31');
+                        const notify = (message) => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
                         const startInput = document.querySelector('#DocumentPrintingJournalVoucher form input[name="DPStartFrom"]');
                         const endInput = document.querySelector('#DocumentPrintingJournalVoucher form input[name="DPEndTo"]');
                         const resultsBox = document.getElementById('documentPrintingSearchResults');
@@ -4615,6 +4617,15 @@
                             docPriJourVoucherCancelButton.addEventListener('click', hideAndResetDocumentPrintingForm);
                         }
 
+                        const loadVoucherNumbers = async (voucherType) => {
+                            const response = await fetch(`/journal-voucher-list?type=${encodeURIComponent(voucherType)}`);
+                            if (!response.ok) {
+                                throw new Error('Failed to load journal voucher list');
+                            }
+                            const data = await response.json();
+                            return data.vouchers || [];
+                        };
+
                         const fetchJournalVoucherList = async () => {
                             if (!currentVoucherType) {
                                 console.error('No voucher type selected');
@@ -4622,13 +4633,7 @@
                             }
 
                             try {
-                                const response = await fetch(`/journal-voucher-list?type=${encodeURIComponent(currentVoucherType)}`);
-                                if (!response.ok) {
-                                    throw new Error('Failed to load journal voucher list');
-                                }
-
-                                const data = await response.json();
-                                const vouchers = data.vouchers || [];
+                                const vouchers = await loadVoucherNumbers(currentVoucherType);
 
                                 if (vouchers.length === 0) {
                                     resultsList.innerHTML = '<tr><td style="padding:8px;">No vouchers found.</td></tr>';
@@ -4710,6 +4715,73 @@
 
                         startInput.addEventListener('keydown', handleSpace);
                         endInput.addEventListener('keydown', handleSpace);
+
+                        documentPrintingForm?.addEventListener('submit', async (event) => {
+                            event.preventDefault();
+                            if (!currentVoucherType) return notify('Choose a voucher type from the Printing menu first.');
+
+                            const startVoucher = startInput.value.trim();
+                            const endVoucher = endInput.value.trim();
+                            if ((startVoucher && !endVoucher) || (!startVoucher && endVoucher)) {
+                                return notify('Enter both Start From and End To voucher numbers.');
+                            }
+
+                            const copiesInput = documentPrintingForm.querySelector('[name="DPNoOfCopies"]');
+                            const copies = Number(copiesInput.value || 1);
+                            if (!Number.isInteger(copies) || copies < 1 || copies > 99) {
+                                return notify('Number of Copies must be a whole number from 1 to 99.');
+                            }
+
+                            // Open synchronously so browsers do not block the print window after data is loaded.
+                            const printWindow = window.open('', '_blank');
+                            if (!printWindow) return notify('Allow pop-ups to print vouchers.');
+                            printWindow.document.write('<p style="font-family:Arial,sans-serif;padding:20px">Preparing vouchers…</p>');
+                            printWindow.document.close();
+
+                            try {
+                                let vouchers = await loadVoucherNumbers(currentVoucherType);
+                                if (currentVoucherType === 'journal-voucher' && documentPrintingForm.querySelector('[name="DpAutoJournal"]')?.checked) {
+                                    const autoJournals = await loadVoucherNumbers('auto-journal');
+                                    vouchers = vouchers.concat(autoJournals);
+                                }
+                                vouchers = vouchers.filter((voucher, index, list) => voucher.voucherNo && list.findIndex((item) => item.voucherNo === voucher.voucherNo) === index);
+
+                                if (startVoucher && endVoucher) {
+                                    const startIndex = vouchers.findIndex((voucher) => voucher.voucherNo === startVoucher);
+                                    const endIndex = vouchers.findIndex((voucher) => voucher.voucherNo === endVoucher);
+                                    if (startIndex < 0 || endIndex < 0) throw new Error('The selected voucher range could not be found.');
+                                    if (startIndex > endIndex) throw new Error('Start From must come before End To.');
+                                    vouchers = vouchers.slice(startIndex, endIndex + 1);
+                                }
+                                if (!vouchers.length) throw new Error('No vouchers found for printing.');
+
+                                const printedVouchers = await Promise.all(vouchers.map(async ({ voucherNo }) => {
+                                    const lookup = await fetch(`/api/journal-vouchers/lookup?voucherNo=${encodeURIComponent(voucherNo)}`);
+                                    const lookupData = await lookup.json();
+                                    if (!lookup.ok || !lookupData.success) throw new Error(lookupData.message || `Unable to load ${voucherNo}.`);
+                                    const voucherResponse = await fetch(`/api/journal-vouchers/${lookupData.journalID}`);
+                                    const voucherData = await voucherResponse.json();
+                                    if (!voucherResponse.ok || !voucherData.success) throw new Error(voucherData.message || `Unable to load ${voucherNo}.`);
+                                    return voucherData;
+                                }));
+
+                                const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+                                const formatLabel = documentPrintingForm.querySelector('[name="DpFormat"]')?.selectedOptions[0]?.textContent.trim() || 'Voucher';
+                                const printerLabel = documentPrintingForm.querySelector('[name="DPPrinter"]')?.selectedOptions[0]?.textContent.trim() || '';
+                                const pages = printedVouchers.flatMap(({ voucher, details }) => Array.from({ length: copies }, (_, copyIndex) => {
+                                    const rows = (details || []).map((detail, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(detail.accountHead || detail.AccountHead)}</td><td>${escapeHtml(detail.subHead || detail.SubHead)}</td><td class="amount">${escapeHtml(detail.DrAmount || '')}</td><td class="amount">${escapeHtml(detail.CrAmount || '')}</td></tr>`).join('');
+                                    return `<section class="voucher"><header><h1>${escapeHtml(formatLabel)}</h1><div>Voucher No: <strong>${escapeHtml(voucher.VoucherNo)}</strong></div><div>Date: ${escapeHtml(voucher.JV_Date)}</div></header><p>Remarks: ${escapeHtml(voucher.Remarks)}</p><table><thead><tr><th>S.N.</th><th>Account Head</th><th>Sub Head</th><th>Debit</th><th>Credit</th></tr></thead><tbody>${rows || '<tr><td colspan="5">No detail rows</td></tr>'}</tbody></table><footer>Copy ${copyIndex + 1} of ${copies}${printerLabel ? ` · Printer: ${escapeHtml(printerLabel)}` : ''}</footer></section>`;
+                                })).join('');
+                                printWindow.document.open();
+                                printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(formatLabel)}</title><style>@page{margin:14mm}body{font-family:Arial,sans-serif;color:#111}.voucher{break-after:page;page-break-after:always}.voucher:last-child{break-after:auto;page-break-after:auto}header{display:flex;gap:22px;align-items:baseline;border-bottom:1px solid #111}h1{font-size:18px;margin:0 auto 12px 0}p{margin:14px 0}table{width:100%;border-collapse:collapse}th,td{border:1px solid #222;padding:6px;font-size:12px}.amount{text-align:right}footer{margin-top:18px;font-size:11px;color:#555}</style></head><body>${pages}</body></html>`);
+                                printWindow.document.close();
+                                printWindow.focus();
+                                setTimeout(() => printWindow.print(), 250);
+                            } catch (error) {
+                                printWindow.close();
+                                notify(error.message || 'Unable to prepare vouchers for printing.');
+                            }
+                        });
                     });
                 </script>
 
@@ -14819,10 +14891,10 @@ const edit = panel?.querySelector('#pvm-edit-button');
                     document.addEventListener('DOMContentLoaded', () => {
                         ['movableDiv100', 'movableDiv107', 'movableDiv113'].forEach(id => { const dialog = document.getElementById(id); if (dialog) dialog.style.zIndex = '10000'; });
                         const voucherMasters = [
-                            { panel: 'movableDiv98', table: 'RMTablevalues', search: 'rvsearchForm', menu: 'Receipt Voucher' },
-                            { panel: 'movableDiv108', table: 'CVMTablevalues', search: 'colmsearchForm', menu: 'Collection' },
-                            { panel: 'movableDiv110', table: 'DVMTablevalues', search: 'dimsearchForm', menu: 'Distribution' },
-                            { panel: 'movableDiv112', table: 'IPVMTablevalues', search: 'ipmsearchForm', menu: 'Interest Posting' }
+                            { panel: 'movableDiv98', table: 'RMTablevalues', search: 'rvsearchForm', menu: 'Receipt Voucher', completeEvent: 'receipt-voucher-search-finished' },
+                            { panel: 'movableDiv108', table: 'CVMTablevalues', search: 'colmsearchForm', menu: 'Collection', completeEvent: 'collection-voucher-search-finished' },
+                            { panel: 'movableDiv110', table: 'DVMTablevalues', search: 'dimsearchForm', menu: 'Distribution', completeEvent: 'distribution-voucher-search-finished' },
+                            { panel: 'movableDiv112', table: 'IPVMTablevalues', search: 'ipmsearchForm', menu: 'Interest Posting', completeEvent: 'interest-posting-voucher-search-finished' }
                         ];
                         const notify = message => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
                         voucherMasters.forEach(config => {
@@ -14835,10 +14907,11 @@ const edit = panel?.querySelector('#pvm-edit-button');
                             loadingOverlay.innerHTML = '<div style="width:280px;padding:20px 22px;border-radius:10px;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18);text-align:center;font-size:16px;font-weight:600"><div style="margin-bottom:12px"><i class="fas fa-spinner fa-spin"></i> Loading vouchers</div><div style="height:12px;border-radius:8px;background:#d7e6f5;overflow:hidden"><div class="voucher-loading-bar" style="height:100%;width:8%;background:#218838;transition:width .15s ease"></div></div><div class="voucher-loading-percent" style="margin-top:9px">8%</div></div>';
                             panel.style.position = panel.style.position || 'relative'; panel.appendChild(loadingOverlay);
                             const loadingBar = loadingOverlay.querySelector('.voucher-loading-bar'), loadingPercent = loadingOverlay.querySelector('.voucher-loading-percent');
-                            const setLoading = value => { loading = value; [edit, remove, copy, trash, reverse].forEach(button => { if (button) button.disabled = value; }); clearInterval(loadingTimer); if (value) { let progress = 8; loadingPercent.textContent = '8%'; loadingBar.style.width = '8%'; loadingOverlay.style.display = 'flex'; loadingTimer = setInterval(() => { progress = Math.min(92, progress + 4); loadingPercent.textContent = `${progress}%`; loadingBar.style.width = `${progress}%`; }, 160); } else { loadingPercent.textContent = '100%'; loadingBar.style.width = '100%'; setTimeout(() => { loadingOverlay.style.display = 'none'; }, 220); } };
+                            const setLoading = value => { loading = value; [edit, remove, copy, trash, reverse].forEach(button => { if (button) button.disabled = value; }); clearInterval(loadingTimer); if (value) { let progress = 8; loadingPercent.textContent = '8%'; loadingBar.style.width = '8%'; loadingOverlay.style.display = 'flex'; loadingTimer = setInterval(() => { progress = Math.min(88, progress + 4); loadingPercent.textContent = `${progress}%`; loadingBar.style.width = `${progress}%`; }, 160); } else { loadingPercent.textContent = '100%'; loadingBar.style.width = '100%'; setTimeout(() => { loadingOverlay.style.display = 'none'; }, 120); } };
                             const body = table.tBodies[0];
                             const resultObserver = body ? new MutationObserver(() => { if (loading && body.querySelector('tr[data-journal-id]')) setLoading(false); }) : null;
                             resultObserver?.observe(body, { childList: true, subtree: true });
+                            window.addEventListener(config.completeEvent, () => setLoading(false));
                             search.addEventListener('submit', () => { setLoading(true); setTimeout(() => { if (loading) setLoading(false); }, 30000); }, true);
                             const buttons = Array.from(panel.querySelectorAll('button'));
                             const button = text => buttons.find(item => item.textContent.trim().toLowerCase().includes(text));
@@ -15083,12 +15156,13 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         overlay.innerHTML = '<div style="width:280px;padding:20px 22px;border-radius:10px;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18);text-align:center;font-size:16px;font-weight:600"><div style="margin-bottom:12px"><i class="fas fa-spinner fa-spin"></i> Loading vouchers</div><div style="height:12px;border-radius:8px;background:#d7e6f5;overflow:hidden"><div class="mbv-loading-bar" style="height:100%;width:8%;background:#218838;transition:width .15s ease"></div></div><div class="mbv-loading-percent" style="margin-top:9px">8%</div></div>';
                         panel.style.position = panel.style.position || 'relative'; panel.appendChild(overlay);
                         const bar = overlay.querySelector('.mbv-loading-bar'), percent = overlay.querySelector('.mbv-loading-percent');
-                        const setLoading = active => { clearInterval(loadingTimer); if (active) { let progress = 8; percent.textContent = '8%'; bar.style.width = '8%'; overlay.style.display = 'flex'; loadingTimer = setInterval(() => { progress = Math.min(92, progress + 4); percent.textContent = `${progress}%`; bar.style.width = `${progress}%`; }, 160); } else { percent.textContent = '100%'; bar.style.width = '100%'; setTimeout(() => { overlay.style.display = 'none'; }, 220); } };
+                        const setLoading = active => { clearInterval(loadingTimer); if (active) { let progress = 8; percent.textContent = '8%'; bar.style.width = '8%'; overlay.style.display = 'flex'; loadingTimer = setInterval(() => { progress = Math.min(88, progress + 4); percent.textContent = `${progress}%`; bar.style.width = `${progress}%`; }, 160); } else { percent.textContent = '100%'; bar.style.width = '100%'; setTimeout(() => { overlay.style.display = 'none'; }, 120); } };
                         const selectedID = () => selectedRow?.dataset.journalId || null, reload = () => search.requestSubmit(), value = cell => String(cell?.querySelector('input')?.value ?? cell?.textContent ?? '').trim();
                         document.getElementById('toggleButton115')?.addEventListener('click', () => { delete form.dataset.editJournalId; document.getElementById('mbankVoucherDate').value = currentVoucherDate(); });
                         masterTable.addEventListener('click', event => { const row = event.target.closest('tbody tr[data-journal-id]'); if (!row) return; selectedRow?.classList.remove('selected-row'); selectedRow = row; row.classList.add('selected-row'); }, true);
                         search.addEventListener('submit', () => { setLoading(true); setTimeout(() => { if (overlay.style.display !== 'none') setLoading(false); }, 30000); }, true);
                         new MutationObserver(() => { if (masterTable.tBodies[0]?.querySelector('tr[data-journal-id]')) setLoading(false); }).observe(masterTable.tBodies[0], { childList: true, subtree: true });
+                        window.addEventListener('mbank-voucher-search-finished', () => setLoading(false));
                         const setTrashMode = active => { trashMode = active; let field = search.querySelector('[name="MbVMTrash"]'); if (!field) { field = document.createElement('input'); field.type = 'hidden'; field.name = 'MbVMTrash'; search.appendChild(field); } field.value = active ? '1' : '0'; trash.innerHTML = active ? '<i class="fas fa-list"></i> Active' : '<i class="fas fa-recycle"></i> Trash'; selectedRow = null; reload(); };
                         trash?.addEventListener('click', event => { event.preventDefault(); setTrashMode(!trashMode); });
                         remove?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select an Mbank voucher row first.'); if (trashMode) return notify('Open Active vouchers to delete.'); const confirmed = await window.showVoucherDeleteConfirm('Move the selected Mbank voucher to Trash?'); if (!confirmed) return; try { const response = await fetch(`/api/vouchers/${journalID}/trash`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ menuName: 'Mbank Voucher' }) }); const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message); notify(data.message); selectedRow = null; reload(); } catch (error) { notify(error.message || 'Unable to move Mbank voucher to Trash.'); } });
@@ -15136,6 +15210,42 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         });
                         edit?.addEventListener('click', async event => { event.preventDefault(); const journalID = selectedID(); if (!journalID) return notify('Select an Mbank voucher row first.'); if (trashMode) return notify('Restore the voucher before editing.'); try { const response = await fetch(`/api/vouchers/${journalID}?menuName=Mbank%20Voucher`), data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'Unable to load Mbank voucher.'); const v = data.voucher; form.dataset.editJournalId = journalID; document.getElementById('mbankVoucherNo').value = v.VoucherNo || ''; document.getElementById('mbankVoucherDate').value = v.JV_Date || ''; document.getElementById('DEMBVnewLedger').value = v.CashLedger || ''; document.getElementById('DEMBVnewDocclass').value = v.DocClassName || ''; document.getElementById('DEMBVnewCollector').value = v.CollectorName || ''; document.getElementById('mbankVoucherSubLedgerAlias').value = v.SubLedgerAlias || ''; document.getElementById('mbankVoucherRemarks').value = v.Remarks || ''; entryTable.tBodies[0].innerHTML = data.details.map((d, i) => `<tr><td>${i + 1}</td><td>${Number(d.DrAmount || 0) > 0 ? 'Dr' : 'Cr'}</td><td>${d.AccountHead || ''}</td><td>${d.SubHead || ''}</td><td>${d.DrAmount || ''}</td><td>${d.CrAmount || ''}</td></tr>`).join('') || '<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>'; dialog.style.zIndex = '10000'; dialog.style.display = 'block'; } catch (error) { notify(error.message || 'Unable to load Mbank voucher.'); } });
                         form.addEventListener('submit', async event => { event.preventDefault(); event.stopImmediatePropagation(); const journalID = form.dataset.editJournalId; const details = Array.from(entryTable.tBodies[0].rows).map(row => ({ accountHead: value(row.cells[2]), subHead: value(row.cells[3]), drAmount: value(row.cells[4]), crAmount: value(row.cells[5]) })).filter(row => row.accountHead || row.subHead || row.drAmount || row.crAmount); const payload = { menuName: 'Mbank Voucher', voucherNo: document.getElementById('mbankVoucherNo').value.trim(), voucherDate: document.getElementById('mbankVoucherDate').value, ledger: document.getElementById('DEMBVnewLedger').value.trim(), docClass: document.getElementById('DEMBVnewDocclass').value.trim(), collector: document.getElementById('DEMBVnewCollector').value.trim(), remarks: document.getElementById('mbankVoucherRemarks').value.trim(), journalVoucher: document.getElementById('mbankJournalVoucher').checked, details }; try { const response = await fetch(journalID ? `/api/vouchers/${journalID}` : '/account/Transaction/MbankVoucher115', { method: journalID ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }), result = await response.json(); if (!response.ok || !result.success) throw new Error(result.message || `Unable to ${journalID ? 'update' : 'save'} Mbank voucher.`); notify(result.message); form.reset(); delete form.dataset.editJournalId; entryTable.tBodies[0].innerHTML = '<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>'; if (!journalID) await window.generateNextVoucherNumber?.('Mbank Voucher', 'mbankVoucherNo'); dialog.style.display = 'none'; reload(); } catch (error) { notify(error.message || `Unable to ${journalID ? 'update' : 'save'} Mbank voucher.`); } }, true);
+                    });
+                </script>
+
+                <script>
+                    // Search loaders for the remaining Data Entry masters. Bank Reconciliation is intentionally excluded.
+                    document.addEventListener('DOMContentLoaded', () => {
+                        [
+                            { panel: 'movableDiv116', form: 'stm-searchForm', event: 'share-task-search-finished', label: 'Loading share tasks' },
+                            { panel: 'movableDiv119', form: 'ccm-searchForm', event: 'collection-cheques-search-finished', label: 'Loading collection cheques' }
+                        ].forEach(config => {
+                            const panel = document.getElementById(config.panel);
+                            const form = document.getElementById(config.form);
+                            if (!panel || !form) return;
+
+                            let timer = null;
+                            const overlay = document.createElement('div');
+                            overlay.style.cssText = 'display:none;position:absolute;inset:0;z-index:9999;background:rgba(255,255,255,.82);align-items:center;justify-content:center;color:#075caf;';
+                            overlay.innerHTML = `<div style="width:280px;padding:20px 22px;border-radius:10px;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18);text-align:center;font-size:16px;font-weight:600"><div style="margin-bottom:12px"><i class="fas fa-spinner fa-spin"></i> ${config.label}</div><div style="height:12px;border-radius:8px;background:#d7e6f5;overflow:hidden"><div class="master-loading-bar" style="height:100%;width:8%;background:#218838;transition:width .15s ease"></div></div><div class="master-loading-percent" style="margin-top:9px">8%</div></div>`;
+                            panel.style.position = panel.style.position || 'relative';
+                            panel.appendChild(overlay);
+                            const bar = overlay.querySelector('.master-loading-bar');
+                            const percent = overlay.querySelector('.master-loading-percent');
+                            const setLoading = active => {
+                                clearInterval(timer);
+                                if (active) {
+                                    let progress = 8;
+                                    percent.textContent = '8%'; bar.style.width = '8%'; overlay.style.display = 'flex';
+                                    timer = setInterval(() => { progress = Math.min(88, progress + 4); percent.textContent = `${progress}%`; bar.style.width = `${progress}%`; }, 160);
+                                } else {
+                                    percent.textContent = '100%'; bar.style.width = '100%';
+                                    setTimeout(() => { overlay.style.display = 'none'; }, 120);
+                                }
+                            };
+                            form.addEventListener('submit', () => { setLoading(true); setTimeout(() => { if (overlay.style.display !== 'none') setLoading(false); }, 30000); }, true);
+                            window.addEventListener(config.event, () => setLoading(false));
+                        });
                     });
                 </script>
 

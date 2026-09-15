@@ -148,5 +148,32 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   fetchDocClassesForLogin(true);  // Fetch data on page load
+
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'ArrowDown') {
+      const rows = Array.from(document.querySelectorAll('#docClassesTableBody tr')).filter(row => row.onclick);
+      const selectedIndex = rows.indexOf(selectedRow);
+      const nextRow = rows[Math.min(selectedIndex + 1, rows.length - 1)];
+      if (nextRow) {
+        event.preventDefault();
+        nextRow.click();
+      }
+    }
+
+    if (event.key === 'ArrowUp') {
+      const rows = Array.from(document.querySelectorAll('#docClassesTableBody tr')).filter(row => row.onclick);
+      const selectedIndex = rows.indexOf(selectedRow);
+      const previousRow = rows[Math.max(selectedIndex - 1, 0)];
+      if (previousRow) {
+        event.preventDefault();
+        previousRow.click();
+      }
+    }
+
+    if (event.key === 'Enter' && selectedRow) {
+      event.preventDefault();
+      document.getElementById('okButton').click();
+    }
+  });
 });
 

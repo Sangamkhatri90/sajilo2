@@ -296,6 +296,33 @@
             document.getElementById('logoutBtn').addEventListener('click', () => {
                 logout();
             });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'ArrowDown') {
+                    const rows = Array.from(document.querySelectorAll('#orgTableBody tr[data-orgid]'));
+                    const selectedIndex = rows.findIndex(row => row.classList.contains('selected'));
+                    const nextRow = rows[Math.min(selectedIndex + 1, rows.length - 1)];
+                    if (nextRow) {
+                        event.preventDefault();
+                        nextRow.click();
+                    }
+                }
+
+                if (event.key === 'ArrowUp') {
+                    const rows = Array.from(document.querySelectorAll('#orgTableBody tr[data-orgid]'));
+                    const selectedIndex = rows.findIndex(row => row.classList.contains('selected'));
+                    const previousRow = rows[Math.max(selectedIndex - 1, 0)];
+                    if (previousRow) {
+                        event.preventDefault();
+                        previousRow.click();
+                    }
+                }
+
+                if (event.key === 'Enter' && selectedOrgData) {
+                    event.preventDefault();
+                    document.getElementById('continueBtn').click();
+                }
+            });
         }
 
         function submitSelection() {
