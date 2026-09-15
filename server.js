@@ -13825,6 +13825,25 @@ app.get("/get-resaved-accounts", (req, res) => {
   });
 });
 
+app.get("/collection-cheque-account-suggestions", (req, res) => {
+  const conn = req.session.conn;
+  const search = String(req.query.q || '').trim();
+  const query = `
+    SELECT TOP 20 SLName, SlAlias
+    FROM dbo.SubLedgerMaster
+    WHERE SlAlias IS NOT NULL
+      AND SlAlias LIKE ?
+    ORDER BY SlAlias ASC`;
+
+  sql.query(conn, query, [`%${search}%`], (err, rows) => {
+    if (err) {
+      console.error('Error loading Collection Cheque account suggestions:', err);
+      return res.status(500).json({ success: false, message: 'Unable to load account suggestions.' });
+    }
+    res.json({ success: true, accounts: rows || [] });
+  });
+});
+
 app.post("/update-resaved-accounts", async (req, res) => {
   const { accounts, RSACreatedBy } = req.body;
   console.log(accounts, RSACreatedBy);

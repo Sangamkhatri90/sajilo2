@@ -16094,10 +16094,11 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                 <fieldset class="cc-fieldset">
                                     <legend class="cc-legend">For Credit of</legend>
                                     <div class="cc-form-style-horizontal3">
-                                        <div>
+                                        <div style="position:relative;">
                                             <label for="">Account #</label>
                                             <input type="text" class="cc-text" name="CCAccAlias" id="CCAccAlias"
                                                 required>
+                                            <div id="CCAccAliasSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:10001; max-height:180px; overflow-y:auto; border:1px solid #999; background:#fff;"></div>
                                         </div>
                                         <div>
                                             <label for="">A/c Name</label>
@@ -27203,10 +27204,57 @@ const edit = panel?.querySelector('#pvm-edit-button');
             </script>
 
             <script>
-                document.getElementById('CCAccAlias').addEventListener('blur', function () {
+                const ccAccAliasInput = document.getElementById('CCAccAlias');
+                const ccAccNameInput = document.getElementById('CCAccName');
+                const ccAccAliasSuggestions = document.getElementById('CCAccAliasSuggestions');
+
+                const hideCCAccAliasSuggestions = () => {
+                    ccAccAliasSuggestions.style.display = 'none';
+                    ccAccAliasSuggestions.innerHTML = '';
+                };
+
+                const loadCCSubLedgerAliases = async (search) => {
+                    const response = await fetch(`/collection-cheque-account-suggestions?q=${encodeURIComponent(search)}`);
+                    if (!response.ok) throw new Error('Unable to load account suggestions.');
+                    const data = await response.json();
+                    return data.accounts || [];
+                };
+
+                const showCCAccAliasSuggestions = async () => {
+                    const search = ccAccAliasInput.value.trim().toLowerCase();
+                    try {
+                        const matches = await loadCCSubLedgerAliases(search);
+                        ccAccAliasSuggestions.innerHTML = '';
+                        matches.forEach((account) => {
+                            const option = document.createElement('div');
+                            option.textContent = account.SlAlias;
+                            option.style.cssText = 'padding:6px 8px; cursor:pointer; border-bottom:1px solid #eee;';
+                            option.addEventListener('mouseenter', () => { option.style.background = '#e8f3ff'; });
+                            option.addEventListener('mouseleave', () => { option.style.background = '#fff'; });
+                            option.addEventListener('mousedown', (event) => {
+                                event.preventDefault();
+                                ccAccAliasInput.value = account.SlAlias;
+                                ccAccNameInput.value = account.SLName || '';
+                                hideCCAccAliasSuggestions();
+                                ccAccAliasInput.focus();
+                            });
+                            ccAccAliasSuggestions.appendChild(option);
+                        });
+                        ccAccAliasSuggestions.style.display = matches.length ? 'block' : 'none';
+                    } catch (error) {
+                        console.error('Error loading account suggestions:', error);
+                        hideCCAccAliasSuggestions();
+                    }
+                };
+
+                ccAccAliasInput.addEventListener('input', showCCAccAliasSuggestions);
+                ccAccAliasInput.addEventListener('focus', showCCAccAliasSuggestions);
+                ccAccAliasInput.addEventListener('blur', () => setTimeout(hideCCAccAliasSuggestions, 150));
+
+                ccAccAliasInput.addEventListener('blur', function () {
                     const alias = this.value;
                     if (alias.trim() === '') {
-                        document.getElementById('CCAccName').value = '';
+                        ccAccNameInput.value = '';
                         return;
                     }
 
@@ -27220,7 +27268,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         .then((response) => response.json())
                         .then((data) => {
                             if (data.success) {
-                                document.getElementById('CCAccName').value = data.memberName || '';
+                                ccAccNameInput.value = data.memberName || '';
                             } else {
                                 showCustomAlert(data.message || 'Alias not found');
                             }
