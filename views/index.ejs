@@ -306,7 +306,7 @@
                                             </li>
                                             <li><a href="#" id="backupDatabaseLink">Backup</a></li>
                                             <li><a href="#" id="restoreDatabaseLink">Restore</a></li>
-                                            <li><a href="">Multiple backup</a></li>
+                                            <li><a href="#" id="toggleButton193">Multiple backup</a></li>
                                             <li>
                                                 <a href="">Master Database <i class="fas fa-caret-right"></i></a>
                                                 <div class="dropdown-menu-2" style="display:none;">
@@ -4792,7 +4792,7 @@
                                     return `<section class="voucher"><header><h1>${escapeHtml(formatLabel)}</h1><div>Voucher No: <strong>${escapeHtml(voucher.VoucherNo)}</strong></div><div>Date: ${escapeHtml(voucher.JV_Date)}</div></header><table><thead><tr><th>S.N.</th><th>Particular</th><th>Sub Ledger</th><th>Debit</th><th>Credit</th></tr></thead><tbody>${rows || '<tr><td colspan="5">No detail rows</td></tr>'}</tbody><tfoot><tr><th colspan="3">Total</th><th class="amount">${formatAmount(debitTotal)}</th><th class="amount">${formatAmount(creditTotal)}</th></tr></tfoot></table><div class="voucher-notes"><div><strong>Amount in Words:</strong> ${escapeHtml(amountInWords(debitTotal || creditTotal))}</div><div><strong>Narration:</strong> ${escapeHtml(voucher.Remarks)}</div></div><div class="audit">${auditEntry('Data Entered By', voucher.EnteredBy, voucher.CreatedDate)}${auditEntry('Posted By', voucher.PostedBy, voucher.PostDate)}${auditEntry('Checked By', voucher.CheckedBy, voucher.CheckDate)}${auditEntry('Approved By', voucher.ApprovedBy, voucher.ApprovedDate)}</div><footer>Copy ${copyIndex + 1} of ${copies}${printerLabel ? ` &middot; Printer: ${escapeHtml(printerLabel)}` : ''}</footer></section>`;
                                 })).join('');
                                 printWindow.document.open();
-                                printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(formatLabel)}</title><style>@page{margin:14mm}body{font-family:Arial,sans-serif;color:#111}.voucher{box-sizing:border-box;min-height:250mm;display:flex;flex-direction:column;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid}.voucher+.voucher{break-before:page;page-break-before:always}.voucher:last-child{break-after:auto;page-break-after:auto}header{display:flex;gap:22px;align-items:baseline;border-bottom:1px solid #111}h1{font-size:18px;margin:0 auto 12px 0}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #222;padding:6px;font-size:12px}.amount{text-align:right}.voucher-notes{margin-top:12px;font-size:12px}.voucher-notes div{margin-top:5px}.audit{margin-top:auto;display:grid;grid-template-columns:repeat(2,1fr);gap:14px 28px;font-size:11px}.audit div{display:flex;flex-direction:column;gap:3px}.audit strong{margin-bottom:2px}footer{margin-top:14px;font-size:11px;color:#555}</style></head><body>${pages}</body></html>`);
+                                printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(formatLabel)}</title><style>@page{margin:14mm}body{font-family:Arial,sans-serif;color:#111}.print-again{position:fixed;right:20px;top:20px;padding:8px 16px;cursor:pointer}@media print{.print-again{display:none}}.voucher{box-sizing:border-box;min-height:250mm;display:flex;flex-direction:column;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid}.voucher+.voucher{break-before:page;page-break-before:always}.voucher:last-child{break-after:auto;page-break-after:auto}header{display:flex;gap:22px;align-items:baseline;border-bottom:1px solid #111}h1{font-size:18px;margin:0 auto 12px 0}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #222;padding:6px;font-size:12px}.amount{text-align:right}.voucher-notes{margin-top:12px;font-size:12px}.voucher-notes div{margin-top:5px}.audit{margin-top:auto;display:grid;grid-template-columns:repeat(2,1fr);gap:14px 28px;font-size:11px}.audit div{display:flex;flex-direction:column;gap:3px}.audit strong{margin-bottom:2px}footer{margin-top:14px;font-size:11px;color:#555}</style></head><body><button class="print-again" type="button" onclick="window.print()">Print</button>${pages}</body></html>`);
                                 printWindow.document.close();
                                 printWindow.focus();
                                 setTimeout(() => printWindow.print(), 250);
@@ -9890,6 +9890,34 @@ async function loadEarningsData() {
                                 <div class="lo-button-row">
                                     <button type="submit" class="lo-button">Ok</button>
                                     <button type="button" class="lo-button" id="cancelButton81">Cancel</button>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="movableDiv" id="movableDiv193">
+                    <button id="closeButton193">&times;</button>
+                    <div class="lo-container">
+                        <form id="multipleBackupForm">
+                            <fieldset class="lo-fieldset">
+                                <legend class="lo-legend">Multiple Backup</legend>
+                                <div class="lo-table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>S.N</th>
+                                                <th>Select</th>
+                                                <th>Organization Name</th>
+                                                <th>Org Alias</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="multipleBackupTableBody"></tbody>
+                                    </table>
+                                </div>
+                                <div class="lo-button-row">
+                                    <button type="submit" class="lo-button" id="multipleBackupOkButton">Ok</button>
+                                    <button type="button" class="lo-button" id="cancelButton193">Cancel</button>
                                 </div>
                             </fieldset>
                         </form>
@@ -52183,6 +52211,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
 
            
             <script src="/js/databaseBackup.js?v=2"></script>
+            <script src="/js/multipleDatabaseBackup.js?v=1"></script>
             <script src="/js/databaseRestore.js?v=1"></script>
             <script src ="/js/SessiontoIndex.js"></script>
 

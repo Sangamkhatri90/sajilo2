@@ -563,14 +563,46 @@ const getBackupLogicalFiles = async (masterConnectionString, backupPath) => {
     logLogicalName: getRestoreValue(rows.find((row) => getRestoreValue(row, "Type") === "L"), "LogicalName"),
   };
 };
+app.get("/multiple-backup-organizations", (req, res) => {
+  if (!req.session.dbName || !req.session.conn) {
+    return res.status(440).json({ success: false, message: "Session expired. Please login and select a database again." });
+  }
+
+  sql.query(connectionString, "SELECT OrgName, OrgAlias, DBName FROM SAJILODB.dbo.tbOrgMaster ORDER BY OrgName", (err, rows) => {
+    if (err) {
+      console.error("Error fetching organizations for backup:", err);
+      return res.status(500).json({ success: false, message: "Unable to load organizations for backup." });
+    }
+    res.json(rows);
+  });
+});
+
 app.get("/backup-database", async (req, res) => {
-  const dbName = req.session.dbName;
+  let dbName = req.session.dbName;
 
   if (!dbName || !req.session.conn) {
     return res.status(440).json({
       success: false,
       message: "Session expired. Please login and select a database again.",
     });
+  }
+
+  const requestedDbName = typeof req.query.dbName === "string" ? req.query.dbName.trim() : "";
+  if (requestedDbName) {
+    const organization = await new Promise((resolve, reject) => {
+      sql.query(connectionString, "SELECT DBName FROM SAJILODB.dbo.tbOrgMaster WHERE DBName = ?", [requestedDbName], (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows?.[0]);
+      });
+    }).catch((err) => {
+      console.error("Error validating database for backup:", err);
+      return null;
+    });
+
+    if (!organization) {
+      return res.status(400).json({ success: false, message: "The selected organization database could not be found." });
+    }
+    dbName = organization.DBName;
   }
 
   if (!/^[A-Za-z0-9_]+$/.test(dbName)) {
