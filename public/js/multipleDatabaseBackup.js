@@ -37,17 +37,27 @@
 
     backupButton.disabled = true;
     backupButton.textContent = "Starting backup...";
-    selectedDatabases.forEach((dbName) => {
-      const downloadFrame = document.createElement("iframe");
-      downloadFrame.hidden = true;
-      downloadFrame.src = `/backup-database?dbName=${encodeURIComponent(dbName)}`;
-      document.body.appendChild(downloadFrame);
-      setTimeout(() => downloadFrame.remove(), 60000);
-    });
-
-    setTimeout(() => {
+    (async () => {
+      try {
+        for (const dbName of selectedDatabases) {
+          const backupUrl = `/backup-database?dbName=${encodeURIComponent(dbName)}`;
+          const result = await window.saveDatabaseBackupToDestination?.(backupUrl, `${dbName}-backup.bak`);
+          if (result === null) break;
+          if (result === false || result === undefined) {
+            const downloadFrame = document.createElement("iframe");
+            downloadFrame.hidden = true;
+            downloadFrame.src = backupUrl;
+            document.body.appendChild(downloadFrame);
+            setTimeout(() => downloadFrame.remove(), 60000);
+          }
+        }
+      } catch (error) {
+        console.error("Multiple backup failed:", error);
+        showMessage(error.message || "Database backup failed.");
+      } finally {
       backupButton.disabled = false;
       backupButton.textContent = "Ok";
-    }, 3000);
+      }
+    })();
   });
 })();

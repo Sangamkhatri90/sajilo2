@@ -645,10 +645,10 @@
                 <li class="menu-item">
                     <div class="link">
 
-                        <button type="button" class="Crebtn" onclick="window.location='/createMem'">New Member</button>
+                        <button type="button" class="Crebtn" id="toggleButton194">New Member</button>
                         <form action="/account/createAccount" method="GET" id="createMemberForm">
                             <input type="hidden" id="searchedMemberId" name="MemberId" value="<%= searchedMemberId %>">
-                            <button type="submit" id="createMemberBtn" class="Crebtn" disabled>New Account</button>
+                            <button type="button" id="createMemberBtn" class="Crebtn" disabled>New Account</button>
                         </form>
                     </div>
                 </li>
@@ -656,6 +656,51 @@
             </nav>
         </div>
     </div>
+
+    <div class="movableDiv" id="movableDiv194" style="display: none; position: fixed; top: 80px; left: 3%; width: 94%; height: calc(100vh - 100px); padding: 0; overflow: hidden; z-index: 10000;">
+        <div style="height: 32px; padding: 5px 10px; background: #2d72ad; color: #fff; cursor: move;">
+            <strong>Create a New Member</strong>
+            <button type="button" id="closeButton194" style="float: right; margin-left: 6px;">X</button>
+            <button type="button" id="cancelButton194" style="float: right;">Close</button>
+        </div>
+        <iframe id="createMemberFrame" src="/createMem" title="Create a New Member" style="width: 100%; height: calc(100% - 32px); border: 0;"></iframe>
+    </div>
+    <script>
+        document.getElementById('createMemberFrame').addEventListener('load', function () {
+            this.contentDocument.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    document.getElementById('movableDiv194').style.display = 'none';
+                }
+            });
+        });
+    </script>
+
+    <div class="movableDiv" id="movableDiv195" style="display: none; position: fixed; top: 80px; left: 3%; width: 94%; height: calc(100vh - 100px); padding: 0; overflow: hidden; z-index: 10000;">
+        <button type="button" id="toggleButton195" hidden></button>
+        <div style="height: 32px; padding: 5px 10px; background: #2d72ad; color: #fff; cursor: move;">
+            <strong>Create a New Account</strong>
+            <button type="button" id="closeButton195" style="float: right; margin-left: 6px;">X</button>
+            <button type="button" id="cancelButton195" style="float: right;">Close</button>
+        </div>
+        <iframe id="createAccountFrame" src="about:blank" title="Create a New Account" style="width: 100%; height: calc(100% - 32px); border: 0;"></iframe>
+    </div>
+    <script>
+        document.getElementById('createMemberBtn').addEventListener('click', function () {
+            const memberId = document.getElementById('searchedMemberId').value;
+            if (memberId) {
+                document.getElementById('createAccountFrame').src = `/account/createAccount?MemberId=${encodeURIComponent(memberId)}`;
+                document.getElementById('toggleButton195').click();
+            }
+        });
+
+        document.getElementById('createAccountFrame').addEventListener('load', function () {
+            this.contentDocument.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    document.getElementById('movableDiv195').style.display = 'none';
+                }
+            });
+        });
+    </script>
 
 
     <div class="organization-name">

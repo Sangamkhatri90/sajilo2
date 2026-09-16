@@ -31,6 +31,28 @@ function resetFormFields(movableDivId) {
 // Function to keep track of the highest z-index value
 let highestZIndex = 1;
 
+// Close the front-most movable panel with the Escape key.
+document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+
+    const openMovableDivs = Array.from(document.querySelectorAll('.movableDiv, .dcm-movableDiv'))
+        .filter(function (movableDiv) {
+            return window.getComputedStyle(movableDiv).display !== 'none';
+        });
+
+    const frontMovableDiv = openMovableDivs.reduce(function (front, movableDiv) {
+        if (!front) return movableDiv;
+
+        const frontZIndex = Number.parseInt(window.getComputedStyle(front).zIndex, 10) || 0;
+        const movableDivZIndex = Number.parseInt(window.getComputedStyle(movableDiv).zIndex, 10) || 0;
+        return movableDivZIndex >= frontZIndex ? movableDiv : front;
+    }, null);
+
+    if (frontMovableDiv) {
+        frontMovableDiv.style.display = 'none';
+    }
+});
+
 function clampMovableToViewport(element) {
     if (!element || window.getComputedStyle(element).display === 'none') {
         return;
