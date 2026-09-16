@@ -646,10 +646,6 @@
                     <div class="link">
 
                         <button type="button" class="Crebtn" id="toggleButton194">New Member</button>
-                        <form action="/account/createAccount" method="GET" id="createMemberForm">
-                            <input type="hidden" id="searchedMemberId" name="MemberId" value="<%= searchedMemberId %>">
-                            <button type="button" id="createMemberBtn" class="Crebtn" disabled>New Account</button>
-                        </form>
                     </div>
                 </li>
 
@@ -685,12 +681,17 @@
         <iframe id="createAccountFrame" src="about:blank" title="Create a New Account" style="width: 100%; height: calc(100% - 32px); border: 0;"></iframe>
     </div>
     <script>
-        document.getElementById('createMemberBtn').addEventListener('click', function () {
-            const memberId = document.getElementById('searchedMemberId').value;
-            if (memberId) {
-                document.getElementById('createAccountFrame').src = `/account/createAccount?MemberId=${encodeURIComponent(memberId)}`;
-                document.getElementById('toggleButton195').click();
-            }
+        document.addEventListener('DOMContentLoaded', function () {
+            const createMemberBtn = document.getElementById('createMemberBtn');
+            if (!createMemberBtn) return;
+
+            createMemberBtn.addEventListener('click', function () {
+                const memberId = document.getElementById('searchedMemberId').value;
+                if (memberId) {
+                    document.getElementById('createAccountFrame').src = `/account/createAccount?MemberId=${encodeURIComponent(memberId)}`;
+                    document.getElementById('toggleButton195').click();
+                }
+            });
         });
 
         document.getElementById('createAccountFrame').addEventListener('load', function () {
@@ -724,6 +725,10 @@
                 <fieldset class="pvm-fieldset">
                     <legend class="search-result">Searched Results</legend>
                     <button type="button" id="closeSearchedDataForm" class="close-x" title="Close search results">&times;</button>
+                    <div style="margin-bottom: 8px; text-align: right;">
+                        <input type="hidden" id="searchedMemberId" name="MemberId" value="<%= searchedMemberId %>">
+                        <button type="button" id="createMemberBtn" class="Crebtn">New Account</button>
+                    </div>
 
 
                     <div class="display-table">
