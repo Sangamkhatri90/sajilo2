@@ -263,17 +263,26 @@
                                     <th>Cr.Amount</th>
                                     <th>Balance</th>
                                 </tr>
-                            <tbody>
-                                <td></td>
-                                <td><input type="text" id="JV_Miti"></td>
-                                <td id=""></td>
-                                <td><input type="text" name="" id="VoucherNo"></td>
-                                <td><input type="text" id="DrAmount"></td>
-                                <td><input type="text" id="CrAmount"></td>
-                                <td><input type="text" id="Balance"></td>
-                                <td><input type="text" id="JournalEntries"></td>
-                            </tbody>
                             </thead>
+                            <tbody>
+                                <% if (transactionHistory.length) { %>
+                                    <% transactionHistory.forEach(function (transaction) { %>
+                                        <tr>
+                                            <td><%= transaction.SNo %></td>
+                                            <td><%= transaction.JV_Miti || '' %></td>
+                                            <td><%= transaction.Description || '' %></td>
+                                            <td><%= transaction.VoucherNo || '' %></td>
+                                            <td><%= transaction.DrAmount %></td>
+                                            <td><%= transaction.CrAmount %></td>
+                                            <td><%= transaction.Balance %></td>
+                                        </tr>
+                                    <% }); %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="7">No transaction history found.</td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
                         </table>
                     </div>
                  </fieldset>
