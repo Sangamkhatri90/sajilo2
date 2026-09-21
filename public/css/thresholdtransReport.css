@@ -130,3 +130,63 @@
     background-color: #dc3545;
     max-width: 80px;
 }
+
+.threshold-report-viewer {
+  position: fixed;
+  z-index: 10000;
+  top: 12%;
+  left: 5%;
+  width: 90%;
+  max-height: 75vh;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #222;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .35);
+}
+
+#closeThresholdReport {
+  float: right;
+  border: 0;
+  background: transparent;
+  color: #d11;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.threshold-report-header {
+  min-height: 25px;
+  color: #fff;
+  padding: 5px 35px 5px 8px;
+  background: #245d89;
+  text-align: center;
+}
+
+#thresholdReportPeriod {
+  float: right;
+  font-size: 12px;
+}
+
+.threshold-report-table-wrap {
+  max-height: calc(75vh - 55px);
+  overflow: auto;
+}
+
+#thresholdReportTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+#thresholdReportTable th,
+#thresholdReportTable td {
+  padding: 6px;
+  border: 1px solid #8a8a8a;
+  white-space: nowrap;
+}
+
+#thresholdReportTable th {
+  position: sticky;
+  top: 0;
+  background: #d6dce7;
+}

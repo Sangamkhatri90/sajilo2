@@ -34674,6 +34674,152 @@ function formatQuery(query, params) {
 
 
 
+app.get("/api/ageing-report/account-types", async (req, res) => {
+  const category = String(req.query.category || "").toUpperCase();
+  const savingOrLoan = category === "DEBTORS" ? "Loan" : category === "CREDITORS" ? "Saving" : null;
+  const conn = req.session.conn;
+
+  if (!conn || !savingOrLoan) {
+    return res.status(400).json({ success: false, message: "A valid report category is required." });
+  }
+
+  try {
+    const accountTypes = await runQuery(conn, `
+      SELECT GLID, GLName, GLAlias
+      FROM dbo.tbLedgerMaster
+      WHERE SavingorLoan = ?
+      ORDER BY GLName
+    `, [savingOrLoan]);
+    return res.json({ success: true, accountTypes });
+  } catch (error) {
+    console.error("Ageing report account type error:", error);
+    return res.status(500).json({ success: false, message: "Unable to load account types." });
+  }
+});
+
+app.post("/api/ageing-report", async (req, res) => {
+  const { dateFrom, dateTo, asOn, category, selectedGlids } = req.body || {};
+  const normalizedCategory = String(category || "").toUpperCase();
+  const savingOrLoan = normalizedCategory === "DEBTORS" ? "Loan" : normalizedCategory === "CREDITORS" ? "Saving" : null;
+  const amountColumn = normalizedCategory === "DEBTORS" ? "DrAmount" : "CrAmount";
+  const conn = req.session.conn;
+
+  if (!conn || !dateFrom || !dateTo || !asOn || !savingOrLoan) {
+    return res.status(400).json({ success: false, message: "Date From, Date To, As on, and Category are required." });
+  }
+  if (![dateFrom, dateTo, asOn].every(date => /^\d{4}-\d{2}-\d{2}$/.test(date))) {
+    return res.status(400).json({ success: false, message: "Invalid report date." });
+  }
+  if (dateFrom > dateTo) {
+    return res.status(400).json({ success: false, message: "Date From cannot be later than Date To." });
+  }
+
+  const glids = Array.isArray(selectedGlids)
+    ? [...new Set(selectedGlids.map(Number).filter(Number.isInteger))]
+    : [];
+
+  try {
+    let query = `
+      SELECT
+        lm.GLName AS AccountType,
+        COALESCE(sl.SLName, '') AS Particular,
+        COALESCE(jm.VoucherNo, '') AS VoucherNo,
+        CONVERT(varchar(10), jm.JV_Date, 23) AS VoucherDate,
+        COALESCE(jd.${amountColumn}, 0) AS Amount,
+        DATEDIFF(day, CONVERT(date, jm.JV_Date), CONVERT(date, ?)) AS Day
+      FROM dbo.tbJournalDetails jd
+      INNER JOIN dbo.tbJournalMaster jm ON jm.JournalID = jd.JournalID
+      INNER JOIN dbo.tbLedgerMaster lm ON lm.GLID = jd.GLID
+      LEFT JOIN dbo.tbSubLedgerMaster sl ON sl.SLID = jd.SLID
+      WHERE CONVERT(date, jm.JV_Date) BETWEEN ? AND ?
+        AND lm.SavingorLoan = ?
+        AND COALESCE(jd.${amountColumn}, 0) > 0`;
+    const params = [asOn, dateFrom, dateTo, savingOrLoan];
+
+    if (glids.length) {
+      query += ` AND lm.GLID IN (${glids.map(() => "?").join(",")})`;
+      params.push(...glids);
+    }
+
+    query += " ORDER BY lm.GLName, jm.JV_Date, jm.JournalID, jd.SNo";
+    const rows = await runQuery(conn, query, params);
+    return res.json({ success: true, rows });
+  } catch (error) {
+    console.error("Ageing report error:", error);
+    return res.status(500).json({ success: false, message: "Unable to load ageing report." });
+  }
+});
+
+app.post("/api/threshold-transaction-report", async (req, res) => {
+  const { dateFrom, dateTo, docClass } = req.body || {};
+  const conn = req.session.conn;
+
+  if (!conn || !dateFrom || !dateTo) {
+    return res.status(400).json({ success: false, message: "Date From and Date To are required." });
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateFrom) || !/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) {
+    return res.status(400).json({ success: false, message: "Invalid report date." });
+  }
+
+  if (dateFrom > dateTo) {
+    return res.status(400).json({ success: false, message: "Date From cannot be later than Date To." });
+  }
+
+  try {
+    const settings = await runQuery(
+      conn,
+      "SELECT TOP 1 SourceofFundMaxLimit FROM dbo.tbSystemSettings WHERE SourceofFundMaxLimit IS NOT NULL"
+    );
+    const threshold = Number(settings?.[0]?.SourceofFundMaxLimit);
+
+    if (!Number.isFinite(threshold)) {
+      return res.status(400).json({
+        success: false,
+        message: "Source of Fund Max Limit is not configured in System Settings."
+      });
+    }
+
+    let query = `
+      SELECT
+        jm.JournalID,
+        COALESCE(mm.MemberName, sl.SLName, '') AS AccountName,
+        '' AS Branch,
+        CONVERT(varchar(10), jm.JV_Date, 23) AS TransactionDate,
+        COALESCE(jm.JV_Miti, '') AS TransactionMiti,
+        CONCAT(COALESCE(lm.GLName, ''), CASE WHEN sl.SlAlias IS NULL THEN '' ELSE ' - ' + sl.SlAlias END) AS AccountTypeAndNo,
+        COALESCE(jm.TotalAmountDC, 0) AS AmountInvolved,
+        COALESCE(jm.FundSource, '') AS SourceOfFund,
+        COALESCE(jm.Remarks, '') AS Remarks
+      FROM tbJournalMaster jm
+      OUTER APPLY (
+        SELECT TOP 1 jd.SLID
+        FROM tbJournalDetails jd
+        WHERE jd.JournalID = jm.JournalID AND jd.SLID IS NOT NULL
+        ORDER BY jd.SNo
+      ) jd
+      LEFT JOIN tbSubLedgerMaster sl ON sl.SLID = COALESCE(jm.SLIDPR, jd.SLID)
+      LEFT JOIN tbMemberMaster mm ON mm.MemberID = COALESCE(jm.MemberID, sl.MemberID)
+      LEFT JOIN tbLedgerMaster lm ON lm.GLID = sl.GLID
+      LEFT JOIN tbDocClassMaster dcm ON dcm.DocClassID = jm.DocClassID
+      WHERE CONVERT(date, jm.JV_Date) BETWEEN ? AND ?
+        AND COALESCE(jm.TotalAmountDC, 0) >= ?`;
+    const params = [dateFrom, dateTo, threshold];
+
+    if (docClass && docClass.trim()) {
+      query += " AND (dcm.DocClassName = ? OR dcm.DocClassAlias = ?)";
+      params.push(docClass.trim(), docClass.trim());
+    }
+
+    query += " ORDER BY jm.JV_Date, jm.JournalID";
+    const transactions = await runQuery(conn, query, params);
+    return res.json({ success: true, threshold, transactions });
+  } catch (error) {
+    console.error("Threshold transaction report error:", error);
+    return res.status(500).json({ success: false, message: "Unable to load threshold transactions." });
+  }
+});
+
 app.post("/api/getRecentTransactionsLP8", async (req, res) => {
   let { endDate, slAlias } = req.body;
   const conn = req.session.conn;

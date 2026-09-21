@@ -1815,34 +1815,33 @@
                                 <div class="ar-form-style-horizontal3">
                                     <div>
                                         <label for="">Category</label>
-                                        <select name="ARCategory" id="" class="ar-select">
-                                            <option value="">DEBTORS</option>
-                                            <option value="">CREDITORS</option>
+                                        <select name="ARCategory" id="ageing-report-category" class="ar-select">
+                                            <option value="DEBTORS">DEBTORS</option>
+                                            <option value="CREDITORS">CREDITORS</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label for="">Slot(s)</label>
-                                        <input type="text" name="ARSlot" class="ar-text">
+                                        <input type="number" name="ARSlot" id="ageing-report-slots" class="ar-text" min="1" value="3">
                                     </div>
                                     <div>
                                         <label for="">Day (s)Slot</label>
-                                        <input type="number" name="ARDay" class="ar-text">
+                                        <input type="number" name="ARDay" id="ageing-report-days" class="ar-text" min="1" value="30">
                                     </div>
                                 </div>
                                 <div class="ar-form-style-horizontal3">
                                     <div>
                                         <label for="">Doc.Class</label>
                                         <input type="text" name="ARDocClass" class="benchods"
-                                            id="doc-class-acc-als-age-rep"
-                                            
-                                            placeholder="Type or click to get lists.">
+                                            id="doc-class-acc-als-age-rep" readonly
+                                            placeholder="Selected account types">
                                     </div>
                                     <div id="docClassesListforAccAlsAgeRep" style="display: none;"
                                         class="suggestions-list2">
                                     </div>
                                     <div>
                                         <input type="checkbox" name="ARSelectAll" id="ar-lajita">
-                                        <label for="" id="ar-lajita">Select All</label>
+                                        <label for="ar-lajita">Select All</label>
                                     </div>
                                 </div>
                                 <div class="ar-button-row">
@@ -8135,6 +8134,60 @@ async function loadEarningsData() {
                                 </div>
                             </fieldset>
                         </form>
+                    </div>
+                </div>
+
+                <div id="ageingAccountTypeSelector" class="ageing-overlay" style="display: none;">
+                    <div class="ageing-selector-panel">
+                        <button type="button" id="closeAgeingAccountTypeSelector" class="ageing-close">&times;</button>
+                        <fieldset class="ar-fieldset">
+                            <legend class="ar-legend">Select Item(s) from list</legend>
+                            <div class="ageing-selector-table-wrap">
+                                <table id="ageingAccountTypeTable">
+                                    <thead><tr><th></th><th>Sno</th><th>Account Types</th><th>Account Alias</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <input type="search" id="ageingAccountTypeSearch" class="ar-text" placeholder="Search here">
+                            <div class="ar-button-row">
+                                <button type="button" id="confirmAgeingAccountTypes" class="ar-button">Ok</button>
+                                <button type="button" id="selectAllAgeingAccountTypes" class="ar-button">Select All</button>
+                                <button type="button" id="clearAgeingAccountTypes" class="ar-button">Unselect All</button>
+                                <button type="button" id="cancelAgeingAccountTypes" class="ar-button">Cancel</button>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+
+                <div id="ageingReportViewer" class="ageing-report-viewer" style="display: none;">
+                    <button type="button" id="closeAgeingReportViewer" class="ageing-close">&times;</button>
+                    <div class="ageing-report-title">Ageing Report <span id="ageingReportAsOn"></span></div>
+                    <div class="ageing-report-table-wrap"><table id="ageingReportTable"><thead></thead><tbody></tbody><tfoot></tfoot></table></div>
+                </div>
+
+                <div id="thresholdReportViewer" class="threshold-report-viewer" style="display: none;">
+                    <button type="button" id="closeThresholdReport">&times;</button>
+                    <div class="threshold-report-header">
+                        <strong>Threshold Transaction Report</strong>
+                        <span id="thresholdReportPeriod"></span>
+                    </div>
+                    <div class="threshold-report-table-wrap">
+                        <table id="thresholdReportTable">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>A/c Name and Address</th>
+                                    <th>Branch</th>
+                                    <th>Date of Transaction</th>
+                                    <th>Date of Transaction</th>
+                                    <th>Account Type and No</th>
+                                    <th>Amount Involved</th>
+                                    <th>Source of Fund</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -47558,9 +47611,8 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         }
 
                         typingTimeout = setTimeout(async () => {
-                            aliasInput.value = formatAlias(val);
-
                             if (checkbox.checked) {
+                                aliasInput.value = formatAlias(val);
                                 suggestionBox.style.display = 'none';
                                 return;
                             }
@@ -52317,6 +52369,8 @@ const edit = panel?.querySelector('#pvm-edit-button');
             <script src="/js/GlobalLgrMasterConB.js"></script>
             <script src="/js/GlobalLgrMasterSaving.js"></script>
             <script src="/js/costofFund.js"></script>
+            <script src="/js/thresholdTransactionReport.js"></script>
+            <script src="/js/ageingReport.js"></script>
             <script src="/js/MovetoNextField.js"></script>
             <script src="/js/chequeRegister.js"></script>
             <script src="/js/OpeningBalanceMaster.js"></script>

@@ -130,3 +130,63 @@
     background-color: #dc3545;
     max-width: 80px;
 }
+
+.ageing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: rgba(0, 0, 0, .2);
+}
+
+.ageing-selector-panel, .ageing-report-viewer {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(780px, calc(100vw - 32px));
+  padding: 10px;
+  background: #f5f5f5;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .35);
+  z-index: 10002;
+}
+
+.ageing-close {
+  float: right;
+  border: 0;
+  color: #e11;
+  background: transparent;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.ageing-selector-table-wrap, .ageing-report-table-wrap {
+  max-height: 430px;
+  overflow: auto;
+  border: 1px solid #333;
+}
+
+#ageingAccountTypeTable, #ageingReportTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+#ageingAccountTypeTable th, #ageingAccountTypeTable td,
+#ageingReportTable th, #ageingReportTable td {
+  padding: 6px;
+  border: 1px solid #333;
+  text-align: center;
+}
+
+#ageingAccountTypeTable th, #ageingReportTable th {
+  position: sticky;
+  top: 0;
+  background: #337fb8;
+  color: #fff;
+}
+
+.ageing-report-viewer { top: 12%; }
+.ageing-report-title { padding: 8px; text-align: center; font-size: 18px; font-weight: bold; }
+.ageing-report-title span { float: right; font-size: 12px; font-weight: normal; }
+#ageingReportTable .amount { text-align: right; }
