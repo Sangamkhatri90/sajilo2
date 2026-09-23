@@ -30370,8 +30370,14 @@ app.post("/search-transaction-voucher", (req, res) => {
     ledgerTrans,
     subLedgerTrans,
     LSSelect,
-    docClassTrans
+    docClassTrans,
+    page: requestedPage,
+    pageSize: requestedPageSize
   } = req.body;
+
+  const page = Math.max(1, parseInt(requestedPage, 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(requestedPageSize, 10) || 100));
+  const offset = (page - 1) * pageSize;
 
   const TMDateFromm = TMDateFrom ? TMDateFrom.replace(/-/g, '/') : null;
   const TMDateToo = TMDateTo ? TMDateTo.replace(/-/g, '/') : null;
@@ -30412,6 +30418,7 @@ app.post("/search-transaction-voucher", (req, res) => {
     let query = `
       SELECT 
         m.JournalID,
+        COUNT(*) OVER() AS TotalRows,
         m.VoucherNo,
         m.TransType,
         ISNULL(d.DetailsCount, 0) AS DetailsCount,
@@ -30422,26 +30429,6 @@ app.post("/search-transaction-voucher", (req, res) => {
         cc.CollectorName,
         sl.SlAlias,
 sl.SLName,
-
-        
-(
-  SELECT STUFF((
-      SELECT ', ' + lm.GLName
-      FROM tbJournalDetails jd
-      INNER JOIN tbLedgerMaster lm ON jd.GLID = lm.GLID
-      WHERE jd.JournalID = m.JournalID
-      FOR XML PATH(''), TYPE
-  ).value('.', 'NVARCHAR(MAX)'), 1, 2, '')
-) AS GLName,
-
-
-(
-  SELECT TOP 1 lm.SavingorLoan
-  FROM tbJournalDetails jd
-  INNER JOIN tbLedgerMaster lm ON jd.GLID = lm.GLID
-  WHERE jd.JournalID = m.JournalID
-) AS SavingorLoan,
-
 
         uc.UserName AS Creator,
         up.UserName AS Poster,
@@ -30596,7 +30583,8 @@ sl.SLName,
       params.push(amountTrans);
     }
 
-    const finalQuery = query + joinClauses + fromToFilter;
+    const finalQuery = query + joinClauses + fromToFilter + " ORDER BY m.JournalID DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+    params.push(offset, pageSize);
 
     console.log("Final Query:", finalQuery);
     console.log("Params:", params);
@@ -30606,7 +30594,7 @@ sl.SLName,
         console.error("Database Query Error:", err);
         return res.status(500).json({ error: "Database error" });
       }
-      res.json(rows);
+      res.json({ results: rows, totalRows: rows[0]?.TotalRows || 0, page, pageSize });
     });
   });
 });

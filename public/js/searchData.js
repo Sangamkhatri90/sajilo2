@@ -2094,11 +2094,27 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
 
 
 //transactionvoucher search
+let transactionVoucherPage = 1;
+const transactionVoucherPageSize = 100;
+let transactionVoucherPageNavigation = false;
+let transactionVoucherTotalRows = 0;
+
 document.getElementById("tmsearchForm").addEventListener("submit", function (event) {
     event.preventDefault();
 
+    if (!transactionVoucherPageNavigation) transactionVoucherPage = 1;
+    transactionVoucherPageNavigation = false;
+    transactionVoucherTotalRows = 0;
+    const loading = document.getElementById("tmTableLoading");
+    const error = document.getElementById("tmError");
+    loading?.classList.add("is-visible");
+    loading?.setAttribute("aria-hidden", "false");
+    if (error) error.textContent = "";
+
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
+    data.page = transactionVoucherPage;
+    data.pageSize = transactionVoucherPageSize;
 
     fetch("/search-transaction-voucher", {
         method: "POST",
@@ -2106,10 +2122,11 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
         body: JSON.stringify(data),
     })
         .then(response => response.json())
-        .then(results => {
+        .then(payload => {
+            transactionVoucherTotalRows = Number(payload?.totalRows) || 0;
+            const results = payload?.results;
             if (!Array.isArray(results)) {
-                console.error("Expected an array but got:", results);
-                return;
+                throw new Error(payload?.error || "Unable to load voucher results.");
             }
             const checkbox = document.getElementById("TMShowLog");
             const table = document.getElementById("TMTablevalues");
@@ -2119,6 +2136,7 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
             // Clear previous header and body
             thead.innerHTML = "";
             tbody.innerHTML = "";
+            const transactionRowsFragment = document.createDocumentFragment();
 
             // Build header based on checkbox state
             const headerRow = document.createElement("tr");
@@ -2196,13 +2214,14 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
                     <td>${row.SLName || ''}</td>
                 `;
                 }
-                tbody.appendChild(tr);
+                transactionRowsFragment.appendChild(tr);
 
                 // ✅ Accumulate the amount (make sure it's a number)
                 totalAmount += parseFloat(row.TotalCrAmount) || 0;
             });
 
             // ✅ Append total row
+            tbody.appendChild(transactionRowsFragment);
             const totalRow = document.createElement("tr");
             totalRow.style.fontWeight = "bold";
             if (checkbox.checked) {
@@ -2220,7 +2239,35 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
             }
             tbody.appendChild(totalRow);
         })
-        .catch(err => console.error("Error fetching results:", err));
+        .catch(err => {
+            console.error("Error fetching transaction voucher results:", err);
+            if (error) error.textContent = err.message || "Unable to load voucher results.";
+        })
+        .finally(() => {
+            loading?.classList.remove("is-visible");
+            loading?.setAttribute("aria-hidden", "true");
+            const pageCount = Math.max(1, Math.ceil(transactionVoucherTotalRows / transactionVoucherPageSize));
+            const pageStatus = document.getElementById("tmPageStatus");
+            const previous = document.getElementById("tmPreviousPage");
+            const next = document.getElementById("tmNextPage");
+            if (pageStatus) pageStatus.textContent = transactionVoucherTotalRows
+                ? `Page ${transactionVoucherPage} of ${pageCount} (${transactionVoucherTotalRows} vouchers)`
+                : "No results";
+            if (previous) previous.disabled = transactionVoucherPage <= 1 || !transactionVoucherTotalRows;
+            if (next) next.disabled = transactionVoucherPage >= pageCount || !transactionVoucherTotalRows;
+        });
+});
+
+document.getElementById("tmPreviousPage")?.addEventListener("click", () => {
+    if (transactionVoucherPage <= 1) return;
+    transactionVoucherPage--;
+    transactionVoucherPageNavigation = true;
+    document.getElementById("tmsearchForm").requestSubmit();
+});
+document.getElementById("tmNextPage")?.addEventListener("click", () => {
+    transactionVoucherPage++;
+    transactionVoucherPageNavigation = true;
+    document.getElementById("tmsearchForm").requestSubmit();
 });
 
 //receipt voucher search

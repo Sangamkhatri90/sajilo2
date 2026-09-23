@@ -12029,6 +12029,9 @@ async function loadEarningsData() {
                                     <!-- Left Panel -->
                                     <fieldset>
                                         <div class="tm-table-container">
+                                            <div id="tmTableLoading" class="tm-table-loading" aria-live="polite" aria-hidden="true">
+                                                <span class="tm-loading-spinner"></span>Loading vouchers...
+                                            </div>
                                             <table class="tm-table" id="TMTablevalues">
                                                 <thead>
                                                     <tr>
@@ -12085,7 +12088,12 @@ async function loadEarningsData() {
                                                     </tr>
                                                 </tbody>
                                             </table>
-                                            <p id="error" style="color: red;"></p>
+                                            <p id="tmError" style="color: red;"></p>
+                                        </div>
+                                        <div id="tmPagination" class="tm-pagination" aria-live="polite">
+                                            <button type="button" id="tmPreviousPage" disabled>Previous</button>
+                                            <span id="tmPageStatus">No results</span>
+                                            <button type="button" id="tmNextPage" disabled>Next</button>
                                         </div>
                                     </fieldset>
                                 </div>
