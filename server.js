@@ -876,12 +876,12 @@ app.post("/search", async (req, res) => {
     });
 
     if (!checkResult || checkResult.length === 0) {
-      return res.send(`
-        <script>
-          alert("The given member alias seems to be invalid or not found. Please check and provide the right member alias.");
-          window.history.back();
-        </script>
-      `);
+      return res.status(404).render("index", {
+        memberName: null,
+        data: [],
+        searchedMemberId: [],
+        error: "The given member alias seems to be invalid or not found. Please check and provide the right member alias.",
+      });
     }
 
     // =========================

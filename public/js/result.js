@@ -38,7 +38,7 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
         let isDragging = false;
         let offsetX = 0;
         let offsetY = 0;
-        let highestZIndex = 3;
+        let highestZIndex = 10000;
 
         const bringToFront = (element) => {
             highestZIndex++;
@@ -61,6 +61,13 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
             const rect = div.getBoundingClientRect();
             offsetX = e.clientX - rect.left;
             offsetY = e.clientY - rect.top;
+            // The modal is initially centered with translate(-50%, -50%).
+            // Convert it to viewport coordinates before dragging so the
+            // pointer keeps the same position on the modal.
+            div.style.position = 'fixed';
+            div.style.transform = 'none';
+            div.style.left = `${rect.left}px`;
+            div.style.top = `${rect.top}px`;
             isDragging = true;
         });
 
@@ -69,9 +76,8 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
                 return;
             }
 
-            div.style.left = `${e.pageX - offsetX}px`;
-            div.style.top = `${e.pageY - offsetY}px`;
-            div.style.position = 'absolute';
+            div.style.left = `${e.clientX - offsetX}px`;
+            div.style.top = `${e.clientY - offsetY}px`;
         });
 
         document.addEventListener('mouseup', () => {

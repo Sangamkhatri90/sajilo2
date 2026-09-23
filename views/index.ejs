@@ -27123,6 +27123,13 @@ const edit = panel?.querySelector('#pvm-edit-button');
                     <button id="alertOkButton">OK</button>
                 </div>
             </div>
+            <% if (typeof error !== 'undefined' && error) { %>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        showCustomAlert(<%- JSON.stringify(error) %>);
+                    });
+                </script>
+            <% } %>
 
 
 
