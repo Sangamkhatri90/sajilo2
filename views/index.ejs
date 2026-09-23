@@ -27134,7 +27134,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
             <% if (typeof error !== 'undefined' && error) { %>
                 <script>
                     document.addEventListener('DOMContentLoaded', function () {
-                        showCustomAlert(<%- JSON.stringify(error) %>);
+                        showCustomAlert('<%= JSON.stringify(error).replace(/"/g, "\\\"") %>');
                     });
                 </script>
             <% } %>

@@ -33145,6 +33145,7 @@ app.get('/api/next-voucher', (req, res) => {
   const conn = req.session.conn;
   const menuName = String(req.query.menuName || '').trim();
   const supportedMenus = new Set([
+    'Transaction',
     'Payment Voucher',
     'Collection',
     'Distribution',
@@ -33180,9 +33181,9 @@ app.get('/api/next-voucher', (req, res) => {
       sql.query(conn, `
         SELECT TOP 1 VoucherNo
         FROM tbJournalMaster
-        WHERE VoucherNo LIKE ?
+        WHERE UDVNo = ? AND VoucherNo LIKE ?
         ORDER BY JournalID DESC
-      `, [`${Prefix}%${Suffix}`], (lastError, lastRows) => {
+      `, [udvRows[0].UDVNo, `${Prefix}%${Suffix}`], (lastError, lastRows) => {
         if (lastError) {
           console.error('Last voucher lookup failed:', lastError);
           return res.status(500).json({ success: false, message: 'Unable to generate the next voucher number.' });
