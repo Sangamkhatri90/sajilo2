@@ -29,13 +29,23 @@
         const columnIndex = Array.prototype.indexOf.call(headerRow.cells, header);
         const ascending = header.dataset.sortDirection !== "asc";
         const rows = Array.from(body.rows);
+        const totalRows = rows.filter(function (row) { return /\btotal\s*:/i.test(row.textContent); });
+        const sortableRows = rows.filter(function (row) { return totalRows.indexOf(row) === -1; });
 
-        rows.sort(function (rowA, rowB) {
+        sortableRows.sort(function (rowA, rowB) {
             const comparison = compareValues(getCellValue(rowA, columnIndex), getCellValue(rowB, columnIndex));
             return (ascending ? 1 : -1) * comparison;
         });
 
-        rows.forEach(function (row) { body.appendChild(row); });
+        sortableRows.concat(totalRows).forEach(function (row) { body.appendChild(row); });
+        const serialColumnIndex = Array.prototype.findIndex.call(headerRow.cells, function (cell) {
+            return /^s\s*\.?\s*n\s*\.?\s*o\.?$/i.test(cell.textContent.trim());
+        });
+        if (serialColumnIndex !== -1) {
+            sortableRows.forEach(function (row, index) {
+                if (row.cells[serialColumnIndex]) row.cells[serialColumnIndex].textContent = index + 1;
+            });
+        }
         headerRow.querySelectorAll("th").forEach(function (cell) {
             delete cell.dataset.sortDirection;
             cell.removeAttribute("aria-sort");
@@ -46,7 +56,7 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         const style = document.createElement("style");
-        style.textContent = "table thead th { cursor: pointer; } table thead th[aria-sort=asc]::after { content: ' ▲'; } table thead th[aria-sort=desc]::after { content: ' ▼'; }";
+        style.textContent = "table thead th { cursor: pointer; } table thead th[aria-sort=asc]::after { content: ' \\25B2'; } table thead th[aria-sort=desc]::after { content: ' \\25BC'; }";
         document.head.appendChild(style);
     });
 })();
