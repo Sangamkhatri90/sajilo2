@@ -54,9 +54,7 @@
         header.setAttribute("aria-sort", ascending ? "ascending" : "descending");
     });
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const style = document.createElement("style");
-        style.textContent = "table thead th { cursor: pointer; } table thead th[aria-sort=asc]::after { content: ' \\25B2'; } table thead th[aria-sort=desc]::after { content: ' \\25BC'; }";
-        document.head.appendChild(style);
-    });
+    const style = document.createElement("style");
+    style.textContent = "table thead th { cursor: pointer; } table thead th[aria-sort=ascending]::after { content: ' ▲'; } table thead th[aria-sort=descending]::after { content: ' ▼'; }";
+    document.head.appendChild(style);
 })();
