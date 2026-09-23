@@ -11973,7 +11973,7 @@ async function loadEarningsData() {
                                 <legend class="tm-legend">Transaction Master</legend>
                                 <div class="tm-button-row">
                                     <a href="#" style="text-decoration: none;">
-                                        <button type="button" class="new-button" id="">
+                                        <button type="button" class="new-button" id="tm-new-transaction-button">
                                             <i class="fas fa-plus" alt=""></i>New
                                         </button>
                                     </a>
@@ -52396,6 +52396,39 @@ const edit = panel?.querySelector('#pvm-edit-button');
             <script src="/js/BooksCbbResult.js"></script>
             <script src="/js/GlobalLgrMasterLoan.js"></script>
             <script src="/js/globalTableSort.js"></script>
+            <script>
+                document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {
+                    event.preventDefault();
+                    const transactionForm = document.getElementById('mainCreatTransDiv');
+                    const voucherNumber = document.getElementById('MaintransvoucherNo');
+                    if (!transactionForm || !voucherNumber) return;
+
+                    transactionForm.style.display = 'block';
+                    transactionForm.style.zIndex = '10001';
+                    voucherNumber.value = '';
+                    try {
+                        const configResponse = await fetch('/getVoucherConfig?menuName=Transaction');
+                        if (!configResponse.ok) throw new Error('Unable to load Transaction voucher settings.');
+                        const { Prefix, Suffix, BodyLength } = await configResponse.json();
+                        if (!Prefix || BodyLength === undefined || BodyLength === null) throw new Error('Invalid Transaction voucher settings.');
+                        const actualSuffix = Suffix || '';
+                        const numericLength = BodyLength - Prefix.length - actualSuffix.length;
+                        if (numericLength <= 0) throw new Error('Invalid Transaction voucher settings.');
+
+                        const lastResponse = await fetch(`/getLastVoucherNo?prefix=${encodeURIComponent(Prefix)}`);
+                        if (!lastResponse.ok) throw new Error('Unable to load the last Transaction voucher number.');
+                        const { lastVoucherNo } = await lastResponse.json();
+                        const lastNumber = lastVoucherNo
+                            ? parseInt(lastVoucherNo.slice(Prefix.length, lastVoucherNo.length - actualSuffix.length), 10) || 0
+                            : 0;
+                        voucherNumber.value = Prefix + String(lastNumber + 1).padStart(numericLength, '0') + actualSuffix;
+                    } catch (error) {
+                        voucherNumber.value = '';
+                        if (typeof showCustomAlert === 'function') showCustomAlert(error.message);
+                        else console.error('Unable to generate Transaction voucher number:', error);
+                    }
+                });
+            </script>
 
 
 
