@@ -2679,8 +2679,11 @@
                         <button type="button" class="">Export</button>
                     </div>
                 </div>
-                <div id="cbb-data-summaryonlydiv1" style="display: none;">
-                    <h2>Cash</h2>
+                <div id="cbb-data-summaryonlydiv1" class="cbb-summary-only-result" style="display: none;">
+                    <div class="cbb-summary-only-header">
+                        <h2>Cash</h2>
+                        <button type="button" id="closeCbbSummaryOnly" class="cbb-summary-only-close" aria-label="Close cash summary">&times;</button>
+                    </div>
                     <div id="cbb-data-summaryonlydiv2">
                         <table id="cbb-data-summaryonlytable">
                             <thead>
@@ -2699,7 +2702,7 @@
                         </table>
                     </div>
                     <div class="cbb-data-button-row">
-                        <button type="button" class="cbb-button" id="books-cbbdata-OKbtnSO">Ok</button>
+                        <button type="button" class="cbb-button" id="books-cbbdata-OKbtnSO">OK</button>
                         <button type="button" class="cbb-button" id="">Print</button>
                         <button type="button" class="">Export</button>
                     </div>

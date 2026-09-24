@@ -3,6 +3,58 @@
                     const form = document.getElementById("myForm11");
                     let ExcelData = null;
 
+                    const summaryOnlyDiv = document.getElementById("cbb-data-summaryonlydiv1");
+                    const summaryOnlyHeader = summaryOnlyDiv?.querySelector(".cbb-summary-only-header");
+                    const closeSummaryOnly = () => {
+                        if (summaryOnlyDiv) summaryOnlyDiv.style.display = "none";
+                    };
+
+                    document.getElementById("closeCbbSummaryOnly")?.addEventListener("click", closeSummaryOnly);
+                    document.getElementById("books-cbbdata-OKbtnSO")?.addEventListener("click", closeSummaryOnly);
+
+                    if (summaryOnlyDiv && summaryOnlyHeader) {
+                        let dragState = null;
+
+                        summaryOnlyHeader.addEventListener("pointerdown", (event) => {
+                            if (event.target.closest("button")) return;
+
+                            const rect = summaryOnlyDiv.getBoundingClientRect();
+                            summaryOnlyDiv.style.transform = "none";
+                            summaryOnlyDiv.style.left = rect.left + "px";
+                            summaryOnlyDiv.style.top = rect.top + "px";
+                            dragState = {
+                                pointerId: event.pointerId,
+                                offsetX: event.clientX - rect.left,
+                                offsetY: event.clientY - rect.top
+                            };
+                            summaryOnlyHeader.classList.add("is-dragging");
+                            summaryOnlyHeader.setPointerCapture(event.pointerId);
+                        });
+
+                        summaryOnlyHeader.addEventListener("pointermove", (event) => {
+                            if (!dragState || event.pointerId !== dragState.pointerId) return;
+
+                            const rect = summaryOnlyDiv.getBoundingClientRect();
+                            const margin = 8;
+                            const maxLeft = Math.max(margin, window.innerWidth - rect.width - margin);
+                            const maxTop = Math.max(margin, window.innerHeight - rect.height - margin);
+                            const left = Math.min(Math.max(event.clientX - dragState.offsetX, margin), maxLeft);
+                            const top = Math.min(Math.max(event.clientY - dragState.offsetY, margin), maxTop);
+                            summaryOnlyDiv.style.left = left + "px";
+                            summaryOnlyDiv.style.top = top + "px";
+                        });
+
+                        const stopDragging = (event) => {
+                            if (!dragState || event.pointerId !== dragState.pointerId) return;
+                            summaryOnlyHeader.classList.remove("is-dragging");
+                            summaryOnlyHeader.releasePointerCapture(event.pointerId);
+                            dragState = null;
+                        };
+
+                        summaryOnlyHeader.addEventListener("pointerup", stopDragging);
+                        summaryOnlyHeader.addEventListener("pointercancel", stopDragging);
+                    }
+
                     // 👉 Define all checkboxes
                     const SOCB = document.getElementById("books-cbb-SOCB"); // Summary Only
                     const SNT = document.getElementById("books-cbb-SNT");   // Show Narration (Transaction)
@@ -223,6 +275,7 @@
       `;
                             tableBody.appendChild(tr);
                         });
+
                     }
 
                     // 📋 Render Summary-Only Table
@@ -256,6 +309,28 @@
       `;
                             tableBody.appendChild(tr);
                         });
+                        const totals = data.reduce((sum, row) => ({
+                            openingBalance: sum.openingBalance + (Number(row.OpeningBalance) || 0),
+                            receipt: sum.receipt + (Number(row.Receipt) || 0),
+                            payment: sum.payment + (Number(row.Payment) || 0),
+                            balance: sum.balance + (Number(row.Balance) || 0)
+                        }), {
+                            openingBalance: 0,
+                            receipt: 0,
+                            payment: 0,
+                            balance: 0
+                        });
+
+                        const totalRow = document.createElement("tr");
+                        totalRow.className = "cbb-summary-only-total-row";
+                        totalRow.innerHTML = `
+        <td colspan="2"><strong>Total</strong></td>
+        <td><strong>${totals.openingBalance}</strong></td>
+        <td><strong>${totals.receipt}</strong></td>
+        <td><strong>${totals.payment}</strong></td>
+        <td><strong>${totals.balance}</strong></td>
+      `;
+                        tableBody.appendChild(totalRow);
                     }
                 });
      

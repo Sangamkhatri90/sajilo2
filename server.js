@@ -38344,25 +38344,345 @@ app.post("/get-openingBalance-MasterEntry", (req, res) => {
 });
 
 
+// app.post("/api/cbbSummaryOnly", async (req, res) => {
+
+//   const conn = req.session.conn;
+
+//   let { bankBook, fromDate, toDate, excelData } = req.body;
+
+//   console.log(
+//     "🔍 bankBook:",
+//     bankBook,
+//     "| fromDate:",
+//     fromDate,
+//     "| toDate:",
+//     toDate
+//   );
+
+//   if (!bankBook || !fromDate || !toDate) {
+//     return res.status(400).json({
+//       error: "bankBook, fromDate and toDate are required."
+//     });
+//   }
+
+//   try {
+
+//     // Step 0: Detect date type (AD / BS)
+//     const settingsRows = await queryAsync(conn, `
+//       SELECT TOP 1 DateType
+//       FROM dbo.tbSystemSettings
+//     `);
+
+//     const dateType = (settingsRows?.[0]?.DateType || "")
+//       .toString()
+//       .trim()
+//       .toUpperCase();
+
+//     if (dateType !== "AD" && dateType !== "BS") {
+//       return res.status(500).json({
+//         error: `Invalid DateType in tbSystemSettings: "${dateType}"`
+//       });
+//     }
+
+//     const isAD = dateType === "AD";
+
+//     console.log("🗓️ DateType:", dateType);
+
+//     // Normalize incoming dates
+//     // AD -> YYYY-MM-DD
+//     // BS -> YYYY/MM/DD
+//     if (isAD) {
+//       fromDate = fromDate.replace(/\//g, "-");
+//       toDate = toDate.replace(/\//g, "-");
+//     } else {
+//       fromDate = fromDate.replace(/-/g, "/");
+//       toDate = toDate.replace(/-/g, "/");
+//     }
+
+//     const sep = isAD ? "-" : "/";
+
+//     console.log(
+//       "🔄 Normalized fromDate:",
+//       fromDate,
+//       "| toDate:",
+//       toDate
+//     );
+
+//     // Date expressions
+//     const filterExpr = isAD
+//       ? "CAST(jm.JV_Date AS DATE)"
+//       : "jm.JV_Miti";
+
+//     const groupExpr = isAD
+//       ? "CONVERT(varchar(10), CAST(jm.JV_Date AS DATE), 23)"
+//       : "jm.JV_Miti";
+
+//     // Step 1: Resolve GLID dynamically from GLName
+//     const ledgerRows = await queryAsync(conn, `
+//       SELECT GLID
+//       FROM dbo.tbLedgerMaster
+//       WHERE RTRIM(LTRIM(GLName)) = ?
+//     `, [bankBook.trim()]);
+
+//     if (!ledgerRows || ledgerRows.length === 0) {
+//       console.warn(
+//         `⚠️ No GLID found for bankBook: "${bankBook}"`
+//       );
+
+//       return res.status(404).json({
+//         error: `No ledger found for "${bankBook}".`
+//       });
+//     }
+
+//     const glid = ledgerRows[0].GLID;
+
+//     console.log("📌 Resolved GLID:", glid);
+
+//     // Step 2: Prior fiscal year range
+//     const fromYear =
+//       parseInt(fromDate.split(sep)[0]) - 1;
+
+//     const toYear =
+//       parseInt(fromDate.split(sep)[0]);
+
+//     const priorFYFrom =
+//       `${fromYear}${sep}04${sep}01`;
+
+//     const priorFYTo =
+//       `${toYear}${sep}03${sep}31`;
+
+//     console.log(
+//       "📅 Prior fiscal year range:",
+//       priorFYFrom,
+//       "to",
+//       priorFYTo
+//     );
+
+//     // Step 3: Summary query
+//     // Main logic:
+//     // SUM(DrAmount)
+//     // SUM(CrAmount)
+//     // Group by date
+//     // Filter by dynamically resolved GLID
+//     // No TransType filtering
+
+//     const summaryQuery = `
+
+//       WITH OpeningBalance AS (
+
+//         SELECT
+//           SUM(ISNULL(jd.DrAmount, 0))
+//           -
+//           SUM(ISNULL(jd.CrAmount, 0)) AS OpeningBalance
+
+//         FROM tbJournalMaster jm
+
+//         INNER JOIN tbJournalDetails jd
+//           ON jm.JournalID = jd.JournalID
+
+//         WHERE ${filterExpr} BETWEEN ? AND ?
+//           AND jd.GLID = ?
+//       ),
+
+//       DailyTotals AS (
+
+//         SELECT
+//           ${groupExpr} AS TxnDate,
+
+//           SUM(ISNULL(jd.DrAmount, 0)) AS TotalDeposit,
+
+//           SUM(ISNULL(jd.CrAmount, 0)) AS TotalWithdraw
+
+//         FROM tbJournalMaster jm
+
+//         INNER JOIN tbJournalDetails jd
+//           ON jm.JournalID = jd.JournalID
+
+//         WHERE ${filterExpr} BETWEEN ? AND ?
+//           AND jd.GLID = ?
+
+//         GROUP BY ${groupExpr}
+//       )
+
+//       SELECT
+
+//         d.TxnDate,
+
+//         -- Opening balance
+//         ob.OpeningBalance
+//           +
+//           ISNULL(
+//             SUM(d.TotalDeposit - d.TotalWithdraw)
+//             OVER (
+//               ORDER BY d.TxnDate
+//               ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+//             ),
+//             0
+//           ) AS OpeningBalance,
+
+//         -- Total DrAmount
+//         d.TotalDeposit,
+
+//         -- Total CrAmount
+//         d.TotalWithdraw,
+
+//         -- Closing balance
+//         ob.OpeningBalance
+//           +
+//           SUM(d.TotalDeposit - d.TotalWithdraw)
+//           OVER (
+//             ORDER BY d.TxnDate
+//             ROWS UNBOUNDED PRECEDING
+//           ) AS ClosingBalance
+
+//       FROM DailyTotals d
+
+//       CROSS JOIN OpeningBalance ob
+
+//       ORDER BY d.TxnDate;
+
+//     `;
+
+//     // Step 4: Execute query
+//     const rows = await queryAsync(conn, summaryQuery, [
+
+//       // Opening balance
+//       priorFYFrom,
+//       priorFYTo,
+//       glid,
+
+//       // Current date range
+//       fromDate,
+//       toDate,
+//       glid
+
+//     ]);
+
+//     console.log(
+//       "📊 Rows returned:",
+//       rows?.length || 0
+//     );
+
+//     // Step 5: Format response
+//     const formatted = (rows || []).map(row => ({
+//       Date: row.TxnDate,
+//       OpeningBalance: row.OpeningBalance,
+//       Receipt: row.TotalDeposit,
+//       Payment: row.TotalWithdraw,
+//       Balance: row.ClosingBalance
+//     }));
+
+//     return res.json(formatted);
+
+//   } catch (error) {
+
+//     console.error(
+//       "❌ Error in cbbSummaryOnly:",
+//       error
+//     );
+
+//     return res.status(500).json({
+//       error: "Internal Server Error",
+//       details: error.message
+//     });
+
+//   }
+
+// });
+
+
+// Start the server
+
+
+
 app.post("/api/cbbSummaryOnly", async (req, res) => {
+
   const conn = req.session.conn;
+
   let { bankBook, fromDate, toDate, excelData } = req.body;
 
-  console.log("🔍 bankBook:", bankBook, "| fromDate:", fromDate, "| toDate:", toDate);
+  console.log(
+    "🔍 bankBook:",
+    bankBook,
+    "| fromDate:",
+    fromDate,
+    "| toDate:",
+    toDate
+  );
 
   if (!bankBook || !fromDate || !toDate) {
-    return res.status(400).json({ error: "bankBook, fromDate and toDate are required." });
+    return res.status(400).json({
+      error: "bankBook, fromDate and toDate are required."
+    });
   }
 
-  // 🔄 Normalize incoming dates from "YYYY-MM-DD" to "YYYY/MM/DD"
-  // (HTML date inputs send dashes; JV_Miti in DB is stored with slashes)
-  fromDate = fromDate.replace(/-/g, "/");
-  toDate = toDate.replace(/-/g, "/");
-
-  console.log("🔄 Normalized fromDate:", fromDate, "| toDate:", toDate);
-
   try {
-    // Step 1: Resolve GLID from GLName (bankBook)
+
+    // ------------------------------------------------------------
+    // Step 0: Detect date type (AD / BS)
+    // ------------------------------------------------------------
+
+    const settingsRows = await queryAsync(conn, `
+      SELECT TOP 1 DateType
+      FROM dbo.tbSystemSettings
+    `);
+
+    const dateType = (settingsRows?.[0]?.DateType || "")
+      .toString()
+      .trim()
+      .toUpperCase();
+
+    if (dateType !== "AD" && dateType !== "BS") {
+      return res.status(500).json({
+        error: `Invalid DateType in tbSystemSettings: "${dateType}"`
+      });
+    }
+
+    const isAD = dateType === "AD";
+
+    console.log("🗓️ DateType:", dateType);
+
+
+    // ------------------------------------------------------------
+    // Normalize incoming dates
+    //
+    // AD -> YYYY-MM-DD
+    // BS -> YYYY/MM/DD
+    // ------------------------------------------------------------
+
+    if (isAD) {
+      fromDate = fromDate.replace(/\//g, "-");
+      toDate = toDate.replace(/\//g, "-");
+    } else {
+      fromDate = fromDate.replace(/-/g, "/");
+      toDate = toDate.replace(/-/g, "/");
+    }
+
+    console.log(
+      "🔄 Normalized fromDate:",
+      fromDate,
+      "| toDate:",
+      toDate
+    );
+
+
+    // ------------------------------------------------------------
+    // Date expressions
+    // ------------------------------------------------------------
+
+    const filterExpr = isAD
+      ? "CAST(jm.JV_Date AS DATE)"
+      : "jm.JV_Miti";
+
+    const groupExpr = isAD
+      ? "CONVERT(varchar(10), CAST(jm.JV_Date AS DATE), 23)"
+      : "jm.JV_Miti";
+
+
+    // ------------------------------------------------------------
+    // Step 1: Resolve GLID dynamically from GLName
+    // ------------------------------------------------------------
+
     const ledgerRows = await queryAsync(conn, `
       SELECT GLID
       FROM dbo.tbLedgerMaster
@@ -38370,91 +38690,188 @@ app.post("/api/cbbSummaryOnly", async (req, res) => {
     `, [bankBook.trim()]);
 
     if (!ledgerRows || ledgerRows.length === 0) {
-      console.warn(`⚠️ No GLID found for bankBook: "${bankBook}"`);
-      return res.status(404).json({ error: `No ledger found for "${bankBook}".` });
+
+      console.warn(
+        `⚠️ No GLID found for bankBook: "${bankBook}"`
+      );
+
+      return res.status(404).json({
+        error: `No ledger found for "${bankBook}".`
+      });
     }
 
     const glid = ledgerRows[0].GLID;
+
     console.log("📌 Resolved GLID:", glid);
 
-    // Step 2: Compute prior fiscal year range (for Opening Balance)
-    const fromYear = parseInt(fromDate.split('/')[0]) - 1;
-    const toYear = parseInt(fromDate.split('/')[0]);
-    const priorFYFrom = `${fromYear}/04/01`;
-    const priorFYTo = `${toYear}/03/31`;
 
-    console.log("📅 Prior fiscal year range:", priorFYFrom, "to", priorFYTo);
+    // ------------------------------------------------------------
+    // Step 2: Summary Query
+    //
+    // Opening Balance:
+    //     All DrAmount BEFORE fromDate
+    //     -
+    //     All CrAmount BEFORE fromDate
+    //
+    // Daily:
+    //     SUM(DrAmount)
+    //     SUM(CrAmount)
+    //
+    // No TransType filtering.
+    // ------------------------------------------------------------
 
-    // Step 3: Run the dynamic CTE query — GLID and both date ranges are parameterized
     const summaryQuery = `
+
       WITH OpeningBalance AS (
-          SELECT
-              SUM(CASE WHEN jm.TransType = 'Deposit' THEN ISNULL(jd.DrAmount, 0) ELSE 0 END)
-              -
-              SUM(CASE WHEN jm.TransType = 'Withdraw' THEN ISNULL(jd.CrAmount, 0) ELSE 0 END) AS OpeningBalance
-          FROM tbJournalMaster jm
-          INNER JOIN tbJournalDetails jd ON jm.JournalID = jd.JournalID
-          WHERE jm.JV_Miti BETWEEN ? AND ?
-            AND jd.GLID = ?
-            AND jm.TransType IN ('Deposit', 'Withdraw')
+
+        SELECT
+          COALESCE(SUM(ISNULL(jd.DrAmount, 0)), 0)
+          -
+          COALESCE(SUM(ISNULL(jd.CrAmount, 0)), 0)
+          AS OpeningBalance
+
+        FROM tbJournalMaster jm
+
+        INNER JOIN tbJournalDetails jd
+          ON jm.JournalID = jd.JournalID
+
+        WHERE ${filterExpr} < ?
+          AND jd.GLID = ?
       ),
+
+
       DailyTotals AS (
-          SELECT
-              jm.JV_Miti,
-              SUM(CASE WHEN jm.TransType = 'Deposit' THEN ISNULL(jd.DrAmount, 0) ELSE 0 END) AS TotalDeposit,
-              SUM(CASE WHEN jm.TransType = 'Withdraw' THEN ISNULL(jd.CrAmount, 0) ELSE 0 END) AS TotalWithdraw
-          FROM tbJournalMaster jm
-          INNER JOIN tbJournalDetails jd ON jm.JournalID = jd.JournalID
-          WHERE jm.JV_Miti BETWEEN ? AND ?
-            AND jd.GLID = ?
-            AND jm.TransType IN ('Deposit', 'Withdraw')
-          GROUP BY jm.JV_Miti
+
+        SELECT
+
+          ${groupExpr} AS TxnDate,
+
+          SUM(ISNULL(jd.DrAmount, 0))
+            AS TotalDeposit,
+
+          SUM(ISNULL(jd.CrAmount, 0))
+            AS TotalWithdraw
+
+        FROM tbJournalMaster jm
+
+        INNER JOIN tbJournalDetails jd
+          ON jm.JournalID = jd.JournalID
+
+        WHERE ${filterExpr} BETWEEN ? AND ?
+          AND jd.GLID = ?
+
+        GROUP BY ${groupExpr}
       )
+
+
       SELECT
-          d.JV_Miti,
-          ob.OpeningBalance
-            + ISNULL(
-                SUM(d.TotalDeposit - d.TotalWithdraw)
-                OVER (ORDER BY d.JV_Miti ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING),
-                0
-              ) AS OpeningBalance,
-          d.TotalDeposit,
-          d.TotalWithdraw,
-          ob.OpeningBalance
-            + SUM(d.TotalDeposit - d.TotalWithdraw)
-              OVER (ORDER BY d.JV_Miti ROWS UNBOUNDED PRECEDING) AS ClosingBalance
+
+        d.TxnDate,
+
+
+        -- Opening balance for each day
+        ob.OpeningBalance
+          +
+          ISNULL(
+            SUM(d.TotalDeposit - d.TotalWithdraw)
+            OVER (
+              ORDER BY d.TxnDate
+              ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+            ),
+            0
+          ) AS OpeningBalance,
+
+
+        -- Total DrAmount for the day
+        d.TotalDeposit AS TotalDeposit,
+
+
+        -- Total CrAmount for the day
+        d.TotalWithdraw AS TotalWithdraw,
+
+
+        -- Closing balance
+        ob.OpeningBalance
+          +
+          SUM(d.TotalDeposit - d.TotalWithdraw)
+          OVER (
+            ORDER BY d.TxnDate
+            ROWS UNBOUNDED PRECEDING
+          ) AS ClosingBalance
+
+
       FROM DailyTotals d
+
       CROSS JOIN OpeningBalance ob
-      ORDER BY d.JV_Miti;
+
+      ORDER BY d.TxnDate;
+
     `;
 
+
+    // ------------------------------------------------------------
+    // Step 3: Execute query
+    // ------------------------------------------------------------
+
     const rows = await queryAsync(conn, summaryQuery, [
-      priorFYFrom, priorFYTo, glid,
-      fromDate, toDate, glid
+
+      // Opening balance:
+      // Everything before fromDate
+      fromDate,
+      glid,
+
+      // Daily totals:
+      fromDate,
+      toDate,
+      glid
+
     ]);
 
-    console.log("📊 Rows returned:", rows?.length || 0);
 
-    // TODO (later): fallback to excelData if rows is empty / opening balance is null
-    // if (!rows || rows.length === 0) { ... }
+    console.log(
+      "📊 Rows returned:",
+      rows?.length || 0
+    );
+
+
+    // ------------------------------------------------------------
+    // Step 4: Format response
+    // ------------------------------------------------------------
 
     const formatted = (rows || []).map(row => ({
-      Date: row.JV_Miti,
+
+      Date: row.TxnDate,
+
       OpeningBalance: row.OpeningBalance,
+
       Receipt: row.TotalDeposit,
+
       Payment: row.TotalWithdraw,
+
       Balance: row.ClosingBalance
+
     }));
+
 
     return res.json(formatted);
 
+
   } catch (error) {
-    console.error("❌ Error in cbbSummaryOnly:", error);
-    return res.status(500).json({ error: "Internal Server Error", details: error.message });
+
+    console.error(
+      "❌ Error in cbbSummaryOnly:",
+      error
+    );
+
+    return res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message
+    });
+
   }
+
 });
 
-// Start the server
 const PORT = 80;
 
 
