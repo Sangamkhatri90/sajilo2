@@ -2579,7 +2579,7 @@ app.post("/add-ta-code-menu", (req, res) => {
       }
       res
         .status(200)
-        .send({ message: "TA Code Menu added successfully!", success: true });
+        .send({ message: "TA Code Menu added successfully!", menuName, success: true });
     }
   );
 });

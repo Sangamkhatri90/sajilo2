@@ -33,6 +33,17 @@ document.addEventListener('DOMContentLoaded', () => {
             
                 if (result.success) {
                     showCustomAlert(result.message); // Custom success alert
+                    if (this.action.endsWith('/add-ta-code-menu') && result.menuName) {
+                        const menuList = document.getElementById('menu-list');
+                        if (menuList) {
+                            const emptyItem = menuList.querySelector('li:not(.menu-list)');
+                            if (emptyItem) emptyItem.remove();
+                            const listItem = document.createElement('li');
+                            listItem.textContent = result.menuName;
+                            listItem.classList.add('menu-list');
+                            menuList.appendChild(listItem);
+                        }
+                    }
                     if (result.redirect) {
                         window.location.href = result.redirect;
                     }

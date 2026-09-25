@@ -27915,12 +27915,32 @@ const edit = panel?.querySelector('#pvm-edit-button');
                             const list = document.getElementById('fiscalYearLists');
                             list.innerHTML = ''; // Clear "Loading..." message
 
+                            const normalizeDate = (date) => {
+                                const value = String(date || '').trim();
+                                let match = value.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/);
+                                if (match) return match[1] + '-' + match[2].padStart(2, '0') + '-' + match[3].padStart(2, '0');
+                                match = value.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+                                return match ? match[3] + '-' + match[2].padStart(2, '0') + '-' + match[1].padStart(2, '0') : value;
+                            };
+                            const selectedStartDate = normalizeDate(localStorage.getItem('selectedStartDateLocal'));
+                            const selectedEndDate = normalizeDate(localStorage.getItem('selectedEndDateLocal'));
+
                             data.forEach(item => {
                                 const listItem = document.createElement('li');
                                 listItem.textContent = item;
                                 listItem.classList.add("fiscalYearLists");
+                                const [itemStartDate, itemEndDate] = item.split(' - ');
+                                const selectedMark = document.createElement('span');
+                                selectedMark.textContent = String.fromCharCode(10003);
+                                selectedMark.classList.add('fiscal-year-selected-mark');
+                                selectedMark.hidden = normalizeDate(itemStartDate) !== selectedStartDate || normalizeDate(itemEndDate) !== selectedEndDate;
+                                listItem.appendChild(selectedMark);
 
                                 listItem.addEventListener('click', () => {
+                                    document.querySelectorAll('.fiscal-year-selected-mark').forEach(mark => {
+                                        mark.hidden = true;
+                                    });
+                                    selectedMark.hidden = false;
                                     const [startDate, endDate] = item.split(' - ');
 
                                     const formatForInput = (date) => {
@@ -52399,6 +52419,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
             <script src="/js/BooksCbbResult.js"></script>
             <script src="/js/GlobalLgrMasterLoan.js"></script>
             <script src="/js/globalTableSort.js"></script>
+            <script src="/js/inputBehavior.js"></script>
             <script>
                 document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {
                     event.preventDefault();
