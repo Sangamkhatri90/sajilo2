@@ -35629,7 +35629,19 @@ app.get('/get-signatures/:username', (req, res) => {
   const username = decodeURIComponent(req.params.username);
 
   const subusername = 'Super';
-  const query = `SELECT FullName, Designation FROM tbUserMaster WHERE UserName = ?`;
+  const query = `
+    SELECT
+      FullName,
+      Designation,
+      (SELECT TOP 1 VoucherCheckedByName FROM tbSystemSetting) AS VoucherCheckedByName,
+      (SELECT TOP 1 VoucherCheckedByDesignation FROM tbSystemSetting) AS VoucherCheckedByDesignation,
+      (SELECT TOP 1 VoucherApprovedByName FROM tbSystemSetting) AS VoucherApprovedByName,
+      (SELECT TOP 1 VoucherApprovedByDesignation FROM tbSystemSetting) AS VoucherApprovedByDesignation,
+      (SELECT TOP 1 VoucherVerifiedByName FROM tbSystemSetting) AS VoucherVerifiedByName,
+      (SELECT TOP 1 VoucherVerifiedByDesignation FROM tbSystemSetting) AS VoucherVerifiedByDesignation
+    FROM tbUserMaster
+    WHERE UserName = ?
+  `;
 
   sql.query(connectionString, query, [username], (err, result) => {
     if (err) {

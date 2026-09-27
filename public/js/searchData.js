@@ -127,6 +127,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const fieldMap = {
                     FullName: 'vouchersign-username',
                     Designation: 'vouchersign-checkedBy',
+                    VoucherCheckedByName: 'approvedBy',
+                    VoucherCheckedByDesignation: 'verifiedBy',
+                    VoucherApprovedByName: 'designation1',
+                    VoucherApprovedByDesignation: 'designation2',
+                    VoucherVerifiedByName: 'designation3',
+                    VoucherVerifiedByDesignation: 'designation4',
                 };
 
                 // Loop through each key in data and fill the mapped input
