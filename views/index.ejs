@@ -6065,7 +6065,7 @@
                                     <div id="menuListForSCTTrans" style="display: none;" class="suggestions-list2">
                                     </div>
                                     <div>
-                                        <label for="sct-transaction">SCT Transaction</label>
+                                        <label for="sct-transaction">SCT Transaction Ledger</label>
                                         <input type="text" class="mb-text" id="sct-transaction" name="MBSctTransaction">
                                     </div>
                                 </div>
@@ -31698,31 +31698,100 @@ const edit = panel?.querySelector('#pvm-edit-button');
             </script>
 
             <script>
+                let mbankExcludeSubLedgers = [];
+
+                function renumberMBankExcludeRows() {
+                    document.querySelectorAll('#mbankExcludeTableBody tr').forEach((row, index) => {
+                        row.cells[0].textContent = index + 1;
+                    });
+                }
+
+                function addMBankExcludeRow(item = {}) {
+                    const tableBody = document.getElementById('mbankExcludeTableBody');
+                    const row = document.createElement('tr');
+                    const serialCell = document.createElement('td');
+                    const subHeadCell = document.createElement('td');
+
+                    row.dataset.slid = item.SLID || '';
+                    serialCell.textContent = tableBody.rows.length + 1;
+                    subHeadCell.className = 'mbank-exclude-subhead';
+                    subHeadCell.tabIndex = 0;
+                    subHeadCell.textContent = item.SLName || '';
+                    row.append(serialCell, subHeadCell);
+                    tableBody.appendChild(row);
+                    return row;
+                }
+
                 function renderMBankExcludeList(items) {
                     const tableBody = document.getElementById('mbankExcludeTableBody');
                     if (!tableBody) return;
 
                     tableBody.innerHTML = '';
+                    (items || []).forEach(item => addMBankExcludeRow(item));
+                    addMBankExcludeRow();
+                    renumberMBankExcludeRows();
+                }
 
-                    if (!items || items.length === 0) {
-                        tableBody.innerHTML = '<tr><td colspan="2">No excluded sub-heads found</td></tr>';
-                        return;
-                    }
+                async function loadMBankExcludeSubLedgers() {
+                    if (mbankExcludeSubLedgers.length) return mbankExcludeSubLedgers;
+                    const response = await fetch('/fetch-mbank-exclude-subledgers');
+                    const data = await response.json();
+                    if (!response.ok || !data.success) throw new Error(data.message || 'Unable to load sub-heads');
+                    mbankExcludeSubLedgers = data.subledgers || [];
+                    return mbankExcludeSubLedgers;
+                }
 
-                    items.forEach((item, index) => {
-                        const row = document.createElement('tr');
-                        const serialCell = document.createElement('td');
-                        const subHeadCell = document.createElement('td');
+                function hideMBankExcludeDropdown() {
+                    document.getElementById('mbankExcludeDropdown')?.remove();
+                }
 
-                        serialCell.textContent = item.SNo || index + 1;
-                        subHeadCell.textContent = item.SLName || '';
+                function showMBankExcludeDropdown(row) {
+                    const cell = row.querySelector('.mbank-exclude-subhead');
+                    if (!cell) return;
+                    hideMBankExcludeDropdown();
 
-                        row.dataset.detailId = item.DetailID || '';
-                        row.dataset.slid = item.SLID || '';
-                        row.appendChild(serialCell);
-                        row.appendChild(subHeadCell);
-                        tableBody.appendChild(row);
-                    });
+                    loadMBankExcludeSubLedgers().then(items => {
+                        const dropdown = document.createElement('div');
+                        dropdown.id = 'mbankExcludeDropdown';
+                        dropdown.style.cssText = 'position:fixed;z-index:10001;width:340px;max-height:270px;padding:8px;background:#fff;border:1px solid #999;box-shadow:0 3px 10px rgba(0,0,0,.25);overflow:hidden;';
+                        dropdown.innerHTML = '<input type="text" placeholder="Search sub-head or alias" style="box-sizing:border-box;width:100%;padding:6px"><div style="display:grid;grid-template-columns:1fr 110px;padding:8px 6px 5px;font-weight:600"><span>Sub-head</span><span>Acc Alias</span></div><div class="mbank-exclude-options" style="max-height:190px;overflow:auto"></div>';
+                        document.body.appendChild(dropdown);
+
+                        const rect = cell.getBoundingClientRect();
+                        dropdown.style.left = `${Math.min(rect.left, window.innerWidth - 350)}px`;
+                        dropdown.style.top = `${Math.min(rect.bottom + 2, window.innerHeight - 280)}px`;
+                        const search = dropdown.querySelector('input');
+                        const options = dropdown.querySelector('.mbank-exclude-options');
+
+                        const renderOptions = matches => {
+                            options.innerHTML = '';
+                            matches.forEach(item => {
+                                const option = document.createElement('div');
+                                option.style.cssText = 'display:grid;grid-template-columns:1fr 110px;padding:6px;cursor:pointer;';
+                                option.innerHTML = `<span></span><span></span>`;
+                                option.children[0].textContent = item.SLName || '';
+                                option.children[1].textContent = item.SLAlias || '';
+                                option.addEventListener('mouseenter', () => option.style.background = '#eef6ff');
+                                option.addEventListener('mouseleave', () => option.style.background = '');
+                                option.addEventListener('click', () => {
+                                    cell.textContent = item.SLName || '';
+                                    row.dataset.slid = item.SLID || '';
+                                    const tableBody = document.getElementById('mbankExcludeTableBody');
+                                    if (row === tableBody.rows[tableBody.rows.length - 1]) addMBankExcludeRow();
+                                    renumberMBankExcludeRows();
+                                    hideMBankExcludeDropdown();
+                                });
+                                options.appendChild(option);
+                            });
+                        };
+
+                        search.addEventListener('input', () => {
+                            const value = search.value.trim().toLowerCase();
+                            renderOptions(items.filter(item => !value || String(item.SLName || '').toLowerCase().includes(value) || String(item.SLAlias || '').toLowerCase().includes(value)));
+                        });
+                        renderOptions(items);
+                        search.focus();
+                    }).catch(error => console.error('Error loading MBank exclude sub-heads:', error));
                 }
 
                 function fetchMBankExcludeList() {
@@ -31730,16 +31799,11 @@ const edit = panel?.querySelector('#pvm-edit-button');
                     if (!tableBody) return;
 
                     tableBody.innerHTML = '<tr><td colspan="2">Loading...</td></tr>';
-
                     fetch('/fetch-mbank-exclude-list')
                         .then(response => response.json())
                         .then(data => {
-                            if (data.success) {
-                                renderMBankExcludeList(data.excludeItems);
-                                return;
-                            }
-
-                            tableBody.innerHTML = '<tr><td colspan="2">Unable to load exclude list</td></tr>';
+                            if (data.success) return renderMBankExcludeList(data.excludeItems);
+                            throw new Error(data.message || 'Unable to load exclude list');
                         })
                         .catch(error => {
                             console.error('Error fetching MBank exclude list:', error);
@@ -31747,13 +31811,71 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         });
                 }
 
+                function fetchMBankSCTSettings() {
+                    fetch('/api/system-settings/mbank-sct')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data.success) throw new Error(data.message || 'Unable to load MBank/SCT settings');
+
+                            const settings = data.settings || {};
+                            document.getElementById('menu-name-STC').value = settings.MBankVoucherName || '';
+                            document.getElementById('gl-name-SCTMbank').value = settings.MBankLedgerName || '';
+                            document.getElementById('menu-name-SCTTrans').value = settings.SCTVoucherName || '';
+                            document.getElementById('sct-transaction').value = settings.SCTLedgerName || '';
+                        })
+                        .catch(error => console.error('Error fetching MBank/SCT settings:', error));
+                }
+
                 document.addEventListener('DOMContentLoaded', function () {
+                    const tableBody = document.getElementById('mbankExcludeTableBody');
+                    const form = document.getElementById('myForm41');
                     fetchMBankExcludeList();
+                    fetchMBankSCTSettings();
+
+                    tableBody?.addEventListener('click', event => {
+                        const row = event.target.closest('tr');
+                        if (row?.parentElement === tableBody) showMBankExcludeDropdown(row);
+                    });
+
+                    document.addEventListener('click', event => {
+                        const dropdown = document.getElementById('mbankExcludeDropdown');
+                        if (dropdown && !dropdown.contains(event.target) && !event.target.closest('#mbankExcludeTableBody')) hideMBankExcludeDropdown();
+                    });
+
+                    form?.addEventListener('submit', async event => {
+                        event.preventDefault();
+                        const excludeSubHeads = Array.from(tableBody.rows)
+                            .map(row => row.querySelector('.mbank-exclude-subhead')?.textContent.trim())
+                            .filter(Boolean);
+                        const payload = {
+                            MBankVoucher: document.getElementById('menu-name-STC').value.trim(),
+                            GLIDMBank: document.getElementById('gl-name-SCTMbank').value.trim(),
+                            SCTVoucher: document.getElementById('menu-name-SCTTrans').value.trim(),
+                            GLIDSCT: document.getElementById('sct-transaction').value.trim(),
+                            excludeSubHeads
+                        };
+
+                        try {
+                            const response = await fetch('/api/system-settings/mbank-sct', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            const data = await response.json();
+                            if (!response.ok || !data.success) throw new Error(data.message || 'Unable to save MBank/SCT settings');
+                            (typeof showCustomAlert === 'function' ? showCustomAlert : alert)(data.message);
+                            fetchMBankExcludeList();
+                            fetchMBankSCTSettings();
+                        } catch (error) {
+                            (typeof showCustomAlert === 'function' ? showCustomAlert : alert)(error.message);
+                        }
+                    });
 
                     const toggleButton = document.getElementById('toggleButton41');
-                    if (toggleButton) {
-                        toggleButton.addEventListener('click', fetchMBankExcludeList);
-                    }
+                    toggleButton?.addEventListener('click', function () {
+                        fetchMBankExcludeList();
+                        fetchMBankSCTSettings();
+                    });
                 });
             </script>
             <script>

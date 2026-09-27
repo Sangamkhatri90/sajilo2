@@ -4789,7 +4789,7 @@ app.post("/submit-fiscal-year", (req, res) => {
 
 // Endpoint to fetch menuname and Alias from tbUserDefinedVoucher
 app.get("/fetchMenuNames", (req, res) => {
-  const query = "SELECT MenuName, Alias FROM dbo.tbUserDefinedVoucher";
+  const query = "SELECT UDVNo, MenuName, Alias FROM dbo.tbUserDefinedVoucher";
   const conn = req.session.conn;
   // Open the database connection using sql.open
   sql.open(conn, (err, connection) => {
@@ -13189,7 +13189,7 @@ app.post("/process-loanTNA-checked-values", (req, res) => {
 //To fetch the Menu name in setting stc
 app.get("/fetchMenuNameForSTC", (req, res) => {
   // Fetch MenuName and Alias from the tbUserDefinedVoucher table
-  const query = `SELECT MenuName, Alias FROM dbo.tbUserDefinedVoucher`; // No brackets needed if no conflicts
+  const query = `SELECT UDVNo, MenuName, Alias FROM dbo.tbUserDefinedVoucher`; // No brackets needed if no conflicts
   const conn = req.session.conn;
 
   // Ensure connection is available
@@ -13214,7 +13214,7 @@ app.get("/fetchMenuNameForSTC", (req, res) => {
 //To fetch the Menu name in setting sct transaction voucher
 app.get("/fetchMenuNameForSCTTrans", (req, res) => {
   // Fetch MenuName and Alias from the tbUserDefinedVoucher table
-  const query = `SELECT MenuName, Alias FROM dbo.tbUserDefinedVoucher`; // No brackets needed if no conflicts
+  const query = `SELECT UDVNo, MenuName, Alias FROM dbo.tbUserDefinedVoucher`; // No brackets needed if no conflicts
   const conn = req.session.conn;
 
   // Ensure connection is available
@@ -13240,7 +13240,7 @@ app.get("/fetchMenuNameForSCTTrans", (req, res) => {
 app.get("/fetchGLNamesForSCTMbank", (req, res) => {
   // Fetch distinct GLName, GlAlias from dbo.tbLedgerMaster where GLID matches in dbo.tbSubLedgerMaster
   const query = `
-    SELECT DISTINCT lm.GLName, lm.GlAlias
+    SELECT DISTINCT lm.GLID, lm.GLName, lm.GlAlias
     FROM dbo.tbLedgerMaster lm
     JOIN dbo.tbSubLedgerMaster slm ON lm.GLID = slm.GLID
   `;
@@ -38878,3 +38878,58 @@ const PORT = 80;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+app.get("/api/system-settings/mbank-sct",async(req,res)=>{try{const r=await queryAsync(req.session.conn,`SELECT TOP 1 s.MBankVoucher,s.GLIDMBank,s.SCTVoucher,s.GLIDSCT,mbv.MenuName AS MBankVoucherName,mbv.Alias AS MBankVoucherAlias,mbg.GLName AS MBankLedgerName,mbg.GlAlias AS MBankLedgerAlias,scv.MenuName AS SCTVoucherName,scv.Alias AS SCTVoucherAlias,scg.GLName AS SCTLedgerName,scg.GlAlias AS SCTLedgerAlias FROM dbo.tbSystemSettings s LEFT JOIN dbo.tbUserDefinedVoucher mbv ON s.MBankVoucher=mbv.UDVNo LEFT JOIN dbo.tbLedgerMaster mbg ON s.GLIDMBank=mbg.GLID LEFT JOIN dbo.tbUserDefinedVoucher scv ON s.SCTVoucher=scv.UDVNo LEFT JOIN dbo.tbLedgerMaster scg ON s.GLIDSCT=scg.GLID`);res.json({success:true,settings:r[0]||{}})}catch(e){res.status(500).json({success:false,message:e.message})}});
+
+app.post("/api/system-settings/mbank-sct", async (req, res) => {
+  let transactionStarted = false;
+  try {
+    const conn = req.session.conn;
+    const mbankVoucher = await resolveUserDefinedVoucherIdValue(conn, req.body.MBankVoucher, "MBank voucher");
+    const sctVoucher = await resolveUserDefinedVoucherIdValue(conn, req.body.SCTVoucher, "SCT voucher");
+    const mbankLedger = await resolveLedgerIdValue(conn, req.body.GLIDMBank, "MBank ledger");
+    const sctLedger = await resolveLedgerIdValue(conn, req.body.GLIDSCT, "SCT ledger");
+    const subHeadNames = [...new Set((Array.isArray(req.body.excludeSubHeads) ? req.body.excludeSubHeads : [])
+      .map(value => String(value || "").trim())
+      .filter(Boolean))];
+    const excludeRows = await Promise.all(subHeadNames.map(async slName => {
+      const rows = await queryAsync(conn, `
+        SELECT TOP 1 SLID
+        FROM dbo.tbSubLedgerMaster
+        WHERE LTRIM(RTRIM(SLName)) = ?
+        ORDER BY SLID
+      `, [slName]);
+      const slid = rows?.[0]?.SLID;
+      if (!slid) {
+        const error = new Error(`Sub-head not found: ${slName}`);
+        error.statusCode = 400;
+        throw error;
+      }
+      return slid;
+    }));
+
+    await queryAsync(conn, "BEGIN TRANSACTION");
+    transactionStarted = true;
+    await queryAsync(conn, `
+      UPDATE dbo.tbSystemSettings
+      SET MBankVoucher = ?, GLIDMBank = ?, SCTVoucher = ?, GLIDSCT = ?
+    `, [mbankVoucher, mbankLedger, sctVoucher, sctLedger]);
+    await queryAsync(conn, "DELETE FROM dbo.tbSystemSettingMBankExclude");
+    for (const [index, slid] of excludeRows.entries()) {
+      await queryAsync(conn, `
+        INSERT INTO dbo.tbSystemSettingMBankExclude (SNo, SLID)
+        VALUES (?, ?)
+      `, [index + 1, slid]);
+    }
+    await queryAsync(conn, "COMMIT TRANSACTION");
+    transactionStarted = false;
+    res.json({ success: true, message: "MBank/SCT settings saved" });
+  } catch (error) {
+    if (transactionStarted) {
+      try { await queryAsync(req.session.conn, "ROLLBACK TRANSACTION"); } catch (rollbackError) { console.error("MBank/SCT settings rollback error:", rollbackError); }
+    }
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+});
+app.get("/fetch-mbank-exclude-subledgers",async(req,res)=>{try{res.json({success:true,subledgers:await queryAsync(req.session.conn,`SELECT SLID,SLName,SLAlias FROM dbo.tbSubLedgerMaster ORDER BY SLName,SLAlias`)})}catch(e){res.status(500).json({success:false,message:e.message})}});
+app.post("/update-mbank-exclude",async(req,res)=>{const d=toNullableInt(req.body.DetailID),s=toNullableInt(req.body.SLID);if(!d||!s)return res.status(400).json({success:false,message:"Invalid exclude row"});try{await queryAsync(req.session.conn,`UPDATE dbo.tbSystemSettingMBankExclude SET SLID=? WHERE DetailID=?`,[s,d]);res.json({success:true,message:"Excluded sub-head saved"})}catch(e){res.status(500).json({success:false,message:e.message})}});
