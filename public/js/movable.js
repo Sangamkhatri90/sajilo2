@@ -100,7 +100,6 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
     // Close the div when clicking the close button
     closeButton.addEventListener('click', function () {
         draggable.style.display = 'none';
-        resetFormFields(movableDivId); // Reset form fields when close button is clicked
     });
 
     // Close the div when clicking the cancel button

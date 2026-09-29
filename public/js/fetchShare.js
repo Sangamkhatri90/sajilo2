@@ -59,6 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getValue = (value) => (value !== null && value !== undefined ? value : '');
 
+    const setVoucherDate = (inputId, value, dateType) => {
+        const input = document.getElementById(inputId);
+        input.type = dateType === 'LD' ? 'text' : 'date';
+        input.value = getValue(value) || (dateType === 'LD' ? '1900/01/01' : '1900-01-01');
+    };
+
     const loadVoucherDetails = (selectedMenuName) => {
         if (!selectedMenuName) return;
 
@@ -71,8 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 document.getElementById("VCategory").value = getValue(data.Category);
-                document.getElementById("dateFrom").value = getValue(data.StartDate || data.StartMiti);
-                document.getElementById("dateTo").value = getValue(data.EndDate || data.EndMiti);
+                setVoucherDate('dateFrom', data.StartDate, data.DateType);
+                setVoucherDate('dateTo', data.EndDate, data.DateType);
                 document.getElementById("prefix").value = getValue(data.Prefix);
                 document.getElementById("suffix").value = getValue(data.Suffix);
                 document.getElementById("startFromP").value = getValue(data.StartFrom);
@@ -120,6 +126,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 option.textContent = module.Module;
                 moduleDropdown.appendChild(option);
             });
+            moduleDropdown.dispatchEvent(new Event('change'));
         })
         .catch(error => console.error("Error fetching modules:", error));
 
@@ -138,6 +145,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 // Helper function to handle null or undefined values
                 const getValue = (value) => (value !== null && value !== undefined ? value : '');
 
+                const setModuleDate = (inputId, value, dateType) => {
+                    const input = document.getElementById(inputId);
+                    input.type = dateType === 'LD' ? 'text' : 'date';
+                    input.value = getValue(value) || (dateType === 'LD' ? '1900/01/01' : '1900-01-01');
+                };
+
 
 
                 // Populate fields
@@ -151,8 +164,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     categorySelect.appendChild(option);
                 });
                 document.getElementById("MCategory").value = getValue(data.Category);
-                document.getElementById("MDateFrom").value = getValue(data.StartMiti);
-                document.getElementById("MDateTo").value = getValue(data.EndMiti);
+                setModuleDate('MDateFrom', data.StartDate, data.DateType);
+                setModuleDate('MDateTo', data.EndDate, data.DateType);
                 document.getElementById("MPrefix").value = getValue(data.Prefix);
                 document.getElementById("MSuffix").value = getValue(data.Suffix);
                 document.getElementById("MStartFrom").value = getValue(data.StartFrom);

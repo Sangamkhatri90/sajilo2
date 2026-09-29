@@ -6455,87 +6455,47 @@ app.get("/api/voucher-names", (req, res) => {
 
 app.get("/api/voucher-details", (req, res) => {
   const { menuName } = req.query;
-  const conns = req.session.conn; // Connection string for the primary database
+  const conn = req.session.conn;
 
-  // Query to get UDVNo for the selected MenuName
-  const query1 = "SELECT UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?";
-  sql.query(conns, query1, [menuName], (err, rows1) => {
-    if (err || rows1.length === 0) {
+  const voucherQuery = "SELECT UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?";
+  sql.query(conn, voucherQuery, [menuName], (err, voucherRows) => {
+    if (err || !voucherRows?.length) {
       return res.status(500).json({ error: "MenuName not found" });
     }
 
-    const udvNo = rows1[0].UDVNo;
+    const query = `
+      SELECT
+        ans.Category,
+        UPPER(ISNULL(settings.DateType, 'AD')) AS DateType,
+        CASE WHEN UPPER(ISNULL(settings.DateType, 'AD')) = 'LD'
+          THEN ISNULL(startLocal.M_Miti, '1900/01/01')
+          ELSE CONVERT(varchar(10), ISNULL(ans.StartDate, CONVERT(date, '19000101')), 23)
+        END AS StartDate,
+        CASE WHEN UPPER(ISNULL(settings.DateType, 'AD')) = 'LD'
+          THEN ISNULL(endLocal.M_Miti, '1900/01/01')
+          ELSE CONVERT(varchar(10), ISNULL(ans.EndDate, CONVERT(date, '19000101')), 23)
+        END AS EndDate,
+        ans.Prefix, ans.Suffix, ans.StartFrom, ans.EndTo, ans.BodyLength, ans.FillChar
+      FROM tbAutoNumberSetting ans
+      OUTER APPLY (SELECT TOP 1 DateType FROM dbo.tbSystemSettings) settings
+      OUTER APPLY (
+        SELECT TOP 1 M_Miti
+        FROM SAJILODB.dbo.tbLocalDate
+        WHERE CONVERT(date, M_date) = CONVERT(date, ans.StartDate)
+      ) startLocal
+      OUTER APPLY (
+        SELECT TOP 1 M_Miti
+        FROM SAJILODB.dbo.tbLocalDate
+        WHERE CONVERT(date, M_date) = CONVERT(date, ans.EndDate)
+      ) endLocal
+      WHERE ans.VoucherID = ?
+    `;
 
-    // Query to get details from tbAutoNumberSetting using UDVNo
-    const query2 = `
-            SELECT
-              StartDate,
-              CONVERT(varchar(10), StartDate, 23) AS StartDateValue,
-              Category,
-              EndDate,
-              CONVERT(varchar(10), EndDate, 23) AS EndDateValue,
-              Prefix,
-              Suffix,
-              StartFrom,
-              EndTo,
-              BodyLength,
-              FillChar
-            FROM tbAutoNumberSetting 
-            WHERE VoucherID = ?
-        `;
-    sql.query(conns, query2, [udvNo], (err, rows2) => {
-      if (err || rows2.length === 0) {
+    sql.query(conn, query, [voucherRows[0].UDVNo], (detailsErr, rows) => {
+      if (detailsErr || !rows?.length) {
         return res.status(500).json({ error: "Details not found" });
       }
-
-      const {
-        StartDate,
-        StartDateValue,
-        Category,
-        EndDate,
-        EndDateValue,
-        Prefix,
-        Suffix,
-        StartFrom,
-        EndTo,
-        BodyLength,
-        FillChar,
-      } = rows2[0];
-
-      // Query to get corresponding M_Miti for StartDate and EndDate from tbLocalDate
-      const query3 = `
-                SELECT M_Miti FROM tbLocalDate WHERE M_date = ?
-                UNION ALL
-                SELECT M_Miti FROM tbLocalDate WHERE M_date = ?
-            `;
-      sql.query(
-        connectionString,
-        query3,
-        [StartDate, EndDate],
-        (err, rows3) => {
-          if (err || rows3.length < 2) {
-            return res.status(500).json({ error: "Local dates not found" });
-          }
-
-          // Extract M_Miti for StartDate and EndDate
-          const startMiti = rows3[0]?.M_Miti || "";
-          const endMiti = rows3[1]?.M_Miti || "";
-
-          res.json({
-            Category,
-            StartDate: StartDateValue,
-            EndDate: EndDateValue,
-            StartMiti: startMiti,
-            EndMiti: endMiti,
-            Prefix,
-            Suffix,
-            StartFrom,
-            EndTo,
-            BodyLength,
-            FillChar,
-          });
-        }
-      );
+      res.json(rows[0]);
     });
   });
 });
@@ -6555,77 +6515,48 @@ app.get("/api/modules", (req, res) => {
 
 app.get("/api/module-details", (req, res) => {
   const module = req.query.module;
-  console.log("Moti", module);
   const conn = req.session.conn;
-  if (!module) {
-    return res.status(400).json({ error: "Module is required" });
-  }
+  if (!module) return res.status(400).json({ error: "Module is required" });
 
   const query = `
-      SELECT StartDate, Category, EndDate, Prefix, Suffix, StartFrom, EndTo, BodyLength, FillChar
-      FROM tbOtherAutoNumberSetting 
-      WHERE Module = ?
+    SELECT
+      ans.Category,
+      UPPER(ISNULL(settings.DateType, 'AD')) AS DateType,
+      CASE WHEN UPPER(ISNULL(settings.DateType, 'AD')) = 'LD'
+        THEN ISNULL(startLocal.M_Miti, '1900/01/01')
+        ELSE CONVERT(varchar(10), ISNULL(ans.StartDate, CONVERT(date, '19000101')), 23)
+      END AS StartDate,
+      CASE WHEN UPPER(ISNULL(settings.DateType, 'AD')) = 'LD'
+        THEN ISNULL(endLocal.M_Miti, '1900/01/01')
+        ELSE CONVERT(varchar(10), ISNULL(ans.EndDate, CONVERT(date, '19000101')), 23)
+      END AS EndDate,
+      ans.Prefix, ans.Suffix, ans.StartFrom, ans.EndTo, ans.BodyLength, ans.FillChar
+    FROM tbOtherAutoNumberSetting ans
+    OUTER APPLY (SELECT TOP 1 DateType FROM dbo.tbSystemSettings) settings
+    OUTER APPLY (
+      SELECT TOP 1 M_Miti
+      FROM SAJILODB.dbo.tbLocalDate
+      WHERE CONVERT(date, M_date) = CONVERT(date, ans.StartDate)
+    ) startLocal
+    OUTER APPLY (
+      SELECT TOP 1 M_Miti
+      FROM SAJILODB.dbo.tbLocalDate
+      WHERE CONVERT(date, M_date) = CONVERT(date, ans.EndDate)
+    ) endLocal
+    WHERE ans.Module = ?
   `;
 
-  sql.query(conn, query, [module], (err, results) => {
+  sql.query(conn, query, [module], (err, rows) => {
     if (err) {
       console.error("Error fetching module details:", err);
       return res.status(500).json({ error: "Server error" });
     }
-
-    if (results.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No details found for the selected module" });
-    }
-    const {
-        StartDate,
-        StartDateValue,
-        Category,
-        EndDate,
-        EndDateValue,
-        Prefix,
-      Suffix,
-      StartFrom,
-      EndTo,
-      BodyLength,
-      FillChar,
-    } = results[0];
-    console.log("Data", StartDate, Category, EndDate, Prefix, Suffix);
-
-    // Query to get corresponding M_Miti for StartDate and EndDate from tbLocalDate
-    const query3 = `
-       SELECT M_Miti FROM tbLocalDate WHERE M_date = ?
-       UNION ALL
-       SELECT M_Miti FROM tbLocalDate WHERE M_date = ?
-   `;
-    sql.query(connectionString, query3, [StartDate, EndDate], (err, rows3) => {
-      if (err || rows3.length < 2) {
-        return res.status(500).json({ error: "Local dates not found" });
-      }
-
-      // Extract M_Miti for StartDate and EndDate
-      const startMiti = rows3[0]?.M_Miti || "";
-      const endMiti = rows3[1]?.M_Miti || "";
-
-      res.json({
-            Category,
-            StartDate: StartDateValue,
-            EndDate: EndDateValue,
-            StartMiti: startMiti,
-            EndMiti: endMiti,
-            Prefix,
-        Suffix,
-        StartFrom,
-        EndTo,
-        BodyLength,
-        FillChar,
-      });
-    });
+    if (!rows?.length) return res.status(404).json({ error: "No details found for the selected module" });
+    res.json(rows[0]);
   });
 });
 
-app.post("/update-auto-num-setting", (req, res) => {
+app.post("/update-auto-num-setting", async (req, res) => {
   const {
     menuName,
     VCategory,
@@ -6649,85 +6580,52 @@ app.post("/update-auto-num-setting", (req, res) => {
     MFillBy,
   } = req.body;
   const conn = req.session.conn;
+  if (!conn) return res.status(401).json({ error: "Database connection is not available" });
 
-  const query1 = `SELECT UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?;`;
+  try {
+    const settingsRows = await queryAsync(conn, "SELECT TOP 1 DateType FROM dbo.tbSystemSettings");
+    const isLocalDate = String(settingsRows[0]?.DateType || "AD").trim().toUpperCase() === "LD";
+    let [voucherStartDate, voucherEndDate, moduleStartDate, moduleEndDate] = [VDateFrom, VDateTo, MDateFrom, MDateTo];
 
-  sql.query(conn, query1, [menuName], (err, result1) => {
-    if (err) {
-      console.error("Error fetching UDVNo:", err);
-      return res.status(500).json({ error: "Query Execution Error" });
+    if (isLocalDate) {
+      const convertedDates = await queryAsync(conn, `
+        SELECT
+          CASE WHEN ? = '1900/01/01' THEN '1900-01-01' ELSE (SELECT TOP 1 CONVERT(varchar(10), M_date, 23) FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) END AS VoucherStartDate,
+          CASE WHEN ? = '1900/01/01' THEN '1900-01-01' ELSE (SELECT TOP 1 CONVERT(varchar(10), M_date, 23) FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) END AS VoucherEndDate,
+          CASE WHEN ? = '1900/01/01' THEN '1900-01-01' ELSE (SELECT TOP 1 CONVERT(varchar(10), M_date, 23) FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) END AS ModuleStartDate,
+          CASE WHEN ? = '1900/01/01' THEN '1900-01-01' ELSE (SELECT TOP 1 CONVERT(varchar(10), M_date, 23) FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) END AS ModuleEndDate
+      `, [VDateFrom, VDateFrom, VDateTo, VDateTo, MDateFrom, MDateFrom, MDateTo, MDateTo]);
+      const row = convertedDates[0] || {};
+      if (!row.VoucherStartDate || !row.VoucherEndDate || !row.ModuleStartDate || !row.ModuleEndDate) {
+        return res.status(400).json({ error: "One or more local dates could not be converted" });
+      }
+      [voucherStartDate, voucherEndDate, moduleStartDate, moduleEndDate] = [
+        row.VoucherStartDate, row.VoucherEndDate, row.ModuleStartDate, row.ModuleEndDate
+      ];
     }
 
-    if (result1.length) {
-      const voucherID = result1[0].UDVNo;
+    const voucherRows = await queryAsync(conn, "SELECT UDVNo FROM tbUserDefinedVoucher WHERE MenuName = ?", [menuName]);
+    if (!voucherRows.length) return res.status(404).json({ error: "MenuName not found in tbUserDefinedVoucher" });
 
-      const query2 = `
-        UPDATE tbAutoNumberSetting 
-        SET Category = ?, StartDate = ?, EndDate = ?, Prefix = ?, Suffix = ?, 
-            StartFrom = ?, EndTo = ?, BodyLength = ?, FillChar = ? 
-        WHERE VoucherID = ?;
-      `;
-      sql.query(
-        conn,
-        query2,
-        [
-          VCategory,
-          VDateFrom,
-          VDateTo,
-          VPrefix,
-          VSuffix,
-          VStartFrom,
-          VEndTo,
-          VLength,
-          VFillBy,
-          voucherID,
-        ],
-        (err, result2) => {
-          if (err) {
-            console.error("Error updating UDV details:", err);
-            return res.status(500).json({ error: "Query Execution Error" });
-          }
+    await queryAsync(conn, `
+      UPDATE tbAutoNumberSetting
+      SET Category = ?, StartDate = ?, EndDate = ?, Prefix = ?, Suffix = ?,
+          StartFrom = ?, EndTo = ?, BodyLength = ?, FillChar = ?
+      WHERE VoucherID = ?
+    `, [VCategory, voucherStartDate, voucherEndDate, VPrefix, VSuffix, VStartFrom, VEndTo, VLength, VFillBy, voucherRows[0].UDVNo]);
 
-          const query3 = `
-            UPDATE tbOtherAutoNumberSetting 
-            SET Category = ?, StartDate = ?, EndDate = ?, Prefix = ?, Suffix = ?, 
-                StartFrom = ?, EndTo = ?, BodyLength = ?, FillChar = ? 
-            WHERE Module = ?;
-          `;
-          sql.query(
-            conn,
-            query3,
-            [
-              MCategory,
-              MDateFrom,
-              MDateTo,
-              MPrefix,
-              MSuffix,
-              MStartFrom,
-              MEndTo,
-              MLength,
-              MFillBy,
-              ModuleName,
-            ],
-            (err, result3) => {
-              if (err) {
-                console.error("Error updating other UDV details:", err);
-                return res.status(500).json({ error: "Query Execution Error" });
-              }
+    await queryAsync(conn, `
+      UPDATE tbOtherAutoNumberSetting
+      SET Category = ?, StartDate = ?, EndDate = ?, Prefix = ?, Suffix = ?,
+          StartFrom = ?, EndTo = ?, BodyLength = ?, FillChar = ?
+      WHERE Module = ?
+    `, [MCategory, moduleStartDate, moduleEndDate, MPrefix, MSuffix, MStartFrom, MEndTo, MLength, MFillBy, ModuleName]);
 
-              res.json({
-                message: "Auto Number Settings Updated Successfully",
-              });
-            }
-          );
-        }
-      );
-    } else {
-      res
-        .status(404)
-        .json({ error: "MenuName not found in tbUserDefinedVoucher" });
-    }
-  });
+    res.json({ message: "Auto Number Settings Updated Successfully" });
+  } catch (error) {
+    console.error("Auto Number settings update error:", error);
+    res.status(500).json({ error: "Query Execution Error" });
+  }
 });
 
 app.get("/get-menu-names", (req, res) => {
@@ -35586,7 +35484,13 @@ app.post('/save-signatures', (req, res) => {
   const {
     username,
     checkedBy,
-    SIGUsername
+    SIGUsername,
+    approvedBy,
+    verifiedBy,
+    designation1,
+    designation2,
+    designation3,
+    designation4
   } = req.body;
   console.log('sih', username,
     checkedBy,
@@ -35620,7 +35524,36 @@ app.post('/save-signatures', (req, res) => {
         console.error('Database error:', err);
         return res.status(500).json({ message: "Database Update Failed" });
       }
-      res.status(200).json({ message: "Signatures Updated Successfully!" });
+      const settingsConn = req.session.conn;
+      if (!settingsConn) {
+        return res.status(401).json({ message: "Database connection is not available" });
+      }
+
+      const settingsQuery = `
+        UPDATE dbo.tbSystemSettings
+        SET VoucherCheckedByName = ?,
+            VoucherCheckedByDesignation = ?,
+            VoucherApprovedByName = ?,
+            VoucherApprovedByDesignation = ?,
+            VoucherVerifiedByName = ?,
+            VoucherVerifiedByDesignation = ?
+      `;
+      const settingsValues = [
+        approvedBy,
+        verifiedBy,
+        designation1,
+        designation2,
+        designation3,
+        designation4
+      ];
+
+      sql.query(settingsConn, settingsQuery, settingsValues, (settingsErr) => {
+        if (settingsErr) {
+          console.error('System settings update error:', settingsErr);
+          return res.status(500).json({ message: "System settings update failed" });
+        }
+        res.status(200).json({ message: "Signatures Updated Successfully!" });
+      });
     });
   });
 });
@@ -35629,19 +35562,7 @@ app.get('/get-signatures/:username', (req, res) => {
   const username = decodeURIComponent(req.params.username);
 
   const subusername = 'Super';
-  const query = `
-    SELECT
-      FullName,
-      Designation,
-      (SELECT TOP 1 VoucherCheckedByName FROM tbSystemSetting) AS VoucherCheckedByName,
-      (SELECT TOP 1 VoucherCheckedByDesignation FROM tbSystemSetting) AS VoucherCheckedByDesignation,
-      (SELECT TOP 1 VoucherApprovedByName FROM tbSystemSetting) AS VoucherApprovedByName,
-      (SELECT TOP 1 VoucherApprovedByDesignation FROM tbSystemSetting) AS VoucherApprovedByDesignation,
-      (SELECT TOP 1 VoucherVerifiedByName FROM tbSystemSetting) AS VoucherVerifiedByName,
-      (SELECT TOP 1 VoucherVerifiedByDesignation FROM tbSystemSetting) AS VoucherVerifiedByDesignation
-    FROM tbUserMaster
-    WHERE UserName = ?
-  `;
+  const query = `SELECT FullName, Designation FROM tbUserMaster WHERE UserName = ?`;
 
   sql.query(connectionString, query, [username], (err, result) => {
     if (err) {
@@ -35652,7 +35573,29 @@ app.get('/get-signatures/:username', (req, res) => {
     
   });
 });
-// 🕒 Helper for SQL datetime (Nepal Time: UTC+5:45)
+app.get('/get-voucher-signatories', (req, res) => {
+  const conn = req.session.conn;
+  if (!conn) return res.status(401).json({ message: "Database connection is not available" });
+
+  const query = `
+    SELECT TOP 1
+      VoucherCheckedByName,
+      VoucherCheckedByDesignation,
+      VoucherApprovedByName,
+      VoucherApprovedByDesignation,
+      VoucherVerifiedByName,
+      VoucherVerifiedByDesignation
+    FROM dbo.tbSystemSettings
+  `;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("Voucher signatories fetch error:", err);
+      return res.status(500).json({ message: "Failed to fetch voucher signatories" });
+    }
+    res.json(rows?.[0] || {});
+  });
+});// 🕒 Helper for SQL datetime (Nepal Time: UTC+5:45)
 function getSQLDateTime() {
   const now = new Date();
 

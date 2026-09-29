@@ -101,6 +101,27 @@ document.getElementById('myForm63').addEventListener('submit', async function (e
         });
 
         const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Failed to save signatures');
+
+        const fieldMap = {
+            username: 'vouchersign-username',
+            checkedBy: 'vouchersign-checkedBy',
+            approvedBy: 'approvedBy',
+            verifiedBy: 'verifiedBy',
+            designation1: 'designation1',
+            designation2: 'designation2',
+            designation3: 'designation3',
+            designation4: 'designation4',
+        };
+        const restoreFormValues = () => {
+            Object.entries(fieldMap).forEach(([key, inputId]) => {
+                const input = document.getElementById(inputId);
+                if (input) input.value = data[key] ?? '';
+            });
+        };
+
+        restoreFormValues();
+        setTimeout(restoreFormValues, 0);
         showCustomAlert(result.message);
 
     } catch (error) {
@@ -113,6 +134,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const username = localStorage.getItem('selectedusername');
 
     console.log("VSun:", username);
+    const signatoryFieldMap = {
+        VoucherCheckedByName: 'approvedBy',
+        VoucherCheckedByDesignation: 'verifiedBy',
+        VoucherApprovedByName: 'designation1',
+        VoucherApprovedByDesignation: 'designation2',
+        VoucherVerifiedByName: 'designation3',
+        VoucherVerifiedByDesignation: 'designation4',
+    };
+
+    fetch('/get-voucher-signatories')
+        .then(res => {
+            if (!res.ok) throw new Error(`Server error ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            Object.keys(signatoryFieldMap).forEach(key => {
+                const input = document.getElementById(signatoryFieldMap[key]);
+                if (input) input.value = data[key] ?? '';
+            });
+        })
+        .catch(err => console.error("Error loading voucher signatories:", err));
 
     if (username && username.trim() !== "") {
         fetch(`/get-signatures/${encodeURIComponent(username)}`)
@@ -127,12 +169,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const fieldMap = {
                     FullName: 'vouchersign-username',
                     Designation: 'vouchersign-checkedBy',
-                    VoucherCheckedByName: 'approvedBy',
-                    VoucherCheckedByDesignation: 'verifiedBy',
-                    VoucherApprovedByName: 'designation1',
-                    VoucherApprovedByDesignation: 'designation2',
-                    VoucherVerifiedByName: 'designation3',
-                    VoucherVerifiedByDesignation: 'designation4',
                 };
 
                 // Loop through each key in data and fill the mapped input
