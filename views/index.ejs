@@ -8560,23 +8560,20 @@ async function loadEarningsData() {
                                     </div>
                                 </fieldset>
                                 <fieldset>
-                                    <table>
-                                        <tr>
-                                            <th>S.N</th>
-                                            <th>User Name</th>
-                                            <th>Full Name</th>
-                                            <th>Designation</th>
-                                            <th>Valid Form</th>
-                                            <th>Valid to</th>
-                                        </tr>
-                                        <tr>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                        </tr>
+                                    <table id="userMasterTable" class="highlight-table">
+                                        <thead>
+                                            <tr>
+                                                <th>S.N</th>
+                                                <th>User Name</th>
+                                                <th>Full Name</th>
+                                                <th>Designation</th>
+                                                <th>Valid Form</th>
+                                                <th>Valid to</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="userMasterResults">
+
+                                        </tbody>
                                     </table>
                                 </fieldset>
                                 <div class="um-button-row">
@@ -8590,6 +8587,54 @@ async function loadEarningsData() {
                         </form>
                     </div>
                 </div>
+                <script>
+                    document.getElementById('myForm68')?.addEventListener('submit', async (event) => {
+                        event.preventDefault();
+                        const form = event.currentTarget;
+                        const tbody = document.getElementById('userMasterResults');
+                        const setMessage = (message) => {
+                            tbody.replaceChildren();
+                            const row = tbody.insertRow();
+                            const cell = row.insertCell();
+                            cell.colSpan = 6;
+                            cell.textContent = message;
+                        };
+
+                        setMessage('Loading users...');
+                        try {
+                            const response = await fetch('/api/user-master/search', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    userName: form.elements.namedItem('user-name').value,
+                                    fullName: form.elements.namedItem('edit-name').value,
+                                    status: form.elements.namedItem('status').value
+                                })
+                            });
+                            const result = await response.json();
+                            if (!response.ok || !result.success) throw new Error(result.message || 'Unable to search users.');
+
+                            tbody.replaceChildren();
+                            if (!result.users.length) {
+                                setMessage('No users found.');
+                                return;
+                            }
+
+                            result.users.forEach((user, index) => {
+                                const row = tbody.insertRow();
+                                [index + 1, user.UserName, user.FullName, user.Designation, user.ValidFrom, user.ValidTo]
+                                    .forEach((value) => {
+                                        const cell = row.insertCell();
+                                        cell.textContent = value == null ? '' : String(value);
+                                    });
+                            });
+                        } catch (error) {
+                            setMessage('Unable to load users.');
+                            if (typeof showCustomAlert === 'function') showCustomAlert(error.message);
+                            else alert(error.message);
+                        }
+                    });
+                </script>
 
                 <!--VDC/Municipality-->
                 <div class="movableDiv" id="movableDiv69">
@@ -20238,7 +20283,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         <fieldset class="ans-fieldset">
                             <legend class="ans-legend">New/Edit:User</legend>
                             <div class="ans-anchor">
-                                <a href="#" class="toggle-link" data-target="GeneralUser">
+                                <a href="#" class="toggle-link active" data-target="GeneralUser">
                                     General</a>
                                 <a href="#" class="toggle-link" data-target="RightsInfo">
                                     Rights Info</a>
@@ -20250,7 +20295,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                             <div class="contents">
 
 
-                                <div id="GeneralUser">
+                                <div id="GeneralUser" style="display: block;">
                                     <!-- Add your General content here -->
                                     <fieldset class="ans-fieldset">
                                         <div>
@@ -20310,7 +20355,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                     </fieldset>
                                 </div>
 
-                                <div id="RightsInfo" class="ans-content">
+                                <div id="RightsInfo" class="ans-content" style="display: none;">
                                     <!-- Add your Rights Info content here -->
                                     <fieldset class="ans-fieldset">
                                         <div class="ans-table-container">
@@ -20331,7 +20376,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                     </fieldset>
                                 </div>
 
-                                <div id="OrganizationRights" class="ans-content">
+                                <div id="OrganizationRights" class="ans-content" style="display: none;">
                                     <!-- Add your Organization Rights content here -->
                                     <fieldset class="ans-fieldset">
                                         <div class="ans-table-container">
@@ -20350,7 +20395,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                     </fieldset>
                                 </div>
 
-                                <div id="VoucherRights" class="ans-content">
+                                <div id="VoucherRights" class="ans-content" style="display: none;">
                                     <!-- Add your Rights Info content here -->
                                     <fieldset class="ans-fieldset">
                                         <div>
@@ -20358,7 +20403,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                             <select name="" class="ans-select" id="orgDropdown"></select>
                                         </div>
                                         <div class="ans-table">
-                                            <table>
+                                            <table id="userVoucherRightsTable">
                                                 <thead>
                                                     <th>S.No</th>
                                                     <th>Voucher Name</th>
@@ -20382,7 +20427,111 @@ const edit = panel?.querySelector('#pvm-edit-button');
                     </div>
                 </form>
             </div>
+            <script>
+                (() => {
+                    const editor = document.getElementById('movableDiv150');
+                    const tabs = editor?.querySelectorAll('.ans-anchor .toggle-link');
+                    const panels = editor?.querySelectorAll('.contents > div');
+                    if (!editor || !tabs?.length || !panels?.length) return;
 
+                    const activateTab = (tab) => {
+                        tabs.forEach((item) => item.classList.toggle('active', item === tab));
+                        panels.forEach((panel) => {
+                            panel.style.display = panel.id === tab.dataset.target ? 'block' : 'none';
+                        });
+                    };
+
+                    tabs.forEach((tab) => tab.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        activateTab(tab);
+                    }));
+
+                    const generalTab = Array.from(tabs).find((tab) => tab.dataset.target === 'GeneralUser');
+                    if (generalTab) {
+                        activateTab(generalTab);
+                        document.getElementById('toggleButton150')?.addEventListener('click', () => activateTab(generalTab));
+                    }
+                })();
+            </script>
+
+            <script>
+                document.querySelector('#movableDiv150 form')?.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+
+                    const fields = Array.from(document.querySelectorAll('#GeneralUser input, #GeneralUser select, #GeneralUser textarea'));
+                    const [userName, password, confirmPassword, fullName, designation, docClassName, status, validFrom, validTo, withdrawLimit, remarks] = fields;
+
+                    if (password.value !== confirmPassword.value) {
+                        alert('Password and confirm password do not match.');
+                        return;
+                    }
+
+                    const organization = Array.from(
+                        document.querySelectorAll('#userOrgMasterTable tbody input[type="checkbox"]:checked')
+                    ).map((checkbox) => checkbox.value).join(',');
+
+                    const voucherRights = Array.from(
+                        document.querySelectorAll('#userVoucherRightsTable tbody tr')
+                    ).map((row) => ({
+                        voucherId: row.dataset.voucherId,
+                        access: row.cells[2]?.querySelector('input')?.checked ? 1 : 0,
+                        new: row.cells[3]?.querySelector('input')?.checked ? 1 : 0,
+                        edit: row.cells[4]?.querySelector('input')?.checked ? 1 : 0,
+                        del: row.cells[5]?.querySelector('input')?.checked ? 1 : 0
+                    })).filter((right) => right.voucherId);
+                    const userRights = Array.from(
+                        document.querySelectorAll('#userRightInfoTable tbody tr')
+                    ).map((row) => {
+                        const accessCheckbox = row.querySelector('input.isRootCheckbox, input.childCheckbox');
+                        const newCheckbox = row.querySelector('input[data-type="new"]');
+                        const editCheckbox = row.querySelector('input[data-type="edit"]');
+                        const deleteCheckbox = row.querySelector('input[data-type="delete"]');
+                        const allChecked = [accessCheckbox, newCheckbox, editCheckbox, deleteCheckbox]
+                            .every((checkbox) => checkbox?.checked);
+
+                        return {
+                            rightId: row.dataset.rightId,
+                            access: accessCheckbox?.checked ? null : '',
+                            new: newCheckbox?.checked ? 1 : 0,
+                            edit: editCheckbox?.checked ? 1 : 0,
+                            del: deleteCheckbox?.checked ? 1 : 0,
+                            cancel: allChecked ? 1 : 0
+                        };
+                    }).filter((right) => right.rightId);
+                    try {
+                        const response = await fetch('/api/user-master', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                userName: userName.value.trim(),
+                                password: password.value,
+                                fullName: fullName.value.trim(),
+                                designation: designation.value.trim(),
+                                docClassName: docClassName.value.trim(),
+                                status: status.value,
+                                validFrom: validFrom.value || null,
+                                validTo: validTo.value || null,
+                                withdrawLimit: withdrawLimit.value.trim(),
+                                organization,
+                                voucherRights,
+                                userRights,
+                                remarks: remarks.value.trim()
+                            })
+                        });
+                        const result = await response.json();
+
+                        if (!response.ok || !result.success) {
+                            throw new Error(result.message || 'Unable to insert user.');
+                        }
+
+                        alert(result.message);
+                        event.target.reset();
+                    } catch (error) {
+                        console.error('Error inserting user:', error);
+                        alert(error.message);
+                    }
+                });
+            </script>
             <!--Day Close-->
             <div class="movableDiv" id="movableDiv151">
                 <button id="closeButton151">&times;</button>

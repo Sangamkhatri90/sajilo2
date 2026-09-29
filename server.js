@@ -22546,7 +22546,7 @@ app.post("/update-action-right", (req, res) => {
 
 app.get("/get-org-master", (req, res) => {
   const query = `
-       SELECT OrgName, OrgAlias
+       SELECT OrgId, OrgName, OrgAlias
       FROM tbOrgMaster 
       `;
 
@@ -22560,15 +22560,47 @@ app.get("/get-org-master", (req, res) => {
 });
 
 app.get("/getOrganizations", (req, res) => {
-  const query = "SELECT OrgName, OrgAlias FROM dbo.tbOrgMaster";
+  const query = "SELECT OrgName, OrgAlias, DBName FROM SAJILODB.dbo.tbOrgMaster ORDER BY OrgName";
 
   sql.query(connectionString, query, (err, rows) => {
     if (err) {
       console.error("SQL Error:", err);
       return res.status(500).send("Database query failed");
     }
-    res.json(rows); // Send the result as JSON
+    res.json({ organizations: rows, selectedDbName: req.session.dbName || "" });
   });
+});
+
+app.post("/api/user-master/voucher-menus", async (req, res) => {
+  const dbName = String(req.body?.dbName || "").trim();
+  if (!dbName) {
+    return res.status(400).json({ success: false, message: "Select an organization database." });
+  }
+
+  try {
+    const organizations = await queryAsync(
+      connectionString,
+      "SELECT DBName FROM SAJILODB.dbo.tbOrgMaster WHERE DBName = ?",
+      [dbName]
+    );
+    if (!organizations.length) {
+      return res.status(400).json({ success: false, message: "The selected organization database is invalid." });
+    }
+
+    const organizationConn = createConnectionString(organizations[0].DBName);
+    const menus = await queryAsync(
+      organizationConn,
+      `SELECT UDVNo, MenuName
+       FROM dbo.tbUserDefinedVoucher
+       WHERE MenuName NOT IN (?, ?, ?)
+       ORDER BY MenuName`,
+      ["Journal Voucher", "Opening Balance", "Auto Journal"]
+    );
+    res.json({ success: true, menus });
+  } catch (error) {
+    console.error("Error loading User Master voucher menus:", error);
+    res.status(500).json({ success: false, message: "Unable to load voucher menus." });
+  }
 });
 
 app.post('/getVoucherApproved', (req, res) => {
@@ -36104,6 +36136,134 @@ app.get("/api/getUserData", (req, res) => {
   });
 });
 
+app.post("/api/user-master/search", async (req, res) => {
+  const userName = String(req.body.userName || "").trim();
+  const fullName = String(req.body.fullName || "").trim();
+  const status = String(req.body.status || "both").toLowerCase();
+  const filters = [];
+  const params = [];
+
+  if (userName) {
+    filters.push("UserName LIKE ?");
+    params.push(`%${userName}%`);
+  }
+  if (fullName) {
+    filters.push("FullName LIKE ?");
+    params.push(`%${fullName}%`);
+  }
+  if (status === "enable") {
+    filters.push("Status = ?");
+    params.push(1);
+  } else if (status === "disable") {
+    filters.push("Status = ?");
+    params.push(0);
+  } else if (status !== "both") {
+    return res.status(400).json({ success: false, message: "Invalid user status filter." });
+  }
+
+  const query = `
+    SELECT UserName, FullName, Designation,
+           CONVERT(varchar(10), ValidFrom, 23) AS ValidFrom,
+           CONVERT(varchar(10), ValidTo, 23) AS ValidTo
+    FROM SAJILODB.dbo.tbUserMaster
+    ${filters.length ? `WHERE ${filters.join(" AND ")}` : ""}
+    ORDER BY UserName
+  `;
+
+  try {
+    const users = await queryAsync(connectionString, query, params);
+    res.json({ success: true, users });
+  } catch (error) {
+    console.error("Error searching User Master:", error);
+    res.status(500).json({ success: false, message: "Unable to search users." });
+  }
+});
+
+app.post("/api/user-master", async (req, res) => {
+  const {
+    userName,
+    password,
+    fullName,
+    designation,
+    validFrom,
+    validTo,
+    status,
+    organization,
+    remarks,
+    docClassName,
+    withdrawLimit,
+    voucherRights,
+    userRights,
+  } = req.body;
+
+  if (!String(userName || "").trim()) {
+    return res.status(400).json({
+      success: false,
+      message: "User name is required.",
+    });
+  }
+
+  const query = "INSERT INTO dbo.tbUserMaster (UserName, Password, FullName, Designation, ValidFrom, ValidTo, Status, Organization, Remarks, DocClassName, WithdrawLimit) OUTPUT INSERTED.UserID AS UserID VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+  try {
+    const userResult = await queryAsync(connectionString, query, [
+      String(userName).trim(),
+      String(password || ""),
+      String(fullName || "").trim() || null,
+      String(designation || "").trim() || null,
+      validFrom || null,
+      validTo || null,
+      String(status).toLowerCase() === "disabled" ? 0 : 1,
+      String(organization || "").trim() || null,
+      String(remarks || "").trim() || null,
+      String(docClassName || "").trim() || null,
+      withdrawLimit === "" || withdrawLimit === undefined ? null : withdrawLimit,
+    ]);
+    const userId = userResult[0]?.UserID;
+    if (!userId) throw new Error("UserID was not returned after inserting the user.");
+
+    if (Array.isArray(voucherRights) && voucherRights.length) {
+      const orgRows = await queryAsync(
+        connectionString,
+        "SELECT TOP 1 OrgID FROM dbo.tbOrgMaster WHERE DBName = ?",
+        [req.session.dbName]
+      );
+      if (!orgRows.length) throw new Error("Organization was not found for the current session database.");
+
+      const voucherRightQuery = "INSERT INTO dbo.tbVoucherRights (OrgID, UserID, VoucherID, Access, [NEW], [EDIT], [Del]) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      for (const right of voucherRights) {
+        await queryAsync(connectionString, voucherRightQuery, [
+          orgRows[0].OrgID,
+          userId,
+          Number(right.voucherId),
+          right.access ? 1 : 0,
+          right.new ? 1 : 0,
+          right.edit ? 1 : 0,
+          right.del ? 1 : 0,
+        ]);
+      }
+    }
+    if (Array.isArray(userRights) && userRights.length) {
+      const rightQuery = "INSERT INTO dbo.tbUserRight (UserId, RightId, Access, [NEW], [EDIT], [Del], [Cancel]) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      for (const right of userRights) {
+        await queryAsync(connectionString, rightQuery, [
+          userId,
+          Number(right.rightId),
+          right.access === null ? null : "",
+          right.new ? 1 : 0,
+          right.edit ? 1 : 0,
+          right.del ? 1 : 0,
+          right.cancel ? 1 : 0,
+        ]);
+      }
+    }
+
+    res.json({ success: true, message: "User inserted successfully." });
+  } catch (error) {
+    console.error("Error inserting User Master record:", error);
+    res.status(500).json({ success: false, message: "Unable to insert user." });
+  }
+});
 app.post('/insert-userDefineField', (req, res) => {
   const conn = req.session.conn;
   const {

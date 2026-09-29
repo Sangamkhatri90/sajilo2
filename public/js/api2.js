@@ -73,12 +73,65 @@ document.addEventListener("DOMContentLoaded", () => {
                 .then(response => response.json())
                 .then(data => {
                     const dropdown = document.getElementById("orgDropdown");
-                    data.forEach(org => {
+                    const tableBody = document.querySelector("#userVoucherRightsTable tbody");
+                    if (!dropdown || !tableBody) return;
+
+                    const loadVoucherMenus = async () => {
+                        tableBody.replaceChildren();
+                        if (!dropdown.value) return;
+
+                        try {
+                            const response = await fetch("/api/user-master/voucher-menus", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ dbName: dropdown.value })
+                            });
+                            const result = await response.json();
+                            if (!response.ok || !result.success) throw new Error(result.message || "Unable to load voucher menus.");
+
+                            result.menus.forEach((menu, index) => {
+                                const menuName = menu.MenuName || "";
+                                const row = tableBody.insertRow();
+                                row.dataset.voucherId = menu.UDVNo;
+                                const numberCell = row.insertCell();
+                                numberCell.textContent = String(index + 1);
+                                const nameCell = row.insertCell();
+                                nameCell.textContent = menuName || "";
+
+                                ["Access", "New", "Edit", "Delete"].forEach((permission) => {
+                                    const cell = row.insertCell();
+                                    const checkbox = document.createElement("input");
+                                    checkbox.type = "checkbox";
+                                    checkbox.className = "user-voucher-right-checkbox";
+                                    checkbox.dataset.menuName = menuName || "";
+                                    checkbox.dataset.permission = permission.toLowerCase();
+                                    checkbox.setAttribute("aria-label", `${menuName} ${permission}`);
+                                    cell.appendChild(checkbox);
+                                });
+                            });
+                        } catch (error) {
+                            const row = tableBody.insertRow();
+                            const cell = row.insertCell();
+                            cell.colSpan = 6;
+                            cell.textContent = "Unable to load voucher menus.";
+                            console.error("Error loading User Master voucher menus:", error);
+                        }
+                    };
+
+                    data.organizations.forEach(org => {
                         const option = document.createElement("option");
-                        option.value = org.OrgAlias; // Set OrgAlias as value
-                        option.textContent = `${org.OrgName} (${org.OrgAlias})`; // Display format: OrgName (OrgAlias)
+                        option.value = org.DBName;
+                        option.textContent = `${org.OrgName} (${org.DBName})`;
                         dropdown.appendChild(option);
                     });
+
+                    if (data.organizations.some(org => org.DBName === data.selectedDbName)) {
+                        dropdown.value = data.selectedDbName;
+                    } else if (data.organizations.length) {
+                        dropdown.selectedIndex = 0;
+                    }
+                    dropdown.addEventListener("change", loadVoucherMenus);
+                    loadVoucherMenus();
                 })
                 .catch(error => console.error("Error fetching organizations:", error));
         });

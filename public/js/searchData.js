@@ -1278,6 +1278,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     ? `<input type="checkbox" class="isRootCheckbox" data-rightid="${row.RightId}">`
                     : "";
 
+                const childCheckbox = !row.IsRoot
+                    ? `<input type="checkbox" class="childCheckbox" data-rightid="${row.RightId}">`
+                    : "";
+
                 // Checkboxes for ActionRight (New, Edit, Delete)
                 const newCheckbox = row.ActionRight
                     ? `<input type="checkbox" class="actionCheckbox" data-type="new" data-rightid="${row.RightId}">`
@@ -1291,7 +1295,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 tr.innerHTML = `
                     <td>${index + 1}</td>
-                    <td>${isRootCheckbox}</td>
+                    <td>${isRootCheckbox || childCheckbox}</td>
                     <td style="white-space: pre;">${row.RightDescription || ''}</td>
                     <td>${newCheckbox}</td>
                     <td>${editCheckbox}</td>
@@ -1404,7 +1408,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 tr.innerHTML = `
                     <td>${index + 1}</td>
-                    <td><input type="checkbox" class=""/></td>
+                    <td><input type="checkbox" class="" value="${row.OrgId}"/></td>
                     <td>${row.OrgName || ''}</td>
                     <td>${row.OrgAlias || ''}</td>
                 `;
