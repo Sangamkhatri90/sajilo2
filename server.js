@@ -185,9 +185,12 @@ app.get("/fetch-fiscal-data", (req, res) => {
     WHERE EXISTS (
       SELECT 1
       FROM SAJILODB.dbo.tbUserMaster AS um
-      CROSS APPLY STRING_SPLIT(ISNULL(um.Organization, ''), ',') AS allowedOrg
       WHERE um.UserID = ?
-        AND TRY_CONVERT(int, LTRIM(RTRIM(allowedOrg.value))) = OrgId
+        AND (
+          LOWER(LTRIM(RTRIM(um.UserName))) = 'admin'
+          OR (',' + REPLACE(ISNULL(um.Organization, ''), ' ', '') + ',')
+             LIKE '%,' + CONVERT(varchar(20), OrgId) + ',%'
+        )
     )
     ORDER BY LastSavedDateTime;
   `;
@@ -407,9 +410,12 @@ app.post("/select-database", (req, res) => {
       AND EXISTS (
         SELECT 1
         FROM tbUserMaster AS um
-        CROSS APPLY STRING_SPLIT(ISNULL(um.Organization, ''), ',') AS allowedOrg
         WHERE um.UserID = ?
-          AND TRY_CONVERT(int, LTRIM(RTRIM(allowedOrg.value))) = org.OrgID
+          AND (
+            LOWER(LTRIM(RTRIM(um.UserName))) = 'admin'
+            OR (',' + REPLACE(ISNULL(um.Organization, ''), ' ', '') + ',')
+               LIKE '%,' + CONVERT(varchar(20), org.OrgID) + ',%'
+          )
       )
   `;
 
@@ -36235,6 +36241,65 @@ app.get("/api/user-master/:userId", async (req, res) => {
   }
 });
 
+app.get("/api/current-user-permissions", async (req, res) => {
+  const userId = Number(req.session.userID);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(401).json({ success: false, message: "User is not logged in." });
+  }
+
+  try {
+    const users = await queryAsync(
+      connectionString,
+      "SELECT UserName FROM dbo.tbUserMaster WHERE UserID = ?",
+      [userId]
+    );
+    const userName = String(users[0]?.UserName || "").trim();
+    if (userName.toLowerCase() === "admin") {
+      return res.json({ success: true, isAdmin: true, rightInfo: [], voucherRights: [] });
+    }
+
+    const rightInfo = await queryAsync(
+      connectionString,
+      "SELECT RM.RightDescription, UR.Access, UR.[NEW], UR.[EDIT], UR.[Del] FROM dbo.tbUserRight UR INNER JOIN dbo.tbRightMaster RM ON RM.RightId = UR.RightId WHERE UR.UserId = ?",
+      [userId]
+    );
+
+    let voucherRights = [];
+    const dbName = String(req.session.dbName || "").trim();
+    if (/^[A-Za-z0-9_]+$/.test(dbName)) {
+      const organizations = await queryAsync(
+        connectionString,
+        "SELECT TOP 1 OrgID FROM dbo.tbOrgMaster WHERE DBName = ?",
+        [dbName]
+      );
+      if (organizations.length) {
+        const rights = await queryAsync(
+          connectionString,
+          "SELECT VoucherID, Access, [NEW], [EDIT], [Del] FROM dbo.tbVoucherRights WHERE UserID = ? AND OrgID = ?",
+          [userId, organizations[0].OrgID]
+        );
+        const menuRows = await queryAsync(
+          createConnectionString(dbName),
+          "SELECT UDVNo, MenuName FROM dbo.tbUserDefinedVoucher",
+          []
+        );
+        const menuNames = new Map(menuRows.map((menu) => [String(menu.UDVNo), menu.MenuName]));
+        voucherRights = rights.map((right) => ({
+          menuName: menuNames.get(String(right.VoucherID)) || "",
+          access: right.Access,
+          new: right.NEW,
+          edit: right.EDIT,
+          del: right.Del,
+        }));
+      }
+    }
+
+    res.json({ success: true, isAdmin: false, rightInfo, voucherRights });
+  } catch (error) {
+    console.error("Error loading current user permissions:", error);
+    res.status(500).json({ success: false, message: "Unable to load user permissions." });
+  }
+});
 app.put("/api/user-master/:userId", async (req, res) => {
   const userId = Number(req.params.userId);
   const {
