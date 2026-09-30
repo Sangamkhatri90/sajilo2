@@ -36300,6 +36300,25 @@ app.get("/api/current-user-permissions", async (req, res) => {
     res.status(500).json({ success: false, message: "Unable to load user permissions." });
   }
 });
+app.delete("/api/user-master/:userId", async (req, res) => {
+  const userId = Number(req.params.userId);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ success: false, message: "Invalid user ID." });
+  }
+
+  try {
+    const result = await queryAsync(
+      connectionString,
+      "BEGIN TRY BEGIN TRANSACTION; DELETE FROM dbo.tbVoucherRights WHERE UserID = ?; DELETE FROM dbo.tbUserRight WHERE UserId = ?; DELETE FROM dbo.tbUserMaster WHERE UserID = ?; IF @@ROWCOUNT = 0 THROW 50001, 'User not found.', 1; COMMIT TRANSACTION; SELECT 1 AS Deleted; END TRY BEGIN CATCH IF XACT_STATE() <> 0 ROLLBACK TRANSACTION; THROW; END CATCH",
+      [userId, userId, userId]
+    );
+
+    res.json({ success: true, message: "User deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting User Master record:", error);
+    res.status(500).json({ success: false, message: "Unable to delete user." });
+  }
+});
 app.put("/api/user-master/:userId", async (req, res) => {
   const userId = Number(req.params.userId);
   const {

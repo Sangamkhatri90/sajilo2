@@ -8528,7 +8528,7 @@ async function loadEarningsData() {
                                     <div><a href="#" style="text-decoration: none;" id="toggleButton150"><input
                                                 type="button" class="new-button" value="New" id="new-button"></a></div>
                                     <div><input type="button" class="edit-button" value="Edit" id="user-master-edit-button"></div>
-                                    <div><input type="button" class="delete-button" value="Delete" id="delete-button">
+                                    <div><input type="button" class="delete-button" value="Delete" id="user-master-delete-button">
                                     </div>
                                     <div><input type="button" class="copy-button" value="Copy" id="copy-button"></div>
                                     <div><input type="button" class="print-button" value="Print" id="print-button">
@@ -20284,7 +20284,41 @@ const edit = panel?.querySelector('#pvm-edit-button');
                 </div>
             </div>
 
-            <!--New User Master-->
+            <script>
+                (() => {
+                    const table = document.getElementById('userMasterTable');
+                    const deleteButton = document.getElementById('user-master-delete-button');
+                    if (!table || !deleteButton) return;
+
+                    deleteButton.addEventListener('click', async () => {
+                        const row = table.querySelector('tbody tr.selected');
+                        if (!row || !row.dataset.userId) {
+                            alert('Please select a user first.');
+                            return;
+                        }
+
+                        if (!confirm('Do you want to delete the selected user?')) return;
+
+                        try {
+                            const response = await fetch('/api/user-master/' + encodeURIComponent(row.dataset.userId), {
+                                method: 'DELETE'
+                            });
+                            const result = await response.json();
+                            if (!response.ok || !result.success) {
+                                throw new Error(result.message || 'Unable to delete user.');
+                            }
+
+                            row.remove();
+                            table.querySelectorAll('tbody tr').forEach((item, index) => {
+                                if (item.cells[0]) item.cells[0].textContent = index + 1;
+                            });
+                            alert(result.message);
+                        } catch (error) {
+                            alert(error.message);
+                        }
+                    });
+                })();
+            </script>            <!--New User Master-->
             <div class="movableDiv" id="movableDiv150">
                 <button id="closeButton150">&times;</button>
                 <form action="" method="" id="userMasterEditorForm">
