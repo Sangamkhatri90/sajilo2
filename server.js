@@ -182,10 +182,17 @@ app.get("/fetch-fiscal-data", (req, res) => {
   const orgQuery = `
     SELECT OrgId, OrgName, DBName, Address1, Address2, Phone1, Phone2, Fax, Email, LastSavedDateTime, Remarks
     FROM SAJILODB.dbo.tbOrgMaster
+    WHERE EXISTS (
+      SELECT 1
+      FROM SAJILODB.dbo.tbUserMaster AS um
+      CROSS APPLY STRING_SPLIT(ISNULL(um.Organization, ''), ',') AS allowedOrg
+      WHERE um.UserID = ?
+        AND TRY_CONVERT(int, LTRIM(RTRIM(allowedOrg.value))) = OrgId
+    )
     ORDER BY LastSavedDateTime;
   `;
 
-  sql.query(connectionString, orgQuery, (err, orgResults) => {
+  sql.query(connectionString, orgQuery, [req.session.userID], (err, orgResults) => {
     if (err) {
       console.error("ERROR fetching organizations:", err.message);
       return res.status(500).send("Error fetching organization data");
@@ -334,8 +341,7 @@ app.post("/login", (req, res) => {
 
   // Query to check if user exists no password verification for simplicityand testing
   const query = `
-    SELECT UserID FROM tbUserMaster
-    WHERE UserName = ? AND Password = ?
+    SELECT UserID, Status FROM tbUserMaster WHERE UserName = ? AND Password = ?
   `;
 
   sql.query(connectionString, query, [username, password], (err, rows) => {
@@ -355,7 +361,14 @@ app.post("/login", (req, res) => {
       });
     }
 
-    // User is admin - store in session and redirect to database selection
+    if (Number(rows[0].Status) === 0) {
+      return res.status(403).json({
+        message: "This user is disabled by User Admin. Please contact the admin for assistance.",
+        success: false
+      });
+    }
+
+    // User is active - store in session and redirect to database selection
     const userID = rows[0].UserID;
     req.session.username = username;
     req.session.userID = userID;
@@ -388,10 +401,19 @@ app.post("/select-database", (req, res) => {
 
   // Get OrgID for the selected database
   const queryOrgID = `
-    SELECT OrgID FROM tbOrgMaster WHERE DBName = ?
+    SELECT OrgID
+    FROM tbOrgMaster AS org
+    WHERE org.DBName = ?
+      AND EXISTS (
+        SELECT 1
+        FROM tbUserMaster AS um
+        CROSS APPLY STRING_SPLIT(ISNULL(um.Organization, ''), ',') AS allowedOrg
+        WHERE um.UserID = ?
+          AND TRY_CONVERT(int, LTRIM(RTRIM(allowedOrg.value))) = org.OrgID
+      )
   `;
 
-  sql.query(connectionString, queryOrgID, [dbName], (err, rows) => {
+  sql.query(connectionString, queryOrgID, [dbName, userID], (err, rows) => {
     if (err) {
       console.error("Database selection failed:", err);
       return res.status(500).json({ 
@@ -36162,7 +36184,7 @@ app.post("/api/user-master/search", async (req, res) => {
   }
 
   const query = `
-    SELECT UserName, FullName, Designation,
+    SELECT UserID, UserName, FullName, Designation,
            CONVERT(varchar(10), ValidFrom, 23) AS ValidFrom,
            CONVERT(varchar(10), ValidTo, 23) AS ValidTo
     FROM SAJILODB.dbo.tbUserMaster
@@ -36176,6 +36198,153 @@ app.post("/api/user-master/search", async (req, res) => {
   } catch (error) {
     console.error("Error searching User Master:", error);
     res.status(500).json({ success: false, message: "Unable to search users." });
+  }
+});
+
+app.get("/api/user-master/:userId", async (req, res) => {
+  const userId = Number(req.params.userId);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ success: false, message: "Invalid user ID." });
+  }
+
+  try {
+    const userRows = await queryAsync(
+      connectionString,
+      "SELECT UserID, UserName, FullName, Designation, CONVERT(varchar(10), ValidFrom, 23) AS ValidFrom, CONVERT(varchar(10), ValidTo, 23) AS ValidTo, Status, Organization, DocClassName, WithdrawLimit, Remarks FROM SAJILODB.dbo.tbUserMaster WHERE UserID = ?",
+      [userId]
+    );
+    if (!userRows.length) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    const userRights = await queryAsync(
+      connectionString,
+      "SELECT RightId, Access, [NEW], [EDIT], [Del], [Cancel] FROM dbo.tbUserRight WHERE UserId = ?",
+      [userId]
+    );
+    const voucherRights = await queryAsync(
+      connectionString,
+      "SELECT OrgID, VoucherID, Access, [NEW], [EDIT], [Del] FROM dbo.tbVoucherRights WHERE UserID = ?",
+      [userId]
+    );
+
+    res.json({ success: true, user: userRows[0], userRights, voucherRights });
+  } catch (error) {
+    console.error("Error loading User Master record:", error);
+    res.status(500).json({ success: false, message: "Unable to load user details." });
+  }
+});
+
+app.put("/api/user-master/:userId", async (req, res) => {
+  const userId = Number(req.params.userId);
+  const {
+    userName,
+    password,
+    fullName,
+    designation,
+    validFrom,
+    validTo,
+    status,
+    organization,
+    remarks,
+    docClassName,
+    withdrawLimit,
+    voucherRights,
+    userRights,
+  } = req.body;
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ success: false, message: "Invalid user ID." });
+  }
+  if (!String(userName || "").trim()) {
+    return res.status(400).json({ success: false, message: "User name is required." });
+  }
+
+  try {
+    const updatedUsers = await queryAsync(
+      connectionString,
+      `UPDATE dbo.tbUserMaster
+       SET UserName = ?, Password = CASE WHEN ? = '' THEN Password ELSE ? END,
+           FullName = ?, Designation = ?, ValidFrom = ?, ValidTo = ?, Status = ?,
+           Organization = ?, Remarks = ?, DocClassName = ?, WithdrawLimit = ?
+       OUTPUT INSERTED.UserID AS UserID
+       WHERE UserID = ?`,
+      [
+        String(userName).trim(),
+        String(password || ""),
+        String(password || ""),
+        String(fullName || "").trim() || null,
+        String(designation || "").trim() || null,
+        validFrom || null,
+        validTo || null,
+        String(status).toLowerCase() === "disabled" ? 0 : 1,
+        String(organization || "").trim() || null,
+        String(remarks || "").trim() || null,
+        String(docClassName || "").trim() || null,
+        withdrawLimit === "" || withdrawLimit === undefined ? null : withdrawLimit,
+        userId,
+      ]
+    );
+    if (!updatedUsers.length) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    if (Array.isArray(voucherRights)) {
+      const orgRows = await queryAsync(
+        connectionString,
+        "SELECT TOP 1 OrgID FROM dbo.tbOrgMaster WHERE DBName = ?",
+        [req.session.dbName]
+      );
+      if (!orgRows.length) throw new Error("Organization was not found for the current session database.");
+
+      const orgId = orgRows[0].OrgID;
+      const voucherRightQuery = `
+        MERGE dbo.tbVoucherRights WITH (HOLDLOCK) AS target
+        USING (SELECT ? AS OrgID, ? AS UserID, ? AS VoucherID, ? AS Access, ? AS [NEW], ? AS [EDIT], ? AS [Del]) AS source
+        ON target.OrgID = source.OrgID AND target.UserID = source.UserID AND target.VoucherID = source.VoucherID
+        WHEN MATCHED THEN UPDATE SET Access = source.Access, [NEW] = source.[NEW], [EDIT] = source.[EDIT], [Del] = source.[Del]
+        WHEN NOT MATCHED THEN INSERT (OrgID, UserID, VoucherID, Access, [NEW], [EDIT], [Del])
+        VALUES (source.OrgID, source.UserID, source.VoucherID, source.Access, source.[NEW], source.[EDIT], source.[Del]);
+      `;
+      for (const right of voucherRights) {
+        await queryAsync(connectionString, voucherRightQuery, [
+          orgId,
+          userId,
+          Number(right.voucherId),
+          right.access ? 1 : 0,
+          right.new ? 1 : 0,
+          right.edit ? 1 : 0,
+          right.del ? 1 : 0,
+        ]);
+      }
+    }
+
+    if (Array.isArray(userRights)) {
+      const userRightQuery = `
+        MERGE dbo.tbUserRight WITH (HOLDLOCK) AS target
+        USING (SELECT ? AS UserId, ? AS RightId, ? AS Access, ? AS [NEW], ? AS [EDIT], ? AS [Del], ? AS [Cancel]) AS source
+        ON target.UserId = source.UserId AND target.RightId = source.RightId
+        WHEN MATCHED THEN UPDATE SET Access = source.Access, [NEW] = source.[NEW], [EDIT] = source.[EDIT], [Del] = source.[Del], [Cancel] = source.[Cancel]
+        WHEN NOT MATCHED THEN INSERT (UserId, RightId, Access, [NEW], [EDIT], [Del], [Cancel])
+        VALUES (source.UserId, source.RightId, source.Access, source.[NEW], source.[EDIT], source.[Del], source.[Cancel]);
+      `;
+      for (const right of userRights) {
+        await queryAsync(connectionString, userRightQuery, [
+          userId,
+          Number(right.rightId),
+          right.access === null ? null : "",
+          right.new ? 1 : 0,
+          right.edit ? 1 : 0,
+          right.del ? 1 : 0,
+          right.cancel ? 1 : 0,
+        ]);
+      }
+    }
+
+    res.json({ success: true, message: "User updated successfully." });
+  } catch (error) {
+    console.error("Error updating User Master record:", error);
+    res.status(500).json({ success: false, message: "Unable to update user." });
   }
 });
 

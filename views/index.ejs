@@ -8527,7 +8527,7 @@ async function loadEarningsData() {
                                 <div class="um-buttons">
                                     <div><a href="#" style="text-decoration: none;" id="toggleButton150"><input
                                                 type="button" class="new-button" value="New" id="new-button"></a></div>
-                                    <div><input type="button" class="edit-button" value="Edit" id="edit-button"></div>
+                                    <div><input type="button" class="edit-button" value="Edit" id="user-master-edit-button"></div>
                                     <div><input type="button" class="delete-button" value="Delete" id="delete-button">
                                     </div>
                                     <div><input type="button" class="copy-button" value="Copy" id="copy-button"></div>
@@ -8622,11 +8622,20 @@ async function loadEarningsData() {
 
                             result.users.forEach((user, index) => {
                                 const row = tbody.insertRow();
+                                row.dataset.userId = user.UserID || '';
+                                row.dataset.fullName = user.FullName || '';
+                                row.dataset.designation = user.Designation || '';
+                                row.dataset.validFrom = user.ValidFrom || '';
+                                row.dataset.validTo = user.ValidTo || '';
                                 [index + 1, user.UserName, user.FullName, user.Designation, user.ValidFrom, user.ValidTo]
                                     .forEach((value) => {
                                         const cell = row.insertCell();
                                         cell.textContent = value == null ? '' : String(value);
                                     });
+                                row.addEventListener('click', () => {
+                                    tbody.querySelectorAll('tr').forEach((item) => item.classList.remove('selected'));
+                                    row.classList.add('selected');
+                                });
                             });
                         } catch (error) {
                             setMessage('Unable to load users.');
@@ -20278,7 +20287,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
             <!--New User Master-->
             <div class="movableDiv" id="movableDiv150">
                 <button id="closeButton150">&times;</button>
-                <form action="" method="" id="">
+                <form action="" method="" id="userMasterEditorForm">
                     <div class="ans-container">
                         <fieldset class="ans-fieldset">
                             <legend class="ans-legend">New/Edit:User</legend>
@@ -20300,57 +20309,57 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                     <fieldset class="ans-fieldset">
                                         <div>
                                             <label for="">User Name</label>
-                                            <input type="text" class="ans-text" id="" name="">
+                                            <input type="text" class="ans-text" id="userMasterEditorUserName" name="userName">
                                         </div>
                                         <div class="ans-form-style-horizontal3">
                                             <div>
                                                 <label for="">Password</label>
-                                                <input type="text" class="ans-text" id="" name="">
+                                                <input type="text" class="ans-text" id="userMasterEditorPassword" name="password">
                                             </div>
                                             <div>
                                                 <label for="">Confirm Password</label>
-                                                <input type="text" class="ans-text" id="" name="">
+                                                <input type="text" class="ans-text" id="userMasterEditorConfirmPassword" name="confirmPassword">
                                             </div>
                                         </div>
 
                                         <div>
                                             <label for="">Full Name</label>
-                                            <input type="text" class="ans-text" id="" name="">
+                                            <input type="text" class="ans-text" id="userMasterEditorFullName" name="fullName">
                                         </div>
                                         <div class="ans-form-style-horizontal3">
                                             <div>
                                                 <label for="">Designation</label>
-                                                <input type="text" class="ans-text" id="" name="">
+                                                <input type="text" class="ans-text" id="userMasterEditorDesignation" name="designation">
                                             </div>
                                             <div>
                                                 <label for="">Doc Class</label>
-                                                <input type="text" class="benchods" id="" name="">
+                                                <input type="text" class="benchods" id="userMasterEditorDocClassName" name="docClassName">
                                             </div>
                                         </div>
                                         <div class="ans-form-style-horizontal3">
                                             <div>
                                                 <label for="">Status</label>
-                                                <select name="" class="ans-select" id="">
+                                                <select name="status" class="ans-select" id="userMasterEditorStatus">
                                                     <option value="Enabled">Enabled</option>
                                                     <option value="Disabled">Disabled</option>
                                                 </select>
                                             </div>
                                             <div>
                                                 <label for="">Valid fromEntries</label>
-                                                <input type="date" name="" class="ans-date" id="">
+                                                <input type="date" name="validFrom" class="ans-date" id="userMasterEditorValidFrom">
                                             </div>
                                             <div>
                                                 <label for="">Valid To</label>
-                                                <input type="date" name="" class="ans-date" id="">
+                                                <input type="date" name="validTo" class="ans-date" id="userMasterEditorValidTo">
                                             </div>
                                         </div>
                                         <div>
                                             <label for="">Withdraw Limit</label>
-                                            <input type="text" class="ans-text" name="" id="">
+                                            <input type="text" class="ans-text" name="withdrawLimit" id="userMasterEditorWithdrawLimit">
                                         </div>
                                         <div>
                                             <label for="">Remarks</label>
-                                            <textarea name="" class="ans-text" id=""></textarea>
+                                            <textarea name="remarks" class="ans-text" id="userMasterEditorRemarks"></textarea>
                                         </div>
                                     </fieldset>
                                 </div>
@@ -20457,9 +20466,17 @@ const edit = panel?.querySelector('#pvm-edit-button');
             <script>
                 document.querySelector('#movableDiv150 form')?.addEventListener('submit', async (event) => {
                     event.preventDefault();
+                    const form = event.currentTarget;
+                    const isEdit = form.dataset.mode === 'edit';
+                    const userId = form.dataset.userId;
 
                     const fields = Array.from(document.querySelectorAll('#GeneralUser input, #GeneralUser select, #GeneralUser textarea'));
                     const [userName, password, confirmPassword, fullName, designation, docClassName, status, validFrom, validTo, withdrawLimit, remarks] = fields;
+
+                    if (isEdit && !userId) {
+                        alert('Please select a user first.');
+                        return;
+                    }
 
                     if (password.value !== confirmPassword.value) {
                         alert('Password and confirm password do not match.');
@@ -20499,8 +20516,8 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         };
                     }).filter((right) => right.rightId);
                     try {
-                        const response = await fetch('/api/user-master', {
-                            method: 'POST',
+                        const response = await fetch(isEdit ? `/api/user-master/${encodeURIComponent(userId)}` : '/api/user-master', {
+                            method: isEdit ? 'PUT' : 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 userName: userName.value.trim(),
@@ -20521,16 +20538,115 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         const result = await response.json();
 
                         if (!response.ok || !result.success) {
-                            throw new Error(result.message || 'Unable to insert user.');
+                            throw new Error(result.message || (isEdit ? 'Unable to update user.' : 'Unable to insert user.'));
                         }
 
                         alert(result.message);
-                        event.target.reset();
+                        form.reset();
+                        form.dataset.mode = 'new';
+                        delete form.dataset.userId;
                     } catch (error) {
-                        console.error('Error inserting user:', error);
+                        console.error(isEdit ? 'Error updating user:' : 'Error inserting user:', error);
                         alert(error.message);
                     }
                 });
+            </script>            <script>
+                (() => {
+                    const table = document.getElementById('userMasterTable');
+                    const editButton = document.getElementById('user-master-edit-button');
+                    const editor = document.getElementById('movableDiv150');
+                    const form = document.getElementById('userMasterEditorForm');
+                    if (!table || !editButton || !editor || !form) return;
+
+                    document.querySelector('#movableDiv68 #new-button')?.addEventListener('click', () => {
+                        form.reset();
+                        form.dataset.mode = 'new';
+                        delete form.dataset.userId;
+                    });
+
+                    const waitForRows = (selector, callback, attempts = 0) => {
+                        const rows = Array.from(document.querySelectorAll(selector));
+                        if (rows.length || attempts >= 50) {
+                            callback(rows);
+                            return;
+                        }
+                        setTimeout(() => waitForRows(selector, callback, attempts + 1), 100);
+                    };
+
+                    const fillUserDetails = (data) => {
+                        const user = data.user;
+                        document.getElementById('userMasterEditorUserName').value = user.UserName || '';
+                        document.getElementById('userMasterEditorFullName').value = user.FullName || '';
+                        document.getElementById('userMasterEditorDesignation').value = user.Designation || '';
+                        document.getElementById('userMasterEditorDocClassName').value = user.DocClassName || '';
+                        document.getElementById('userMasterEditorValidFrom').value = user.ValidFrom || '';
+                        document.getElementById('userMasterEditorValidTo').value = user.ValidTo || '';
+                        document.getElementById('userMasterEditorStatus').value = Number(user.Status) === 1 ? 'Enabled' : 'Disabled';
+                        document.getElementById('userMasterEditorWithdrawLimit').value = user.WithdrawLimit ?? '';
+                        document.getElementById('userMasterEditorRemarks').value = user.Remarks || '';
+                        document.getElementById('userMasterEditorPassword').value = '';
+                        document.getElementById('userMasterEditorConfirmPassword').value = '';
+
+                        const organizations = new Set(String(user.Organization || '').split(',').map((value) => value.trim()).filter(Boolean));
+                        waitForRows('#userOrgMasterTable tbody input[type="checkbox"]', (checkboxes) => {
+                            checkboxes.forEach((checkbox) => {
+                                checkbox.checked = organizations.has(String(checkbox.value));
+                            });
+                        });
+
+                        const userRights = new Map((data.userRights || []).map((right) => [String(right.RightId), right]));
+                        waitForRows('#userRightInfoTable tbody tr[data-right-id]', (rows) => {
+                            rows.forEach((row) => {
+                                const right = userRights.get(String(row.dataset.rightId));
+                                if (!right) return;
+                                const access = row.querySelector('input.isRootCheckbox, input.childCheckbox');
+                                const newRight = row.querySelector('input[data-type="new"]');
+                                const editRight = row.querySelector('input[data-type="edit"]');
+                                const deleteRight = row.querySelector('input[data-type="delete"]');
+                                if (access) access.checked = right.Access === null || Number(right.Access) === 1;
+                                if (newRight) newRight.checked = Number(right.NEW) === 1;
+                                if (editRight) editRight.checked = Number(right.EDIT) === 1;
+                                if (deleteRight) deleteRight.checked = Number(right.Del) === 1;
+                            });
+                        });
+
+                        const voucherRights = new Map((data.voucherRights || []).map((right) => [String(right.VoucherID), right]));
+                        waitForRows('#userVoucherRightsTable tbody tr[data-voucher-id]', (rows) => {
+                            rows.forEach((row) => {
+                                const right = voucherRights.get(String(row.dataset.voucherId));
+                                if (!right) return;
+                                const cells = row.cells;
+                                if (cells[2]?.querySelector('input')) cells[2].querySelector('input').checked = Number(right.Access) === 1;
+                                if (cells[3]?.querySelector('input')) cells[3].querySelector('input').checked = Number(right.NEW) === 1;
+                                if (cells[4]?.querySelector('input')) cells[4].querySelector('input').checked = Number(right.EDIT) === 1;
+                                if (cells[5]?.querySelector('input')) cells[5].querySelector('input').checked = Number(right.Del) === 1;
+                            });
+                        });
+                    };
+
+                    editButton.addEventListener('click', async () => {
+                        const row = table.querySelector('tbody tr.selected');
+                        if (!row || !row.dataset.userId) {
+                            alert('Please select a user first.');
+                            return;
+                        }
+
+                        document.getElementById('toggleButton150')?.click();
+                        form.dataset.mode = 'edit';
+                        form.dataset.userId = row.dataset.userId;
+                        editor.style.display = 'block';
+
+                        try {
+                            const response = await fetch('/api/user-master/' + encodeURIComponent(row.dataset.userId));
+                            const data = await response.json();
+                            if (!response.ok || !data.success) throw new Error(data.message || 'Unable to load user details.');
+                            fillUserDetails(data);
+                            document.getElementById('userMasterEditorUserName').focus();
+                        } catch (error) {
+                            alert(error.message);
+                        }
+                    });
+                })();
             </script>
             <!--Day Close-->
             <div class="movableDiv" id="movableDiv151">

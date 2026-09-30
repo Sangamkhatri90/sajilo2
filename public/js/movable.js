@@ -31,6 +31,11 @@ function resetFormFields(movableDivId) {
 // Function to keep track of the highest z-index value
 let highestZIndex = 1;
 
+function bringMovableToFront(element) {
+    highestZIndex++;
+    element.style.zIndex = highestZIndex;
+}
+
 // Close the front-most movable panel with the Escape key.
 document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
@@ -81,18 +86,12 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
 
     let isDragging = false;
 
-    // Function to bring the div to the front by updating the z-index
-    function bringToFront(element) {
-        highestZIndex++;
-        element.style.zIndex = highestZIndex;
-    }
-
     // Show/hide the div when clicking the toggle button
     toggleButton.addEventListener('click', function () {
         const currentDisplay = window.getComputedStyle(draggable).display;
         draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
         if (currentDisplay === 'none') {
-            bringToFront(draggable);
+            bringMovableToFront(draggable);
             clampMovableToViewport(draggable);
         }
     });
