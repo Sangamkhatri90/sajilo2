@@ -4,16 +4,52 @@
         .replace(/&/g, 'and')
         .replace(/[^a-z0-9]+/g, '');
 
-    const allowed = (value) => value === null || value === true || Number(value) === 1;
+    const allowed = (value) => value === null || Number(value) === 1;
+    const permissionAliases = new Map([
+        ['docclass', 'documentclass'],
+        ['definenepalicalender', 'definenepalicalendar'],
+        ['maturefdtransfer', 'maturedfdtransfer'],
+        ['repothitcountreport', 'reporthitcountreport'],
+        ['dartachalani', 'accesschalan']
+    ]);
     const notifyDenied = () => {
         const message = 'Access denied.';
         if (typeof showCustomAlert === 'function') showCustomAlert(message);
         else alert(message);
     };
 
+    const permissionKey = (value) => {
+        const key = normalize(value)
+            .replace(/reports$/, 'report')
+            .replace(/books$/, 'book')
+            .replace(/settings$/, 'setting')
+            .replace(/entries$/, 'entry')
+            .replace(/s$/, '');
+        return permissionAliases.get(key) || key;
+    };
+
     const findPermission = (permissions, label) => {
-        const key = normalize(label);
-        return permissions.find((permission) => normalize(permission.label || permission.menuName) === key);
+        const key = permissionKey(label);
+        return permissions.find((permission) => permissionKey(permission.label || permission.menuName) === key);
+    };
+
+    const findAccessPermission = (permissions, label) => {
+        const key = permissionKey(label);
+        const matches = permissions.filter((permission) => permissionKey(permission.label) === key);
+        if (!matches.length) return null;
+        return { access: matches.every((permission) => allowed(permission.access)) ? 1 : 0 };
+    };
+
+    const restrictLink = (link, permission) => {
+        if (allowed(permission.access) || link.dataset.permissionChecked === 'true') return;
+
+        link.dataset.permissionChecked = 'true';
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            notifyDenied();
+        }, true);
+        link.setAttribute('aria-disabled', 'true');
     };
 
     const applyVoucherActions = (panel, permission) => {
@@ -41,7 +77,9 @@
         if (!response.ok || !data.success) throw new Error(data.message || 'Unable to load permissions.');
         if (data.isAdmin) return;
 
-        const rightInfo = (data.rightInfo || []).map((right) => ({
+        const rightInfo = (data.rightInfo || [])
+            .filter((right) => permissionKey(right.RootDescription) === permissionKey('ACCESS RIGHTS'))
+            .map((right) => ({
             label: right.RightDescription,
             access: right.Access
         }));
@@ -53,22 +91,22 @@
             delete: right.del
         }));
 
+        const systemPermission = findAccessPermission(rightInfo, 'System');
+        if (!systemPermission || !allowed(systemPermission.access)) {
+            const systemMenu = Array.from(document.querySelectorAll('.navbar-menu > .menu-item'))
+                .find((item) => permissionKey(item.querySelector('a.uls')?.textContent) === permissionKey('System'));
+            systemMenu?.style.setProperty('display', 'none', 'important');
+        }
+
         document.querySelectorAll('a[id^="toggleButton"]').forEach((link) => {
             const label = link.textContent.trim();
-            const right = findPermission(rightInfo, label);
+            const right = findAccessPermission(rightInfo, label);
             const voucher = findPermission(voucherRights, label);
             const permission = right || voucher;
             if (!permission) return;
 
-            if (!allowed(permission.access)) {
-                link.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopImmediatePropagation();
-                    notifyDenied();
-                }, true);
-                link.setAttribute('aria-disabled', 'true');
-                return;
-            }
+            restrictLink(link, permission);
+            if (!allowed(permission.access)) return;
 
             if (voucher) {
                 link.addEventListener('click', () => {
@@ -76,6 +114,11 @@
                     setTimeout(() => applyVoucherActions(document.getElementById(panelId), voucher), 0);
                 });
             }
+        });
+
+        document.querySelectorAll('.navbar-menu a.uls, .navbar-menu .dropdown-menu a:not([id^="toggleButton"])').forEach((link) => {
+            const right = findAccessPermission(rightInfo, link.textContent.trim());
+            if (right) restrictLink(link, right);
         });
     };
 

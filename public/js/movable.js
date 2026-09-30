@@ -113,7 +113,7 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
             const currentDisplay = window.getComputedStyle(draggable).display;
             draggable.style.display = (currentDisplay === 'none') ? 'block' : 'none';
             if (currentDisplay === 'none') {
-                bringToFront(draggable);
+                bringMovableToFront(draggable);
                 clampMovableToViewport(draggable);
             }
         }
@@ -129,7 +129,7 @@ function makeMovable(movableDivId, closeButtonId, cancelButtonId, toggleButtonId
         }
 
         e.preventDefault();
-        bringToFront(draggable); // Bring the div to the front when clicked
+    bringMovableToFront(draggable);
         isDragging = true;
 
         let offsetX = e.clientX - draggable.getBoundingClientRect().left;

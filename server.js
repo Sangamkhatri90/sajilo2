@@ -36260,7 +36260,28 @@ app.get("/api/current-user-permissions", async (req, res) => {
 
     const rightInfo = await queryAsync(
       connectionString,
-      "SELECT RM.RightDescription, UR.Access, UR.[NEW], UR.[EDIT], UR.[Del] FROM dbo.tbUserRight UR INNER JOIN dbo.tbRightMaster RM ON RM.RightId = UR.RightId WHERE UR.UserId = ?",
+      `WITH RightsTree AS (
+         SELECT RightId, ParentRightID, RightDescription AS RootDescription,
+                CAST(CONCAT(',', RightId, ',') AS varchar(max)) AS RightPath
+         FROM dbo.tbRightMaster
+         WHERE ParentRightID = 0 AND RightDescription = 'ACCESS RIGHTS'
+           AND DM NOT LIKE '%MP%' AND DM NOT LIKE '%MB%'
+         UNION ALL
+         SELECT Child.RightId, Child.ParentRightID, Parent.RootDescription,
+                CAST(Parent.RightPath + CAST(Child.RightId AS varchar(20)) + ',' AS varchar(max))
+         FROM dbo.tbRightMaster Child
+         INNER JOIN RightsTree Parent ON Child.ParentRightID = Parent.RightId
+         WHERE Child.DM NOT LIKE '%MP%' AND Child.DM NOT LIKE '%MB%'
+           AND CHARINDEX(CONCAT(',', Child.RightId, ','), Parent.RightPath) = 0
+       )
+       SELECT RM.RightId, RM.ParentRightID, RM.RightDescription, RightsTree.RootDescription,
+              CASE WHEN UR.RightId IS NULL THEN 0 ELSE UR.Access END AS Access,
+              UR.[NEW], UR.[EDIT], UR.[Del]
+       FROM dbo.tbRightMaster RM
+       INNER JOIN RightsTree ON RightsTree.RightId = RM.RightId
+       LEFT JOIN dbo.tbUserRight UR ON UR.RightId = RM.RightId AND UR.UserId = ?
+       WHERE RM.DM NOT LIKE '%MP%' AND RM.DM NOT LIKE '%MB%'
+       OPTION (MAXRECURSION 100)`,
       [userId]
     );
 
@@ -36298,6 +36319,27 @@ app.get("/api/current-user-permissions", async (req, res) => {
   } catch (error) {
     console.error("Error loading current user permissions:", error);
     res.status(500).json({ success: false, message: "Unable to load user permissions." });
+  }
+});
+app.patch("/api/user-master/:userId/reset-password", async (req, res) => {
+  const userId = Number(req.params.userId);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ success: false, message: "Invalid user ID." });
+  }
+
+  try {
+    const result = await queryAsync(
+      connectionString,
+      "UPDATE SAJILODB.dbo.tbUserMaster SET Password = ? WHERE UserID = ?",
+      ["", userId]
+    );
+    if (!result || result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+    res.json({ success: true, message: "Password resetted successfully." });
+  } catch (error) {
+    console.error("Error resetting User Master password:", error);
+    res.status(500).json({ success: false, message: "Unable to reset password." });
   }
 });
 app.delete("/api/user-master/:userId", async (req, res) => {
