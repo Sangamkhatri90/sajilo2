@@ -21889,7 +21889,7 @@ app.post('/checkIfInUse', (req, res) => {
 
 const connectionStringForDB = {
   server: 'localhost',
-  database: 'SAJILODB',
+  database: process.env.SQL_DATABASE,
   user: 'sa',
   password: '123',
   options: {
@@ -36274,9 +36274,10 @@ app.get("/api/current-user-permissions", async (req, res) => {
          WHERE Child.DM NOT LIKE '%MP%' AND Child.DM NOT LIKE '%MB%'
            AND CHARINDEX(CONCAT(',', Child.RightId, ','), Parent.RightPath) = 0
        )
-       SELECT RM.RightId, RM.ParentRightID, RM.RightDescription, RightsTree.RootDescription,
+       SELECT RM.RightId, RM.ParentRightID, RM.RightDescription, RightsTree.RootDescription, RightsTree.RightPath,
               CASE WHEN UR.RightId IS NULL THEN 0 ELSE UR.Access END AS Access,
-              UR.[NEW], UR.[EDIT], UR.[Del]
+              CASE WHEN UR.RightId IS NULL THEN 0 ELSE 1 END AS HasUserRight,
+              UR.[NEW] AS NewAction, UR.[EDIT] AS EditAction, UR.[Del] AS DeleteAction
        FROM dbo.tbRightMaster RM
        INNER JOIN RightsTree ON RightsTree.RightId = RM.RightId
        LEFT JOIN dbo.tbUserRight UR ON UR.RightId = RM.RightId AND UR.UserId = ?
@@ -36284,6 +36285,16 @@ app.get("/api/current-user-permissions", async (req, res) => {
        OPTION (MAXRECURSION 100)`,
       [userId]
     );
+
+    console.table(rightInfo.map((right) => ({
+      UserId: userId,
+      RightId: right.RightId,
+      Access: right.Access,
+      NewAction: right.NewAction,
+      EditAction: right.EditAction,
+      DeleteAction: right.DeleteAction,
+      HasUserRight: right.HasUserRight
+    })));
 
     let voucherRights = [];
     const dbName = String(req.session.dbName || "").trim();
@@ -36315,7 +36326,7 @@ app.get("/api/current-user-permissions", async (req, res) => {
       }
     }
 
-    res.json({ success: true, isAdmin: false, rightInfo, voucherRights });
+    res.json({ success: true, userId, isAdmin: false, rightInfo, voucherRights });
   } catch (error) {
     console.error("Error loading current user permissions:", error);
     res.status(500).json({ success: false, message: "Unable to load user permissions." });
@@ -36458,7 +36469,7 @@ app.put("/api/user-master/:userId", async (req, res) => {
         await queryAsync(connectionString, userRightQuery, [
           userId,
           Number(right.rightId),
-          right.access === null ? null : "",
+          right.access === null ? null : Number(right.access) === 1 ? 1 : 0,
           right.new ? 1 : 0,
           right.edit ? 1 : 0,
           right.del ? 1 : 0,
@@ -36544,7 +36555,7 @@ app.post("/api/user-master", async (req, res) => {
         await queryAsync(connectionString, rightQuery, [
           userId,
           Number(right.rightId),
-          right.access === null ? null : "",
+          right.access === null ? null : Number(right.access) === 1 ? 1 : 0,
           right.new ? 1 : 0,
           right.edit ? 1 : 0,
           right.del ? 1 : 0,

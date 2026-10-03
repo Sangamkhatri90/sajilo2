@@ -20624,7 +20624,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
 
                         return {
                             rightId: row.dataset.rightId,
-                            access: accessCheckbox?.checked ? null : '',
+                            access: accessCheckbox?.checked ? null : 0,
                             new: newCheckbox?.checked ? 1 : 0,
                             edit: editCheckbox?.checked ? 1 : 0,
                             del: deleteCheckbox?.checked ? 1 : 0,

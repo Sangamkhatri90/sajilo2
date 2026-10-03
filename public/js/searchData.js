@@ -1306,7 +1306,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             // Add event listener for all checkboxes
-            document.querySelectorAll("input[type='checkbox']").forEach(checkbox => {
+            document.querySelectorAll(".isRootCheckbox, .childCheckbox").forEach(checkbox => {
                 checkbox.addEventListener("change", function () {
                     const selectedRightId = String(this.dataset.rightid); // Convert to string
                     if (this.checked) {
@@ -1319,7 +1319,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Recursive function to check all matching child checkboxes
             function checkMatchingParentRights(selectedRightId) {
-                document.querySelectorAll("input[type='checkbox']").forEach(checkbox => {
+                document.querySelectorAll(".isRootCheckbox, .childCheckbox").forEach(checkbox => {
                     const rowRightId = String(checkbox.dataset.rightid); // Convert to string
                     const rowData = rightsMap.get(rowRightId);
 
@@ -1339,7 +1339,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Recursive function to uncheck all related checkboxes when unchecked
             function uncheckMatchingParentRights(selectedRightId) {
-                document.querySelectorAll("input[type='checkbox']").forEach(checkbox => {
+                document.querySelectorAll(".isRootCheckbox, .childCheckbox").forEach(checkbox => {
                     const rowRightId = String(checkbox.dataset.rightid); // Convert to string
                     const rowData = rightsMap.get(rowRightId);
 

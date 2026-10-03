@@ -33,13 +33,30 @@
         return permissions.find((permission) => permissionKey(permission.label || permission.menuName) === key);
     };
 
-    const findAccessPermission = (permissions, label) => {
-        const key = permissionKey(label);
-        const matches = permissions.filter((permission) => permissionKey(permission.label) === key);
-        if (!matches.length) return null;
-        return { access: matches.every((permission) => allowed(permission.access)) ? 1 : 0 };
-    };
+    const pathsMatch = (left, right) => left.length === right.length &&
+        left.every((part, index) => permissionKey(part) === permissionKey(right[index]));
+    const findAccessPermission = (permissions, path) => {
+        const requestedPath = Array.isArray(path) ? path : [path];
+        const findBestMatch = (candidatePath) => permissions
+            .filter((permission) => pathsMatch(permission.path || [permission.label], candidatePath))
+            .sort((left, right) => Number(right.hasUserRight) - Number(left.hasUserRight))[0];
+        const matchedRight = findBestMatch(requestedPath);
+        if (!matchedRight) return null;
 
+        const inheritedPermissions = [];
+        for (let length = 1; length <= requestedPath.length; length += 1) {
+            const ancestor = findBestMatch(requestedPath.slice(0, length));
+            if (ancestor) inheritedPermissions.push(ancestor);
+        }
+        return {
+            rightId: matchedRight.rightId,
+            access: inheritedPermissions.every((permission) => allowed(permission.access)) ? 1 : 0,
+            new: matchedRight.new,
+            edit: matchedRight.edit,
+            delete: matchedRight.delete,
+            parentRightID: matchedRight.parentRightID
+        };
+    };
     const restrictLink = (link, permission) => {
         if (allowed(permission.access) || link.dataset.permissionChecked === 'true') return;
 
@@ -70,6 +87,35 @@
             }, true);
         });
     };
+    const applyUserRightActions = (panel, permission) => {
+        if (!panel || !permission) return;
+
+        console.log('[UserRight actions]', {
+            RightId: permission.rightId,
+            NewAction: permission.new,
+            EditAction: permission.edit,
+            DeleteAction: permission.delete
+        });
+
+        const actionValues = {
+            new: permission.new,
+            edit: permission.edit,
+            delete: permission.delete
+        };
+        panel.querySelectorAll('button, input[type="button"], input[type="submit"]').forEach((control) => {
+            const label = String(control.value || control.textContent || '').trim().toLowerCase();
+            const action = ['new', 'edit', 'delete'].find((name) => new RegExp('\\b' + name + '\\b').test(label));
+            if (!action || Number(actionValues[action]) === 1 || control.dataset.actionPermissionChecked === 'true') return;
+
+
+            control.dataset.actionPermissionChecked = 'true';
+            control.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                notifyDenied();
+            }, true);
+        });
+    };
 
     const loadPermissions = async () => {
         const response = await fetch('/api/current-user-permissions');
@@ -77,12 +123,48 @@
         if (!response.ok || !data.success) throw new Error(data.message || 'Unable to load permissions.');
         if (data.isAdmin) return;
 
-        const rightInfo = (data.rightInfo || [])
+        const rights = data.rightInfo || [];
+        const rightsById = new Map(rights.map((right) => [String(right.RightId), right]));
+        const rightPathCache = new Map();
+        const getRightPath = (rightId, trail = new Set()) => {
+            const id = String(rightId);
+            if (rightPathCache.has(id)) return rightPathCache.get(id);
+            if (trail.has(id)) return [];
+
+            const right = rightsById.get(id);
+            if (!right) return [];
+
+            const nextTrail = new Set(trail);
+            nextTrail.add(id);
+            const parentId = Number(right.ParentRightID);
+            const parentPath = parentId > 0 ? getRightPath(parentId, nextTrail) : [];
+            const path = [...parentPath, right.RightDescription];
+            rightPathCache.set(id, path);
+            return path;
+        };
+        console.table(rights.map((right) => ({
+            UserId: data.userId,
+            RightId: right.RightId,
+            Access: right.Access,
+            NewAction: right.NewAction,
+            EditAction: right.EditAction,
+            DeleteAction: right.DeleteAction,
+            HasUserRight: right.HasUserRight
+        })));
+
+        const rightInfo = rights
             .filter((right) => permissionKey(right.RootDescription) === permissionKey('ACCESS RIGHTS'))
             .map((right) => ({
-            label: right.RightDescription,
-            access: right.Access
-        }));
+                rightId: right.RightId,
+                label: right.RightDescription,
+                access: right.Access,
+                hasUserRight: Number(right.HasUserRight) === 1,
+                new: right.NewAction,
+                edit: right.EditAction,
+                delete: right.DeleteAction,
+                parentRightID: right.ParentRightID,
+                path: getRightPath(right.RightId).slice(1)
+            }));
         const voucherRights = (data.voucherRights || []).map((right) => ({
             menuName: right.menuName,
             access: right.access,
@@ -91,21 +173,29 @@
             delete: right.del
         }));
 
-        const systemPermission = findAccessPermission(rightInfo, 'System');
-        if (!systemPermission || !allowed(systemPermission.access)) {
-            const systemMenu = Array.from(document.querySelectorAll('.navbar-menu > .menu-item'))
-                .find((item) => permissionKey(item.querySelector('a.uls')?.textContent) === permissionKey('System'));
-            systemMenu?.style.setProperty('display', 'none', 'important');
-        }
+
+        const getMenuPath = (link) => {
+            const path = [];
+            let item = link.closest('li');
+            while (item) {
+                const directLink = Array.from(item.children).find((child) => child.matches('a')) ||
+                    Array.from(item.children)
+                        .filter((child) => child.matches('div'))
+                        .flatMap((child) => Array.from(child.children))
+                        .find((child) => child.matches('a.uls'));
+                if (directLink) path.unshift(directLink.textContent.trim());
+                item = item.parentElement?.closest('li');
+            }
+            return path;
+        };
 
         document.querySelectorAll('a[id^="toggleButton"]').forEach((link) => {
-            const label = link.textContent.trim();
-            const right = findAccessPermission(rightInfo, label);
-            const voucher = findPermission(voucherRights, label);
+            const right = findAccessPermission(rightInfo, getMenuPath(link));
+            const voucher = findPermission(voucherRights, link.textContent.trim());
             const permission = right || voucher;
             if (!permission) return;
 
-            restrictLink(link, permission);
+            if (!right || Number(right.parentRightID) !== 1) restrictLink(link, permission);
             if (!allowed(permission.access)) return;
 
             if (voucher) {
@@ -114,11 +204,19 @@
                     setTimeout(() => applyVoucherActions(document.getElementById(panelId), voucher), 0);
                 });
             }
+            if (right) {
+                const panel = document.getElementById(link.id.replace('toggleButton', 'movableDiv'));
+                if (panel) {
+                    link.addEventListener('click', () => {
+                        setTimeout(() => applyUserRightActions(panel, right), 0);
+                    });
+                }
+            }
         });
 
         document.querySelectorAll('.navbar-menu a.uls, .navbar-menu .dropdown-menu a:not([id^="toggleButton"])').forEach((link) => {
-            const right = findAccessPermission(rightInfo, link.textContent.trim());
-            if (right) restrictLink(link, right);
+            const right = findAccessPermission(rightInfo, getMenuPath(link));
+            if (right && Number(right.parentRightID) !== 1) restrictLink(link, right);
         });
     };
 
