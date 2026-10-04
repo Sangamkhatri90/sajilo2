@@ -37,9 +37,31 @@
         left.every((part, index) => permissionKey(part) === permissionKey(right[index]));
     const findAccessPermission = (permissions, path) => {
         const requestedPath = Array.isArray(path) ? path : [path];
-        const findBestMatch = (candidatePath) => permissions
-            .filter((permission) => pathsMatch(permission.path || [permission.label], candidatePath))
-            .sort((left, right) => Number(right.hasUserRight) - Number(left.hasUserRight))[0];
+        const findBestMatch = (candidatePath) => {
+            const score = (permission) => {
+                const accessAllowed = permission.access === null || Number(permission.access) === 1;
+                const grantedActions = [permission.new, permission.edit, permission.delete]
+                    .filter((value) => value === true || Number(value) === 1).length;
+                return (permission.hasUserRight ? 100 : 0) +
+                    (accessAllowed ? 10 : 0) +
+                    grantedActions;
+            };
+            const exactMatches = permissions.filter((permission) =>
+                pathsMatch(permission.path || [permission.label], candidatePath)
+            );
+            const explicitExactMatch = exactMatches
+                .filter((permission) => permission.hasUserRight)
+                .sort((left, right) => score(right) - score(left))[0];
+            if (explicitExactMatch) return explicitExactMatch;
+
+            const leaf = candidatePath[candidatePath.length - 1];
+            const explicitLeafMatches = permissions.filter((permission) =>
+                permission.hasUserRight && permissionKey(permission.label) === permissionKey(leaf)
+            );
+            if (explicitLeafMatches.length === 1) return explicitLeafMatches[0];
+
+            return exactMatches.sort((left, right) => score(right) - score(left))[0];
+        };
         const matchedRight = findBestMatch(requestedPath);
         if (!matchedRight) return null;
 
@@ -54,7 +76,8 @@
             new: matchedRight.new,
             edit: matchedRight.edit,
             delete: matchedRight.delete,
-            parentRightID: matchedRight.parentRightID
+            parentRightID: matchedRight.parentRightID,
+            isRoot: matchedRight.isRoot
         };
     };
     const restrictLink = (link, permission) => {
@@ -158,6 +181,7 @@
                 rightId: right.RightId,
                 label: right.RightDescription,
                 access: right.Access,
+                isRoot: right.IsRoot,
                 hasUserRight: Number(right.HasUserRight) === 1,
                 new: right.NewAction,
                 edit: right.EditAction,
@@ -195,7 +219,7 @@
             const permission = right || voucher;
             if (!permission) return;
 
-            if (!right || Number(right.parentRightID) !== 1) restrictLink(link, permission);
+            if (!right || (Number(right.parentRightID) !== 1 && Number(right.isRoot) !== 1)) restrictLink(link, permission);
             if (!allowed(permission.access)) return;
 
             if (voucher) {
@@ -216,7 +240,7 @@
 
         document.querySelectorAll('.navbar-menu a.uls, .navbar-menu .dropdown-menu a:not([id^="toggleButton"])').forEach((link) => {
             const right = findAccessPermission(rightInfo, getMenuPath(link));
-            if (right && Number(right.parentRightID) !== 1) restrictLink(link, right);
+            if (right && Number(right.parentRightID) !== 1 && Number(right.isRoot) !== 1) restrictLink(link, right);
         });
     };
 

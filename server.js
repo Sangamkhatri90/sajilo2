@@ -36274,7 +36274,7 @@ app.get("/api/current-user-permissions", async (req, res) => {
          WHERE Child.DM NOT LIKE '%MP%' AND Child.DM NOT LIKE '%MB%'
            AND CHARINDEX(CONCAT(',', Child.RightId, ','), Parent.RightPath) = 0
        )
-       SELECT RM.RightId, RM.ParentRightID, RM.RightDescription, RightsTree.RootDescription, RightsTree.RightPath,
+       SELECT RM.RightId, RM.ParentRightID, RM.RightDescription, RM.IsRoot, RightsTree.RootDescription, RightsTree.RightPath,
               CASE WHEN UR.RightId IS NULL THEN 0 ELSE UR.Access END AS Access,
               CASE WHEN UR.RightId IS NULL THEN 0 ELSE 1 END AS HasUserRight,
               UR.[NEW] AS NewAction, UR.[EDIT] AS EditAction, UR.[Del] AS DeleteAction
