@@ -5682,6 +5682,20 @@
                                                 </tbody>
                                             </table>
                                         </div>
+                                        <div id="jvPagination" class="jv-pagination" aria-live="polite">
+                                            <button type="button" id="jvPreviousPage" class="jv-page-arrow" disabled aria-label="Previous page">‹</button>
+                                            <span>Page</span>
+                                            <select id="jvPageSelect" disabled aria-label="Page"></select>
+                                            <span id="jvPageCount">/ 0</span>
+                                            <button type="button" id="jvNextPage" class="jv-page-arrow" disabled aria-label="Next page">›</button>
+                                            <span id="jvPageStatus">No results</span>
+                                            <label for="jvRowsPerPage">Rows:</label>
+                                            <select id="jvRowsPerPage" aria-label="Rows per page">
+                                                <option value="100">100</option>
+                                                <option value="200" selected>200</option>
+                                                <option value="500">500</option>
+                                            </select>
+                                        </div>
                                     </fieldset>
                                 </div>
                         </form>
@@ -5708,20 +5722,25 @@
                                             <label for="">Voucher No</label>
                                             <input type="text" class="jv-text" id="searchInput" name="JVVoucherNO">
                                         </div>
-                                    </div>
-                                    <div class="rv-form-style-horizontal3">
                                         <div>
                                             <label for="">Entered By</label>
                                             <input type="text" class="jv-text" name="JVEnteredBy" id="">
                                         </div>
+                                    </div>
+                                    <div class="rv-form-style-horizontal3">
                                         <div>
                                             <label for="">Remarks</label>
                                             <input type="text" class="jv-text" name="JVRemarks" id="">
                                         </div>
-                                    </div>
-                                    <div class="rv-form-style-horizontal3">
                                         <div>
-                                            <label for="">Amount</label>
+                                            <input type="checkbox" class="jv-checkbox" name="JVShowEntryLog"
+                                                id="JVShowEntryLog" checked>
+                                            <label for="">Show Entry Log</label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="">Amount</label>
+                                        <div class="jv-amount-fields">
                                             <select name="JVAmountOperator" id="JVAmountOperator">
                                                 <option value="=">=</option>
                                                 <option value="<>">&ne;</option>
@@ -5734,11 +5753,6 @@
                                             </select>
                                             <input type="text" class="jv-text" name="JVAmount" id="">
                                         </div>
-                                        <div>
-                                            <input type="checkbox" class="jv-checkbox" name="JVShowEntryLog"
-                                                id="JVShowEntryLog" checked>
-                                            <label for="">Show Entry Log</label>
-                                        </div>
                                     </div>
                                     <fieldset class="rv-fieldset">
                                         <legend class="rv-legend">Detail Part Contains</legend>
@@ -5750,7 +5764,7 @@
                                             </div>
                                             <div id="LedgerListForDEJVMsearchDIV" class="suggestions-list2"></div>
                                             <div>
-                                                <labelfor="">Sub Ledger</label>
+                                                <label for="">Sub Ledger</label>
                                                     <input type="text" class="jv-text" name="JVSubLedger">
                                             </div>
                                             <div>
@@ -5763,20 +5777,21 @@
                                             </div>
                                         </div>
                                     </fieldset>
-                                    <div>
-                                        <label for="">Doc Class</label>
-                                        <input type="text" class="benchods" name="JVDocClass"
-                                            id="doc-class-journal-voucher-search"
-                                            placeholder="Type or click to get list">
+                                    <div class="rv-form-style-horizontal3">
+                                        <div>
+                                            <label for="">Doc Class</label>
+                                            <input type="text" class="benchods" name="JVDocClass"
+                                                id="doc-class-journal-voucher-search"
+                                                placeholder="Type or click to get list">
+                                        </div>
+                                        <div>
+                                            <label for="">Collector</label>
+                                            <input type="text" class="jv-text" name="JVCollector"
+                                                id="de-jvm-coll-searchinput" placeholder="Type or click to Get List">
+                                        </div>
                                     </div>
                                     <div id="docClassesListforJournalVoucherSearch" class="suggestions-list2"
                                         style="display: none;"></div>
-                                    <div>
-                                        <label for="">Collector</label>
-                                        <input type="text" class="jv-text" name="JVCollector"
-                                            id="de-jvm-coll-searchinput" placeholder="Type or click to Get List"
-                                            >
-                                    </div>
                                     <div id="CollectorsListForDEJVMsearchDIV" class="suggestions-list2"></div>
                                     <div class="jv-button-row jv-search-actions">
                                         <div>

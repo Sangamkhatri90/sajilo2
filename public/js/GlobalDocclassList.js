@@ -67,6 +67,7 @@
         function displayDocClassSuggestions(inputId, listId) {
             const listElement = document.getElementById(listId);
             listElement.innerHTML = '';
+            positionJournalVoucherSearchList(inputId, listId, listElement);
 
             // Close button
             const closeButton = document.createElement('button');
@@ -93,6 +94,18 @@
                 listElement.innerHTML += '<div>No matching Doc Classes found</div>';
                 listElement.style.display = 'block';
             }
+        }
+
+        function positionJournalVoucherSearchList(inputId, listId, listElement) {
+            if (listId !== 'docClassesListforJournalVoucherSearch') return;
+            const input = document.getElementById(inputId);
+            const searchPanel = document.getElementById('jv-search');
+            if (!input || !searchPanel) return;
+            const inputRect = input.getBoundingClientRect();
+            const panelRect = searchPanel.getBoundingClientRect();
+            listElement.style.setProperty('left', `${inputRect.left - panelRect.left}px`, 'important');
+            listElement.style.setProperty('top', `${inputRect.bottom - panelRect.top}px`, 'important');
+            listElement.style.setProperty('width', `${inputRect.width}px`, 'important');
         }
 
         // Attach autocomplete to multiple fields easily

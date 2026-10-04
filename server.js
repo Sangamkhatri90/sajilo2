@@ -29918,8 +29918,14 @@ app.post("/search-journal-voucher", async (req, res) => {
     JVCollector,
     JVAmountOperator,
     JVAmount,
-    JVTrash
+    JVTrash,
+    page: requestedPage,
+    pageSize: requestedPageSize
   } = req.body;
+
+  const page = Math.max(1, parseInt(requestedPage, 10) || 1);
+  const pageSize = Math.min(500, Math.max(1, parseInt(requestedPageSize, 10) || 200));
+  const offset = (page - 1) * pageSize;
 
   const useJVDateRange = ['on', '1', 'true'].includes(String(JVUseDateRange || '').toLowerCase());
 
@@ -29971,6 +29977,7 @@ app.post("/search-journal-voucher", async (req, res) => {
     let query = `
       SELECT 
         m.JournalID,
+        COUNT(*) OVER() AS TotalRows,
         m.VoucherNo,
         ISNULL(d.DetailsCount, 0) AS DetailsCount,
         ISNULL(d.TotalDrAmount, 0) AS TotalDrAmount,
@@ -30147,7 +30154,8 @@ app.post("/search-journal-voucher", async (req, res) => {
       params.push(JVAmount);
     }
 
-    const finalQuery = query + joinClauses + fromToFilter;
+    const finalQuery = query + joinClauses + fromToFilter + " ORDER BY m.JournalID DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+    params.push(offset, pageSize);
 
     console.log("Final Query:", finalQuery);
     console.log("Params:", params);
@@ -30157,7 +30165,7 @@ app.post("/search-journal-voucher", async (req, res) => {
         console.error("Database Query Error:", err);
         return res.status(500).json({ error: "Database error" });
       }
-      res.json(rows);
+      res.json({ results: rows, totalRows: rows[0]?.TotalRows || 0, page, pageSize });
     });
   });
 });

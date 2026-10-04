@@ -2005,11 +2005,24 @@ function PostedNUnpostedAllCheckboxes(lockStatus) {
 
 
 //JournalVoucher search
+let journalVoucherPage = 1;
+let journalVoucherPageSize = 200;
+let journalVoucherPageNavigation = false;
+let journalVoucherTotalRows = 0;
+let journalVoucherRequestId = 0;
+
 document.getElementById("jvSearchForm").addEventListener("submit", function (event) {
     event.preventDefault();
 
+    if (!journalVoucherPageNavigation) journalVoucherPage = 1;
+    journalVoucherPageNavigation = false;
+    journalVoucherTotalRows = 0;
+
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
+    data.page = journalVoucherPage;
+    data.pageSize = journalVoucherPageSize;
+    const requestId = ++journalVoucherRequestId;
 
     fetch("/search-journal-voucher", {
         method: "POST",
@@ -2017,9 +2030,13 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
         body: JSON.stringify(data),
     })
         .then(response => response.json())
-        .then(results => {
+        .then(payload => {
+            if (requestId !== journalVoucherRequestId) return;
+            journalVoucherPage = Number(payload?.page) || journalVoucherPage;
+            journalVoucherTotalRows = Number(payload?.totalRows) || 0;
+            const results = payload?.results;
             if (!Array.isArray(results)) {
-                console.error("Expected an array but got:", results);
+                console.error("Expected voucher results but got:", payload);
                 return;
             }
 
@@ -2079,7 +2096,7 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
                 if (checkbox.checked) {
                     // ✅ Show full log columns
                     tr.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td>${((journalVoucherPage - 1) * journalVoucherPageSize) + index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
                     <td>${row.TotalDrAmount}</td>
@@ -2099,7 +2116,7 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
                 } else {
                     // ✅ Simpler row
                     tr.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td>${((journalVoucherPage - 1) * journalVoucherPageSize) + index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
                     <td>${row.TotalCrAmount}</td>
@@ -2111,6 +2128,15 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
                 tbody.appendChild(tr);
                 totalAmount += parseFloat(row.TotalCrAmount) || 0;
             });
+
+            if (results.length === 0) {
+                const columnCount = checkbox.checked ? 16 : 6;
+                for (let index = 0; index < 8; index++) {
+                    const emptyRow = document.createElement("tr");
+                    emptyRow.innerHTML = `<td colspan="${columnCount}">&nbsp;</td>`;
+                    tbody.appendChild(emptyRow);
+                }
+            }
 
             // ✅ Add total row at the end
             const totalRow = document.createElement("tr");
@@ -2126,14 +2152,68 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
                 totalRow.innerHTML = `
                 <td colspan="3" style="text-align:right;">Total:</td>
                 <td>${totalAmount.toFixed(2)}</td>
-                <td colspan="4"></td>
+                    <td colspan="2"></td>
             `;
             }
 
             tbody.appendChild(totalRow);
         })
         .catch(err => console.error("Error fetching results:", err))
-        .finally(() => window.dispatchEvent(new CustomEvent('journal-voucher-search-finished')));
+        .finally(() => {
+            if (requestId !== journalVoucherRequestId) return;
+            const pageCount = Math.max(1, Math.ceil(journalVoucherTotalRows / journalVoucherPageSize));
+            const pageStatus = document.getElementById("jvPageStatus");
+            const previous = document.getElementById("jvPreviousPage");
+            const next = document.getElementById("jvNextPage");
+            const pageSelect = document.getElementById("jvPageSelect");
+            const pageCountLabel = document.getElementById("jvPageCount");
+            if (pageStatus) pageStatus.textContent = journalVoucherTotalRows
+                ? `${((journalVoucherPage - 1) * journalVoucherPageSize) + 1}-${Math.min(journalVoucherPage * journalVoucherPageSize, journalVoucherTotalRows)} of ${journalVoucherTotalRows}`
+                : "No results";
+            if (previous) previous.disabled = journalVoucherPage <= 1 || !journalVoucherTotalRows;
+            if (next) next.disabled = journalVoucherPage >= pageCount || !journalVoucherTotalRows;
+            if (pageCountLabel) pageCountLabel.textContent = `/ ${journalVoucherTotalRows ? pageCount : 0}`;
+            if (pageSelect) {
+                pageSelect.innerHTML = '';
+                for (let pageNumber = 1; pageNumber <= pageCount && journalVoucherTotalRows; pageNumber++) {
+                    const option = document.createElement("option");
+                    option.value = pageNumber;
+                    option.textContent = pageNumber;
+                    option.selected = pageNumber === journalVoucherPage;
+                    pageSelect.appendChild(option);
+                }
+                pageSelect.disabled = !journalVoucherTotalRows;
+            }
+            window.dispatchEvent(new CustomEvent('journal-voucher-search-finished'));
+        });
+});
+
+document.getElementById("jvPreviousPage")?.addEventListener("click", () => {
+    if (journalVoucherPage <= 1) return;
+    journalVoucherPage--;
+    journalVoucherPageNavigation = true;
+    document.getElementById("jvSearchForm").requestSubmit();
+});
+
+document.getElementById("jvNextPage")?.addEventListener("click", () => {
+    journalVoucherPage++;
+    journalVoucherPageNavigation = true;
+    document.getElementById("jvSearchForm").requestSubmit();
+});
+
+document.getElementById("jvPageSelect")?.addEventListener("change", event => {
+    const requestedPage = parseInt(event.target.value, 10);
+    if (!requestedPage || requestedPage === journalVoucherPage) return;
+    journalVoucherPage = requestedPage;
+    journalVoucherPageNavigation = true;
+    document.getElementById("jvSearchForm").requestSubmit();
+});
+
+document.getElementById("jvRowsPerPage")?.addEventListener("change", event => {
+    journalVoucherPageSize = parseInt(event.target.value, 10) || 200;
+    journalVoucherPage = 1;
+    journalVoucherPageNavigation = true;
+    document.getElementById("jvSearchForm").requestSubmit();
 });
 
 

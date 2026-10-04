@@ -3,6 +3,8 @@
     top: 60px;
     left: 30px;
     width: min(90vw, 1027px);
+    min-width: min(90vw, 1027px);
+    --jv-panel-height: clamp(420px, calc(100vh - 186px), 614px);
     max-width: calc(100vw - 32px);
     max-height: calc(100vh - 72px);
     overflow: auto;
@@ -56,7 +58,8 @@
   right: 20px;
   width: 410px;
   max-width: calc(100% - 430px);
-  max-height: calc(90vh - 150px);
+  height: var(--jv-panel-height);
+  max-height: var(--jv-panel-height);
   box-sizing: border-box;
   background: #f4f4f4;
   padding: 10px;
@@ -66,7 +69,7 @@
   transition: opacity 0.2s ease-in-out;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
   border-radius: 8px;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 #jv-search[style*="display: block"] {
@@ -79,9 +82,12 @@
   min-width: 0;
 }
 
-#movableDiv38.jv-search-open .jv-table-section > fieldset {
+#movableDiv38 .jv-table-section > fieldset {
   width: 100%;
+  height: var(--jv-panel-height);
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .jv-container {
@@ -136,6 +142,18 @@
   outline: none;
 }
 
+#jv-search .jv-amount-fields {
+  display: flex;
+  gap: 5px;
+}
+
+#jv-search .jv-amount-fields select,
+#jv-search .jv-amount-fields input {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
   .jv-checkbox {
     margin-left: 10px;
     margin-top: 20px;
@@ -149,13 +167,17 @@
     overflow: auto;
 }
 
-#movableDiv38.jv-search-open .jv-table-container {
+#movableDiv38 .jv-table-container {
   max-width: none;
-  max-height: calc(100vh - 220px);
+  height: calc(var(--jv-panel-height) - 44px);
+  max-height: none;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .jv-table-container table {
     width: 100%;
+    min-width: 100%;
     border-collapse: collapse;
     font-family: Arial, sans-serif;
     font-size: 14px;
@@ -233,7 +255,11 @@
 #jv-search .jv-search-actions {
   justify-content: space-between;
   gap: 0;
-  margin: 18px 0 10px;
+  margin: 6px 0 4px;
+}
+
+#jv-search > .jv-fieldset {
+  margin: 0;
 }
 
 #jv-search .jv-search-actions > div {
@@ -243,10 +269,109 @@
 #jv-search .jv-search-actions .jv-button {
   min-width: 92px;
   max-width: none;
-  min-height: 30px;
-  padding: 6px 18px;
+  min-height: 26px;
+  padding: 4px 16px;
   font-size: 13px;
 }
+
+.jv-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.jv-pagination button {
+  padding: 4px 10px;
+  border: 1px solid #0b62e4;
+  border-radius: 3px;
+  background: #0b62e4;
+  color: #fff;
+  cursor: pointer;
+}
+
+.jv-pagination button:disabled {
+  cursor: default;
+  opacity: .5;
+}
+
+.jv-pagination select {
+  height: 28px;
+  padding: 2px 5px;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.jv-pagination #jvPageSelect {
+  width: 58px;
+}
+
+.jv-pagination .jv-page-arrow {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.jv-pagination label {
+  margin-left: 12px;
+}
+
+.jv-pagination #jvRowsPerPage {
+  width: 60px;
+}
+
+.jv-pagination select:disabled {
+  opacity: .5;
+}
+
+#jv-search #LedgerListForDEJVMsearchDIV,
+#jv-search #docClassesListforJournalVoucherSearch,
+#jv-search #CollectorsListForDEJVMsearchDIV {
+  box-sizing: border-box;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10000;
+  padding-top: 0;
+}
+
+#jv-search #LedgerListForDEJVMsearchDIV > button,
+#jv-search #docClassesListforJournalVoucherSearch > button,
+#jv-search #CollectorsListForDEJVMsearchDIV > button {
+  position: sticky;
+  top: 0;
+  display: block;
+  margin-left: auto;
+  z-index: 1;
+  min-width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: #dc3545;
+  color: #fff;
+  cursor: pointer;
+  line-height: 22px;
+}
+
+#jv-search #LedgerListForDEJVMsearchDIV > div,
+#jv-search #docClassesListforJournalVoucherSearch > div,
+#jv-search #CollectorsListForDEJVMsearchDIV > div {
+  padding: 6px 8px;
+  border-bottom: 1px solid #d6d6d6;
+  cursor: pointer;
+}
+
+#jv-search #LedgerListForDEJVMsearchDIV > div:last-child,
+#jv-search #docClassesListforJournalVoucherSearch > div:last-child,
+#jv-search #CollectorsListForDEJVMsearchDIV > div:last-child {
+  border-bottom: 0;
+}
+
 
 @media (max-width: 900px) {
   #movableDiv38 {
@@ -267,8 +392,19 @@
     right: auto;
     width: 100%;
     max-width: 100%;
+    height: auto;
     max-height: none;
     margin-top: 10px;
+  }
+
+  #movableDiv38 .jv-table-section > fieldset {
+    height: auto;
+    display: block;
+  }
+
+  #movableDiv38 .jv-table-container {
+    height: auto;
+    max-height: calc(100vh - 220px);
   }
 
   #movableDiv38 .jv-form-style-horizontal3,

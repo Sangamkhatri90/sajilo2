@@ -67,6 +67,7 @@
         function displayLgrMasSuggestions(inputId, listId) {
             const listElement = document.getElementById(listId);
             listElement.innerHTML = '';
+            positionJournalVoucherSearchList(inputId, listId, listElement);
 
             // Close button
             const closeButton = document.createElement('button');
@@ -93,6 +94,18 @@
                 listElement.innerHTML += '<div>No matching Ledger Master found</div>';
                 listElement.style.display = 'block';
             }
+        }
+
+        function positionJournalVoucherSearchList(inputId, listId, listElement) {
+            if (listId !== 'LedgerListForDEJVMsearchDIV') return;
+            const input = document.getElementById(inputId);
+            const searchPanel = document.getElementById('jv-search');
+            if (!input || !searchPanel) return;
+            const inputRect = input.getBoundingClientRect();
+            const panelRect = searchPanel.getBoundingClientRect();
+            listElement.style.setProperty('left', `${inputRect.left - panelRect.left}px`, 'important');
+            listElement.style.setProperty('top', `${inputRect.bottom - panelRect.top}px`, 'important');
+            listElement.style.setProperty('width', `${inputRect.width}px`, 'important');
         }
 
         // Attach autocomplete to multiple fields easily
@@ -133,4 +146,4 @@
             attachLgrMasAutocomplete(field.inputId, field.listId, '/fetchLgrMaster');
         });
 
-  
+
