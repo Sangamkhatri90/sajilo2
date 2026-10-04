@@ -96,7 +96,7 @@
                 }
 
                 function positionJournalVoucherSearchList(inputId, listId, listElement) {
-                    if (listId !== 'CollectorsListForDEJVMsearchDIV') return;
+                    if (listId === 'CollectorsListForDEJVMsearchDIV') return;
                     const input = document.getElementById(inputId);
                     const searchPanel = document.getElementById('jv-search');
                     if (!input || !searchPanel) return;

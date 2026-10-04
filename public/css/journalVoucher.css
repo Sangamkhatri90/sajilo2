@@ -339,6 +339,21 @@
   padding-top: 0;
 }
 
+#jv-search .jv-suggestion-field {
+  position: relative;
+  overflow: visible;
+}
+
+#jv-search .jv-suggestion-field #docClassesListforJournalVoucherSearch,
+#jv-search .jv-suggestion-field #CollectorsListForDEJVMsearchDIV {
+  top: auto !important;
+  right: auto;
+  bottom: calc(100% + 2px) !important;
+  left: 0 !important;
+  width: 100% !important;
+  min-width: 0;
+}
+
 #jv-search #LedgerListForDEJVMsearchDIV > button,
 #jv-search #docClassesListforJournalVoucherSearch > button,
 #jv-search #CollectorsListForDEJVMsearchDIV > button {
