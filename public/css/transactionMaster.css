@@ -6,10 +6,28 @@
   min-width: min(90vw, 1027px);
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 72px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   box-sizing: border-box;
+  padding: 0;
   --tm-panel-height: clamp(420px, calc(100vh - 186px), 614px);
+}
+
+#movableDiv99 > *,
+#movableDiv99 form {
+  max-width: 100%;
+}
+
+#movableDiv99 fieldset {
+  max-width: 100%;
+  min-width: 0;
+}
+
+#movableDiv99 input,
+#movableDiv99 select,
+#movableDiv99 textarea {
+  max-width: 100%;
 }
 
 #tm-search {
@@ -36,7 +54,8 @@
 }  
 
 .tm-container {
-    padding: 8px;
+    padding: 10px 8px 0;
+    position: relative;
     width: 100%;
     box-sizing: border-box;
 }
@@ -66,9 +85,8 @@
 
 #movableDiv99.tm-search-open .tm-table-section {
   width: calc(100% - 440px);
-  flex: 0 0 calc(100% - 440px);
+  max-width: none;
   min-width: 0;
-  overflow: hidden;
 }
 
 #movableDiv99 .tm-table-section > fieldset {
@@ -78,7 +96,6 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow: hidden;
 }
 
 .tm-fieldset {
@@ -137,10 +154,9 @@
 .tm-table-container {
     position: relative;
     width: 100%;
-    max-width: 950px;
+    max-width: 970px;
     margin: 0 auto;
     overflow: auto;
-    max-width: 100%;
 }
 
 #movableDiv99 .tm-table-container {
@@ -185,12 +201,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 6px;
   margin-top: 8px;
+  font-size: 12px;
 }
 
 .tm-pagination button {
-  padding: 5px 10px;
+  padding: 4px 10px;
+  border: 1px solid #0b62e4;
+  border-radius: 3px;
+  background: #0b62e4;
+  color: #fff;
+  cursor: pointer;
+}
+
+.tm-pagination button:disabled {
+  cursor: default;
+  opacity: .5;
 }
 
 .tm-pagination select {
@@ -201,14 +228,33 @@
   background: #fff;
 }
 
-.tm-pagination #tmPageSelect { width: 58px; }
-.tm-pagination #tmRowsPerPage { width: 60px; }
-.tm-pagination .tm-page-arrow { width: 28px; height: 28px; padding: 0; font-size: 20px; line-height: 1; }
-.tm-pagination label { margin-left: 12px; }
-.tm-pagination select:disabled { opacity: .5; }
+.tm-pagination #tmPageSelect {
+  width: 58px;
+}
+
+.tm-pagination .tm-page-arrow {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.tm-pagination label {
+  margin-left: 12px;
+}
+
+.tm-pagination #tmRowsPerPage {
+  width: 60px;
+}
+
+.tm-pagination select:disabled {
+  opacity: .5;
+}
 
 .tm-table-container table {
     width: 100%;
+    min-width: 100%;
     border-collapse: collapse;
     font-family: Arial, sans-serif;
     font-size: 14px;
