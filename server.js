@@ -30342,7 +30342,7 @@ app.post("/search-transaction-voucher", (req, res) => {
   } = req.body;
 
   const page = Math.max(1, parseInt(requestedPage, 10) || 1);
-  const pageSize = Math.min(100, Math.max(1, parseInt(requestedPageSize, 10) || 100));
+  const pageSize = Math.min(500, Math.max(1, parseInt(requestedPageSize, 10) || 200));
   const offset = (page - 1) * pageSize;
 
   const TMDateFromm = TMDateFrom ? TMDateFrom.replace(/-/g, '/') : null;

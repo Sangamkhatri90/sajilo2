@@ -2146,7 +2146,7 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
                 totalRow.innerHTML = `
                 <td colspan="3" style="text-align:right;">Total:</td>
                 <td>${totalAmount.toFixed(2)}</td>
-                <td colspan="12"></td>
+                <td colspan="14"></td>
             `;
             } else {
                 totalRow.innerHTML = `
@@ -2221,7 +2221,7 @@ document.getElementById("jvRowsPerPage")?.addEventListener("change", event => {
 
 //transactionvoucher search
 let transactionVoucherPage = 1;
-const transactionVoucherPageSize = 100;
+let transactionVoucherPageSize = 200;
 let transactionVoucherPageNavigation = false;
 let transactionVoucherTotalRows = 0;
 
@@ -2308,7 +2308,7 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
                 tr.dataset.journalId = row.JournalID || '';
                 if (checkbox.checked) {
                     tr.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td>${((transactionVoucherPage - 1) * transactionVoucherPageSize) + index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
                     <td>${row.TotalCrAmount}</td>
@@ -2330,7 +2330,7 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
                 `;
                 } else {
                     tr.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td>${((transactionVoucherPage - 1) * transactionVoucherPageSize) + index + 1}</td>
                     <td>${row.VoucherNo}</td>
                     <td>${row.JV_Miti || ''}</td>
                     <td>${row.TotalCrAmount}</td>
@@ -2347,6 +2347,14 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
             });
 
             // ✅ Append total row
+            if (results.length === 0) {
+                const columnCount = checkbox.checked ? 18 : 8;
+                for (let index = 0; index < 8; index++) {
+                    const emptyRow = document.createElement("tr");
+                    emptyRow.innerHTML = `<td colspan="${columnCount}">&nbsp;</td>`;
+                    transactionRowsFragment.appendChild(emptyRow);
+                }
+            }
             tbody.appendChild(transactionRowsFragment);
             const totalRow = document.createElement("tr");
             totalRow.style.fontWeight = "bold";
@@ -2354,13 +2362,13 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
                 totalRow.innerHTML = `
                 <td colspan="3" style="text-align:right;">Total:</td>
                 <td>${totalAmount.toFixed(2)}</td>
-                <td colspan="12"></td>
+                <td colspan="14"></td>
             `;
             } else {
                 totalRow.innerHTML = `
                 <td colspan="3" style="text-align:right;">Total:</td>
                 <td>${totalAmount.toFixed(2)}</td>
-                <td colspan="2"></td>
+                <td colspan="4"></td>
             `;
             }
             tbody.appendChild(totalRow);
@@ -2376,11 +2384,25 @@ document.getElementById("tmsearchForm").addEventListener("submit", function (eve
             const pageStatus = document.getElementById("tmPageStatus");
             const previous = document.getElementById("tmPreviousPage");
             const next = document.getElementById("tmNextPage");
+            const pageSelect = document.getElementById("tmPageSelect");
+            const pageCountLabel = document.getElementById("tmPageCount");
             if (pageStatus) pageStatus.textContent = transactionVoucherTotalRows
-                ? `Page ${transactionVoucherPage} of ${pageCount} (${transactionVoucherTotalRows} vouchers)`
+                ? `${((transactionVoucherPage - 1) * transactionVoucherPageSize) + 1}-${Math.min(transactionVoucherPage * transactionVoucherPageSize, transactionVoucherTotalRows)} of ${transactionVoucherTotalRows}`
                 : "No results";
             if (previous) previous.disabled = transactionVoucherPage <= 1 || !transactionVoucherTotalRows;
             if (next) next.disabled = transactionVoucherPage >= pageCount || !transactionVoucherTotalRows;
+            if (pageCountLabel) pageCountLabel.textContent = `/ ${transactionVoucherTotalRows ? pageCount : 0}`;
+            if (pageSelect) {
+                pageSelect.innerHTML = '';
+                for (let pageNumber = 1; pageNumber <= pageCount && transactionVoucherTotalRows; pageNumber++) {
+                    const option = document.createElement("option");
+                    option.value = pageNumber;
+                    option.textContent = pageNumber;
+                    option.selected = pageNumber === transactionVoucherPage;
+                    pageSelect.appendChild(option);
+                }
+                pageSelect.disabled = !transactionVoucherTotalRows;
+            }
         });
 });
 
@@ -2392,6 +2414,21 @@ document.getElementById("tmPreviousPage")?.addEventListener("click", () => {
 });
 document.getElementById("tmNextPage")?.addEventListener("click", () => {
     transactionVoucherPage++;
+    transactionVoucherPageNavigation = true;
+    document.getElementById("tmsearchForm").requestSubmit();
+});
+
+document.getElementById("tmPageSelect")?.addEventListener("change", event => {
+    const requestedPage = parseInt(event.target.value, 10);
+    if (!requestedPage || requestedPage === transactionVoucherPage) return;
+    transactionVoucherPage = requestedPage;
+    transactionVoucherPageNavigation = true;
+    document.getElementById("tmsearchForm").requestSubmit();
+});
+
+document.getElementById("tmRowsPerPage")?.addEventListener("change", event => {
+    transactionVoucherPageSize = parseInt(event.target.value, 10) || 200;
+    transactionVoucherPage = 1;
     transactionVoucherPageNavigation = true;
     document.getElementById("tmsearchForm").requestSubmit();
 });

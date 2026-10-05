@@ -381,17 +381,14 @@ document.addEventListener("DOMContentLoaded", function () {
             searchButton.addEventListener("click", function (e) {
                 e.preventDefault(); // Prevent default button behavior
         
-                // Toggle the search panel visibility
                 if (searchPanel.style.display === "none" || searchPanel.style.display === "") {
                     searchPanel.style.display = "block";
-                    movableDiv.style.width = "1910px"; // Expand the movableDiv
+                    movableDiv.classList.add("tm-search-open");
                 } else {
                     searchPanel.style.display = "none";
-                    movableDiv.style.width = "1060px"; // Restore the original width
+                    movableDiv.classList.remove("tm-search-open");
                 }
-        
-                // Smooth transitions for both the div and panel
-                movableDiv.style.transition = "width 0.3s ease";
+
                 searchPanel.style.transition = "all 0.3s ease";
             });
         });

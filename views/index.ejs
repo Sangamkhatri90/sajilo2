@@ -12097,7 +12097,7 @@ async function loadEarningsData() {
                                     </a>
                                 </div>
 
-                                <div style="display: flex;">
+                                <div class="tm-table-section" style="display: flex;">
                                     <!-- Left Panel -->
                                     <fieldset>
                                         <div class="tm-table-container">
@@ -12163,9 +12163,18 @@ async function loadEarningsData() {
                                             <p id="tmError" style="color: red;"></p>
                                         </div>
                                         <div id="tmPagination" class="tm-pagination" aria-live="polite">
-                                            <button type="button" id="tmPreviousPage" disabled>Previous</button>
+                                            <button type="button" id="tmPreviousPage" class="tm-page-arrow" disabled aria-label="Previous page">‹</button>
+                                            <span>Page</span>
+                                            <select id="tmPageSelect" disabled aria-label="Page"></select>
+                                            <span id="tmPageCount">/ 0</span>
+                                            <button type="button" id="tmNextPage" class="tm-page-arrow" disabled aria-label="Next page">›</button>
                                             <span id="tmPageStatus">No results</span>
-                                            <button type="button" id="tmNextPage" disabled>Next</button>
+                                            <label for="tmRowsPerPage">Rows:</label>
+                                            <select id="tmRowsPerPage" aria-label="Rows per page">
+                                                <option value="100">100</option>
+                                                <option value="200" selected>200</option>
+                                                <option value="500">500</option>
+                                            </select>
                                         </div>
                                     </fieldset>
                                 </div>
@@ -12240,12 +12249,12 @@ async function loadEarningsData() {
                                     <fieldset class="tm-fieldset">
                                         <legend class="tm-legend">Details Part Contains</legend>
                                         <div class="tm-form-style-horizontal3">
-                                            <div>
+                                            <div class="tm-suggestion-field">
                                                 <label for="">Ledger</label>
                                                 <input type="text" class="tm-text" name="ledgerTrans"
                                                     id="DE-TVM-searchledger" placeholder="Type or click to Get List">
+                                                <div id="LedgerListForDETVMsearchDIV" class="suggestions-list2"></div>
                                             </div>
-                                            <div id="LedgerListForDETVMsearchDIV" class="suggestions-list2"></div>
                                             <div>
                                                 <label for="">Sub Ledger</label>
                                                 <input type="text" class="tm-text" name="subLedgerTrans" id="">
@@ -12260,14 +12269,14 @@ async function loadEarningsData() {
                                             </div>
                                         </div>
                                     </fieldset>
-                                    <div>
+                                    <div class="tm-suggestion-field">
                                         <label for="">Doc Class</label>
                                         <input type="text" class="benchods" name="docClassTrans"
                                             id="doc-class-transaction-master-search"
                                             placeholder="Type or click to get list">
+                                        <div id="docClassesListforTransactionMasterSearch" class="suggestions-list2"
+                                            style="display: none;"></div>
                                     </div>
-                                    <div id="docClassesListforTransactionMasterSearch" class="suggestions-list2"
-                                        style="display: none;"></div>
                                     <div class="tm-button-row">
                                         <button type="submit" class="tm-button" id="">Go</button>
                                         <button type="reset" class="tm-button" id="reset-button">Reset</button>
