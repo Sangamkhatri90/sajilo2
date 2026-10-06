@@ -377,6 +377,14 @@ document.addEventListener("DOMContentLoaded", function () {
             const searchButton = document.getElementById("tm-search-button");
             const movableDiv = document.getElementById("movableDiv99");
             const searchPanel = document.getElementById("tm-search");
+            const closeButton = document.getElementById("closeButton99");
+            const cancelButton = document.getElementById("cancelButton99");
+
+            function closeTransactionMaster() {
+                movableDiv.style.display = "none";
+                searchPanel.style.display = "none";
+                movableDiv.classList.remove("tm-search-open");
+            }
         
             searchButton.addEventListener("click", function (e) {
                 e.preventDefault(); // Prevent default button behavior
@@ -391,6 +399,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 searchPanel.style.transition = "all 0.3s ease";
             });
+
+            closeButton.addEventListener("click", closeTransactionMaster);
+            cancelButton.addEventListener("click", closeTransactionMaster);
         });
 
 //Distribution Master

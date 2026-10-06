@@ -725,10 +725,7 @@
                 <fieldset class="pvm-fieldset">
                     <legend class="search-result">Searched Results</legend>
                     <button type="button" id="closeSearchedDataForm" class="close-x" title="Close search results">&times;</button>
-                    <div style="margin-bottom: 8px; text-align: right;">
-                        <input type="hidden" id="searchedMemberId" name="MemberId" value="<%= searchedMemberId %>">
-                        <button type="button" id="createMemberBtn" class="Crebtn">New Account</button>
-                    </div>
+                    <input type="hidden" id="searchedMemberId" name="MemberId" value="<%= searchedMemberId %>">
 
 
                     <div class="display-table">
@@ -762,13 +759,18 @@
                         <% } else { %>
                             <h2>No member found.</h2>
                         <% } %>
-                        <div class="choose-transaction">
-                            <label for="actionSelect">Choose an action:</label>
-                            <select id="actionSelect" style="background-color: #dedada; border: 1px solid #ccc;">
-                                <option value="transaction">Transaction</option>
-                                <option value="bigTransaction">Multi Transaction</option>
-                                <option value="openingBalance">Opening Balance</option>
-                            </select>
+                        <div class="searched-data-actions">
+                            <div>
+                                <button type="button" id="createMemberBtn" class="Crebtn">New Account</button>
+                            </div>
+                            <div class="choose-transaction">
+                                <label for="actionSelect">Choose an action:</label>
+                                <select id="actionSelect" style="background-color: #dedada; border: 1px solid #ccc;">
+                                    <option value="transaction">Transaction</option>
+                                    <option value="bigTransaction">Multi Transaction</option>
+                                    <option value="openingBalance">Opening Balance</option>
+                                </select>
+                            </div>
                         </div>
                         <fieldset id="searched-account-details">
                             <legend>Account Details</legend>
@@ -12129,34 +12131,34 @@ async function loadEarningsData() {
                                                 </thead>
                                                 <tbody>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="18">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="18">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="18">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="18">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="18">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="18">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="18">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="18">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="18">&nbsp;</td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="14">&nbsp;</td>
+                                                        <td colspan="18">&nbsp;</td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -12223,9 +12225,9 @@ async function loadEarningsData() {
                                             <input type="text" class="tm-text" name="remarksTrans" id="">
                                         </div>
                                     </div>
-                                    <div class="tm-form-style-horizontal3">
-                                        <div>
-                                            <label for="">Amount</label>
+                                    <div>
+                                        <label for="">Amount</label>
+                                        <div class="tm-amount-fields">
                                             <select name="amountRange" id="">
                                                 <option value="=">=</option>
                                                 <option value="<>">
@@ -12240,10 +12242,20 @@ async function loadEarningsData() {
                                             </select>
                                             <input type="text" class="tm-text" name="amountTrans" id="">
                                         </div>
+                                    </div>
+                                    <div class="tm-form-style-horizontal3">
                                         <div>
                                             <input type="checkbox" id="TMShowLog" name="showEntryLogTrans" id=""
                                                 checked>
                                             <label for="">Show Entry Log</label>
+                                        </div>
+                                        <div class="tm-suggestion-field">
+                                            <label for="">Doc Class</label>
+                                            <input type="text" class="benchods" name="docClassTrans"
+                                                id="doc-class-transaction-master-search"
+                                                placeholder="Type or click to get list">
+                                            <div id="docClassesListforTransactionMasterSearch" class="suggestions-list2"
+                                                style="display: none;"></div>
                                         </div>
                                     </div>
                                     <fieldset class="tm-fieldset">
@@ -12269,14 +12281,6 @@ async function loadEarningsData() {
                                             </div>
                                         </div>
                                     </fieldset>
-                                    <div class="tm-suggestion-field">
-                                        <label for="">Doc Class</label>
-                                        <input type="text" class="benchods" name="docClassTrans"
-                                            id="doc-class-transaction-master-search"
-                                            placeholder="Type or click to get list">
-                                        <div id="docClassesListforTransactionMasterSearch" class="suggestions-list2"
-                                            style="display: none;"></div>
-                                    </div>
                                     <div class="tm-button-row">
                                         <button type="submit" class="tm-button" id="">Go</button>
                                         <button type="reset" class="tm-button" id="reset-button">Reset</button>
@@ -25836,28 +25840,26 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                         placeholder="Enter Nepali Date (YYYY/MM/DD)" class="currentlocaldate">
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div style="margin-left: 83%;">
-                                    <label for="user withdraw limit">User Withdraw Limit</label>
-                                    <input type="number" id="Maintransuserwithdrawlmt">
+                            <div class="maintrans-three-columns">
+                                <div>
+                                    <label for="MaintransvoucherNo">Voucher Number</label>
+                                    <input type="text" id="MaintransvoucherNo" name="voucherid">
                                 </div>
-                            </div>
-                            <div class="form-row">
-                                <label for="voucher-number">Voucher Number</label>
-                                <input type="text" id="MaintransvoucherNo" name="voucherid">
-                                <label for="doc-class">Doc. Class</label>
-                                <input type="text" id="MaintransDocclass" name="docClassTrans"
-                                    placeholder="Type or click to get list">
+                                <div>
+                                    <label for="MaintransDocclass">Doc. Class</label>
+                                    <input type="text" id="MaintransDocclass" name="docClassTrans"
+                                        placeholder="Type or click to get list">
+                                </div>
                                 <div id="DocClassMaintrans" class="suggestions-list"
                                     style="display: none; margin-top: 16.5%; margin-left: 57.5%; max-width: 205px;">
                                 </div>
-
-                                <!-- Suggestions List -->
-                                <label for="transactionType">Transaction Type</label>
-                                <select id="transactionTypeforMaintrans" name="transactionTypewww">
-                                    <option value="Deposit">Deposit</option>
-                                    <option value="Withdraw">Withdraw</option>
-                                </select>
+                                <div>
+                                    <label for="transactionTypeforMaintrans">Transaction Type</label>
+                                    <select id="transactionTypeforMaintrans" name="transactionTypewww">
+                                        <option value="Deposit">Deposit</option>
+                                        <option value="Withdraw">Withdraw</option>
+                                    </select>
+                                </div>
                             </div>
                             <div>
                                 <!-- Using input tags to display the start date -->
@@ -25869,29 +25871,43 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                 <input type="hidden" class="end-date-local" />
                             </div>
 
-                            <div class="form-row">
+                            <div class="maintrans-three-columns">
+                                <div>
+                                    <label for="CashChequeforMaintrans">Cash/Cheque</label>
+                                    <select id="CashChequeforMaintrans" name="cashcheque">
+                                        <option value="Cash">Cash</option>
+                                        <option value="Cheque">Cheque</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="MaintransGLName">Cash/Cheque</label>
+                                    <input type="text" id="MaintransGLName" name="GLName"
+                                        placeholder="Type or click to get list" required>
+                                </div>
+                                <div>
+                                    <label for="Maintransuserwithdrawlmt">User Withdraw Limit</label>
+                                    <input type="number" id="Maintransuserwithdrawlmt">
+                                </div>
                             </div>
-                            <label for="Cash/Cheque">Cash/Cheque</label>
-                            <select id="CashChequeforMaintrans" name="cashcheque">
-                                <option value="Cash">Cash</option>
-                                <option value="Cheque">Cheque</option>
-                            </select>
-                            <label for="cash/cheque">Cash/Cheque:</label>
-                            <input type="text" id="MaintransGLName" name="GLName"
-                                placeholder="Type or click to get list" required>
                             <div id="MaintransglNamesList" class="suggestions-list"
                                 style="display: none; margin-top: 16.5%; margin-left: 33.5%; max-width: 205px;"></div>
                             <!-- Suggestions List -->
 
 
-                            <div class="form-row">
-                                <label for="cheque-number">Cheque Number</label>
-                                <input type="text" id="MaintranschequeNumber" class="cheque-number">
-                                <div id="error-message" class="error"></div>
-                                <label for="cheque-date">Cheque Date</label>
-                                <input type="date" class="date" id="MaintranschequeDate">
-                                <label for="bearer">Bearer</label>
-                                <input type="number" id="Maintransbearer" name="bearer">
+                            <div class="maintrans-three-columns">
+                                <div>
+                                    <label for="MaintranschequeNumber">Cheque Number</label>
+                                    <input type="text" id="MaintranschequeNumber" class="cheque-number">
+                                    <div id="error-message" class="error"></div>
+                                </div>
+                                <div>
+                                    <label for="MaintranschequeDate">Cheque Date</label>
+                                    <input type="date" class="date" id="MaintranschequeDate">
+                                </div>
+                                <div>
+                                    <label for="Maintransbearer">Bearer</label>
+                                    <input type="number" id="Maintransbearer" name="bearer">
+                                </div>
                             </div>
                             <div class="Maintransmembertableforaccedit">
                                 <fieldset class="fieldset1">
@@ -25941,54 +25957,47 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                 </fieldset>
                             </div>
 
-                            <div class="cem-form-style-horizontal2" style=" margin-top: -107px;">
-                                <div style="width: 160px;">
+                            <div class="maintrans-three-columns" style="margin-top: -107px;">
+                                <div>
                                     <label for="account-number">Account Number
                                         <input type="checkbox" name="" id="MaintransaccnumCbforaccedit">
                                     </label>
                                     <input type="text" id="Maintransaccountnumberofaccpostedit" name="accountnumber"
                                         value="">
                                 </div>
-                                <div></div>
-                                <div>
-                                    <label for="source of fund">Source of Fund</label>
-                                    <input type="text" name="sourceofFund" id="MaintranssrcofFund">
-                                </div>
-                            </div>
-
-
-                            <div class="cem-form-style-horizontal2" style=" margin-top: 10px;">
                                 <div>
                                     <label for="account-name">Account Name</label>
                                     <input type="text" id="Maintransmembervalueforedit" name="SLName" value="" readonly>
                                 </div>
-                                <div></div>
-                                <div style="margin-right: -20px ;">
+                                <div>
+                                    <label for="account-type-ledger">A/C Type</label>
+                                    <input type="text" name="Glname" id="Maintransacctypeforaccpostingedit">
+                                </div>
+                            </div>
+
+                            <div class="maintrans-three-columns" style="margin-top: 10px;">
+                                <div>
+                                    <label for="source of fund">Source of Fund</label>
+                                    <input type="text" name="sourceofFund" id="MaintranssrcofFund">
+                                </div>
+                                <div style="align-self: end;">
                                     <button type="button" id="MaintranstoggleButton184"> View A/c Details </button>
                                 </div>
-                                <div style="margin-left: 10px ; margin-right: -54px;">
+                                <div style="align-self: end;">
                                     <button type="button" id="MaintransPostIntBtn" class="action-button post-interest">Post Interest</button></a>
                                 </div>
                             </div>
 
-                            <div class="tc-form-style">
-                                <div style="width: 184px;">
-                                    <label for="account-type-ledger">A/C Type</label>
-                                    <input type="text" name="Glname" id="Maintransacctypeforaccpostingedit">
-                                </div>
-
-                                <div style="width: 184px;">
+                            <div class="maintrans-three-columns">
+                                <div>
                                     <label for="interest-balance">Interest Balance</label>
                                     <input type="text" id="MaintransinterestBal" name="account-name" value="">
                                 </div>
-                            </div>
-
-                            <div class="tc-form-style">
-                                <div style="width: 184px;">
+                                <div>
                                     <label for="balance"> Balance</label>
                                     <input type="text" id="MaintransBalance" name="account-name" value="" readonly>
                                 </div>
-                                <div style="width: 184px;">
+                                <div>
                                     <label for="amount">Interest Amount</label>
                                     <input type="number" id="MaintransintAmount" name="amount">
                                 </div>
@@ -26049,36 +26058,46 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                     <label for="accrued-interest">Accrued Interest</label>
                                     <input type="number" id="MaintransaccruedInterest" name="accrued-interest">
                                 </div>
-                                <div style="display: flex;">
+                                <div class="maintrans-checkbox">
                                     <input type="checkbox" id="Maintranssuspicious-trans" name="suspicious-trans">
-                                    <label for="suspicious-trans" style="margin-top: 15px;">Suspicious
+                                    <label for="Maintranssuspicious-trans">Suspicious
                                         Transaction</label>
 
 
                                 </div>
-                                <div style="display: flex;">
+                                <div class="maintrans-checkbox">
                                            <input type="checkbox" id="MaintransAccClose" name="MaintransAccClose">
-                                    <label for="suspicious-trans" style="margin-top: 15px;">Account Close</label>
+                                    <label for="MaintransAccClose">Account Close</label>
                                 </div>
                             </div>
 
-                            <div class="form-row">
-                                <label for="Collateral amount for others">Collateral Amount For Others</label>
-                                <input type="number" name="" id="MaintranscollateralAmt">
-                                <label for="deposit-by">Deposited By</label>
-                                <input type="text" id="MaintransdepositBy" name="deposit-by">
-                                <label for="contact-number">Contact Number</label>
-                                <input type="number" id="MaintranscontactNumber" name="contact-number">
+                            <div class="maintrans-three-columns">
+                                <div>
+                                    <label for="MaintranscollateralAmt">Collateral Amount For Others</label>
+                                    <input type="number" name="" id="MaintranscollateralAmt">
+                                </div>
+                                <div>
+                                    <label for="MaintransdepositBy">Deposited By</label>
+                                    <input type="text" id="MaintransdepositBy" name="deposit-by">
+                                </div>
+                                <div>
+                                    <label for="MaintranscontactNumber">Contact Number</label>
+                                    <input type="number" id="MaintranscontactNumber" name="contact-number">
+                                </div>
                             </div>
 
-                            <div class="tc-remark">
-                                <label for="remark">Remark</label>
-                                <textarea id="Maintransremark" name="remark" placeholder="Remark"></textarea>
+                            <div class="maintrans-two-columns">
+                                <div>
+                                    <label for="Maintransremark">Remark</label>
+                                    <textarea id="Maintransremark" name="remark" placeholder="Remark"></textarea>
+                                </div>
+                                <div>
+                                    <label for="Mainrefund-amount">Refund Amount</label>
+                                    <input type="number" id="Mainrefund-amount" name="refund-amount">
+                                </div>
                             </div>
 
                             <div class="form-row buttons">
-                                <label for="refund-amount">Refund Amount</label>
-                                <input type="number" id="Mainrefund-amount" name="refund-amount">
                                 <button id="MaintranssaveBtn" class="save" type="submit"><img src="PNG/save.png"
                                         alt="Save">Save</button>
                                 <button type="button" class="cancel" id="mainCreatTransDcancelButton"><img

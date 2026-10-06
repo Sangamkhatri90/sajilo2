@@ -159,6 +159,18 @@
     overflow: auto;
 }
 
+#tm-search .tm-amount-fields {
+  display: flex;
+  gap: 5px;
+}
+
+#tm-search .tm-amount-fields select,
+#tm-search .tm-amount-fields input {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 #movableDiv99 .tm-table-container {
   max-width: none;
   height: calc(var(--tm-panel-height) - 44px);
@@ -324,6 +336,15 @@
 
 #tm-search .tm-button-row {
   margin: 6px 0 4px;
+}
+
+#tm-search .tm-button {
+  min-width: 92px;
+  max-width: none;
+  min-height: 26px;
+  max-height: none;
+  padding: 4px 16px;
+  font-size: 13px;
 }
 
 #tm-search .tm-suggestion-field {
