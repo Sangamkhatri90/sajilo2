@@ -465,6 +465,29 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
 
 }
 
+document.getElementById('Maintransacctypeforaccpostingedit').addEventListener('dblclick', function() {
+    const accountType = this.value.trim();
+    const editPanel = document.getElementById('movableDiv156');
+    if (!accountType) {
+        const notify = typeof showCustomAlert === 'function' ? showCustomAlert : alert;
+        notify('Please select an account with an account type first.');
+        return;
+    }
+
+    // The existing Account Type edit form uses this hidden value to identify
+    // the original account type while saving changes.
+    document.getElementById('EditAccTypeMas-Name').value = accountType;
+    document.getElementById('EditAccTypeMas-SelectedName').value = accountType;
+    editPanel.querySelectorAll('#generalContent1, #savingContent1, #loanContent1').forEach(section => {
+        section.style.display = section.id === 'generalContent1' ? 'block' : 'none';
+    });
+    editPanel.querySelectorAll('.toggler-link').forEach(link => {
+        link.classList.toggle('active', link.dataset.target === 'generalContent1');
+    });
+    editPanel.style.display = 'block';
+    editPanel.style.zIndex = '10002';
+});
+
 document.getElementById('mainopeningbalanceForm').addEventListener('submit', async function(event) {
     event.preventDefault();
 
