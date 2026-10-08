@@ -27913,15 +27913,21 @@ const edit = panel?.querySelector('#pvm-edit-button');
             </script>
 
             <script>
-                document.getElementById('mas-account-id').addEventListener('blur', function () {
-                    const alias = this.value;
-                    if (alias.trim() === '') {
-                        document.getElementById('mas-account-name').value = '';
-                        document.getElementById('mas-mobile-number').value = '';
+                function populateMobileAlertMemberDetails() {
+                    const accountInput = document.getElementById('mas-account-id');
+                    const nameInput = document.getElementById('mas-account-name');
+                    const mobileInput = document.getElementById('mas-mobile-number');
+
+                    if (!accountInput || !nameInput || !mobileInput) return;
+
+                    const alias = accountInput.value.trim();
+                    if (!alias) {
+                        nameInput.value = '';
+                        mobileInput.value = '';
                         return;
                     }
 
-                    fetch('', {
+                    fetch('/get-member-alias-5', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -27931,16 +27937,33 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         .then((response) => response.json())
                         .then((data) => {
                             if (data.success) {
-                                document.getElementById('mas-account-name').value = data.memberName || '';
-                                document.getElementById('mas-mobile-number').value = data.mobile || '';
+                                nameInput.value = data.memberName || '';
+                                mobileInput.value = data.mobile || '';
                             } else {
+                                nameInput.value = '';
+                                mobileInput.value = '';
                                 showCustomAlert(data.message || 'Alias not found');
                             }
                         })
                         .catch((error) => {
-                            console.error('Error:', error);
+                            console.error('Error fetching member detail:', error);
+                            nameInput.value = '';
+                            mobileInput.value = '';
+                            showCustomAlert('Error fetching member detail');
                         });
-                });
+                }
+
+                const masAccountInput = document.getElementById('mas-account-id');
+                if (masAccountInput) {
+                    masAccountInput.addEventListener('blur', populateMobileAlertMemberDetails);
+                    masAccountInput.addEventListener('change', populateMobileAlertMemberDetails);
+                    masAccountInput.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            populateMobileAlertMemberDetails();
+                        }
+                    });
+                }
             </script>
 
             <script>

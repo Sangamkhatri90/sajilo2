@@ -2014,6 +2014,13 @@ let journalVoucherRequestId = 0;
 document.getElementById("jvSearchForm").addEventListener("submit", function (event) {
     event.preventDefault();
 
+    const dateFrom = document.getElementById("JVDateFrom");
+    const dateTo = document.getElementById("JVDateTo");
+    const submittedDates = {
+        from: dateFrom.value,
+        to: dateTo.value
+    };
+
     if (!journalVoucherPageNavigation) journalVoucherPage = 1;
     journalVoucherPageNavigation = false;
     journalVoucherTotalRows = 0;
@@ -2161,6 +2168,9 @@ document.getElementById("jvSearchForm").addEventListener("submit", function (eve
         .catch(err => console.error("Error fetching results:", err))
         .finally(() => {
             if (requestId !== journalVoucherRequestId) return;
+            if (!dateFrom.value && submittedDates.from) dateFrom.value = submittedDates.from;
+            if (!dateTo.value && submittedDates.to) dateTo.value = submittedDates.to;
+
             const pageCount = Math.max(1, Math.ceil(journalVoucherTotalRows / journalVoucherPageSize));
             const pageStatus = document.getElementById("jvPageStatus");
             const previous = document.getElementById("jvPreviousPage");

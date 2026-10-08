@@ -13240,122 +13240,107 @@ app.post("/insert-mobile-alert-setting", (req, res) => {
   } = req.body;
 
   const conn = req.session.conn;
-  const AlertonWithDraw = MASAlertonWithDraw ? 1 : 0;
-  const AlertonDeposit = MASAlertonDeposit ? 1 : 0;
+  const accountNumber = typeof MASAccNum === "string" ? MASAccNum.trim() : "";
+  const createdBy = typeof MASCreatedBy === "string" ? MASCreatedBy.trim() : "";
+  if (!accountNumber || !createdBy) {
+    return res.status(400).json({
+      success: false,
+      message: "Account number and user are required.",
+    });
+  }
 
-  const WithdrawAmount = MASAlertonWithDrawAmount
-    ? MASAlertonWithDrawAmount
-    : 0;
-  const DepositAmount = MASAlertonDepositAmount ? MASAlertonDepositAmount : 0;
-
-  // Convert string dates to Date objects if they are strings
-  const formatDate = (date) => {
-    if (typeof date === "string") {
-      const formattedDate = new Date(date);
-      if (isNaN(formattedDate.getTime())) {
-        throw new Error("Invalid date format");
-      }
-      return formattedDate.toISOString().slice(0, 19).replace("T", " "); // Format 'YYYY-MM-DD HH:MM:SS'
+  const toDate = (value) => {
+    if (!value) return null;
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      throw new Error("Invalid date format");
     }
-    return date; // If already a Date object, return as is
+    const parsed = new Date(`${value}T00:00:00Z`);
+    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+      throw new Error("Invalid date format");
+    }
+    return value;
   };
 
+  const toAmount = (value) => {
+    if (value === undefined || value === null || value === "") return 0;
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) throw new Error("Invalid alert amount");
+    return amount;
+  };
+
+  let effectiveDate;
+  let renewDate;
+  let expiryDate;
+  let withdrawAmount;
+  let depositAmount;
   try {
-    // Ensure all date values are properly formatted
-    const formattedMASSServiceSD = formatDate(MASSServiceSD);
-    const formattedMASRenewDate = formatDate(MASRenewDate);
-    const formattedMASExpiryDate = formatDate(MASExpiryDate);
-
-    console.log(
-      "--------------------------------",
-      MASAccNum,
-      MASSServiceSD,
-      MASRenewDate,
-      MASExpiryDate,
-      AlertonDeposit,
-      WithdrawAmount,
-      AlertonWithDraw,
-      DepositAmount,
-      MASRemarks,
-      MASCreatedBy
-    );
-
-    console.log("MASSServiceSD type:", typeof formattedMASSServiceSD);
-    console.log("MASRenewDate type:", typeof formattedMASRenewDate);
-    console.log("MASExpiryDate type:", typeof formattedMASExpiryDate);
-
-    const query1 = `SELECT SLID FROM tbSubLedgerMaster WHERE SlAlias = ?`;
-    sql.query(conn, query1, [MASAccNum], (err, result) => {
-      if (err) {
-        console.error("Error querying the database:", err);
-        return res.status(500).send("Database error");
-      }
-
-      if (!result || !result[0]) {
-        return res
-          .status(400)
-          .send({ success: false, message: "Account number not found" });
-      }
-      const SLID = result[0].SLID;
-
-      const query2 = `SELECT UserID FROM tbUserMaster WHERE UserName = ?`;
-      sql.query(connectionString, query2, [MASCreatedBy], (err, result) => {
-        if (err) {
-          console.error(err);
-          return res
-            .status(400)
-            .send({ success: false, message: "Error querying UserID" });
-        }
-
-        if (!result || !result[0]) {
-          return res
-            .status(400)
-            .send({ success: false, message: "User not found" });
-        }
-        const createuserID = result[0].UserID;
-
-        const mainquery = `INSERT INTO tbMobileAlertSetting 
-          (SLID, EffectiveDate, AlertonWithdraw, AlertonWithdrawAmount, AlertonDeposit, 
-          AlertonDepositAmount, AlertonScheduleDate, AlertonFixedMaturity, CreatedBy, 
-          CreatedDateTime, LastSavedBy, LastSavedDateTime, Remarks, RenewDate, ExpiryDate)
-          VALUES (?, ?, ?, ?, ?, ?,  0, 0, ?, GETDATE(), ?, ?, ?, ?, ?)`;
-
-        sql.query(
-          conn,
-          mainquery,
-          [
-            SLID,
-            formattedMASSServiceSD,
-            AlertonWithDraw,
-            WithdrawAmount,
-            AlertonDeposit,
-            DepositAmount,
-            createuserID,
-            null,
-            null,
-            MASRemarks,
-            formattedMASRenewDate,
-            formattedMASExpiryDate,
-          ],
-          (err, result) => {
-            if (err) {
-              console.error("Error querying the database:", err);
-              return res.status(500).send("Database error");
-            }
-            res
-              .status(200)
-              .json({
-                message: "Mobile Alert Setting inserted successfully",
-                success: true,
-              });
-          }
-        );
-      });
-    });
-  } catch (err) {
-    console.error("Error:", err.message);
-    res.status(400).send({ success: false, message: err.message });
+    effectiveDate = toDate(MASSServiceSD);
+    renewDate = toDate(MASRenewDate);
+    expiryDate = toDate(MASExpiryDate);
+    withdrawAmount = toAmount(MASAlertonWithDrawAmount);
+    depositAmount = toAmount(MASAlertonDepositAmount);
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
   }
+
+  const alertOnWithdraw = MASAlertonWithDraw ? 1 : 0;
+  const alertOnDeposit = MASAlertonDeposit ? 1 : 0;
+  const subledgerQuery = "SELECT SLID FROM tbSubLedgerMaster WHERE SlAlias = ?";
+  sql.query(conn, subledgerQuery, [accountNumber], (err, subledgerRows) => {
+    if (err) {
+      console.error("Error finding Mobile Alert subledger:", err);
+      return res.status(500).json({ success: false, message: "Database error" });
+    }
+    if (!subledgerRows || !subledgerRows[0]) {
+      return res.status(400).json({ success: false, message: "Account number not found" });
+    }
+
+    const userQuery = "SELECT UserID FROM SAJILODB.dbo.tbUserMaster WHERE UserName = ?";
+    sql.query(userQuery, [createdBy], (userError, userRows) => {
+      if (userError) {
+        console.error("Error finding Mobile Alert creator:", userError);
+        return res.status(500).json({ success: false, message: "Database error" });
+      }
+      if (!userRows || !userRows[0]) {
+        return res.status(400).json({ success: false, message: "User not found" });
+      }
+
+      const insertQuery = `
+        INSERT INTO tbMobileAlertSetting
+          (SLID, EffectiveDate, AlertonWithdraw, AlertonWithdrawAmount,
+           AlertonDeposit, AlertonDepositAmount, AlertonScheduleDate,
+           AlertonFixedMaturity, CreatedBy, CreatedDateTime, LastSavedBy,
+           LastSavedDateTime, Remarks, RenewDate, ExpiryDate)
+        VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, GETDATE(), NULL, NULL, ?, ?, ?)
+      `;
+      sql.query(
+        conn,
+        insertQuery,
+        [
+          subledgerRows[0].SLID,
+          effectiveDate,
+          alertOnWithdraw,
+          withdrawAmount,
+          alertOnDeposit,
+          depositAmount,
+          userRows[0].UserID,
+          MASRemarks || null,
+          renewDate,
+          expiryDate,
+        ],
+        (insertError) => {
+          if (insertError) {
+            console.error("Error inserting Mobile Alert setting:", insertError);
+            return res.status(500).json({ success: false, message: "Database error" });
+          }
+          return res.status(200).json({
+            success: true,
+            message: "Mobile Alert Setting inserted successfully",
+          });
+        }
+      );
+    });
+  });
 });
 // Route to fetch route data for RouteWiseacc
 app.get("/fetchRouteForRouteWiseacc", (req, res) => {
