@@ -1,5 +1,3 @@
-const { response } = require("express");
-
 function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, Mobile,
     AccountOpenDate, Photo, Sign1, Sign2, Sign3, Sign4,
       Gender, NextofKinName, NextofKinAddress, NextofKinContactNumber,
@@ -519,7 +517,14 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
             remarks: value('Maintransremark')
           })
         });
-        const result = await response.json();
+        const responseText = await response.text();
+        let result = {};
+        try {
+          result = responseText ? JSON.parse(responseText) : {};
+        } catch (_) {
+          result.message = responseText;
+        }
+        if (!response.ok) console.error('Transaction save failed:', { status: response.status, result });
         if (!response.ok || !result.success) throw new Error(result.message || 'Unable to save transaction.');
 
         notify(result.message);

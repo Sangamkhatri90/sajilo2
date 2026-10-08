@@ -1281,6 +1281,20 @@ app.post("/account/Transaction", async (req, res) => {
     return res.status(400).json({ success: false, message: 'Enter a valid account, date, voucher number, cash/cheque ledger, document class, and amount.' });
   }
 
+  console.log('Transaction save request:', {
+    accountAlias: String(accountAlias).trim(),
+    amount: total,
+    transactionType,
+    voucherNo: String(voucherNo).trim(),
+    cashLedger: String(cashLedger).trim(),
+    docClass: String(docClass).trim(),
+    transDate,
+    sourceofFund: sourceofFund || null,
+    penalty: Number(penalty) || 0,
+    rebate: Number(rebate) || 0,
+    sessionUserID: req.session.userID || null
+  });
+
   const query = (text, params = []) => sql.promises.query(conn, text, params);
   let journalID;
   try {
@@ -1348,7 +1362,18 @@ app.post("/account/Transaction", async (req, res) => {
         console.error('Transaction cleanup failed:', cleanupError);
       }
     }
-    console.error('Transaction insert failed:', error);
+    console.error('Transaction insert failed:', {
+      message: error.message,
+      code: error.code,
+      sqlState: error.sqlState,
+      accountAlias,
+      voucherNo,
+      cashLedger,
+      docClass,
+      transDate,
+      transactionType,
+      amount: total
+    });
     return res.status(500).json({ success: false, message: 'Unable to save transaction.' });
   }
 });
