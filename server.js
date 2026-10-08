@@ -6617,20 +6617,27 @@ app.get("/getVoucherConfig1", async (req, res) => {
 });
 
 app.get("/getLastVoucherNo", async (req, res) => {
-  const prefix = req.query.prefix;
-  
+  const prefix = typeof req.query.prefix === "string" ? req.query.prefix.trim() : "";
   const conn = req.session.conn; // Connection string for the primary database
   if (!prefix) return res.status(400).send("Prefix is required");
 
   try {
     const query = `
-          SELECT TOP 1 VoucherNo 
-          FROM tbJournalMaster 
-          WHERE VoucherNo LIKE '${prefix}%'
-          ORDER BY VoucherNo DESC;
+          SELECT TOP 1 VoucherNo
+          FROM tbJournalMaster
+          CROSS APPLY (
+              SELECT SUBSTRING(VoucherNo, LEN(?) + 1, 8000) AS VoucherRemainder
+          ) AS voucherParts
+          CROSS APPLY (
+              SELECT PATINDEX('%[^0-9]%', VoucherRemainder + 'X') - 1 AS NumberLength
+          ) AS numberParts
+          WHERE LEFT(VoucherNo, LEN(?)) = ?
+            AND TRY_CONVERT(BIGINT, LEFT(VoucherRemainder, NumberLength)) IS NOT NULL
+          ORDER BY TRY_CONVERT(BIGINT, LEFT(VoucherRemainder, NumberLength)) DESC,
+                   VoucherNo DESC;
       `;
 
-    sql.query(conn, query, (err, result) => {
+    sql.query(conn, query, [prefix, prefix, prefix], (err, result) => {
       if (err) return res.status(500).send(err.message);
       const lastVoucherNo = result.length > 0 ? result[0].VoucherNo : null;
       res.json({ lastVoucherNo });
