@@ -53038,21 +53038,12 @@ const edit = panel?.querySelector('#pvm-edit-button');
                     transactionForm.style.zIndex = '10001';
                     voucherNumber.value = '';
                     try {
-                        const configResponse = await fetch('/getVoucherConfig?menuName=Transaction');
-                        if (!configResponse.ok) throw new Error('Unable to load Transaction voucher settings.');
-                        const { Prefix, Suffix, BodyLength } = await configResponse.json();
-                        if (!Prefix || BodyLength === undefined || BodyLength === null) throw new Error('Invalid Transaction voucher settings.');
-                        const actualSuffix = Suffix || '';
-                        const numericLength = BodyLength - Prefix.length - actualSuffix.length;
-                        if (numericLength <= 0) throw new Error('Invalid Transaction voucher settings.');
-
-                        const lastResponse = await fetch(`/getLastVoucherNo?prefix=${encodeURIComponent(Prefix)}`);
-                        if (!lastResponse.ok) throw new Error('Unable to load the last Transaction voucher number.');
-                        const { lastVoucherNo } = await lastResponse.json();
-                        const lastNumber = lastVoucherNo
-                            ? parseInt(lastVoucherNo.slice(Prefix.length, lastVoucherNo.length - actualSuffix.length), 10) || 0
-                            : 0;
-                        voucherNumber.value = Prefix + String(lastNumber + 1).padStart(numericLength, '0') + actualSuffix;
+                        const response = await fetch('/api/nextJournalVoucherforaccountedit');
+                        const data = await response.json();
+                        if (!response.ok || !data.voucherNumber) {
+                            throw new Error(data.message || 'Unable to generate Transaction voucher number.');
+                        }
+                        voucherNumber.value = data.voucherNumber;
                     } catch (error) {
                         voucherNumber.value = '';
                         if (typeof showCustomAlert === 'function') showCustomAlert(error.message);

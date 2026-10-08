@@ -34101,15 +34101,30 @@ app.get('/api/nextJournalVoucherforaccountedit', (req, res) => {
         return res.status(404).send({ message: "No AutoNumber settings found for VoucherId " + udvNo });
       }
 
-      const { BodyLength, Prefix, Suffix, StartFrom, EndTo } = settingsRows[0];
+      const { BodyLength, StartFrom, EndTo } = settingsRows[0];
+      const Prefix = settingsRows[0].Prefix || '';
+      const Suffix = settingsRows[0].Suffix || '';
 
-      const likePattern = `${Prefix}%${Suffix}`;
       const lastVoucherQuery = `
-        SELECT TOP 1 VoucherNo FROM tbJournalMaster
-        WHERE VoucherNo LIKE ?
-        ORDER BY VoucherNo DESC
+        SELECT TOP 1 jm.VoucherNo
+        FROM tbJournalMaster jm
+        CROSS APPLY (
+          SELECT SUBSTRING(
+            jm.VoucherNo,
+            LEN(?) + 1,
+            CASE WHEN LEN(jm.VoucherNo) >= LEN(?) + LEN(?)
+              THEN LEN(jm.VoucherNo) - LEN(?) - LEN(?)
+              ELSE 0
+            END
+          ) AS NumericPart
+        ) AS voucherParts
+        WHERE jm.UDVNo = ?
+          AND LEFT(jm.VoucherNo, LEN(?)) = ?
+          AND RIGHT(jm.VoucherNo, LEN(?)) = ?
+          AND TRY_CONVERT(BIGINT, voucherParts.NumericPart) IS NOT NULL
+        ORDER BY TRY_CONVERT(BIGINT, voucherParts.NumericPart) DESC
       `;
-      sql.query(conn, lastVoucherQuery, [likePattern], (err, lastVoucherRows) => {
+      sql.query(conn, lastVoucherQuery, [Prefix, Prefix, Suffix, Prefix, Suffix, udvNo, Prefix, Prefix, Suffix, Suffix], (err, lastVoucherRows) => {
         if (err) {
           console.error("SQL error fetching last VoucherNumber:", err);
           return res.status(500).send({ message: "Error fetching last VoucherNumber" });
