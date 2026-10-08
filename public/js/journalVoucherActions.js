@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const memberName = form.querySelector('[name="JVMemberName"], #paymentVoucherMemberName');
     if (!memberID || !memberName || memberID.dataset.lookupBound) return;
     memberID.dataset.lookupBound = 'true';
-    memberID.addEventListener('blur', async () => {
+    const lookupMember = async () => {
       const alias = memberID.value.trim();
       if (!alias) { memberName.value = ''; return; }
       try {
@@ -74,6 +74,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response.ok || !data.success) throw new Error(data.message || 'Member not found.');
         memberName.value = data.memberName || '';
       } catch (error) { memberName.value = ''; notify(error.message); }
+    };
+    memberID.addEventListener('blur', lookupMember);
+    memberID.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        lookupMember();
+      }
     });
   };
 

@@ -48396,34 +48396,6 @@ const edit = panel?.querySelector('#pvm-edit-button');
                 });
             </script>
             <script>
-                document.getElementById('JVMemberID').addEventListener('blur', function () {
-                    const alias = this.value;
-                    if (alias.trim() === '') {
-                        document.getElementById('JVMemberName').value = '';
-                        return;
-                    }
-
-                    fetch('/get-member-name-2', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ alias }),
-                    })
-                        .then((response) => response.json())
-                        .then((data) => {
-                            if (data.success) {
-                                document.getElementById('JVMemberName').value = data.memberName || '';
-                            } else {
-                                showCustomAlert(data.message || 'Member not found');
-                            }
-                        })
-                        .catch((error) => {
-                            console.error('Error:', error);
-                        });
-                });
-            </script>
-            <script>
                 document.getElementById('RVMemberID').addEventListener('blur', function () {
                     const alias = this.value;
                     if (alias.trim() === '') {
