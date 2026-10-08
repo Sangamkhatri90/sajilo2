@@ -1260,233 +1260,97 @@ app.get("/transaction", (req, res) => {
   });
 });
 
-app.post("/account/Transaction", (req, res) => {
+app.post("/account/Transaction", async (req, res) => {
+  const conn = req.session.conn;
   const {
-    SlAlias,
-    total,
+    accountAlias,
+    amount,
     sourceofFund,
-    AliasNo,
     transactionType,
-    voucherid,
-    GLName,
+    voucherNo,
+    cashLedger,
     penalty,
     rebate,
     transDate,
-    docClassTrans,
-  } = req.body;
-  const conn = req.session.conn;
-  const postuserID = 1;
-  const createuserID = 1;
+    docClass,
+    remarks,
+  } = req.body || {};
+  const total = Number(amount);
 
-  // Query to fetch SLID and GLID from tbSubLedgerMaster
-  const getSLIDQuery = `SELECT SLID, GLID FROM tbSubLedgerMaster WHERE SlAlias = ?`;
+  if (!conn || !accountAlias || !voucherNo || !cashLedger || !docClass || !transDate || !['Deposit', 'Withdraw'].includes(transactionType) || !Number.isFinite(total) || total <= 0) {
+    return res.status(400).json({ success: false, message: 'Enter a valid account, date, voucher number, cash/cheque ledger, document class, and amount.' });
+  }
 
-  sql.query(conn, getSLIDQuery, [SlAlias], (err, results) => {
-    if (err) {
-      return res.status(500).send("Database error while retrieving SLID.");
+  const query = (text, params = []) => sql.promises.query(conn, text, params);
+  let journalID;
+  try {
+    const voucherDates = await resolveVoucherDatePair(conn, transDate);
+    const fiscalRows = await query(`
+      SELECT TOP 1 StartDate, EndDate
+      FROM dbo.tbFiscalYearMaster
+      WHERE CurrentFiscal = 1
+        AND CONVERT(date, ?) BETWEEN CONVERT(date, StartDate) AND CONVERT(date, EndDate)
+    `, [voucherDates.jvDate]);
+    if (!fiscalRows.length) {
+      return res.status(400).json({ success: false, message: 'Date should not exceed the fiscal range.' });
     }
-    if (!results || results.length === 0) {
-      return res.status(404).send("SLAlias not found.");
+
+    if ((await query('SELECT TOP 1 JournalID FROM dbo.tbJournalMaster WHERE VoucherNo = ?', [String(voucherNo).trim()])).length) {
+      return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
     }
 
-    const { SLID, GLID } = results[0];
+    const [accountRows, cashRows, docRows, voucherRows] = await Promise.all([
+      query('SELECT TOP 1 SLID, GLID FROM dbo.tbSubLedgerMaster WHERE LTRIM(RTRIM(SlAlias)) = ?', [String(accountAlias).trim()]),
+      query("SELECT TOP 1 GLID FROM dbo.tbLedgerMaster WHERE Category IN ('B', 'C') AND (LTRIM(RTRIM(GLName)) = ? OR LTRIM(RTRIM(GlAlias)) = ?)", [String(cashLedger).trim(), String(cashLedger).trim()]),
+      query('SELECT TOP 1 DocClassID FROM dbo.tbDocClassMaster WHERE LTRIM(RTRIM(DocClassName)) = ? OR LTRIM(RTRIM(DocClassAlias)) = ?', [String(docClass).trim(), String(docClass).trim()]),
+      query("SELECT TOP 1 UDVNo FROM dbo.tbUserDefinedVoucher WHERE MenuName = 'Transaction'")
+    ]);
+    if (!accountRows.length) return res.status(400).json({ success: false, message: 'Account number was not found.' });
+    if (!cashRows.length) return res.status(400).json({ success: false, message: 'Select a valid cash or bank ledger.' });
+    if (!docRows.length) return res.status(400).json({ success: false, message: 'Document class was not found.' });
 
-    // Query to fetch GLID for the provided GLName
-    const getGLIDQuery = `SELECT GLID FROM tbLedgerMaster WHERE GLName = ?`;
-    sql.query(conn, getGLIDQuery, [GLName], (errGL, resultsGL) => {
-      if (errGL) {
-        return res.status(500).send("Database error while retrieving GLID.");
+    let udvNo = voucherRows[0]?.UDVNo;
+    if (udvNo == null) {
+      const autoNumberRows = await query("SELECT TOP 1 VoucherID AS UDVNo FROM dbo.tbAutoNumberSetting WHERE ? LIKE Prefix + '%' ORDER BY LEN(Prefix) DESC", [String(voucherNo).trim()]);
+      udvNo = autoNumberRows[0]?.UDVNo;
+    }
+    if (udvNo == null) return res.status(400).json({ success: false, message: 'Transaction voucher configuration was not found.' });
+
+    let userID = Number(req.session.userID);
+    if (!Number.isInteger(userID) || userID <= 0) {
+      const users = await sql.promises.query(connectionString, 'SELECT TOP 1 UserID FROM dbo.tbUserMaster WHERE UserName = ?', [req.session.username || '']);
+      userID = Number(users[0]?.UserID);
+    }
+    if (!Number.isInteger(userID) || userID <= 0) return res.status(401).json({ success: false, message: 'The logged-in user could not be resolved.' });
+
+    const account = accountRows[0];
+    const cashGLID = cashRows[0].GLID;
+    const masterRows = await query(`
+      INSERT INTO dbo.tbJournalMaster
+        (SLIDPR, FundSource, TransType, VoucherNo, UDVNo, DocClassID, Penalty, Rebate, JV_Miti, JV_Date, CreatedDate, CreatedUserID, Remarks, GLIDCashDC, TotalAmountDC)
+      OUTPUT INSERTED.JournalID
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?, ?, ?, ?)
+    `, [account.SLID, sourceofFund || null, transactionType, String(voucherNo).trim(), udvNo, docRows[0].DocClassID, Number(penalty) || 0, Number(rebate) || 0, voucherDates.jvMiti, voucherDates.jvDate, userID, remarks || null, cashGLID, total]);
+    journalID = masterRows[0].JournalID;
+
+    const accountDebit = transactionType === 'Withdraw' ? total : 0;
+    const accountCredit = transactionType === 'Deposit' ? total : 0;
+    await query(`INSERT INTO dbo.tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, 1, ?, ?, ?, ?, 1, 0)`, [journalID, account.SLID, account.GLID, accountDebit, accountCredit]);
+    await query(`INSERT INTO dbo.tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, 2, NULL, ?, ?, ?, 0, 0)`, [journalID, cashGLID, accountCredit, accountDebit]);
+
+    return res.status(201).json({ success: true, message: 'Transaction saved successfully.', journalID });
+  } catch (error) {
+    if (journalID) {
+      try {
+        await query('DELETE FROM dbo.tbJournalDetails WHERE JournalID = ?', [journalID]);
+        await query('DELETE FROM dbo.tbJournalMaster WHERE JournalID = ?', [journalID]);
+      } catch (cleanupError) {
+        console.error('Transaction cleanup failed:', cleanupError);
       }
-      if (!resultsGL || resultsGL.length === 0) {
-        return res.status(404).send("GLName not found.");
-      }
-
-      const GLIDFromName = resultsGL[0].GLID;
-
-      // Fetch DocClassID for the provided docClass
-      const getDocClassIDQuery = `SELECT DocClassID FROM tbDocClassMaster WHERE DocClassName = ?`;
-      sql.query(
-        conn,
-        getDocClassIDQuery,
-        [docClassTrans],
-        (errDoc, resultsDoc) => {
-          if (errDoc) {
-            return res.status(500).send("Error retrieving DocClassID.");
-          }
-          if (!resultsDoc || resultsDoc.length === 0) {
-            return res.status(404).send("docClass not found.");
-          }
-
-          const DocClassID = resultsDoc[0].DocClassID;
-
-          // Extract only the alphabetic prefix from voucherid
-          const voucherPrefix =
-            typeof voucherid === "string"
-              ? voucherid.match(/^[a-zA-Z]{2}/)?.[0]
-              : null;
-
-          if (!voucherPrefix) {
-            return res.status(400).send("Invalid voucher prefix.");
-          }
-
-          // Fetch VoucherID for the provided voucherid prefix
-          const getVoucherIDQuery = `SELECT VoucherID FROM tbAutoNumberSetting WHERE Prefix = ?`;
-          sql.query(
-            conn,
-            getVoucherIDQuery,
-            [voucherPrefix],
-            (errVoucher, resultsVoucher) => {
-              if (errVoucher) {
-                return res.status(500).send("Error retrieving VoucherID.");
-              }
-              if (!resultsVoucher || resultsVoucher.length === 0) {
-                return res.status(404).send("Voucher prefix not found.");
-              }
-
-              const VoucherID = resultsVoucher[0].VoucherID;
-
-              // **Add the logic to check transDate with M_Miti and insert M_Date into JV_Date**
-
-              // Convert transDate to DD/MM/YYYY format for comparison
-              const [year, month, day] = transDate.split("/");
-              const transDateFormatted = `${day}/${month}/${year}`;
-
-              // Query the secondary database for M_Date based on M_Miti
-              const getMDateQuery = `SELECT M_Date FROM tbLocalDate WHERE M_Miti = ?`;
-
-              sql.query(
-                connectionString,
-                getMDateQuery,
-                [transDateFormatted],
-                (errDate, resultsDate) => {
-                  if (errDate) {
-                    return res
-                      .status(500)
-                      .send("Error retrieving M_Date from secondary database.");
-                  }
-                  if (!resultsDate || resultsDate.length === 0) {
-                    return res
-                      .status(404)
-                      .send("M_Miti not found in tbLocalDate.");
-                  }
-
-                  const JV_Date = resultsDate[0].M_Date;
-
-                  const secondSLIDquery = `SELECT SLID FROM tbSubLedgerMaster WHERE SlAlias = ?
-            `;
-                  sql.query(
-                    conn,
-                    secondSLIDquery,
-                    [AliasNo],
-                    (errSecond, resultsSecond) => {
-                      if (errSecond) {
-                        return res
-                          .status(500)
-                          .send("Error retrieving second SLID.");
-                      }
-                      const secondSlID = resultsSecond[0].SLID;
-
-                      // Insert into tbJournalMaster
-                      const insertJournalMasterQuery = `
-              INSERT INTO tbJournalMaster (SLIDPR, FundSource, TransType, VoucherNo, UDVNo, DocClassID, Penalty, Rebate, JV_Miti, JV_Date, PostDate, CreatedDate, PostUserID, CreatedUserID)
-              OUTPUT INSERTED.JournalID
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?, ?)
-            `;
-
-                      sql.query(
-                        conn,
-                        insertJournalMasterQuery,
-                        [
-                          SLID,
-                          sourceofFund,
-                          transactionType,
-                          voucherid,
-                          VoucherID,
-                          DocClassID,
-                          penalty,
-                          rebate,
-                          transDate,
-                          JV_Date,
-                          postuserID,
-                          createuserID,
-                        ],
-                        (errInsertMaster, resultMaster) => {
-                          if (errInsertMaster) {
-                            console.error(errInsertMaster);
-                            return res
-                              .status(500)
-                              .send("Error inserting journal master.");
-                          }
-
-                          const JournalID = resultMaster[0].JournalID;
-
-                          // Insert into tbJournalDetails
-                          const insertJournalDetailsQuery = `
-                  INSERT INTO tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                `;
-
-                          const detailsData = [
-                            [
-                              JournalID,
-                              1,
-                              SLID,
-                              GLID,
-                              transactionType === "Withdraw" ? total : 0,
-                              transactionType === "Deposit" ? total : 0,
-                              1,
-                              0,
-                            ],
-                            [
-                              JournalID,
-                              2,
-                              secondSlID,
-                              GLIDFromName,
-                              transactionType === "Deposit" ? total : 0,
-                              transactionType === "Withdraw" ? total : 0,
-                              0,
-                              null,
-                            ],
-                          ];
-
-                          Promise.all(
-                            detailsData.map((data) => {
-                              return new Promise((resolve, reject) => {
-                                sql.query(
-                                  conn,
-                                  insertJournalDetailsQuery,
-                                  data,
-                                  (errDetails) => {
-                                    if (errDetails) {
-                                      reject(
-                                        "Error inserting journal details."
-                                      );
-                                    } else {
-                                      resolve();
-                                    }
-                                  }
-                                );
-                              });
-                            })
-                          )
-                            .then(() => {
-                              res.send("Transaction successfully recorded.");
-                            })
-                            .catch((error) => {
-                              res.status(500).send(error);
-                            });
-                        }
-                      );
-                    }
-                  );
-                }
-              );
-            }
-          );
-        }
-      );
-    });
-  });
+    }
+    console.error('Transaction insert failed:', error);
+    return res.status(500).json({ success: false, message: 'Unable to save transaction.' });
+  }
 });
 
 app.get("/bigTransaction", (req, res) => {

@@ -500,48 +500,67 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
     
 
 }
-//Transaction Form Save functionality 
-    document.getElementById('MaintranssaveBtn').addEventListener('click', function(event) {
-      event.preventDefault();  // Prevent any default action (like form submission or reloading)
-  
-      // Get the parent form element 
-      const form = document.getElementById("mainCreatTransDForm");
-  
-      // Get values from input fields
-      const startDate = document.querySelector('.start-date-local').value;
-      const endDate = document.querySelector('.end-date-local').value;
-      const transDate = document.getElementById('MaintransdateInput').value;
-      const amount = document.getElementById('Maintransamount').value;
-  
-      // Flag to track if there's any error
-      let isError = false;
-  
-      // Check if the Transaction Date is between Start Date and End Date
-      if (transDate < startDate || transDate > endDate) {
-        showCustomAlert('Transaction Date must be between the Start Date and End Date!');
-        document.getElementById('MaintransdateInput').style.border = '2px solid red'; // Highlight the date input field
-        document.getElementById('MaintransdateInput').focus(); // Focus the field
-        isError = true; // Set error flag
-      } else {
-        document.getElementById('MaintransdateInput').style.border = ''; // Reset the border style if no error
+// Transaction form save functionality.
+    document.getElementById('mainCreatTransDForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const form = event.currentTarget;
+      const value = (id) => document.getElementById(id)?.value.trim() || '';
+      const transDateInput = document.getElementById('MaintransdateInput');
+      const amountInput = document.getElementById('Maintransamount');
+      const startDate = form.querySelector('.start-date-local')?.value || '';
+      const endDate = form.querySelector('.end-date-local')?.value || '';
+      const transDate = transDateInput.value;
+      const amount = Number(amountInput.value);
+      const notify = (message) => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
+
+      if (!transDate || !startDate || !endDate || transDate < startDate || transDate > endDate) {
+        notify('Date should not exceed the fiscal range.');
+        transDateInput.style.border = '2px solid red';
+        transDateInput.focus();
+        return;
       }
-  
-      // Check if the Amount is greater than 0
-      if (amount <= 0) {
-        if (!isError) { // Only show alert if no previous errors
-          showCustomAlert('0 Amount Voucher cannot be posted!');
-          document.getElementById('Maintransamount').style.border = '2px solid red'; // Highlight the amount input field
-          document.getElementById('Maintransamount').focus(); // Focus the field
-          isError = true; // Set error flag
-        }
-      } else {
-        document.getElementById('Maintransamount').style.border = ''; // Reset the border style if no error
+      transDateInput.style.border = '';
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        notify('0 Amount Voucher cannot be posted!');
+        amountInput.style.border = '2px solid red';
+        amountInput.focus();
+        return;
       }
-  
-      // If no errors, manually submit the form
-      if (!isError) {
-        console.log('Valid input! Proceed with submitting the form...');
-        form.submit();  // Trigger form submission
+      amountInput.style.border = '';
+
+      const saveButton = document.getElementById('MaintranssaveBtn');
+      saveButton.disabled = true;
+      try {
+        const response = await fetch('/account/Transaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accountAlias: value('Maintransaccountnumberofaccpostedit'),
+            amount,
+            sourceofFund: value('MaintranssrcofFund'),
+            transactionType: value('transactionTypeforMaintrans'),
+            voucherNo: value('MaintransvoucherNo'),
+            cashLedger: value('MaintransGLName'),
+            penalty: value('Maintranspenalty'),
+            rebate: value('Maintransrebate'),
+            transDate,
+            docClass: value('MaintransDocclass'),
+            remarks: value('Maintransremark')
+          })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || 'Unable to save transaction.');
+
+        notify(result.message);
+        form.reset();
+        transDateInput.value = transDate;
+        document.getElementById('mainCreatTransDiv').style.display = 'none';
+      } catch (error) {
+        notify(error.message || 'Unable to save transaction.');
+      } finally {
+        saveButton.disabled = false;
       }
     });
 
