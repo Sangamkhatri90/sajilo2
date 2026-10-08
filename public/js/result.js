@@ -153,43 +153,12 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
   // Function to fetch configuration and last voucher number
   async function fetchVoucherConfigAndGenerate() {
     try {
-        // Fetch configuration
-        const configResponse = await fetch(`/getVoucherConfig?menuName=${menuName}`);
-        if (!configResponse.ok) throw new Error(`Failed to fetch configuration: ${configResponse.statusText}`);
-        const configData = await configResponse.json();
-        const { Prefix, Suffix, BodyLength } = configData;
-
-        if (!Prefix || BodyLength === undefined || BodyLength === null) {
-            throw new Error('Invalid configuration response');
+        const response = await fetch('/api/nextJournalVoucherforaccountedit');
+        const data = await response.json();
+        if (!response.ok || !data.voucherNumber) {
+            throw new Error(data.message || 'Failed to generate Transaction voucher number.');
         }
-
-        // Handle empty Suffix
-        const actualSuffix = Suffix || ''; // Default to empty string if Suffix is null/empty
-        const numericLength = BodyLength - Prefix.length - actualSuffix.length;
-
-        if (numericLength <= 0) {
-            throw new Error('BodyLength must be greater than the sum of Prefix and Suffix lengths');
-        }
-
-        // Fetch last VoucherNo
-        const lastVoucherResponse = await fetch(`/getLastVoucherNo?prefix=${Prefix}`);
-        if (!lastVoucherResponse.ok) throw new Error(`Failed to fetch last voucher number: ${lastVoucherResponse.statusText}`);
-        const lastVoucherData = await lastVoucherResponse.json();
-        const lastVoucherNo = lastVoucherData.lastVoucherNo;
-
-        // Determine next VoucherNo
-        let nextNumber = 1;
-        if (lastVoucherNo) {
-            const lastNumber = parseInt(lastVoucherNo.slice(Prefix.length, lastVoucherNo.length - actualSuffix.length), 10);
-            nextNumber = lastNumber + 1;
-        }
-
-        // Pad the number to the calculated length
-        const paddedNumber = nextNumber.toString().padStart(numericLength, '0');
-        const newVoucherNo = Prefix + paddedNumber + actualSuffix;
-
-        // Update input
-        voucherNoInput.value = newVoucherNo;
+        voucherNoInput.value = data.voucherNumber;
     } catch (error) {
         console.error('Error generating VoucherNo:', error.message);
         voucherNoInput.value = ''; // Clear field on error

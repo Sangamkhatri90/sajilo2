@@ -6632,8 +6632,12 @@ app.get("/getLastVoucherNo", async (req, res) => {
               SELECT PATINDEX('%[^0-9]%', VoucherRemainder + 'X') - 1 AS NumberLength
           ) AS numberParts
           WHERE LEFT(VoucherNo, LEN(?)) = ?
-            AND TRY_CONVERT(BIGINT, LEFT(VoucherRemainder, NumberLength)) IS NOT NULL
-          ORDER BY TRY_CONVERT(BIGINT, LEFT(VoucherRemainder, NumberLength)) DESC,
+            AND NumberLength > 0
+            AND LEFT(VoucherRemainder, NumberLength) NOT LIKE '%[^0-9]%'
+          ORDER BY CONVERT(BIGINT, CASE
+                     WHEN NumberLength > 0 AND LEFT(VoucherRemainder, NumberLength) NOT LIKE '%[^0-9]%'
+                     THEN LEFT(VoucherRemainder, NumberLength) ELSE '0'
+                   END) DESC,
                    VoucherNo DESC;
       `;
 
@@ -34121,8 +34125,12 @@ app.get('/api/nextJournalVoucherforaccountedit', (req, res) => {
         WHERE jm.UDVNo = ?
           AND LEFT(jm.VoucherNo, LEN(?)) = ?
           AND RIGHT(jm.VoucherNo, LEN(?)) = ?
-          AND TRY_CONVERT(BIGINT, voucherParts.NumericPart) IS NOT NULL
-        ORDER BY TRY_CONVERT(BIGINT, voucherParts.NumericPart) DESC
+          AND LEN(voucherParts.NumericPart) > 0
+          AND voucherParts.NumericPart NOT LIKE '%[^0-9]%'
+        ORDER BY CONVERT(BIGINT, CASE
+                   WHEN LEN(voucherParts.NumericPart) > 0 AND voucherParts.NumericPart NOT LIKE '%[^0-9]%'
+                   THEN voucherParts.NumericPart ELSE '0'
+                 END) DESC
       `;
       sql.query(conn, lastVoucherQuery, [Prefix, Prefix, Suffix, Prefix, Suffix, udvNo, Prefix, Prefix, Suffix, Suffix], (err, lastVoucherRows) => {
         if (err) {
