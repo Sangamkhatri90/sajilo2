@@ -25825,17 +25825,18 @@ const edit = panel?.querySelector('#pvm-edit-button');
                 <div class="container">
                     <form id="mainCreatTransDForm" action="" method="POST" class="">
                         <fieldset class="fieldset">
-                            <div class="form-row">
+                            <legend class="maintrans-transaction-title">TRANSACTION</legend>
+                            <div class="maintrans-three-columns">
                                 <div>
-                                    <label for="">Member</label>
+                                    <label for="MaintransMembervalueforedit">Member</label>
                                     <input type="text" id="MaintransMembervalueforedit" readonly>
+                                </div>
+                                <div>
+                                    <label for="MaintransMembervalueforedit1">&nbsp;</label>
                                     <input type="text" id="MaintransMembervalueforedit1" readonly>
                                 </div>
-                                <div class="header">
-                                    <h3>TRANSACTION</h3>
-                                </div>
                                 <div>
-                                    <label for="date">Trans Date</label>
+                                    <label for="MaintransdateInput">Trans Date</label>
                                     <input type="date" name="transDate" id="MaintransdateInput"
                                         placeholder="Enter Nepali Date (YYYY/MM/DD)" class="currentlocaldate">
                                 </div>
@@ -25957,7 +25958,9 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                 </fieldset>
                             </div>
 
-                            <div class="maintrans-three-columns" style="margin-top: -107px;">
+                            <fieldset class="maintrans-account-details">
+                                <legend>Account Details</legend>
+                            <div class="maintrans-three-columns">
                                 <div>
                                     <label for="account-number">Account Number
                                         <input type="checkbox" name="" id="MaintransaccnumCbforaccedit">
@@ -25984,7 +25987,7 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                     <button type="button" id="MaintranstoggleButton184"> View A/c Details </button>
                                 </div>
                                 <div style="align-self: end;">
-                                    <button type="button" id="MaintransPostIntBtn" class="action-button post-interest">Post Interest</button></a>
+                                    <button type="button" id="MaintransPostIntBtn" class="action-button post-interest">Post Interest</button>
                                 </div>
                             </div>
 
@@ -26003,49 +26006,53 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                 </div>
                             </div>
 
-                            <div class="tc-form-style-btn">
-                                <div style="width: 184px;">
+                            </fieldset>
+
+                            <div class="maintrans-three-columns">
+                                <div>
+                                    <label for="int-receive-date">Int. Receive Till Date</label>
+                                    <input type="date" class="date" id="MaintransintTillDate">
+                                </div>
+                                <div>
+                                    <label for="principal receive-date">Principal Receive Till Date</label>
+                                    <input type="date" class="date" id="MaintransprinTillDate">
+                                </div>
+                                <div>
+                                    <label for="accrued-interest">Accrued Interest</label>
+                                    <input type="number" id="MaintransaccruedInterest" name="accrued-interest">
+                                </div>
+                            </div>
+
+                            <div class="maintrans-three-columns">
+                                <div>
                                     <label for="amount">Amount</label>
                                     <input type="number" id="Maintransamount" name="amount" oninput="updateTotal1()"
                                         placeholder="Amount">
                                 </div>
-                                <div style="margin-top: 10px;">
-                                    <a href="#" id="MaintranstoggleButton187" class="decoration"> <button type="button"
-                                            class="action-button bill">Bill</button></a>
+                                <div>
+                                    <label for="interest-amount">Penalty</label>
+                                    <input type="number" id="Maintranspenalty" name="penalty" oninput="updateTotal1()"
+                                        placeholder="Penalty">
                                 </div>
-                                <div style="width: 184px; margin-left: 202px;">
+                                <div>
                                     <label for="rebate">Rebate</label>
                                     <input type="number" id="Maintransrebate" name="rebate" oninput="updateTotal1()"
                                         placeholder="rebate">
                                 </div>
                             </div>
 
-                            <div class="tc-form-style-btn">
-                                <div style="width: 184px;">
-                                    <label for="interest-amount">Penalty</label>
-                                    <input type="number" id="Maintranspenalty" name="penalty" oninput="updateTotal1()"
-                                        placeholder="Penalty">
-                                </div>
-                                <div style="margin-top: 10px;">
-                                    <a href="#" id="MaintranstoggleButton188" class="decoration"><button type="button"
-                                            class="action-button renew" id="MaintransRenewbtn">Renew</button></a>
-
-                                </div>
-                                <div style="width: 184px; margin-left: 175px;">
-                                    <label for="int-receive-date">Int. Receive Till Date</label>
-                                    <input type="date" class="date" id="MaintransintTillDate">
-                                </div>
-                            </div>
-
-
-                            <div class="tc-form-style">
-                                <div style="width: 184px;">
+                            <div class="maintrans-three-columns">
+                                <div>
                                     <label for="Total-Amount">Total-Amount</label>
                                     <input type="number" id="Maintranstotal" name="total" readonly placeholder="Total">
                                 </div>
-                                <div style="width: 184px;">
-                                    <label for="principal receive-date">Principal Receive Till Date</label>
-                                    <input type="date" class="date" id="MaintransprinTillDate">
+                                <div style="align-self: end;">
+                                    <a href="#" id="MaintranstoggleButton187" class="decoration"><button type="button"
+                                            class="action-button bill">Bill</button></a>
+                                </div>
+                                <div style="align-self: end;">
+                                    <a href="#" id="MaintranstoggleButton188" class="decoration"><button type="button"
+                                            class="action-button renew" id="MaintransRenewbtn">Renew</button></a>
                                 </div>
                             </div>
 
@@ -26053,10 +26060,6 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                 <div style="width: 184px;">
                                     <textarea id="MaintranstotalInWords" placeholder="Amount in words" rows="4"
                                         cols="50" readonly></textarea>
-                                </div>
-                                <div style="width: 184px;">
-                                    <label for="accrued-interest">Accrued Interest</label>
-                                    <input type="number" id="MaintransaccruedInterest" name="accrued-interest">
                                 </div>
                                 <div class="maintrans-checkbox">
                                     <input type="checkbox" id="Maintranssuspicious-trans" name="suspicious-trans">
@@ -48959,7 +48962,13 @@ const edit = panel?.querySelector('#pvm-edit-button');
                     row.appendChild(amountTd);
 
                     tbodyMain.appendChild(row);
-                    tbodyMain2.appendChild(row); // Clone for the second table
+                    const multiRow = row.cloneNode(true);
+                    const multiInput = multiRow.querySelector("input");
+                    const multiAmountTd = multiRow.children[2];
+                    multiInput.oninput = () => {
+                        multiAmountTd.textContent = fig * Number(multiInput.value);
+                    };
+                    tbodyMain2.appendChild(multiRow);
                 });
 
 

@@ -8,16 +8,16 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background: linear-gradient(to bottom, #e6f2f8, #cde1ed);
-  width: min(820px, calc(100vw - 32px));
+  width: min(700px, calc(100vw - 32px));
   height: 900px;
-  max-height: 95vh;
+  max-height: 89vh;
   overflow-y: auto;
   overflow-x: hidden;
   border: 1px solid #7aa7c7;
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   font-family: "Segoe UI", Tahoma, sans-serif;
-  padding: 12px 18px;
+  padding: 12px 4px;
   box-sizing: border-box;
 }
 
@@ -27,6 +27,13 @@
   isolation: isolate;
 }
 
+#mainCreatTransDiv .container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
 #mainCreatTransDiv .do-table-container th {
   z-index: 1;
 }
@@ -34,8 +41,8 @@
 /* Close Button */
 #mainCreatTransDiv #mainCreatTransDcloseButton {
   position: absolute;
-  top: 6px;
-  right: 8px;
+  top: 2px;
+  right: 2px;
   border: none;
   background: transparent;
   font-size: 20px;
@@ -54,6 +61,19 @@
   color: #004d80;
   margin: 0;
   padding: 4px;
+}
+
+#mainCreatTransDiv .maintrans-transaction-title {
+  margin: 0 auto 6px;
+  padding: 0 6px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #004d80;
+}
+
+#mainCreatTransDiv .maintrans-account-details {
+  margin-top: -107px;
 }
 
 /* Labels and Inputs */
@@ -135,8 +155,15 @@
 #mainCreatTransDiv .maintrans-three-columns,
 #mainCreatTransDiv .maintrans-two-columns {
   display: grid;
-  gap: 10px;
+  gap: 20px;
   margin-bottom: 6px;
+}
+
+#mainCreatTransDForm > .fieldset {
+  width: 100%;
+  box-sizing: border-box;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 #mainCreatTransDiv .maintrans-three-columns {
@@ -155,6 +182,10 @@
 
 #mainCreatTransDiv .maintrans-checkbox label {
   margin: 0;
+}
+
+#mainCreatTransDiv .form-row.buttons {
+  justify-content: space-between;
 }
 .Maintransmembertableforaccedit{
   margin-top: 20px;
@@ -176,6 +207,19 @@
 #mainCreatTransDiv .do-table-containerforeditacc th {
   background: #d8ebf7;
   font-weight: bold;
+  color: #000;
+}
+
+/* Keep denomination-entry rows compact without affecting the recent-transactions table. */
+#mainCreatTransDiv #Maintranstable1 th,
+#mainCreatTransDiv #Maintranstable1 td {
+  padding: 2px 4px;
+  line-height: 1.1;
+}
+
+#mainCreatTransDiv #Maintranstable1 input {
+  height: 24px;
+  padding: 1px 4px;
 }
 
 /* Suggestion dropdown */
