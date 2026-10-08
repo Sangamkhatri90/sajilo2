@@ -13296,7 +13296,7 @@ app.post("/insert-mobile-alert-setting", (req, res) => {
     }
 
     const userQuery = "SELECT UserID FROM SAJILODB.dbo.tbUserMaster WHERE UserName = ?";
-    sql.query(userQuery, [createdBy], (userError, userRows) => {
+    sql.query(conn,userQuery, [createdBy], (userError, userRows) => {
       if (userError) {
         console.error("Error finding Mobile Alert creator:", userError);
         return res.status(500).json({ success: false, message: "Database error" });
