@@ -1463,96 +1463,47 @@ app.post("/account/openingBalance", async (req, res) => {
     GLName,
     transaction,
     amount,
-    OBCreatedBy,
     docClass,
     intAmount,
-    checkbox,
     remarks,
-  } = req.body;
+  } = req.body || {};
   const conn = req.session.conn;
-  const query = `SELECT SLID FROM tbSubLedgermaster WHERE SlAlias = ?
-  `;
-  sql.query(conn, query, [SlAlias], (err, result) => {
-    if (err) {
-      console.error(err);
-      res.status(400).send({ success: false, message: "Error querying SLID" });
+  const openingAmount = Number(amount);
+  const interest = Number(intAmount || 0);
+  if (!conn || !SlAlias || !GLName || !docClass || !['Dr', 'Cr'].includes(transaction) || !Number.isFinite(openingAmount) || openingAmount < 0 || !Number.isFinite(interest)) {
+    return res.status(400).json({ success: false, message: 'Enter a valid account, document class, debit/credit value, amount, and interest.' });
+  }
+
+  const query = (text, params = []) => sql.promises.query(conn, text, params);
+  try {
+    const [subLedgerRows, ledgerRows, docClassRows] = await Promise.all([
+      query('SELECT TOP 1 SLID, GLID FROM dbo.tbSubLedgerMaster WHERE LTRIM(RTRIM(SlAlias)) = ?', [String(SlAlias).trim()]),
+      query('SELECT TOP 1 GLID FROM dbo.tbLedgerMaster WHERE LTRIM(RTRIM(GLName)) = ? OR LTRIM(RTRIM(GlAlias)) = ?', [String(GLName).trim(), String(GLName).trim()]),
+      query('SELECT TOP 1 DocClassID FROM dbo.tbDocClassMaster WHERE LTRIM(RTRIM(DocClassName)) = ? OR LTRIM(RTRIM(DocClassAlias)) = ?', [String(docClass).trim(), String(docClass).trim()])
+    ]);
+    if (!subLedgerRows.length) return res.status(400).json({ success: false, message: 'Account number was not found.' });
+    if (!ledgerRows.length) return res.status(400).json({ success: false, message: 'Account ledger was not found.' });
+    if (!docClassRows.length) return res.status(400).json({ success: false, message: 'Document class was not found.' });
+    if (Number(subLedgerRows[0].GLID) !== Number(ledgerRows[0].GLID)) return res.status(400).json({ success: false, message: 'The selected account does not belong to the selected ledger.' });
+
+    let createdBy = Number(req.session.userID);
+    if (!Number.isInteger(createdBy) || createdBy <= 0) {
+      const userRows = await sql.promises.query(connectionString, 'SELECT TOP 1 UserID FROM dbo.tbUserMaster WHERE UserName = ?', [req.session.username || '']);
+      createdBy = Number(userRows[0]?.UserID);
     }
-    const SLID = result[0].SLID;
+    if (!Number.isInteger(createdBy) || createdBy <= 0) return res.status(401).json({ success: false, message: 'The logged-in user could not be resolved.' });
 
-    const query2 = `SELECT GLID FROM tbLedgerMaster WHERE GLName = ?
-    `;
-    sql.query(conn, query2, [GLName], (err, result2) => {
-      if (err) {
-        console.error(err);
-        res
-          .status(400)
-          .send({ success: false, message: "Error querying GLID" });
-      }
-      const GLID = result2[0].GLID;
+    await query(`
+      INSERT INTO dbo.tbOpeningBalanceMaster
+        (GLID, SLID, DrCr, Amount, Interest, CreatedBy, CreatedDateTime, LastSavedBy, LastSavedDateTime, Remarks, DocClassID)
+      VALUES (?, ?, ?, ?, ?, ?, GETDATE(), NULL, NULL, ?, ?)
+    `, [ledgerRows[0].GLID, subLedgerRows[0].SLID, transaction, openingAmount, interest, createdBy, remarks || null, docClassRows[0].DocClassID]);
 
-      const query3 = `SELECT DocClassID FROM tbDocClassMaster WHERE DocClassName = ?
-      `;
-      sql.query(conn, query3, [docClass], (err, result3) => {
-        if (err) {
-          console.error(err);
-          res
-            .status(400)
-            .send({ success: false, message: "Error querying DocClass" });
-        }
-        const DocClassID = result3[0].DocClassID;
-
-        const query4 = `SELECT UserID FROM tbUserMaster WHERE UserName = ?
-      `;
-        sql.query(connectionString, query4, [OBCreatedBy], (err, result) => {
-          if (err) {
-            console.error(err);
-            res
-              .status(400)
-              .send({ success: false, message: "Error querying UserID" });
-          }
-          const createuserID = result[0].UserID;
-
-          const mainquery = `INSERT INTO tbOpeningBalanceMaster (GLID, SLID, DrCr, Amount, Interest, CreatedBy, CreatedDateTime, LastSavedBy, LastSavedDateTime, Remarks, DocClassID )
-        VALUES (?,?,?,?,?,?, GETDATE(), ?, ?,?,? )`;
-          sql.query(
-            conn,
-            mainquery,
-            [
-              GLID,
-              SLID,
-              transaction,
-              amount,
-              intAmount,
-              createuserID,
-              null,
-              null,
-              remarks,
-              DocClassID,
-            ],
-            (err, result4) => {
-              if (err) {
-                console.error(err);
-                res
-                  .status(400)
-                  .send({
-                    success: false,
-                    message: "Error inserting in tbOpeningBalanceMaster",
-                  });
-              } else {
-                console.log("opening balance inserted successfully");
-                res
-                  .status(200)
-                  .send({
-                    success: true,
-                    message: "Opening balance inserted successfully",
-                  });
-              }
-            }
-          );
-        });
-      });
-    });
-  });
+    return res.status(201).json({ success: true, message: 'Opening balance inserted successfully.' });
+  } catch (error) {
+    console.error('Opening balance insert failed:', { message: error.message, code: error.code, SlAlias, GLName, docClass, transaction, amount: openingAmount });
+    return res.status(500).json({ success: false, message: 'Unable to insert opening balance.' });
+  }
 });
 
 // Fetch and display login details on startup

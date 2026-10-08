@@ -419,7 +419,7 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
         openingBalanceDiv.style.display ='block';
         makeDivMovableOnce(openingBalanceDiv);
         bindCloseButtonsOnce(
-            ['mainopenBalcloseButton', 'mainopenBalcancelButton'],
+            ['mainopenBalcloseButton', 'OpeningBalcancelButton'],
             openingBalanceDiv
        );
        document.getElementById('OpeningBalacctype').value = GLName;
@@ -459,14 +459,55 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
        document.getElementById('OpeningBalAccName').value =SLName;
       
 
-        // Don't pass the base64 image in the URL, it's already stored in sessionStorage
-        url = `/openingBalance?SlAlias=${SlAlias}&GLName=${GLName}
-       `;
     }
 
     
 
 }
+
+document.getElementById('mainopeningbalanceForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const value = (selector) => form.querySelector(selector)?.value.trim() || '';
+    const amount = Number(value('#OpeningBalamount'));
+    const interest = Number(value('#interest-amount') || 0);
+    const notify = (message) => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
+
+    if (!Number.isFinite(amount) || amount < 0 || !Number.isFinite(interest)) {
+        notify('Enter a valid opening balance and interest amount.');
+        document.getElementById('OpeningBalamount').focus();
+        return;
+    }
+
+    const saveButton = form.querySelector('button[type="submit"]');
+    saveButton.disabled = true;
+    try {
+        const response = await fetch('/account/openingBalance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                SlAlias: value('#OpeningBalAccountNumber'),
+                GLName: value('#OpeningBalacctype'),
+                transaction: value('#OpeningBalselect'),
+                amount,
+                docClass: value('#OpeningBalDocClassInput'),
+                intAmount: interest,
+                remarks: value('input[name="remarks"]')
+            })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || 'Unable to insert opening balance.');
+
+        notify(result.message);
+        document.getElementById('mainopeningbalance').style.display = 'none';
+    } catch (error) {
+        console.error('Opening balance save failed:', error);
+        notify(error.message || 'Unable to insert opening balance.');
+    } finally {
+        saveButton.disabled = false;
+    }
+});
 // Transaction form save functionality.
     document.getElementById('mainCreatTransDForm').addEventListener('submit', async function(event) {
       event.preventDefault();
