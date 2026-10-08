@@ -28,14 +28,30 @@
   width: 100%;
 }
 
-/* Header */
-#mainmultitransaction .header h3 {
+/* Multi-transaction fieldset title */
+#mainmultitransaction .multi-transaction-title {
   text-align: center;
   font-size: 18px;
   font-weight: bold;
   color: #004d80;
-  margin: 0;
+  margin: 0 auto;
   padding: 4px;
+}
+
+/* Close Button */
+#mainmultitransaction #mainmultitranscloseButton {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+  color: #444;
+}
+
+#mainmultitransaction #mainmultitranscloseButton:hover {
+  color: #d00;
 }
 
 /* Labels and Inputs */
@@ -145,6 +161,73 @@
   gap: 8px;
 }
 
+#mainmultitransaction .multi-transaction-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#mainmultitransaction .multi-transaction-checkbox label {
+  display: inline;
+  margin: 0;
+}
+
+#mainmultitransaction .multi-transaction-checkbox input[type="checkbox"] {
+  width: auto;
+}
+
+#mainmultitransaction .multi-transaction-submit-row {
+  justify-content: space-between;
+}
+
+#mainmultitransaction .multi-transaction-member-and-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-top: 10px;
+}
+
+#mainmultitransaction #MainMultitransmembertableforaccedit {
+  width: 100%;
+  margin: 0;
+}
+
+#mainmultitransaction .multi-transaction-payment-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+#mainmultitransaction .multi-transaction-payment-fields > div {
+  min-width: 0;
+}
+
+#mainmultitransaction .cem-form-style-horizontal2 > .multi-transaction-actions {
+  flex: 0 0 160px;
+  min-width: 160px;
+}
+
+#mainmultitransaction .multi-transaction-account-row {
+  align-items: flex-start;
+  position: relative;
+  padding-right: 170px;
+  box-sizing: border-box;
+}
+
+#mainmultitransaction .cem-form-style-horizontal2 > .multi-transaction-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 160px;
+}
+
+#mainmultitransaction .multi-transaction-details-row {
+  padding-right: 170px;
+  box-sizing: border-box;
+}
+
 #mainmultitransaction .custom-file-upload {
   padding: 8px;
   display: inline-flex;
@@ -185,54 +268,60 @@
   margin-left: 0;
 }
 
-#mainmultitransaction .legend {
+#mainmultitransaction .legend:not(.multi-transaction-title) {
   font-size: 12px;
   font-weight: bold;
   color: #0b62e4;
 }
 
-#mainmultitransaction .do-table-container,
-#mainmultitransaction #do-table-container {
-  max-height: 295px;
-  overflow-y: auto;
-  width: 100%;
-  margin: 0 auto;
-  overflow-x: auto;
-  color: #ffffff;
-}
-
-#mainmultitransaction .do-table-container table,
-#mainmultitransaction #do-table-container table {
+#MainMultitransmembertableforaccedit .do-table-containerforeditacc table {
   width: 100%;
   border-collapse: collapse;
-  font-family: Arial, sans-serif;
-  font-size: 10px;
-  text-align: left;
-  font-weight: normal;
+  margin-top: 5px;
 }
 
-#mainmultitransaction .do-table-container th,
-#mainmultitransaction #do-table-container th {
-  position: sticky;
-  top: -2px;
-  z-index: 2;
+#MainMultitransmembertableforaccedit .do-table-containerforeditacc th,
+#MainMultitransmembertableforaccedit .do-table-containerforeditacc td {
+  border: 1px solid #7aa7c7;
+  padding: 4px;
   text-align: center;
-  font-weight: normal;
-  background-color: #2f7ebd;
+  font-size: 12px;
 }
 
-#mainmultitransaction .do-table-container th,
-#mainmultitransaction .do-table-container td,
-#mainmultitransaction #do-table-container th,
-#mainmultitransaction #do-table-container td {
-  border: 1px solid #000000;
-  padding: 8px;
-  text-align: left;
+#MainMultitransmembertableforaccedit .do-table-containerforeditacc th {
+  background: #d8ebf7;
+  font-weight: bold;
+  color: #000;
 }
 
-#mainmultitransaction .do-table-container td,
-#mainmultitransaction #do-table-container td {
+/* Keep the denomination table compact; edit inputs only show their border on focus. */
+#mainmultitransaction #MainMultitranstable1 th,
+#mainmultitransaction #MainMultitranstable1 td {
+  padding: 1px 3px;
+  line-height: 1.1;
+}
+
+#mainmultitransaction #MainMultitranstable1 input {
+  height: 20px;
+  padding: 0 3px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   text-align: center;
+  appearance: textfield;
+}
+
+#mainmultitransaction #MainMultitranstable1 input::-webkit-outer-spin-button,
+#mainmultitransaction #MainMultitranstable1 input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+#mainmultitransaction #MainMultitranstable1 input:focus {
+  border-color: #1976d2;
+  background: #fff;
+  box-shadow: 0 0 2px rgba(25, 118, 210, 0.6);
 }
 
 #mainmultitransaction .createbigtrans-table {
@@ -241,6 +330,28 @@
   display: block;
   border: 1px solid #ccc;
   width: 100%;
+}
+
+/* Keep the added-transaction table scrollable without widening the modal. */
+#mainmultitransaction #MultiTransAddTable {
+  height: 155px;
+  width: calc(100% - 24px);
+  max-width: calc(100% - 24px);
+  min-width: 0;
+  margin: 20px auto 0 auto;
+  overflow-x: auto;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+#mainmultitransaction #MultiTransAddTable table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+
+#mainmultitransaction fieldset:has(#MultiTransAddTable) {
+  min-width: 0;
 }
 
 #mainmultitransaction .createbigtrans-table th,
@@ -324,5 +435,19 @@
   #mainmultitransaction .cem-form-style-horizontal3 {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  #mainmultitransaction .multi-transaction-member-and-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  #mainmultitransaction .multi-transaction-account-row,
+  #mainmultitransaction .multi-transaction-details-row {
+    padding-right: 0;
+  }
+
+  #mainmultitransaction .cem-form-style-horizontal2 > .multi-transaction-actions {
+    position: static;
+    width: auto;
   }
 }

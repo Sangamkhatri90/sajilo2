@@ -218,8 +218,26 @@
 }
 
 #mainCreatTransDiv #Maintranstable1 input {
-  height: 24px;
-  padding: 1px 4px;
+  height: 20px;
+  padding: 0 3px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+  appearance: textfield;
+}
+
+#mainCreatTransDiv #Maintranstable1 input::-webkit-outer-spin-button,
+#mainCreatTransDiv #Maintranstable1 input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+#mainCreatTransDiv #Maintranstable1 input:focus {
+  border-color: #1976d2;
+  background: #fff;
+  box-shadow: 0 0 2px rgba(25, 118, 210, 0.6);
 }
 
 /* Suggestion dropdown */
