@@ -17239,11 +17239,11 @@ const edit = panel?.querySelector('#pvm-edit-button');
                                 </div>
                                 <div class="obm-form-style-horizontal3">
                                     <div>
-                                        <label for="">Member ID</label>
-                                        <input type="text" class="obm-text" name="" id="">
+                                        <label for="MemberID">Member ID</label>
+                                        <input type="text" class="obm-text" name="MemberID" id="MemberID">
                                     </div>
                                     <div>
-                                        <input type="text" class="obm-text" name="" id="" style="margin-top: 20px;">
+                                        <input type="text" class="obm-text" name="MemberName" id="MemberName" style="margin-top: 20px;">
                                     </div>
                                     <div>
                                         <label for="">Collector</label>
@@ -17289,6 +17289,55 @@ const edit = panel?.querySelector('#pvm-edit-button');
                         </form>
                     </div>
                 </div>
+                <script>
+                    (() => {
+                        const form = document.getElementById('myForm124');
+                        const memberIdInput = form?.querySelector('#MemberID');
+                        const memberNameInput = form?.querySelector('#MemberName');
+                        if (!memberIdInput || !memberNameInput) return;
+
+                        const lookupMemberName = async () => {
+                            const alias = memberIdInput.value.trim();
+                            if (!alias) {
+                                memberNameInput.value = '';
+                                return;
+                            }
+
+                            try {
+                                const response = await fetch('/get-member-name-1', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ alias })
+                                });
+                                if (!response.ok) throw new Error('Unable to check member.');
+
+                                const result = await response.json();
+                                if (memberIdInput.value.trim() !== alias) return;
+                                if (result.success) {
+                                    memberNameInput.value = result.memberName || '';
+                                } else {
+                                    memberNameInput.value = '';
+                                    alert(result.message === 'Member not found'
+                                        ? 'Member not found'
+                                        : (result.message || 'Unable to check member.'));
+                                }
+                            } catch (error) {
+                                if (memberIdInput.value.trim() === alias) {
+                                    memberNameInput.value = '';
+                                    alert(error.message || 'Unable to check member.');
+                                }
+                            }
+                        };
+
+                        memberIdInput.addEventListener('blur', lookupMemberName);
+                        memberIdInput.addEventListener('keydown', event => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                lookupMemberName();
+                            }
+                        });
+                    })();
+                </script>
 
 
                 <!--Account Statement-->
@@ -48396,6 +48445,34 @@ const edit = panel?.querySelector('#pvm-edit-button');
                 });
             </script>
             <script>
+                document.getElementById('JVMemberID').addEventListener('blur', function () {
+                    const alias = this.value;
+                    if (alias.trim() === '') {
+                        document.getElementById('JVMemberName').value = '';
+                        return;
+                    }
+
+                    fetch('/get-member-name-2', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ alias }),
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.success) {
+                                document.getElementById('JVMemberName').value = data.memberName || '';
+                            } else {
+                                showCustomAlert(data.message || 'Member not found');
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Error:', error);
+                        });
+                });
+            </script>
+            <script>
                 document.getElementById('RVMemberID').addEventListener('blur', function () {
                     const alias = this.value;
                     if (alias.trim() === '') {
@@ -53010,12 +53087,21 @@ const edit = panel?.querySelector('#pvm-edit-button');
                     transactionForm.style.zIndex = '10001';
                     voucherNumber.value = '';
                     try {
-                        const response = await fetch('/api/nextJournalVoucherforaccountedit');
-                        const data = await response.json();
-                        if (!response.ok || !data.voucherNumber) {
-                            throw new Error(data.message || 'Unable to generate Transaction voucher number.');
-                        }
-                        voucherNumber.value = data.voucherNumber;
+                        const configResponse = await fetch('/getVoucherConfig?menuName=Transaction');
+                        if (!configResponse.ok) throw new Error('Unable to load Transaction voucher settings.');
+                        const { Prefix, Suffix, BodyLength } = await configResponse.json();
+                        if (!Prefix || BodyLength === undefined || BodyLength === null) throw new Error('Invalid Transaction voucher settings.');
+                        const actualSuffix = Suffix || '';
+                        const numericLength = BodyLength - Prefix.length - actualSuffix.length;
+                        if (numericLength <= 0) throw new Error('Invalid Transaction voucher settings.');
+
+                        const lastResponse = await fetch(`/getLastVoucherNo?prefix=${encodeURIComponent(Prefix)}`);
+                        if (!lastResponse.ok) throw new Error('Unable to load the last Transaction voucher number.');
+                        const { lastVoucherNo } = await lastResponse.json();
+                        const lastNumber = lastVoucherNo
+                            ? parseInt(lastVoucherNo.slice(Prefix.length, lastVoucherNo.length - actualSuffix.length), 10) || 0
+                            : 0;
+                        voucherNumber.value = Prefix + String(lastNumber + 1).padStart(numericLength, '0') + actualSuffix;
                     } catch (error) {
                         voucherNumber.value = '';
                         if (typeof showCustomAlert === 'function') showCustomAlert(error.message);
