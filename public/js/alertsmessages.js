@@ -95,6 +95,7 @@ function showCustomConfirm(message) {
 
         alertMessage.textContent = message;
         
+        alertBox.style.zIndex = '2147483647';
         alertBox.style.display = 'block';
 console.log('Checkman')
         // Close the alert when clicking the close button or OK button
