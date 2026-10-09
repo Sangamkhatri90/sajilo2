@@ -1584,6 +1584,10 @@ app.post(
       CMCreatedBy,
     } = req.body;
 
+    if (String(Status).toLowerCase() === "left") {
+      return res.status(400).send("A new member cannot be set to Left.");
+    }
+
     const conn = req.session.conn;
     const introID1 = IntroID1 || null; // If IntroID1 is not provided, set it to null
     const introID2 = IntroID2 || null; // If IntroID2 is not provided, set it to null
@@ -1605,7 +1609,7 @@ app.post(
     sql.query(connectionString, query4, [CMCreatedBy], (err, result) => {
       if (err) {
         console.error(err);
-        res
+        return res
           .status(400)
           .send({ success: false, message: "Error querying UserID" });
       }

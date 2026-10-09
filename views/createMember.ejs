@@ -87,8 +87,8 @@
                         <div>
                             <label for="status">Status</label>
                             <select name="Status" id="Status">
-                                <option value="suchira">Suchira</option>
-                                <option value="bichira">Bichira</option>
+                                <option value="live">Live</option>
+                                <option value="left">Left</option>
                             </select>
                         </div>
                         <div>
@@ -311,14 +311,15 @@
                         </div>
                     </fieldset>
                 </div>
+
                 <div id="others" class="contents">
                     <!-- Other Content -->
                     <fieldset>
                         <legend>Other Section</legend>
                         <div>
                             <label for="MembershipLeftcbofcreatemem">Membership Left(Enter Date)</label>
-                            <input type="checkbox" id="MembershipLeftcbofcreatemem" name="MembershipLeft">
-                            <input type="date" class="date" id="MembershipLeftDateofcreatemem" name="MembershipLeftDate">
+                            <input type="checkbox" id="MembershipLeftcbofcreatemem" name="MembershipLeft" disabled>
+                            <input type="date" class="date" id="MembershipLeftDateofcreatemem" name="MembershipLeftDate" disabled>
                         </div>
                         <div>
                             <label for="DocClass">Doc.Class</label>
@@ -520,7 +521,7 @@
         // Add event listeners to toggle links
         document.addEventListener('DOMContentLoaded', () => {
             const links = document.querySelectorAll('.toggle-link');
-            const sections = document.querySelectorAll('#generalInformation, #accounts');
+            const sections = document.querySelectorAll('#generalInformation, #accounts, #others');
     
             // Initially, show only the first section
             sections.forEach(section => section.style.display = 'none');
@@ -546,6 +547,16 @@
             });
 
             if (links[0]) links[0].classList.add('active');
+
+            const statusSelect = document.getElementById('Status');
+            if (statusSelect) {
+                statusSelect.addEventListener('change', () => {
+                    if (statusSelect.value === 'left') {
+                        alert('A new member cannot be set to Left.');
+                        statusSelect.value = 'live';
+                    }
+                });
+            }
 
             document.querySelectorAll('.member-close-button').forEach(button => {
                 button.addEventListener('click', () => {
