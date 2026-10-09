@@ -465,7 +465,7 @@ min-width: 120px;
   display: none; /* hidden by default */
   position: fixed;
   color: white;
-  z-index: 9999;
+  z-index: 2147483647;
   left: 650PX;
   top: 300PX;
   width: 30%;
