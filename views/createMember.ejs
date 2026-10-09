@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="container">
-        <form action="/submit/createMem" method="POST"  enctype="multipart/form-data">
+        <form action="/submit/createMem" method="POST"  enctype="multipart/form-data" id="createnewmemberform">
             <div class="member-form-header">
                 <h3>Create a New Member</h3>
                 <div class="form-close-controls">
@@ -22,9 +22,11 @@
                         General Information</a>
                     <a href="#" class="toggle-link" data-target="accounts">
                         Accounts</a>
+                    <a href="#" class="toggle-link" data-target="others">
+                        Others</a>
                 </div>
 
-            <div id="generalInformation" class="contents">
+                <div id="generalInformation" class="contents">
                 <!-- General Information -->
                 <fieldset>
                     <legend>General Information</legend>
@@ -278,14 +280,59 @@
                             </div>
                         </fieldset>
                 </fieldset>
-            </div>
+                </div>
 
                 <div id="accounts" class="contents">
                     <!-- Accounts Content -->
                     <fieldset>
                         <legend>Account Section</legend>
-                        <p>This is the Accounts section.</p>
-                        <!-- Add your Accounts form fields here -->
+                        <div>
+                            <button type="button" class="btn btn-primary">Add Account</button>
+                                    
+                            <div class="table-container">
+                                    <table id="ccactranstablefd" class="highlight-table">
+                                        <thead>
+                                            <tr>
+                                                <th>S.NO</th>
+                                                <th>Opening Date</th>
+                                                <th>Account Number</th>
+                                                <th>Account Name</th>
+                                                <th>Account Type</th>
+                                                <th>Balance</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        </tbody>
+
+                                    </table>
+                                </div>
+
+                        </div>
+                    </fieldset>
+                </div>
+                <div id="others" class="contents">
+                    <!-- Other Content -->
+                    <fieldset>
+                        <legend>Other Section</legend>
+                        <div>
+                            <label for="MembershipLeftcbofcreatemem">Membership Left(Enter Date)</label>
+                            <input type="checkbox" id="MembershipLeftcbofcreatemem" name="MembershipLeft">
+                            <input type="date" class="date" id="MembershipLeftDateofcreatemem" name="MembershipLeftDate">
+                        </div>
+                        <div>
+                            <label for="DocClass">Doc.Class</label>
+                            <input type="text" id="DocClassforCreatemem" name="DocClass">
+                        </div>
+                        <div id="docclasslistforcreatemem" class="suggestion-box1"></div>
+                        <div>
+                            <label for="Panno">PAN No. of Member</label>
+                            <input type="text" id="Pannoofcreatemem" name="Panno">
+                        </div>
+                        <div>
+                            <label for="NIDno">NID No. of Member</label>
+                            <input type="text" id="NIDnoofcreatemem" name="NIDno">
+                        </div>
                     </fieldset>
                 </div>
 
