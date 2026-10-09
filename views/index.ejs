@@ -674,13 +674,10 @@
 
     <div class="movableDiv" id="movableDiv194"
         style="display: none; position: fixed; top: 80px; left: 3%; width: 94%; height: calc(100vh - 100px); padding: 0; overflow: hidden; z-index: 10000;">
-        <div style="height: 32px; padding: 5px 10px; background: #2d72ad; color: #fff; cursor: move;">
-            <strong>Create a New Member</strong>
-            <button type="button" id="closeButton194" style="float: right; margin-left: 6px;">X</button>
-            <button type="button" id="cancelButton194" style="float: right;">Close</button>
-        </div>
+        <button type="button" id="closeButton194" hidden></button>
+        <button type="button" id="cancelButton194" hidden></button>
         <iframe id="createMemberFrame" src="/createMem" title="Create a New Member"
-            style="width: 100%; height: calc(100% - 32px); border: 0;"></iframe>
+            style="width: 100%; height: 100%; border: 0;"></iframe>
     </div>
     <script>
         document.getElementById('createMemberFrame').addEventListener('load', function () {

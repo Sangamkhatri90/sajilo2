@@ -10,7 +10,13 @@
 <body>
     <div class="container">
         <form action="/submit/createMem" method="POST"  enctype="multipart/form-data">
-            <h1 style="margin-bottom: 10px; text-align: center; color: #f9e800;">CREATE A NEW MEMBER</h1>
+            <div class="member-form-header">
+                <h3>Create a New Member</h3>
+                <div class="form-close-controls">
+                <button type="button" class="member-close-button member-close-x" aria-label="Close">X</button>
+                
+                </div>
+            </div>
                 <div class="anchor">
                     <a href="#" class="toggle-link" data-target="generalInformation">
                         General Information</a>
@@ -21,6 +27,7 @@
             <div id="generalInformation" class="contents">
                 <!-- General Information -->
                 <fieldset>
+                    <legend>General Information</legend>
                         <div class="cem-form-style-horizontal3">
                             <div>
                                 <label class="wir">Member ID </label>
@@ -275,13 +282,16 @@
 
                 <div id="accounts" class="contents">
                     <!-- Accounts Content -->
-                    <p>This is the Accounts section.</p>
-                    <!-- Add your Accounts form fields here -->
+                    <fieldset>
+                        <legend>Account Section</legend>
+                        <p>This is the Accounts section.</p>
+                        <!-- Add your Accounts form fields here -->
+                    </fieldset>
                 </div>
 
             <div class="cem-button-row">
                 <button type="submit" class="cem-button">Save</button>
-                <button type="button" class="cem-button">Cancel</button>
+                <button type="button" class="member-close-button">Cancel</button>
             </div>
         </form>
         </div>
@@ -487,6 +497,47 @@
                     }
                 });
             });
+
+            if (links[0]) links[0].classList.add('active');
+
+            document.querySelectorAll('.member-close-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const parentPanel = window.parent.document.getElementById('movableDiv194');
+                    if (parentPanel) parentPanel.style.display = 'none';
+                });
+            });
+
+            const dragHandle = document.querySelector('.member-form-header');
+            if (dragHandle) {
+                dragHandle.addEventListener('mousedown', event => {
+                    if (event.button !== 0 || event.target.closest('button')) return;
+
+                    const parentPanel = window.parent.document.getElementById('movableDiv194');
+                    if (!parentPanel) return;
+
+                    event.preventDefault();
+                    const panelRect = parentPanel.getBoundingClientRect();
+                    const offsetX = event.clientX - panelRect.left;
+                    const offsetY = event.clientY - panelRect.top;
+
+                    const movePanel = moveEvent => {
+                        const rect = parentPanel.getBoundingClientRect();
+                        const margin = 8;
+                        const maxLeft = Math.max(margin, window.parent.innerWidth - rect.width - margin);
+                        const maxTop = Math.max(margin, window.parent.innerHeight - rect.height - margin);
+                        parentPanel.style.left = `${Math.min(Math.max(moveEvent.clientX - offsetX, margin), maxLeft)}px`;
+                        parentPanel.style.top = `${Math.min(Math.max(moveEvent.clientY - offsetY, margin), maxTop)}px`;
+                    };
+
+                    const stopMoving = () => {
+                        document.removeEventListener('mousemove', movePanel);
+                        document.removeEventListener('mouseup', stopMoving);
+                    };
+
+                    document.addEventListener('mousemove', movePanel);
+                    document.addEventListener('mouseup', stopMoving);
+                });
+            }
         });
     </script>
   
