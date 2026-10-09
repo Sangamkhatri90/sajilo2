@@ -26396,7 +26396,7 @@ async function loadEarningsData() {
             <!-- Main Multi Transaction-->
             <div id="mainmultitransaction" style="display: none;" class="container">
                 <button id="mainmultitranscloseButton">&times;</button>
-                <form class="transaction-form">
+                <form class="transaction-form" id="mainMultiTransForm">
                     <fieldset class="fieldset">
                         <legend class="legend multi-transaction-title">MULTI-TRANSACTION</legend>
                         <div class="form-row2">
@@ -26557,7 +26557,7 @@ async function loadEarningsData() {
                         <button type="button" class="action-button post-interest" id="cem-post">Post Interest</button>
                         <button type="button" class="add" id="MultiTransAddBtn"><img src="/PNG/add.png"
                                 alt="">Add</button>
-                        <button for="file-upload" class="custom-file-upload" id="sign">
+                        <button type="button" for="file-upload" class="custom-file-upload" id="sign">
                             <span>Sign & Photo</span>
                             <input id="file-upload" type="file" name="photo" accept="image/*" multiple
                                 onchange="previewImages(event)">
@@ -26583,11 +26583,11 @@ async function loadEarningsData() {
             </div>
 
             <div class="cem-form-style-horizontal2 multi-transaction-details-row" style="margin-top: 10px;">
-                
                 <div>
-                    <label for="bearer">Bearer</label>
-                    <input type="number" id="bearer" name="bearer">
+                    <label for="total-amount">Total Amount</label>
+                    <input type="number" id="MainMultitranstotal" name="total" readonly>
                 </div>
+
                 <div>
                     <label for="prin-receive-date">Prin. Receive Till Date</label>
                     <input type="date" id="prin-receive-date" name="prin-receive-date" class="date">
@@ -26599,7 +26599,7 @@ async function loadEarningsData() {
             </div>
             
              <div class="cem-form-style-horizontal2 multi-transaction-details-row" style="margin-top: 10px;">
-                
+
                 <div>
                     <label for="total-amount">Accrued Interest</label>
                     <input type="number" id="MainMultiaccruedint" name="total" readonly>
@@ -26620,10 +26620,11 @@ async function loadEarningsData() {
                         <option value="">j</option>
                     </select>
                 </div>
-                <div>
-                    <label for="total-cash">Total Cash</label>
-                    <input type="number" id="MultiTransTotalCash" name="total-cash" readonly>
+                 <div>
+                    <label for="bearer">Bearer</label>
+                    <input type="number" id="bearer" name="bearer">
                 </div>
+
             </div>
 
             
@@ -26687,12 +26688,12 @@ async function loadEarningsData() {
                     <label for="contact-number">Contact Number</label>
                     <input type="number" id="contact-number" name="contact-number">
                 </div>
-                
+
             </div>
             <div class="cem-form-style-horizontal3" style="margin-top: 10px;">
                 <div>
-                    <label for="total-amount">Total Amount</label>
-                    <input type="number" id="MainMultitranstotal" name="total" readonly>
+                    <label for="total-cash">Total Cash</label>
+                    <input type="number" id="MultiTransTotalCash" name="total-cash" readonly>
                 </div>
                 <div>
                     <label for="total-cash">Total Cash in word</label>
@@ -53067,6 +53068,90 @@ async function loadEarningsData() {
                             });
 
                             renumberRowsAndTotals();
+                        });
+                    </script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const form = document.getElementById('mainMultiTransForm');
+                            const tableBody = document.querySelector('#MultiTransAddTable tbody');
+                            if (!form || !tableBody) return;
+
+                            const value = (id) => document.getElementById(id)?.value.trim() || '';
+                            const numberValue = (value) => {
+                                const parsed = Number(String(value || '').replace(/,/g, '').trim());
+                                return Number.isFinite(parsed) ? parsed : 0;
+                            };
+                            const rowFromCells = (row) => {
+                                const cells = row.querySelectorAll('td');
+                                return {
+                                    accountAlias: cells[2]?.textContent.trim() || '',
+                                    debit: numberValue(cells[4]?.textContent),
+                                    credit: numberValue(cells[5]?.textContent),
+                                    penalty: numberValue(cells[9]?.textContent),
+                                    rebate: numberValue(cells[8]?.textContent)
+                                };
+                            };
+                            const currentRecord = () => ({
+                                accountAlias: value('Multitransaccountnumber'),
+                                debit: value('TransactionTypeForMultiTrans') === 'Withdraw' ? numberValue(value('MainMultitransamount')) : 0,
+                                credit: value('TransactionTypeForMultiTrans') === 'Deposit' ? numberValue(value('MainMultitransamount')) : 0,
+                                penalty: numberValue(value('MainMultitranspenalty')),
+                                rebate: numberValue(value('MainMultitransrebate'))
+                            });
+                            const rowKey = (record) => [record.accountAlias, record.debit, record.credit, record.penalty, record.rebate].join('|');
+
+                            form.addEventListener('submit', async function (event) {
+                                event.preventDefault();
+
+                                const records = Array.from(tableBody.querySelectorAll('tr:not([data-template="true"])'))
+                                    .map(rowFromCells);
+                                const pendingRecord = currentRecord();
+                                if (pendingRecord.accountAlias && (pendingRecord.debit > 0 || pendingRecord.credit > 0)
+                                    && !records.some((record) => rowKey(record) === rowKey(pendingRecord))) {
+                                    records.push(pendingRecord);
+                                }
+
+                                const notify = (message) => typeof showCustomAlert === 'function' ? showCustomAlert(message) : alert(message);
+                                const transDate = value('Multitranstransactiondate');
+                                if (!records.length) {
+                                    notify('Add at least one valid transaction record or enter a valid amount.');
+                                    return;
+                                }
+                                if (!transDate) {
+                                    notify('Enter a transaction date.');
+                                    return;
+                                }
+
+                                const saveButton = form.querySelector('button.save[type="submit"]');
+                                saveButton.disabled = true;
+                                try {
+                                    const response = await fetch('/account/MultiTransaction', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            records,
+                                            voucherNo: value('voucher-number'),
+                                            cashLedger: value('MainMultitransGLName'),
+                                            transactionType: value('TransactionTypeForMultiTrans'),
+                                            transDate,
+                                            docClass: value('MainMultitransDocclass'),
+                                            sourceofFund: value('sf'),
+                                            remarks: value('remark')
+                                        })
+                                    });
+                                    const result = await response.json();
+                                    if (!response.ok || !result.success) throw new Error(result.message || 'Unable to save multi transaction.');
+
+                                    notify(result.message);
+                                    form.reset();
+                                    tableBody.querySelectorAll('tr:not([data-template="true"])').forEach((row) => row.remove());
+                                    document.getElementById('mainmultitransaction').style.display = 'none';
+                                } catch (error) {
+                                    notify(error.message || 'Unable to save multi transaction.');
+                                } finally {
+                                    saveButton.disabled = false;
+                                }
+                            });
                         });
                     </script>
 

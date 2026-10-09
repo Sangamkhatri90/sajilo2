@@ -1378,6 +1378,102 @@ app.post("/account/Transaction", async (req, res) => {
   }
 });
 
+app.post("/account/MultiTransaction", async (req, res) => {
+  const conn = req.session.conn;
+  const { records, voucherNo, cashLedger, transactionType, transDate, docClass, sourceofFund, remarks } = req.body || {};
+  const normalizedRecords = Array.isArray(records) ? records.map((record) => ({
+    accountAlias: String(record?.accountAlias || '').trim(),
+    debit: Number(record?.debit) || 0,
+    credit: Number(record?.credit) || 0,
+    penalty: Number(record?.penalty) || 0,
+    rebate: Number(record?.rebate) || 0
+  })) : [];
+
+  if (!conn || !voucherNo || !cashLedger || !docClass || !transDate || !['Deposit', 'Withdraw'].includes(transactionType) || !normalizedRecords.length
+    || normalizedRecords.some((record) => !record.accountAlias || record.debit < 0 || record.credit < 0 || (record.debit <= 0 && record.credit <= 0) || (record.debit > 0 && record.credit > 0)
+      || (transactionType === 'Deposit' && record.debit > 0) || (transactionType === 'Withdraw' && record.credit > 0))) {
+    return res.status(400).json({ success: false, message: 'Enter a valid voucher, cash or bank ledger, document class, date, and transaction records.' });
+  }
+
+  const totalDebit = normalizedRecords.reduce((total, record) => total + record.debit, 0);
+  const totalCredit = normalizedRecords.reduce((total, record) => total + record.credit, 0);
+  const totalAmount = Math.max(totalDebit, totalCredit);
+  if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+    return res.status(400).json({ success: false, message: 'Transaction amount must be greater than zero.' });
+  }
+
+  const query = (text, params = []) => sql.promises.query(conn, text, params);
+  let journalID;
+  try {
+    const voucherDates = await resolveVoucherDatePair(conn, transDate);
+    const fiscalRows = await query(`
+      SELECT TOP 1 StartDate, EndDate
+      FROM dbo.tbFiscalYearMaster
+      WHERE CurrentFiscal = 1
+        AND CONVERT(date, ?) BETWEEN CONVERT(date, StartDate) AND CONVERT(date, EndDate)
+    `, [voucherDates.jvDate]);
+    if (!fiscalRows.length) return res.status(400).json({ success: false, message: 'Date should not exceed the fiscal range.' });
+
+    if ((await query('SELECT TOP 1 JournalID FROM dbo.tbJournalMaster WHERE VoucherNo = ?', [String(voucherNo).trim()])).length) {
+      return res.status(409).json({ success: false, message: 'Voucher number already exists.' });
+    }
+
+    const [cashRows, docRows, voucherRows, ...accountResults] = await Promise.all([
+      query("SELECT TOP 1 GLID FROM dbo.tbLedgerMaster WHERE Category IN ('B', 'C') AND (LTRIM(RTRIM(GLName)) = ? OR LTRIM(RTRIM(GlAlias)) = ?)", [String(cashLedger).trim(), String(cashLedger).trim()]),
+      query('SELECT TOP 1 DocClassID FROM dbo.tbDocClassMaster WHERE LTRIM(RTRIM(DocClassName)) = ? OR LTRIM(RTRIM(DocClassAlias)) = ?', [String(docClass).trim(), String(docClass).trim()]),
+      query("SELECT TOP 1 UDVNo FROM dbo.tbUserDefinedVoucher WHERE MenuName = 'Transaction'"),
+      ...normalizedRecords.map((record) => query('SELECT TOP 1 SLID, GLID FROM dbo.tbSubLedgerMaster WHERE LTRIM(RTRIM(SlAlias)) = ?', [record.accountAlias]))
+    ]);
+    if (!cashRows.length) return res.status(400).json({ success: false, message: 'Select a valid cash or bank ledger.' });
+    if (!docRows.length) return res.status(400).json({ success: false, message: 'Document class was not found.' });
+    if (accountResults.some((rows) => !rows.length)) return res.status(400).json({ success: false, message: 'One or more account numbers were not found.' });
+
+    let udvNo = voucherRows[0]?.UDVNo;
+    if (udvNo == null) {
+      const autoNumberRows = await query("SELECT TOP 1 VoucherID AS UDVNo FROM dbo.tbAutoNumberSetting WHERE ? LIKE Prefix + '%' ORDER BY LEN(Prefix) DESC", [String(voucherNo).trim()]);
+      udvNo = autoNumberRows[0]?.UDVNo;
+    }
+    if (udvNo == null) return res.status(400).json({ success: false, message: 'Transaction voucher configuration was not found.' });
+
+    let userID = Number(req.session.userID);
+    if (!Number.isInteger(userID) || userID <= 0) {
+      const users = await sql.promises.query(connectionString, 'SELECT TOP 1 UserID FROM dbo.tbUserMaster WHERE UserName = ?', [req.session.username || '']);
+      userID = Number(users[0]?.UserID);
+    }
+    if (!Number.isInteger(userID) || userID <= 0) return res.status(401).json({ success: false, message: 'The logged-in user could not be resolved.' });
+
+    const totalPenalty = normalizedRecords.reduce((total, record) => total + record.penalty, 0);
+    const totalRebate = normalizedRecords.reduce((total, record) => total + record.rebate, 0);
+    const masterRows = await query(`
+      INSERT INTO dbo.tbJournalMaster
+        (SLIDPR, FundSource, TransType, VoucherNo, UDVNo, DocClassID, Penalty, Rebate, JV_Miti, JV_Date, CreatedDate, CreatedUserID, Remarks, GLIDCashDC, TotalAmountDC)
+      OUTPUT INSERTED.JournalID
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?, ?, ?, ?)
+    `, [accountResults[0][0].SLID, sourceofFund || null, transactionType, String(voucherNo).trim(), udvNo, docRows[0].DocClassID, totalPenalty, totalRebate, voucherDates.jvMiti, voucherDates.jvDate, userID, remarks || null, cashRows[0].GLID, totalAmount]);
+    journalID = masterRows[0].JournalID;
+
+    for (let index = 0; index < normalizedRecords.length; index += 1) {
+      const record = normalizedRecords[index];
+      const account = accountResults[index][0];
+      await query('INSERT INTO dbo.tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, ?, ?, ?, ?, 1, 0)', [journalID, index + 1, account.SLID, account.GLID, record.debit, record.credit]);
+    }
+    await query('INSERT INTO dbo.tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, NULL, ?, ?, ?, 0, 0)', [journalID, normalizedRecords.length + 1, cashRows[0].GLID, totalCredit, totalDebit]);
+
+    return res.status(201).json({ success: true, message: 'Multi transaction saved successfully.', journalID });
+  } catch (error) {
+    if (journalID) {
+      try {
+        await query('DELETE FROM dbo.tbJournalDetails WHERE JournalID = ?', [journalID]);
+        await query('DELETE FROM dbo.tbJournalMaster WHERE JournalID = ?', [journalID]);
+      } catch (cleanupError) {
+        console.error('Multi transaction cleanup failed:', cleanupError);
+      }
+    }
+    console.error('Multi transaction insert failed:', { message: error.message, voucherNo, cashLedger, docClass, transDate });
+    return res.status(500).json({ success: false, message: 'Unable to save multi transaction.' });
+  }
+});
+
 app.get("/bigTransaction", (req, res) => {
   const {
     SlAlias,
