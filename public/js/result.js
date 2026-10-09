@@ -10,6 +10,7 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
     const openingBalanceDiv = document.getElementById("mainopeningbalance");
     
     const voucherNoInput = document.getElementById('MaintransvoucherNo');
+    const voucherNoInputMulti = document.getElementById('voucher-number');
     const MaintransMembervalueforeditIN = document.getElementById('MaintransMembervalueforedit'); 
     const memberEditFrom = document.getElementById("ccapctmemedit");
 
@@ -157,9 +158,11 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
             throw new Error(data.message || 'Failed to generate Transaction voucher number.');
         }
         voucherNoInput.value = data.voucherNumber;
+        voucherNoInputMulti.value = data.voucherNumber;
     } catch (error) {
         console.error('Error generating VoucherNo:', error.message);
         voucherNoInput.value = ''; // Clear field on error
+        voucherNoInputMulti.value = ''; // Clear field on error
     }
   }
 
@@ -356,14 +359,6 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
                 })
         
    
-
-
-
-        // url = `/transaction?SlAlias=${SlAlias}&GLName=${GLName}&MemberAlias=${MemberAlias}&SLName=${SLName}
-        // &Address1=${Address1}&Phone1=${Phone1}&Mobile=${Mobile}&AccountOpenDate=${AccountOpenDate}
-        // &Gender=${Gender}&NextofKinName=${NextofKinName}&NextofKinAddress=${NextofKinAddress}
-        // &NextofKinContactNumber=${NextofKinContactNumber}&Relation=${Relation}&DOB=${DOB}&JV_Miti=${JV_Miti}&VoucherNo=${VoucherNo}
-        // &DrAmount=${DrAmount}&JournalEntries=${encodeURIComponent(JournalEntries)}&CrAmount=${CrAmount}`;
     
 
     }
