@@ -4439,7 +4439,7 @@ app.get("/fetchVDC2", (req, res) => {
   });
 });
 
-// Route to fetch collector data
+// Route to fetch global collector data
 app.get("/fetchcollectors", (req, res) => {
   const query =
     "SELECT CollectorName, CollectorAlias FROM [dbo].[tbCollectorMaster]";
@@ -4461,6 +4461,27 @@ app.get("/fetchcollectors", (req, res) => {
   });
 });
 
+// Route to fetch global profession data
+app.get("/fetchProfessions", (req, res) => {
+  const query =
+    "SELECT ProfessionName, ProfessionAlias FROM [dbo].[tbProfessionMaster]";
+  const conn = req.session.conn;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("Error fetching professions:", err);
+      return res
+        .status(500)
+        .send({ message: "Error fetching professions", success: false });
+    }
+
+    if (rows && rows.length > 0) {
+      res.json({ professions: rows });
+    } else {
+      res.json({ message: "No professions found" });
+    }
+  });
+});
 app.get("/menu", (req, res) => {
   const query = "SELECT CodeMenuName FROM tbTACodeMenuMaster";
   const conn = req.session.conn;
