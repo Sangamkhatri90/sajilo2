@@ -1,69 +1,69 @@
-               // Shared cache for all profession fields
-                const professionCache = [];
-                let professionDataFetched = false;
+               // Shared cache for all qualification fields
+                  const qualificationCache = [];
+                let qualificationDataFetched = false;
 
                 // Store filtered results separately per input
-                const professionFiltered = {};
+                const qualificationFiltered = {};
 
-                // Fetch professions only once
-                function fetchProfessions(fetchUrl, callback) {
-                    if (professionDataFetched) {
-                        callback(professionCache);
+                // Fetch qualifications only once
+                function fetchQualifications(fetchUrl, callback) {
+                    if (qualificationDataFetched) {
+                        callback(qualificationCache);
                         return;
                     }
                     fetch(fetchUrl)
                         .then(res => res.json())
                         .then(data => {
-                            if (data.professions && data.professions.length > 0) {
-                                // Sort alphabetically by Profession before caching
-                                data.professions.sort((a, b) => a.Profession.localeCompare(b.Profession));
-                                professionCache.push(...data.professions);
-                                professionDataFetched = true;
-                                callback(professionCache);
+                            if (data.qualifications && data.qualifications.length > 0) {
+                                // Sort alphabetically by Qualification before caching
+                                data.qualifications.sort((a, b) => a.Qualification.localeCompare(b.Qualification));
+                                qualificationCache.push(...data.qualifications);
+                                qualificationDataFetched = true;
+                                callback(qualificationCache);
                             } else {
                                 callback([]);
                             }
                         })
                         .catch(err => {
-                            console.error("Error fetching professions:", err);
+                            console.error("Error fetching qualifications:", err);
                             callback([]);
                         });
                 }
 
                 // Handle focus
-                function handleProfessionFocus(inputId, listId, fetchUrl) {
+                function handleQualificationFocus(inputId, listId, fetchUrl) {
                     const listElement = document.getElementById(listId);
                     listElement.innerHTML = '';
                     listElement.style.display = 'none';
 
-                    fetchProfessions(fetchUrl, (data) => {
+                    fetchQualifications(fetchUrl, (data) => {
                         if (data.length > 0) {
-                            professionFiltered[inputId] = [...data];
-                            displayProfessionSuggestions(inputId, listId);
+                            qualificationFiltered[inputId] = [...data];
+                            displayQualificationSuggestions(inputId, listId);
                         } else {
-                            listElement.innerHTML = '<div>No Professions found</div>';
+                            listElement.innerHTML = '<div>No Qualifications found</div>';
                             listElement.style.display = 'block';
                         }
                     });
                 }
 
                 // Handle typing
-                function handleProfessionInput(inputId, listId) {
+                function handleQualificationInput(inputId, listId) {
                     const inputVal = document.getElementById(inputId).value.toLowerCase();
 
                     if (inputVal === '') {
-                        professionFiltered[inputId] = [...professionCache];
+                        qualificationFiltered[inputId] = [...qualificationCache];
                     } else {
-                        professionFiltered[inputId] = professionCache.filter(item =>
-                            item.Profession.toLowerCase().includes(inputVal) ||
+                        qualificationFiltered[inputId] = qualificationCache.filter(item =>
+                            item.Qualification.toLowerCase().includes(inputVal) ||
                             item.Alias.toLowerCase().includes(inputVal)
                         );
                     }
-                    displayProfessionSuggestions(inputId, listId);
+                    displayQualificationSuggestions(inputId, listId);
                 }
 
                 // Display dropdown suggestions
-                function displayProfessionSuggestions(inputId, listId) {
+                function displayQualificationSuggestions(inputId, listId) {
                     const listElement = document.getElementById(listId);
                     listElement.innerHTML = '';
                     // positionJournalVoucherSearchList(inputId, listId, listElement);
@@ -77,20 +77,20 @@
                     };
                     listElement.appendChild(closeButton);
 
-                    const suggestions = professionFiltered[inputId] || [];
+                    const suggestions = qualificationFiltered[inputId] || [];
                     if (suggestions.length > 0) {
                         listElement.style.display = 'block';
                         suggestions.forEach(item => {
                             const div = document.createElement('div');
-                            div.textContent = `${item.Profession} - ${item.Alias}`;
+                            div.textContent = `${item.Qualification} - ${item.Alias}`;
                             div.onclick = function () {
-                                document.getElementById(inputId).value = item.Profession;
+                                document.getElementById(inputId).value = item.Qualification;
                                 listElement.style.display = 'none';
                             };
                             listElement.appendChild(div);
                         });
                     } else {
-                        listElement.innerHTML += '<div>No matching Professions found</div>';
+                        listElement.innerHTML += '<div>No matching Qualifications found</div>';
                         listElement.style.display = 'block';
                     }
                 }
@@ -109,27 +109,27 @@
                 // }
 
                 // Attach autocomplete to multiple fields easily
-                function attachProfessionAutocomplete(inputId, listId, fetchUrl) {
+                function attachQualificationAutocomplete(inputId, listId, fetchUrl) {
                     const inputEl = document.getElementById(inputId);
                     if (!inputEl) return;
 
                     inputEl.addEventListener('focus', function () {
-                        handleProfessionFocus(inputId, listId, fetchUrl);
+                        handleQualificationFocus(inputId, listId, fetchUrl);
                     });
 
                     inputEl.addEventListener('input', function () {
-                        handleProfessionInput(inputId, listId);
+                        handleQualificationInput(inputId, listId);
                     });
                 }
 
-                // List of all profession fields
-                const professionFields = [
-                    { inputId: 'Profession', listId: 'professionlistfornewmemeber' }
+                // List of all qualification fields
+                const qualificationFields = [
+                    { inputId: 'Qualification', listId: 'qualificationlistfornewmember' }
                    
                     
                 ];
 
                 // Attach events for all fields (single fetch for all)
-                professionFields.forEach(field => {
-                    attachProfessionAutocomplete(field.inputId, field.listId, '/fetchprofessions');
+                qualificationFields.forEach(field => {
+                    attachQualificationAutocomplete(field.inputId, field.listId, '/fetchQualifications');
                 });

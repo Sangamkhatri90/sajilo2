@@ -1934,37 +1934,9 @@ app.get("/createMem", (req, res) => {
     });
   });
 });
-// Route to handle profession search based on user input
-app.get("/searchProfession", (req, res) => {
-  const conn = req.session.conn;
-  const searchTerm = req.query.term || ""; // Get the search term from query parameters
-  const query = `SELECT Profession FROM dbo.tbProfessionMaster WHERE Profession LIKE ?`; // Use LIKE for filtering
-  const params = [`${searchTerm}%`]; // Append % for SQL LIKE query to match starting characters
 
-  sql.query(conn, query, params, (err, results) => {
-    if (err) {
-      console.error("SQL error: ", err);
-      return res.status(500).send("Error fetching professions");
-    }
-    res.json(results); // Send the filtered results as JSON
-  });
-});
 
-// Route to handle qualification search based on user input
-app.get("/searchQualification", (req, res) => {
-  const conn = req.session.conn;
-  const searchTerm = req.query.term || ""; // Get the search term from query parameters
-  const query = `SELECT Qualification FROM dbo.tbQualificationMaster WHERE Qualification LIKE ?`;
-  const params = [`${searchTerm}%`]; // Append % for SQL LIKE query to match starting characters
 
-  sql.query(conn, query, params, (err, results) => {
-    if (err) {
-      console.error("SQL error: ", err);
-      return res.status(500).send("Error fetching qualifications");
-    }
-    res.json(results); // Send the filtered results as JSON
-  });
-});
 
 // To get Cash and Cheque in Transaction
 app.get("/fetchGLNames", (req, res) => {
@@ -2638,7 +2610,7 @@ app.post("/add-district", (req, res) => {
 });
 
 
-// Route to fetch district data for delete
+// Route to fetch global district data 
 app.get("/fetchDistricts", (req, res) => {
   const query = "SELECT District, Alias FROM dbo.tbDistrictMaster";
   const conn = req.session.conn;
@@ -2852,7 +2824,7 @@ app.post("/add-qualification", (req, res) => {
     });
   });
 });
-// Route to fetch qualifications (for example purposes, similar to fetching districts)
+// Route to fetch global qualifications 
 app.get("/fetchQualifications", (req, res) => {
   const query = "SELECT Qualification, Alias FROM dbo.tbQualificationMaster";
   const conn = req.session.conn;
@@ -3929,7 +3901,7 @@ app.post("/add-vdc-municipality", (req, res) => {
   }
 });
 
-// Fetch list of VDC/Municipalities
+// Fetch global list of VDC/Municipalities
 app.get("/fetchVdc", (req, res) => {
   const query = "SELECT Vdc, Alias FROM dbo.tbVdcMaster";
   const conn = req.session.conn;
@@ -4462,9 +4434,9 @@ app.get("/fetchcollectors", (req, res) => {
 });
 
 // Route to fetch global profession data
-app.get("/fetchProfessions", (req, res) => {
+app.get("/fetchprofessions", (req, res) => {
   const query =
-    "SELECT ProfessionName, ProfessionAlias FROM [dbo].[tbProfessionMaster]";
+    "SELECT Profession, Alias FROM [dbo].[tbProfessionMaster]";
   const conn = req.session.conn;
 
   sql.query(conn, query, (err, rows) => {
@@ -6957,35 +6929,6 @@ app.post("/get-member-name-1", (req, res) => {
   });
 });
 
-app.post("/get-member-name-2", (req, res) => {
-  const { alias } = req.body;
-  const conn = req.session.conn;
-
-  if (!alias) {
-    return res.json({ success: false, message: "Alias is required" });
-  }
-
-  const query = `
-    SELECT MemberName 
-    FROM tbMemberMaster 
-    WHERE MemberAlias = ?
-  `;
-
-  sql.query(conn, query, [alias], (err, rows) => {
-    if (err) {
-      console.error("Database error:", err);
-      return res.json({ success: false, message: "An error occurred" });
-    }
-
-    if (rows.length > 0) {
-      const memberName = rows[0].MemberName;
-      res.json({ success: true, memberName });
-    } else {
-      res.json({ success: false, message: "Member not found" });
-    }
-  });
-});
-
 app.post("/get-member-name-3", (req, res) => {
   const { alias } = req.body;
   const conn = req.session.conn;
@@ -7044,34 +6987,7 @@ app.post("/get-member-name-4", (req, res) => {
   });
 });
 
-app.post("/get-member-name-5", (req, res) => {
-  const { alias } = req.body;
-  const conn = req.session.conn;
 
-  if (!alias) {
-    return res.json({ success: false, message: "Alias is required" });
-  }
-
-  const query = `
-    SELECT MemberName 
-    FROM tbMemberMaster 
-    WHERE MemberAlias = ?
-  `;
-
-  sql.query(conn, query, [alias], (err, rows) => {
-    if (err) {
-      console.error("Database error:", err);
-      return res.json({ success: false, message: "An error occurred" });
-    }
-
-    if (rows.length > 0) {
-      const memberName = rows[0].MemberName;
-      res.json({ success: true, memberName });
-    } else {
-      res.json({ success: false, message: "Member not found" });
-    }
-  });
-});
 
 app.post("/get-member-alias-1", (req, res) => {
   const { alias } = req.body;

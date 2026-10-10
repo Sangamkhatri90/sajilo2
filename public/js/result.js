@@ -185,7 +185,7 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
   }
   // Call the function immediately on page load
   fetchVoucherConfigAndGenerate();
-
+  fetchmultitransVoucherConfigAndGenerate();
    
     MaintransMembervalueforeditIN.addEventListener("dblclick", async function (e) {
         e.preventDefault();

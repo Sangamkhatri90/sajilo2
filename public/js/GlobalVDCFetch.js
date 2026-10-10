@@ -1,69 +1,69 @@
-               // Shared cache for all profession fields
-                const professionCache = [];
-                let professionDataFetched = false;
+               // Shared cache for all vdc fields
+                const vdcCache = [];
+                let vdcDataFetched = false;
 
                 // Store filtered results separately per input
-                const professionFiltered = {};
+                const vdcFiltered = {};
 
-                // Fetch professions only once
-                function fetchProfessions(fetchUrl, callback) {
-                    if (professionDataFetched) {
-                        callback(professionCache);
+                // Fetch vdcs only once
+                function fetchVdcs(fetchUrl, callback) {
+                    if (vdcDataFetched) {
+                        callback(vdcCache);
                         return;
                     }
                     fetch(fetchUrl)
                         .then(res => res.json())
                         .then(data => {
-                            if (data.professions && data.professions.length > 0) {
-                                // Sort alphabetically by Profession before caching
-                                data.professions.sort((a, b) => a.Profession.localeCompare(b.Profession));
-                                professionCache.push(...data.professions);
-                                professionDataFetched = true;
-                                callback(professionCache);
+                            if (data.vdc && data.vdc.length > 0) {
+                                // Sort alphabetically by Vdc before caching
+                                data.vdc.sort((a, b) => a.Vdc.localeCompare(b.Vdc));
+                                vdcCache.push(...data.vdc);
+                                vdcDataFetched = true;
+                                callback(vdcCache);
                             } else {
                                 callback([]);
                             }
                         })
                         .catch(err => {
-                            console.error("Error fetching professions:", err);
+                            console.error("Error fetching vdcs:", err);
                             callback([]);
                         });
                 }
 
                 // Handle focus
-                function handleProfessionFocus(inputId, listId, fetchUrl) {
+                function handleVdcFocus(inputId, listId, fetchUrl) {
                     const listElement = document.getElementById(listId);
                     listElement.innerHTML = '';
                     listElement.style.display = 'none';
 
-                    fetchProfessions(fetchUrl, (data) => {
+                    fetchVdcs(fetchUrl, (data) => {
                         if (data.length > 0) {
-                            professionFiltered[inputId] = [...data];
-                            displayProfessionSuggestions(inputId, listId);
+                            vdcFiltered[inputId] = [...data];
+                            displayVdcSuggestions(inputId, listId);
                         } else {
-                            listElement.innerHTML = '<div>No Professions found</div>';
+                            listElement.innerHTML = '<div>No VDCs found</div>';
                             listElement.style.display = 'block';
                         }
                     });
                 }
 
                 // Handle typing
-                function handleProfessionInput(inputId, listId) {
+                function handleVdcInput(inputId, listId) {
                     const inputVal = document.getElementById(inputId).value.toLowerCase();
 
                     if (inputVal === '') {
-                        professionFiltered[inputId] = [...professionCache];
+                        vdcFiltered[inputId] = [...vdcCache];
                     } else {
-                        professionFiltered[inputId] = professionCache.filter(item =>
-                            item.Profession.toLowerCase().includes(inputVal) ||
+                        vdcFiltered[inputId] = vdcCache.filter(item =>
+                            item.Vdc.toLowerCase().includes(inputVal) ||
                             item.Alias.toLowerCase().includes(inputVal)
                         );
                     }
-                    displayProfessionSuggestions(inputId, listId);
+                    displayVdcSuggestions(inputId, listId);
                 }
 
                 // Display dropdown suggestions
-                function displayProfessionSuggestions(inputId, listId) {
+                function displayVdcSuggestions(inputId, listId) {
                     const listElement = document.getElementById(listId);
                     listElement.innerHTML = '';
                     // positionJournalVoucherSearchList(inputId, listId, listElement);
@@ -77,20 +77,20 @@
                     };
                     listElement.appendChild(closeButton);
 
-                    const suggestions = professionFiltered[inputId] || [];
+                    const suggestions = vdcFiltered[inputId] || [];
                     if (suggestions.length > 0) {
                         listElement.style.display = 'block';
                         suggestions.forEach(item => {
                             const div = document.createElement('div');
-                            div.textContent = `${item.Profession} - ${item.Alias}`;
+                            div.textContent = `${item.Vdc} - ${item.Alias}`;
                             div.onclick = function () {
-                                document.getElementById(inputId).value = item.Profession;
+                                document.getElementById(inputId).value = item.Vdc;
                                 listElement.style.display = 'none';
                             };
                             listElement.appendChild(div);
                         });
                     } else {
-                        listElement.innerHTML += '<div>No matching Professions found</div>';
+                        listElement.innerHTML += '<div>No matching VDCs found</div>';
                         listElement.style.display = 'block';
                     }
                 }
@@ -109,27 +109,29 @@
                 // }
 
                 // Attach autocomplete to multiple fields easily
-                function attachProfessionAutocomplete(inputId, listId, fetchUrl) {
+                function attachVdcAutocomplete(inputId, listId, fetchUrl) {
                     const inputEl = document.getElementById(inputId);
                     if (!inputEl) return;
 
                     inputEl.addEventListener('focus', function () {
-                        handleProfessionFocus(inputId, listId, fetchUrl);
+                        handleVdcFocus(inputId, listId, fetchUrl);
                     });
 
                     inputEl.addEventListener('input', function () {
-                        handleProfessionInput(inputId, listId);
+                        handleVdcInput(inputId, listId);
                     });
                 }
 
-                // List of all profession fields
-                const professionFields = [
-                    { inputId: 'Profession', listId: 'professionlistfornewmemeber' }
+                // List of all VDC fields
+                const vdcFields = [
+                    { inputId: 'VDCInput1', listId: 'VDCList1fornewMember' },
+                    { inputId: 'VDCInput2', listId: 'VDCList2forNewMember' },
+                    
                    
                     
                 ];
 
                 // Attach events for all fields (single fetch for all)
-                professionFields.forEach(field => {
-                    attachProfessionAutocomplete(field.inputId, field.listId, '/fetchprofessions');
+                vdcFields.forEach(field => {
+                    attachVdcAutocomplete(field.inputId, field.listId, '/fetchVdc');
                 });

@@ -42,15 +42,15 @@
                             <div class="autocomplete-container">
                                 <label for="Profession">Profession:</label>
                                 <input type="text" id="Profession" name="Profession"
-                                    oninput="fetchProfessionOptions(this.value)" autocomplete="off" required>
-                                <div id="profession-list" class="autocomplete-list"></div>
+                                     autocomplete="off" required placeholder="Type or click to get list">
+                                <div id="professionlistfornewmemeber" class="suggestion-list"></div>
                             </div>
 
                             <div class="autocomplete-container">
                                 <label for="Qualification">Qualification:</label>
                                 <input type="text" id="Qualification" name="Qualification"
-                                    oninput="fetchQualificationOptions(this.value)" autocomplete="off" required>
-                                <div id="qualification-list" class="autocomplete-list"></div>
+                                    autocomplete="off" required placeholder="Type or click to get list">
+                                <div id="qualificationlistfornewmember" class="suggestion-list"></div>
                             </div>
                             <div>
                                 <label for="gender">Gender</label>
@@ -120,18 +120,18 @@
                                 <div>
                                     <label for="districtInput">District*</label>
                                     <input type="text" id="districtInput" class="asg-text" name="District" 
-                                           onfocus="fetchDistricts1(true)" oninput="filterDistricts1()" 
-                                           placeholder="Type to get District List">
-                                    <div id="districtsList" class="suggestions-list2"></div>
+                                            
+                                           placeholder="Type or click to get list">
+                                    <div id="districtsList2forNewMember" class="suggestions-list2"></div>
                                 </div>
                                 
                                 
                                 <div>
                                     <label for="VDCInput1">VDC*</label>
                                     <input type="text" id="VDCInput1" class="asg-text" name="TMunicipality" 
-                                           onfocus="fetchVDC1(true)" oninput="filterVDCs1()" 
-                                           placeholder="Type to get VDC List">
-                                    <div id="VDCList1" class="suggestions-list2"></div>
+                                           
+                                           placeholder="Type or click to get list">
+                                    <div id="VDCList1fornewMember" class="suggestions-list2"></div>
                                 </div>
                                 <div>
                                     <label for="Ward.No">Ward.No</label>
@@ -153,18 +153,18 @@
                                 <div>
                                     <label for="PDistrict">District*</label>
                                     <input type="text" id="PDistrict" class="asg-text" name="PDistrict" 
-                                           onfocus="fetchDistricts2(true)" oninput="filterDistricts2()" 
-                                           placeholder="Type to get District List">
-                                    <div id="PDistrictsList" class="suggestions-list2"></div>
+                                          
+                                           placeholder="Type or click to get list">
+                                    <div id="PDistrictsListForNewMember" class="suggestions-list2"></div>
                                 </div>
                                 
                                 
                                 <div>
                                     <label for="VDCInput2">VDC*</label>
                                     <input type="text" id="VDCInput2" class="asg-text" name="PMunicipality" 
-                                           onfocus="fetchVDC2(true)" oninput="filterVDCs2()" 
-                                           placeholder="Type to get VDC List">
-                                    <div id="VDCList2" class="suggestions-list2"></div>
+                                           
+                                           placeholder="Type or click to get list">
+                                    <div id="VDCList2forNewMember" class="suggestions-list2"></div>
                                 </div>
                                 <div>
                                     <label for="Ward.No">Ward.No</label>
@@ -410,113 +410,55 @@
         }
         
         </script>
-
         <script>
-            document.getElementById('intronum1').addEventListener('blur', function () {
-              const alias = this.value;
-              if (alias.trim() === '') {
-                document.getElementById('introname1').value = '';
-                return;
-              }
-          
-              fetch('/get-member-name-1', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ alias }),
-              })
-                .then((response) => response.json())
-                .then((data) => {
-                  if (data.success) {
-                    document.getElementById('introname1').value = data.memberName || '';
-                  } else {
-                    showCustomAlert(data.message || 'Member not found');
-                  }
-                })
-                .catch((error) => {
-                  console.error('Error:', error);
-                });
-            });
-          </script>
-                  <script>
-                    document.getElementById('intronum2').addEventListener('blur', function () {
-                      const alias = this.value;
-                      if (alias.trim() === '') {
-                        document.getElementById('introname2').value = '';
-                        return;
-                      }
-                  
-                      fetch('/get-member-name-2', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ alias }),
-                      })
-                        .then((response) => response.json())
-                        .then((data) => {
-                          if (data.success) {
-                            document.getElementById('introname2').value = data.memberName || '';
-                          } else {
-                            showCustomAlert(data.message || 'Member not found');
-                          }
-                        })
-                        .catch((error) => {
-                          console.error('Error:', error);
-                        });
-                    });
-                  </script>
+  function attachMemberLookup({ aliasInputId, nameInputId, url }) {
+    const aliasEl = document.getElementById(aliasInputId);
+    const nameEl = document.getElementById(nameInputId);
+    if (!aliasEl || !nameEl) return;
 
-    <script>
-        // Fetch and display profession options
-        function fetchProfessionOptions(searchTerm) {
-            const professionList = document.getElementById('profession-list');
-            if (!searchTerm.trim()) {
-                professionList.innerHTML = '';
-                return;
-            }
-            fetch(`/searchProfession?term=${searchTerm}`)
-                .then(response => response.json())
-                .then(data => {
-                    professionList.innerHTML = '';
-                    data.forEach(item => {
-                        const option = document.createElement('div');
-                        option.textContent = item.Profession;
-                        option.onclick = () => {
-                            document.getElementById('Profession').value = item.Profession;
-                            professionList.innerHTML = '';
-                        };
-                        professionList.appendChild(option);
-                    });
-                })
-                .catch(err => console.error(err));
-        }
+    aliasEl.addEventListener('blur', function () {
+      const alias = this.value.trim();
 
-        // Fetch and display qualification options
-        function fetchQualificationOptions(searchTerm) {
-            const qualificationList = document.getElementById('qualification-list');
-            if (!searchTerm.trim()) {
-                qualificationList.innerHTML = '';
-                return;
-            }
-            fetch(`/searchQualification?term=${searchTerm}`)
-                .then(response => response.json())
-                .then(data => {
-                    qualificationList.innerHTML = '';
-                    data.forEach(item => {
-                        const option = document.createElement('div');
-                        option.textContent = item.Qualification;
-                        option.onclick = () => {
-                            document.getElementById('Qualification').value = item.Qualification;
-                            qualificationList.innerHTML = '';
-                        };
-                        qualificationList.appendChild(option);
-                    });
-                })
-                .catch(err => console.error(err));
-        }
-    </script>
+      if (alias === '') {
+        nameEl.value = '';
+        return;
+      }
+
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alias }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            nameEl.value = data.memberName || '';
+          } else {
+            nameEl.value = '';
+            showCustomAlert(data.message || 'Member not found');
+          }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+    });
+  }
+
+  // Usage: one line per field pair
+  attachMemberLookup({
+    aliasInputId: 'intronum1',
+    nameInputId: 'introname1',
+    url: '/get-member-name-1',
+  });
+
+  // Add more pairs the same way
+  attachMemberLookup({
+    aliasInputId: 'intronum2',
+    nameInputId: 'introname2',
+    url: '/get-member-name-1',
+  });
+</script>
+
     <script>
         // Add event listeners to toggle links
         document.addEventListener('DOMContentLoaded', () => {
@@ -598,383 +540,17 @@
             }
         });
     </script>
-  
-<script>
-    let allDistricts1 = [];  // Array to store all district data for the first input
-let filteredDistricts1 = [];  // Array to store filtered district data for the first input
 
-// Fetch district data and show suggestions for districtInput
-function fetchDistricts1(isInitialFocus) {
-    const districtsList = document.getElementById('districtsList');  // List container for districtInput
-    const inputField = document.getElementById('districtInput');  // Input field for districtInput
-    districtsList.innerHTML = '';  // Clear previous suggestions
-    districtsList.style.display = 'none';  // Hide the list initially
-
-    if (allDistricts1.length === 0 || isInitialFocus) {
-        fetch('/fetchDistricts1')  // Fetch from the '/fetchDistricts1' endpoint
-            .then(response => response.json())
-            .then(data => {
-                if (data.districts && data.districts.length > 0) {
-                    allDistricts1 = data.districts;  // Store all districts in allDistricts1
-                    filteredDistricts1 = [...allDistricts1];  // Copy to filteredDistricts1
-                    displayDistricts1();
-                } else {
-                    const noResult = document.createElement('div');
-                    noResult.textContent = 'No districts found';
-                    noResult.style.color = 'gray';
-                    districtsList.appendChild(noResult);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching districts:', error);
-                const errorMessage = document.createElement('div');
-                errorMessage.textContent = 'Error fetching districts';
-                errorMessage.style.color = 'red';
-                districtsList.appendChild(errorMessage);
-            });
-    } else {
-        displayDistricts1();  // Use filteredDistricts1 when available
-    }
-}
-
-// Filter districts based on user input for districtInput
-function filterDistricts1() {
-    const input = document.getElementById('districtInput').value.toLowerCase();
-    if (input === '') {
-        filteredDistricts1 = [...allDistricts1];  // Reset filteredDistricts1 to allDistricts1
-    } else {
-        filteredDistricts1 = allDistricts1.filter(item =>
-            item.District.toLowerCase().includes(input) || item.Alias.toLowerCase().includes(input)
-        );
-    }
-    displayDistricts1();
-}
-
-// Display the filtered districts in the suggestions list for districtInput
-function displayDistricts1() {
-    const districtsList = document.getElementById('districtsList');
-    districtsList.innerHTML = '';  // Clear previous suggestions
-
-    // Sort the districts alphabetically by District name
-    filteredDistricts1.sort((a, b) => a.District.localeCompare(b.District));
-
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'X';
-    closeButton.className = 'close-button';
-
-    closeButton.onclick = function (event) {
-        event.preventDefault();
-        districtsList.style.display = 'none';  // Hide the suggestions list
-    };
-
-    districtsList.appendChild(closeButton);  // Append the close button
-
-    if (filteredDistricts1.length > 0) {
-        districtsList.style.display = 'block';  // Show the suggestions list
-        filteredDistricts1.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.textContent = `${item.District} - ${item.Alias}`;
-            div.title = `${item.District} - ${item.Alias}`;
-
-            div.onclick = function () {
-                document.getElementById('districtInput').value = item.District;  // Populate the input field
-                districtsList.style.display = 'none';  // Hide the suggestions list
-            };
-            districtsList.appendChild(div);
-        });
-    } else {
-        const noResult = document.createElement('div');
-        noResult.textContent = 'No matching districts found';
-        noResult.style.color = 'gray';
-        districtsList.appendChild(noResult);
-    }
-}
-
-</script>
-<script>
-    let allDistricts2 = [];  // Array to store all district data for the second input
-let filteredDistricts2 = [];  // Array to store filtered district data for the second input
-
-// Fetch district data and show suggestions for PDistrict
-function fetchDistricts2(isInitialFocus) {
-    const districtsList = document.getElementById('PDistrictsList');  // List container for PDistrict
-    const inputField = document.getElementById('PDistrict');  // Input field for PDistrict
-    districtsList.innerHTML = '';  // Clear previous suggestions
-    districtsList.style.display = 'none';  // Hide the list initially
-
-    if (allDistricts2.length === 0 || isInitialFocus) {
-        fetch('/fetchDistricts2')  // Fetch from the '/fetchDistricts2' endpoint
-            .then(response => response.json())
-            .then(data => {
-                if (data.districts && data.districts.length > 0) {
-                    allDistricts2 = data.districts;  // Store all districts in allDistricts2
-                    filteredDistricts2 = [...allDistricts2];  // Copy to filteredDistricts2
-                    displayDistricts2();
-                } else {
-                    const noResult = document.createElement('div');
-                    noResult.textContent = 'No districts found';
-                    noResult.style.color = 'gray';
-                    districtsList.appendChild(noResult);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching districts:', error);
-                const errorMessage = document.createElement('div');
-                errorMessage.textContent = 'Error fetching districts';
-                errorMessage.style.color = 'red';
-                districtsList.appendChild(errorMessage);
-            });
-    } else {
-        displayDistricts2();  // Use filteredDistricts2 when available
-    }
-}
-
-// Filter districts based on user input for PDistrict
-function filterDistricts2() {
-    const input = document.getElementById('PDistrict').value.toLowerCase();
-    if (input === '') {
-        filteredDistricts2 = [...allDistricts2];  // Reset filteredDistricts2 to allDistricts2
-    } else {
-        filteredDistricts2 = allDistricts2.filter(item =>
-            item.District.toLowerCase().includes(input) || item.Alias.toLowerCase().includes(input)
-        );
-    }
-    displayDistricts2();
-}
-
-// Display the filtered districts in the suggestions list for PDistrict
-function displayDistricts2() {
-    const districtsList = document.getElementById('PDistrictsList');
-    districtsList.innerHTML = '';  // Clear previous suggestions
-
-    // Sort the districts alphabetically by District name
-    filteredDistricts2.sort((a, b) => a.District.localeCompare(b.District));
-
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'X';
-    closeButton.className = 'close-button';
-
-    closeButton.onclick = function (event) {
-        event.preventDefault();
-        districtsList.style.display = 'none';  // Hide the suggestions list
-    };
-
-    districtsList.appendChild(closeButton);  // Append the close button
-
-    if (filteredDistricts2.length > 0) {
-        districtsList.style.display = 'block';  // Show the suggestions list
-        filteredDistricts2.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.textContent = `${item.District} - ${item.Alias}`;
-            div.title = `${item.District} - ${item.Alias}`;
-
-            div.onclick = function () {
-                document.getElementById('PDistrict').value = item.District;  // Populate the input field
-                districtsList.style.display = 'none';  // Hide the suggestions list
-            };
-            districtsList.appendChild(div);
-        });
-    } else {
-        const noResult = document.createElement('div');
-        noResult.textContent = 'No matching districts found';
-        noResult.style.color = 'gray';
-        districtsList.appendChild(noResult);
-    }
-}
-
-</script>
-<script>
-    let allVDCs1 = [];  // Array to store all VDC data
-let filteredVDCs1 = [];  // Array to store filtered VDC data
-
-// Fetch VDC data and show suggestions
-function fetchVDC1(isInitialFocus) {
-    const vdcList = document.getElementById('VDCList1');  // Corrected to VDCList1
-    const inputField = document.getElementById('VDCInput1');
-    vdcList.innerHTML = '';  // Clear previous suggestions
-    vdcList.style.display = 'none';  // Hide the list initially
-
-    if (allVDCs1.length === 0 || isInitialFocus) {
-        fetch('/fetchVDC1')  // Fetch from the '/fetchVDC1' endpoint
-            .then(response => response.json())
-            .then(data => {
-                if (data.vdc && data.vdc.length > 0) {
-                    allVDCs1 = data.vdc;  // Store all VDCs in allVDCs1
-                    filteredVDCs1 = [...allVDCs1];  // Copy to filteredVDCs1
-                    displayVDCs1(filteredVDCs1);
-                } else {
-                    const noResult = document.createElement('div');
-                    noResult.textContent = 'No VDCs found';
-                    noResult.style.color = 'gray';
-                    vdcList.appendChild(noResult);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching VDC data:', error);
-                const errorMessage = document.createElement('div');
-                errorMessage.textContent = 'Error fetching VDC data';
-                errorMessage.style.color = 'red';
-                vdcList.appendChild(errorMessage);
-            });
-    } else {
-        displayVDCs1(filteredVDCs1);  // Use filteredVDCs1 when available
-    }
-}
-
-// Filter VDCs based on user input
-function filterVDCs1() {
-    const input = document.getElementById('VDCInput1').value.toLowerCase();  // Corrected to VDCInput1
-    if (input === '') {
-        filteredVDCs1 = [...allVDCs1];  // Reset filteredVDCs1 to allVDCs1
-    } else {
-        filteredVDCs1 = allVDCs1.filter(item =>
-            item.VDC.toLowerCase().includes(input) || item.Alias.toLowerCase().includes(input)
-        );
-    }
-    displayVDCs1(filteredVDCs1);
-}
-
-// Display the filtered VDCs in the suggestions list
-function displayVDCs1(vdcList) {
-    const listElement = document.getElementById('VDCList1');  // Corrected to VDCList1
-    listElement.innerHTML = '';  // Clear previous suggestions
-
-    // Sort the VDCs alphabetically by VDC name
-    vdcList.sort((a, b) => a.VDC.localeCompare(b.VDC));
-
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'X';
-    closeButton.className = 'close-button';
-
-    closeButton.onclick = function (event) {
-        event.preventDefault();
-        listElement.style.display = 'none';  // Hide the suggestions list
-    };
-
-    listElement.appendChild(closeButton);  // Append the close button
-
-    if (vdcList.length > 0) {
-        listElement.style.display = 'block';  // Show the suggestions list
-        vdcList.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.textContent = `${item.VDC} - ${item.Alias}`;
-            div.title = `${item.VDC} - ${item.Alias}`;
-
-            div.onclick = function () {
-                document.getElementById('VDCInput1').value = item.VDC;  // Corrected to VDCInput1
-                listElement.style.display = 'none';  // Hide the suggestions list
-            };
-            listElement.appendChild(div);
-        });
-    } else {
-        const noResult = document.createElement('div');
-        noResult.textContent = 'No matching VDCs found';
-        noResult.style.color = 'gray';
-        listElement.appendChild(noResult);
-    }
-}
-
-</script>
-<script>
-    let allVDCs2 = [];  // Array to store all VDC data
-let filteredVDCs2 = [];  // Array to store filtered VDC data
-
-// Fetch VDC data and show suggestions
-function fetchVDC2(isInitialFocus) {
-    const vdcList = document.getElementById('VDCList2');  // Corrected to VDCList2
-    const inputField = document.getElementById('VDCInput2');
-    vdcList.innerHTML = '';  // Clear previous suggestions
-    vdcList.style.display = 'none';  // Hide the list initially
-
-    if (allVDCs2.length === 0 || isInitialFocus) {
-        fetch('/fetchVDC2')  // Fetch from the '/fetchVDC2' endpoint
-            .then(response => response.json())
-            .then(data => {
-                if (data.vdc && data.vdc.length > 0) {
-                    allVDCs2 = data.vdc;  // Store all VDCs in allVDCs2
-                    filteredVDCs2 = [...allVDCs2];  // Copy to filteredVDCs2
-                    displayVDCs2(filteredVDCs2);
-                } else {
-                    const noResult = document.createElement('div');
-                    noResult.textContent = 'No VDCs found';
-                    noResult.style.color = 'gray';
-                    vdcList.appendChild(noResult);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching VDC data:', error);
-                const errorMessage = document.createElement('div');
-                errorMessage.textContent = 'Error fetching VDC data';
-                errorMessage.style.color = 'red';
-                vdcList.appendChild(errorMessage);
-            });
-    } else {
-        displayVDCs2(filteredVDCs2);  // Use filteredVDCs2 when available
-    }
-}
-
-// Filter VDCs based on user input
-function filterVDCs2() {
-    const input = document.getElementById('VDCInput2').value.toLowerCase();  // Corrected to VDCInput2
-    if (input === '') {
-        filteredVDCs2 = [...allVDCs2];  // Reset filteredVDCs2 to allVDCs2
-    } else {
-        filteredVDCs2 = allVDCs2.filter(item =>
-            item.VDC.toLowerCase().includes(input) || item.Alias.toLowerCase().includes(input)
-        );
-    }
-    displayVDCs2(filteredVDCs2);
-}
-
-// Display the filtered VDCs in the suggestions list
-function displayVDCs2(vdcList) {
-    const listElement = document.getElementById('VDCList2');  // Corrected to VDCList2
-    listElement.innerHTML = '';  // Clear previous suggestions
-
-    // Sort the VDCs alphabetically by VDC name
-    vdcList.sort((a, b) => a.VDC.localeCompare(b.VDC));
-
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'X';
-    closeButton.className = 'close-button';
-
-    closeButton.onclick = function (event) {
-        event.preventDefault();
-        listElement.style.display = 'none';  // Hide the suggestions list
-    };
-
-    listElement.appendChild(closeButton);  // Append the close button
-
-    if (vdcList.length > 0) {
-        listElement.style.display = 'block';  // Show the suggestions list
-        vdcList.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.textContent = `${item.VDC} - ${item.Alias}`;
-            div.title = `${item.VDC} - ${item.Alias}`;
-
-            div.onclick = function () {
-                document.getElementById('VDCInput2').value = item.VDC;  // Corrected to VDCInput2
-                listElement.style.display = 'none';  // Hide the suggestions list
-            };
-            listElement.appendChild(div);
-        });
-    } else {
-        const noResult = document.createElement('div');
-        noResult.textContent = 'No matching VDCs found';
-        noResult.style.color = 'gray';
-        listElement.appendChild(noResult);
-    }
-}
+    
 
 </script>
 <script src="/js/div.js"></script>
 <script src="/js/createFormSubmitAlert.js"></script>
-  <script src="/js/alertsmessages.js"></script>
-  <script src="/js/inputBehavior.js"></script>
-    
+<script src="/js/alertsmessages.js"></script>
+<script src="/js/inputBehavior.js"></script>
+<script src="/js/GlobalProfessionFetch.js"></script>
+<script src="/js/GlobalQualificationFetch.js"></script>
+<script src="/js/GlobalVDCFetch.js"></script>
+<script src="/js/GlobalDistrictFetch.js"></script>
 </body>
 </html>
