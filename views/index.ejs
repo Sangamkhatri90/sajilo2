@@ -673,7 +673,7 @@
     </div>
 
     <div class="movableDiv" id="movableDiv194"
-        style="display: none; position: fixed; top: 80px; left: 3%; width: 94%; height: calc(100vh - 100px); padding: 0; overflow: hidden; z-index: 10000;">
+        style="display: none; position: fixed; top: 50px; left: 3%; width: 94%; height: calc(100vh - 60px); padding: 0; overflow: hidden; z-index: 10000;">
         <button type="button" id="closeButton194" hidden></button>
         <button type="button" id="cancelButton194" hidden></button>
         <iframe id="createMemberFrame" src="/createMem" title="Create a New Member"
@@ -681,10 +681,48 @@
     </div>
     <script>
         document.getElementById('createMemberFrame').addEventListener('load', function () {
-            this.contentDocument.addEventListener('keydown', function (event) {
+            const frame = this;
+            const memberPanel = document.getElementById('movableDiv194');
+            const frameDocument = frame.contentDocument;
+
+            frameDocument.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
                     document.getElementById('movableDiv194').style.display = 'none';
                 }
+            });
+
+            const dragHandle = frameDocument.querySelector('.member-form-header');
+            if (!dragHandle || !memberPanel) return;
+
+            let isDragging = false;
+            let offsetX = 0;
+            let offsetY = 0;
+
+            dragHandle.addEventListener('mousedown', function (event) {
+                if (event.button !== 0 || event.target.closest('button')) return;
+
+                event.preventDefault();
+                const panelRect = memberPanel.getBoundingClientRect();
+                const frameRect = frame.getBoundingClientRect();
+                offsetX = frameRect.left + event.clientX - panelRect.left;
+                offsetY = frameRect.top + event.clientY - panelRect.top;
+                isDragging = true;
+            });
+
+            frameDocument.addEventListener('mousemove', function (event) {
+                if (!isDragging) return;
+
+                const frameRect = frame.getBoundingClientRect();
+                const panelRect = memberPanel.getBoundingClientRect();
+                const margin = 8;
+                const maxLeft = Math.max(margin, window.innerWidth - panelRect.width - margin);
+                const maxTop = Math.max(margin, window.innerHeight - panelRect.height - margin);
+                memberPanel.style.left = `${Math.min(Math.max(frameRect.left + event.clientX - offsetX, margin), maxLeft)}px`;
+                memberPanel.style.top = `${Math.min(Math.max(frameRect.top + event.clientY - offsetY, margin), maxTop)}px`;
+            });
+
+            frameDocument.addEventListener('mouseup', function () {
+                isDragging = false;
             });
         });
     </script>
@@ -24251,8 +24289,8 @@ async function loadEarningsData() {
             <div class="movableDiv" id="ccapctmemedit" style="display: none;">
                 <button id="ccapctmemeditxbtn">&times;</button>
                 <div class="container">
-                    <form action="" id="ccapctmemeditform" method="POST" enctype="multipart/form-data">
-                        <h3 style="margin-bottom: 10px; text-align: center; color: #004d80;">Edit Member</h3>
+                    <form action="/submit/updateMember" id="ccapctmemeditform" method="POST" enctype="multipart/form-data">
+                        <h3 class="member-edit-form-header" style="margin-bottom: 10px; text-align: center; color: #004d80;">Edit Member</h3>
                         <div class="anchor">
                             <a href="#" class="toggle-linkmemedit" data-target="generalInformationmemedit">
                                 General Information</a>
@@ -24297,7 +24335,7 @@ async function loadEarningsData() {
                                     </div>
                                     <div>
                                         <label for="status">Status</label>
-                                        <select name="Sex" id="ccapeditmemstatus">
+                                        <select name="MemberStatus" id="ccapeditmemstatus">
                                             <option value="Left">Left</option>
                                             <option value="Live">Live</option>
 
@@ -24579,18 +24617,18 @@ async function loadEarningsData() {
                                 </div>
                                 <div>
                                     <label for="">Doc Class</label>
-                                    <input type="text" id="ccapeditmemotherdoc"
+                                    <input type="text" id="ccapeditmemotherdoc" name="OtherDocClassName"
                                         placeholder="Type or click to get lists.">
                                     <div id="ccapeditmemotherdoclist" class="suggestion-list2"></div>
                                 </div>
                                 <div>
                                     <div>
                                         <label for="">PAN No.of Member</label>
-                                        <input type="text" id="ccapeditmemotherpanmem">
+                                        <input type="text" id="ccapeditmemotherpanmem" name="PANNo">
                                     </div>
                                     <div>
                                         <label for="">NID No.of Member</label>
-                                        <input type="text" id="ccapeditmemothernid">
+                                        <input type="text" id="ccapeditmemothernid" name="NIDNo">
                                     </div>
                                 </div>
                             </fieldset>
@@ -29292,6 +29330,185 @@ async function loadEarningsData() {
                             window.hideSearchedDataForm = hideSearchedDataForm;
                             window.showSearchedDataForm = showSearchedDataForm;
                         })();
+                    </script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const memberHeading = document.getElementById('membervalue');
+                            const selectedMemberId = document.getElementById('searchedMemberId');
+                            const memberEditPanel = document.getElementById('ccapctmemedit');
+
+                            if (!memberHeading || !selectedMemberId || !memberEditPanel) return;
+
+                            const setValue = (id, value) => {
+                                const field = document.getElementById(id);
+                                if (field) field.value = value ?? '';
+                            };
+                            const setImage = (id, value) => {
+                                const image = document.getElementById(id);
+                                if (image && value) image.src = value;
+                            };
+                            const toInputDate = value => value ? String(value).replaceAll('/', '-') : '';
+
+                            memberHeading.addEventListener('dblclick', async function (event) {
+                                event.preventDefault();
+                                const memberAlias = selectedMemberId.value.trim();
+                                const memberName = memberHeading.textContent.replace(/^Member Name:\s*/, '').trim();
+                                if (!memberAlias) return;
+
+                                memberEditPanel.style.display = 'block';
+                                memberEditPanel.style.zIndex = '10001';
+                                document.getElementById('ccapctmemeditform').dataset.memberAlias = memberAlias;
+                                setValue('ccapeditmemMemberId', memberAlias);
+                                setValue('ccapeditmemMemberName', memberName);
+
+                                try {
+                                    const response = await fetch('/fetchccapeditmemdetails', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ ccapeditmemMemberIdval: memberAlias })
+                                    });
+                                    const data = await response.json();
+                                    if (!response.ok || !data.success) throw new Error(data.message || 'Member not found');
+
+                                    setValue('ccapeditmemProfession', data.Profession);
+                                    setValue('ccapeditmemQualification', data.Qualification);
+                                    setValue('ccapeditmemSex', data.Sex);
+                                    setValue('ccapeditmemstatus', data.Status);
+                                    setValue('ccapeditmemDocumentType', data.DocumentType);
+                                    setValue('ccapeditmemmobile', data.Mobile);
+                                    setValue('ccapeditmemDocumentTypeNo', data.DocumentTypeNo);
+                                    setValue('ccapeditmemDocumentIssueaddress', data.DocumentIssueAddress);
+                                    setValue('ccapeditmemtempdistrict', data.TDistrict);
+                                    setValue('ccapeditmemtempVDC', data.TVDC);
+                                    setValue('ccapeditmemtempWard', data.TWardNo);
+                                    setValue('ccapeditmemtemptel', data.TContactNumber);
+                                    setValue('ccapeditmemtemptole', data.TAddress);
+                                    setValue('ccapeditmemperdistrict', data.PDistrict);
+                                    setValue('ccapeditmemperVDC', data.PVDC);
+                                    setValue('ccapeditmemperWard', data.PWardNo);
+                                    setValue('ccapeditmempertel', data.PContactNumber);
+                                    setValue('ccapeditmempertole', data.PAddress);
+                                    setValue('ccapeditmemGuardianRel', data.GuardianRelation);
+                                    setValue('ccapeditmemguardname', data.FatherName);
+                                    setValue('ccapeditmemguardaddress', data.FatherAddress);
+                                    setValue('ccapeditmemguardcontact', data.FatherContactNumber);
+                                    setValue('ccapeditmemNextofKinName', data.NextofKinName);
+                                    setValue('ccapeditmemNextofKinContact', data.NextofKinContactNumber);
+                                    setValue('ccapeditmemNextofKinAddress', data.NextofKinAddress);
+                                    setValue('ccapeditmemkinRelation', data.KinRelation);
+                                    setValue('ccapeditmemgreatguardname', data.GrandFatherName);
+                                    setValue('ccapedtimemremarks', data.Remarks);
+                                    setValue('ccapeditmemdob', toInputDate(data.DateOfBirthNP));
+                                    setValue('ccapeditmemregdate', toInputDate(data.DOR_NP));
+                                    setValue('ccapeditmemIssuedate', toInputDate(data.DocumentIssueDateNP));
+                                    setValue('ccapeditmemotherdoc', data.DocClassName);
+                                    setValue('ccApmemedit', data.DocClassName);
+                                    setValue('ccapeditmemotherpanmem', data.panNo);
+                                    setValue('ccapeditmemothernid', data.NIDNo);
+                                    setImage('ccapeditmemacc-photo', data.Photo);
+                                    setImage('ccapeditmemacc-sign1', data.Sign1);
+                                    setImage('ccapeditmemacc-sign2', data.Sign2);
+                                    setImage('ccapeditmemacc-sign3', data.Sign3);
+                                    setImage('ccapeditmemacc-sign4', data.Sign4);
+
+                                    const accountResponse = await fetch('/fetchccapeditmemaccdetails', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ ccapeditmemMemberIdval: memberAlias })
+                                    });
+                                    const accountData = await accountResponse.json();
+                                    const accountBody = document.querySelector('#ccapeditmemAcctable tbody');
+                                    if (accountBody) {
+                                        accountBody.innerHTML = '';
+                                        (accountData.transactions || []).forEach((account, index) => {
+                                            const row = accountBody.insertRow();
+                                            [index + 1, account.AccountOpenDateNP, account.SlAlias, account.SLName, account.GLName, account.Balance]
+                                                .forEach(value => row.insertCell().textContent = value ?? '');
+                                        });
+                                        if (!accountBody.rows.length) {
+                                            const row = accountBody.insertRow();
+                                            const cell = row.insertCell();
+                                            cell.colSpan = 6;
+                                            cell.textContent = 'No accounts found';
+                                        }
+                                    }
+                                } catch (error) {
+                                    memberEditPanel.style.display = 'none';
+                                    showCustomAlert(error.message || 'Unable to load member details.');
+                                }
+                            });
+                        });
+                    </script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const editMemberForm = document.getElementById('ccapctmemeditform');
+                            const editMemberPanel = document.getElementById('ccapctmemedit');
+                            const editMemberDragHandle = editMemberForm?.querySelector('.member-edit-form-header');
+                            if (!editMemberForm) return;
+
+                            if (editMemberPanel && editMemberDragHandle) {
+                                let isDragging = false;
+                                let offsetX = 0;
+                                let offsetY = 0;
+
+                                editMemberDragHandle.addEventListener('mousedown', function (event) {
+                                    if (event.button !== 0) return;
+                                    const panelRect = editMemberPanel.getBoundingClientRect();
+                                    offsetX = event.clientX - panelRect.left;
+                                    offsetY = event.clientY - panelRect.top;
+                                    isDragging = true;
+                                    event.preventDefault();
+                                });
+
+                                document.addEventListener('mousemove', function (event) {
+                                    if (!isDragging) return;
+                                    editMemberPanel.style.left = `${event.clientX - offsetX}px`;
+                                    editMemberPanel.style.top = `${event.clientY - offsetY}px`;
+                                });
+
+                                document.addEventListener('mouseup', function () {
+                                    isDragging = false;
+                                });
+                            }
+
+                            const primaryDocClass = document.getElementById('ccApmemedit');
+                            const otherDocClass = document.getElementById('ccapeditmemotherdoc');
+                            primaryDocClass?.addEventListener('input', () => { otherDocClass.value = primaryDocClass.value; });
+                            otherDocClass?.addEventListener('input', () => { primaryDocClass.value = otherDocClass.value; });
+
+                            ['ccapctmemeditxbtn', 'ccapctmemeditcancelbtn'].forEach(id => {
+                                document.getElementById(id)?.addEventListener('click', function (event) {
+                                    event.preventDefault();
+                                    document.getElementById('ccapctmemedit').style.display = 'none';
+                                });
+                            });
+
+                            editMemberForm.addEventListener('submit', async function (event) {
+                                event.preventDefault();
+                                const submitButton = editMemberForm.querySelector('button[type="submit"]');
+                                const formData = new FormData(editMemberForm);
+                                formData.set('MemberAlias', editMemberForm.dataset.memberAlias || formData.get('MemberId') || '');
+                                if (submitButton) submitButton.disabled = true;
+
+                                try {
+                                    const response = await fetch(editMemberForm.action, {
+                                        method: 'POST',
+                                        body: formData
+                                    });
+                                    const responseText = await response.text();
+                                    let result;
+                                    try { result = JSON.parse(responseText); } catch (error) { result = { message: responseText }; }
+                                    if (!response.ok || !result.success) throw new Error(result.message || 'Unable to update member.');
+
+                                    showCustomAlert(result.message || 'Member updated successfully.');
+                                    document.getElementById('ccapctmemedit').style.display = 'none';
+                                } catch (error) {
+                                    showCustomAlert(error.message || 'Unable to update member.');
+                                } finally {
+                                    if (submitButton) submitButton.disabled = false;
+                                }
+                            });
+                        });
                     </script>
                     <script>
                         let selectedLedgerForSystem = null;  // To store the currently selected ledger

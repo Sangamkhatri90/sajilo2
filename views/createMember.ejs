@@ -87,8 +87,8 @@
                         <div>
                             <label for="status">Status</label>
                             <select name="Status" id="Status">
-                                <option value="live">Live</option>
-                                <option value="left">Left</option>
+                                <option value="Live">Live</option>
+                                <option value="Left">Left</option>
                             </select>
                         </div>
                         <div>
@@ -117,7 +117,7 @@
                         <fieldset>
                             <legend class="heading"> Temporary Address</legend>
                             <div class="cem-form-style-horizontal3">
-                                <div>
+                                <div class="member-suggestion-field">
                                     <label for="districtInput">District*</label>
                                     <input type="text" id="districtInput" class="asg-text" name="District" 
                                             
@@ -126,7 +126,7 @@
                                 </div>
                                 
                                 
-                                <div>
+                                <div class="member-suggestion-field">
                                     <label for="VDCInput1">VDC*</label>
                                     <input type="text" id="VDCInput1" class="asg-text" name="TMunicipality" 
                                            
@@ -150,7 +150,7 @@
                         <fieldset>
                             <legend class="heading"> Permanent Address</legend>
                             <div class="cem-form-style-horizontal3">
-                                <div>
+                                <div class="member-suggestion-field">
                                     <label for="PDistrict">District*</label>
                                     <input type="text" id="PDistrict" class="asg-text" name="PDistrict" 
                                           
@@ -159,7 +159,7 @@
                                 </div>
                                 
                                 
-                                <div>
+                                <div class="member-suggestion-field">
                                     <label for="VDCInput2">VDC*</label>
                                     <input type="text" id="VDCInput2" class="asg-text" name="PMunicipality" 
                                            
@@ -287,7 +287,7 @@
                     <fieldset>
                         <legend>Account Section</legend>
                         <div>
-                            <button type="button" class="btn btn-primary">Add Account</button>
+                            <button type="button" id="addAccountWhileCreatingMember" class="account-action-button">Add Account</button>
                                     
                             <div class="table-container">
                                     <table id="ccactranstablefd" class="highlight-table">
@@ -338,8 +338,8 @@
                 </div>
 
             <div class="cem-button-row">
-                <button type="submit" class="cem-button">Save</button>
-                <button type="button" class="member-close-button">Cancel</button>
+                <button type="submit" class="cem-button save"><img src="/PNG/save.png" alt="">Save</button>
+                <button type="button" class="cem-button cancel member-close-button"><img src="/PNG/cancel.png" alt="">Cancel</button>
             </div>
         </form>
         </div>
@@ -493,10 +493,17 @@
             const statusSelect = document.getElementById('Status');
             if (statusSelect) {
                 statusSelect.addEventListener('change', () => {
-                    if (statusSelect.value === 'left') {
+                    if (statusSelect.value.toLowerCase() === 'left') {
                         alert('A new member cannot be set to Left.');
-                        statusSelect.value = 'live';
+                        statusSelect.value = 'Live';
                     }
+                });
+            }
+
+            const addAccountButton = document.getElementById('addAccountWhileCreatingMember');
+            if (addAccountButton) {
+                addAccountButton.addEventListener('click', () => {
+                    alert('A new account cannot be created while creating a new member. Save the member first.');
                 });
             }
 
@@ -506,68 +513,8 @@
                     if (parentPanel) parentPanel.style.display = 'none';
                 });
             });
-            const makeDivMovableOnce = (div) => {
-        if (div.dataset.movableBound === 'true') {
-            return;
-        }
-
-        div.dataset.movableBound = 'true';
-        let isDragging = false;
-        let offsetX = 0;
-        let offsetY = 0;
-        let highestZIndex = 10000;
-
-        const bringToFront = (element) => {
-            highestZIndex++;
-            element.style.zIndex = highestZIndex;
-        };
-
-        div.addEventListener('mousedown', (e) => {
-            if (
-                e.target.tagName === 'INPUT' ||
-                e.target.tagName === 'TEXTAREA' ||
-                e.target.tagName === 'BUTTON' ||
-                e.target.tagName === 'SELECT'
-            ) {
-                return;
-            }
-
-            e.preventDefault();
-            bringToFront(div);
-
-            const rect = div.getBoundingClientRect();
-            offsetX = e.clientX - rect.left;
-            offsetY = e.clientY - rect.top;
-            // The modal is initially centered with translate(-50%, -50%).
-            // Convert it to viewport coordinates before dragging so the
-            // pointer keeps the same position on the modal.
-            div.style.position = 'fixed';
-            div.style.transform = 'none';
-            div.style.left = `${rect.left}px`;
-            div.style.top = `${rect.top}px`;
-            isDragging = true;
         });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) {
-                return;
-            }
-
-            div.style.left = `${e.clientX - offsetX}px`;
-            div.style.top = `${e.clientY - offsetY}px`;
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-    };
-            makeDivMovableOnce(document.getElementById('movableDiv194'));      
-});
     </script>
-
-    
-
-</script>
 <script src="/js/div.js"></script>
 <script src="/js/createFormSubmitAlert.js"></script>
 <script src="/js/alertsmessages.js"></script>

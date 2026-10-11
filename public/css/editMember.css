@@ -199,3 +199,220 @@ textarea {
     width: 15px;
     border-radius: 4px;
 }
+
+/* Match the Create Member form styling without affecting other panels. */
+#ccapctmemedit {
+  position: fixed;
+  top: 50px;
+  left: 3%;
+  width: 94%;
+  height: calc(100vh - 60px);
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #7aa7c7;
+  border-radius: 6px;
+  background: linear-gradient(to bottom, #e6f2f8, #cde1ed);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+#ccapctmemedit .container,
+#ccapctmemeditform {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: transparent;
+}
+
+#ccapctmemeditform > h3 {
+  margin: 0 42px 10px;
+  padding: 4px;
+  color: #004d80;
+  font-size: 18px;
+  text-align: center;
+}
+
+#ccapctmemedit .member-edit-form-header {
+  user-select: none;
+}
+
+#ccapctmemeditxbtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: #dc3545;
+  color: #fff;
+  cursor: pointer;
+  line-height: 22px;
+}
+
+#ccapctmemedit .anchor {
+  margin-bottom: 10px;
+}
+
+#ccapctmemedit .anchor a {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #e0e0e0;
+  color: #555;
+  text-decoration: none;
+}
+
+#ccapctmemedit .anchor a.active,
+#ccapctmemedit .anchor a:hover {
+  background: #4caf50;
+  color: #fff;
+}
+
+#ccapctmemedit fieldset {
+  border-color: #7aa7c7;
+  border-radius: 4px;
+}
+
+#ccapctmemedit legend {
+  padding: 0 6px;
+  color: #004d80;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#ccapctmemedit label {
+  margin-bottom: 3px;
+  color: #000;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#ccapctmemedit input:not([type="file"]),
+#ccapctmemedit select,
+#ccapctmemedit textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  margin: 0;
+  border: 1px solid #7aa7c7;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 13px;
+}
+
+#ccapctmemedit input:focus,
+#ccapctmemedit select:focus,
+#ccapctmemedit textarea:focus {
+  border-color: #1976d2;
+  outline: none;
+  box-shadow: 0 0 2px rgba(25, 118, 210, 0.6);
+}
+
+#ccapctmemedit .cem-button-row {
+  justify-content: flex-start;
+}
+
+#ccapctmemedit .cem-button,
+#ccapctmemedit .cem-buttonKYM,
+#ccapctmemedit #toggleButton190 {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: 1px solid #7aa7c7;
+  border-radius: 3px;
+  background: #f0f0f0;
+  color: #333;
+  font-size: 13px;
+}
+
+#ccapctmemedit .cem-button[type="submit"] {
+  background: #28a745;
+  border-color: #218838;
+  color: #fff;
+}
+
+#ccapctmemedit #ccapctmemeditcancelbtn {
+  background: #dc3545;
+  border-color: #c82333;
+  color: #fff;
+}
+
+#ccapctmemedit #ccapeditmemAcctable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#ccapctmemedit #ccapeditmemAcctable th,
+#ccapctmemedit #ccapeditmemAcctable td {
+  padding: 4px;
+  border: 1px solid #7aa7c7;
+  text-align: center;
+  font-size: 12px;
+}
+
+#ccapctmemedit #ccapeditmemAcctable th {
+  background: #d8ebf7;
+  color: #000;
+}
+
+#ccapctmemedit .autocomplete-container,
+#ccapctmemedit .cem-form-style-horizontal3 > div {
+  position: relative;
+}
+
+#ccapctmemedit .suggestions-list2 {
+  top: 100%;
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  max-height: 200px;
+  border-color: #7aa7c7;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Keep the member photo and all four signatures in a single row. */
+#ccapctmemedit .uploads {
+  overflow-x: auto;
+}
+
+#ccapctmemedit .uploads .form-style-horizontal {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 20px;
+  min-width: max-content;
+}
+
+#ccapctmemedit .uploads .form-style-horizontal1n2,
+#ccapctmemedit .uploads .form-style-horizontal3n4 {
+  display: contents;
+}
+
+#ccapctmemedit .uploads .form-style-horizontal > div,
+#ccapctmemedit .uploads .form-style-horizontal1n2 > div,
+#ccapctmemedit .uploads .form-style-horizontal3n4 > div {
+  display: flex;
+  flex: 0 0 135px;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#ccapctmemedit .uploads img {
+  width: 135px;
+  height: 135px;
+  box-sizing: border-box;
+  border: 1px solid #c5c5c5;
+  border-radius: 4px;
+  background: #fff;
+  object-fit: contain;
+}
+
+#ccapctmemedit .uploads input[type="file"] {
+  width: 135px;
+  max-width: 135px;
+  font-size: 12px;
+}

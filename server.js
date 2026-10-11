@@ -1709,6 +1709,9 @@ app.post(
           .status(400)
           .send({ success: false, message: "Error querying UserID" });
       }
+      if (!result || result.length === 0) {
+        return res.status(404).send("Creating user was not found.");
+      }
       const createuserID = result[0].UserID;
 
       // First, get the DocClassID from dbo.tbDocClassMaster
@@ -1904,6 +1907,130 @@ app.post(
         }
       });
     });
+  }
+);
+
+app.post(
+  "/submit/updateMember",
+  uploadmem.fields([
+    { name: "MemPhoto", maxCount: 1 },
+    { name: "MemSign1", maxCount: 1 },
+    { name: "MemSign2", maxCount: 1 },
+    { name: "MemSign3", maxCount: 1 },
+    { name: "MemSign4", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    const {
+      MemberAlias,
+      Name,
+      Profession,
+      Qualification,
+      Sex,
+      MemberStatus,
+      GuardianRel,
+      RelName,
+      RelAddress,
+      RelContact,
+      DocumentType,
+      Mobile,
+      EngName,
+      DOR,
+      DOB,
+      IssueDate,
+      IssueAddress,
+      DocNo,
+      District,
+      TMunicipality,
+      TWardno,
+      TTelephone,
+      TTole,
+      PDistrict,
+      PMunicipality,
+      PWardNo,
+      PTelephone,
+      PTole,
+      KinName,
+      KinContact,
+      KinAddress,
+      KinRelation,
+      IntroID1,
+      IntroID2,
+      Remarks,
+      DocClassName,
+      OtherDocClassName,
+      PANNo,
+      NIDNo,
+      CMCreatedBy,
+    } = req.body;
+    const conn = req.session.conn;
+    const memberAlias = String(MemberAlias || "").trim();
+    const docClassName = String(OtherDocClassName || DocClassName || "").trim();
+
+    if (!conn || !memberAlias || !Name || !Profession || !Qualification || !docClassName) {
+      return res.status(400).json({ success: false, message: "Member ID, name, profession, qualification, and document class are required." });
+    }
+
+    try {
+      const [memberRows, professionRows, qualificationRows, docClassRows] = await Promise.all([
+        runQuery(conn, "SELECT TOP 1 MemberID FROM dbo.tbMemberMaster WHERE MemberAlias = ?", [memberAlias]),
+        runQuery(conn, "SELECT TOP 1 ProfessionID FROM dbo.tbProfessionMaster WHERE Profession = ?", [Profession]),
+        runQuery(conn, "SELECT TOP 1 QualificationID FROM dbo.tbQualificationMaster WHERE Qualification = ?", [Qualification]),
+        runQuery(conn, "SELECT TOP 1 DocClassID FROM dbo.tbDocClassMaster WHERE DocClassName = ?", [docClassName]),
+      ]);
+
+      if (!memberRows.length) return res.status(404).json({ success: false, message: "Member was not found." });
+      if (!professionRows.length) return res.status(400).json({ success: false, message: "Profession was not found." });
+      if (!qualificationRows.length) return res.status(400).json({ success: false, message: "Qualification was not found." });
+      if (!docClassRows.length) return res.status(400).json({ success: false, message: "Document class was not found." });
+
+      let updatedBy = null;
+      if (CMCreatedBy) {
+        const userRows = await runQuery(connectionString, "SELECT TOP 1 UserID FROM dbo.tbUserMaster WHERE UserName = ?", [CMCreatedBy]);
+        updatedBy = userRows[0]?.UserID || null;
+      }
+
+      await runQuery(conn, `
+        UPDATE dbo.tbMemberMaster SET
+          MemberName = ?, ProfessionID = ?, QualificationID = ?, DocClassID = ?, Sex = ?, Status = ?,
+          GuardianRelation = ?, FatherName = ?, FatherAddress = ?, FatherContactNumber = ?, DocumentType = ?,
+          Mobile = ?, AltMemberName = ?, DOR = ?, DateOfBirth = ?, DocumentIssueDate = ?, DocumentIssueAddress = ?,
+          DocumentNo = ?, TDistrict = ?, TVDC = ?, TWardNo = ?, TContactNumber = ?, TAddress = ?,
+          PDistrict = ?, PVDC = ?, PWardNo = ?, PContactNumber = ?, PAddress = ?, NextofKinName = ?,
+          NextofKinContactNumber = ?, NextofKinAddress = ?, Relation = ?, MemberIDIntroducedBy1 = ?,
+          MemberIDIntroducedBy2 = ?, Remarks = ?, PANNo = ?, NIDNo = ?, LastSavedBy = ?, LastSavedDateTime = GETDATE()
+        WHERE MemberAlias = ?
+      `, [
+        Name, professionRows[0].ProfessionID, qualificationRows[0].QualificationID, docClassRows[0].DocClassID,
+        Sex, MemberStatus || "Live", GuardianRel || null, RelName || null, RelAddress || null, RelContact || null,
+        DocumentType || null, Mobile || null, EngName || null, DOR || null, DOB || null, IssueDate || null,
+        IssueAddress || null, DocNo || null, District || null, TMunicipality || null, TWardno || null,
+        TTelephone || null, TTole || null, PDistrict || null, PMunicipality || null, PWardNo || null,
+        PTelephone || null, PTole || null, KinName || null, KinContact || null, KinAddress || null,
+        KinRelation || null, IntroID1 || null, IntroID2 || null, Remarks || null, PANNo || null, NIDNo || null,
+        updatedBy, memberAlias,
+      ]);
+
+      const readUpload = name => {
+        const file = req.files?.[name]?.[0];
+        return file ? fs.readFileSync(path.join(__dirname, "uploadsMem", file.filename)) : null;
+      };
+      const photoValues = ["MemPhoto", "MemSign1", "MemSign2", "MemSign3", "MemSign4"].map(readUpload);
+      if (photoValues.some(value => value !== null)) {
+        const memberId = memberRows[0].MemberID;
+        await runQuery(conn, `
+          IF EXISTS (SELECT 1 FROM dbo.tbMemberPhoto WHERE MemberID = ?)
+            UPDATE dbo.tbMemberPhoto SET Photo = COALESCE(?, Photo), Sign1 = COALESCE(?, Sign1),
+              Sign2 = COALESCE(?, Sign2), Sign3 = COALESCE(?, Sign3), Sign4 = COALESCE(?, Sign4) WHERE MemberID = ?
+          ELSE
+            INSERT INTO dbo.tbMemberPhoto (MemberID, Photo, Sign1, Sign2, Sign3, Sign4) VALUES (?, ?, ?, ?, ?, ?)
+        `, [memberId, ...photoValues, memberId, memberId, ...photoValues]);
+      }
+
+      return res.json({ success: true, message: "Member updated successfully." });
+    } catch (error) {
+      console.error("Member update failed:", error);
+      return res.status(500).json({ success: false, message: "Unable to update member." });
+    }
   }
 );
 

@@ -25,7 +25,7 @@ body {
   position: relative;
   min-height: 28px;
   margin-bottom: 10px;
-  cursor: move;
+  cursor: default;
   user-select: none;
 }
 
@@ -237,11 +237,168 @@ label {
   max-height: 20px;
 }
 
+.cem-button-row .cem-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: none;
+  max-height: none;
+  padding: 5px 10px;
+  border: 1px solid #7aa7c7;
+  font-size: 13px;
+}
+
+.cem-button-row .cem-button img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.cem-button-row .cem-button.save {
+  background: #28a745;
+  border-color: #218838;
+}
+
+.cem-button-row .cem-button.save:hover {
+  background: #218838;
+}
+
+.cem-button-row .cem-button.cancel {
+  background: #dc3545;
+  border-color: #c82333;
+}
+
+.cem-button-row .cem-button.cancel:hover {
+  background: #c82333;
+}
+
+.account-action-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px solid #7aa7c7;
+  border-radius: 3px;
+  background: #f0f0f0;
+  color: #333;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.account-action-button:hover {
+  background: #e6f2f8;
+}
+
+#accounts .table-container {
+  margin-top: 5px;
+  overflow-x: auto;
+}
+
+#ccactranstablefd {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#ccactranstablefd th,
+#ccactranstablefd td {
+  border: 1px solid #7aa7c7;
+  padding: 4px;
+  text-align: center;
+  font-size: 12px;
+}
+
+#ccactranstablefd th {
+  background: #d8ebf7;
+  color: #000;
+  font-weight: bold;
+}
+
 /* Styling the autocomplete container */
 .autocomplete-container {
   position: relative;
   display: inline-block;
   width: 100%;
+}
+
+.member-suggestion-field {
+  position: relative;
+}
+
+.autocomplete-container > input,
+.member-suggestion-field > input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#professionlistfornewmemeber,
+#qualificationlistfornewmember,
+#districtsList2forNewMember,
+#VDCList1fornewMember,
+#PDistrictsListForNewMember,
+#VDCList2forNewMember {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10000;
+  padding-top: 0;
+  border: 1px solid #7aa7c7;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+#professionlistfornewmemeber > button,
+#qualificationlistfornewmember > button,
+#districtsList2forNewMember > button,
+#VDCList1fornewMember > button,
+#PDistrictsListForNewMember > button,
+#VDCList2forNewMember > button {
+  position: sticky;
+  top: 0;
+  display: block;
+  margin-left: auto;
+  z-index: 1;
+  min-width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: #dc3545;
+  color: #fff;
+  cursor: pointer;
+  line-height: 22px;
+}
+
+#professionlistfornewmemeber > div,
+#qualificationlistfornewmember > div,
+#districtsList2forNewMember > div,
+#VDCList1fornewMember > div,
+#PDistrictsListForNewMember > div,
+#VDCList2forNewMember > div {
+  padding: 6px 8px;
+  border-bottom: 1px solid #d6d6d6;
+  cursor: pointer;
+}
+
+#professionlistfornewmemeber > div:last-child,
+#qualificationlistfornewmember > div:last-child,
+#districtsList2forNewMember > div:last-child,
+#VDCList1fornewMember > div:last-child,
+#PDistrictsListForNewMember > div:last-child,
+#VDCList2forNewMember > div:last-child {
+  border-bottom: 0;
+}
+
+#professionlistfornewmemeber > div:hover,
+#qualificationlistfornewmember > div:hover,
+#districtsList2forNewMember > div:hover,
+#VDCList1fornewMember > div:hover,
+#PDistrictsListForNewMember > div:hover,
+#VDCList2forNewMember > div:hover {
+  background: #e6f2f8;
 }
 
 
