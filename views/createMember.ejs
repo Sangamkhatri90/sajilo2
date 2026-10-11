@@ -506,39 +506,63 @@
                     if (parentPanel) parentPanel.style.display = 'none';
                 });
             });
+            const makeDivMovableOnce = (div) => {
+        if (div.dataset.movableBound === 'true') {
+            return;
+        }
 
-            const dragHandle = document.querySelector('.member-form-header');
-            if (dragHandle) {
-                dragHandle.addEventListener('mousedown', event => {
-                    if (event.button !== 0 || event.target.closest('button')) return;
+        div.dataset.movableBound = 'true';
+        let isDragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+        let highestZIndex = 10000;
 
-                    const parentPanel = window.parent.document.getElementById('movableDiv194');
-                    if (!parentPanel) return;
+        const bringToFront = (element) => {
+            highestZIndex++;
+            element.style.zIndex = highestZIndex;
+        };
 
-                    event.preventDefault();
-                    const panelRect = parentPanel.getBoundingClientRect();
-                    const offsetX = event.clientX - panelRect.left;
-                    const offsetY = event.clientY - panelRect.top;
-
-                    const movePanel = moveEvent => {
-                        const rect = parentPanel.getBoundingClientRect();
-                        const margin = 8;
-                        const maxLeft = Math.max(margin, window.parent.innerWidth - rect.width - margin);
-                        const maxTop = Math.max(margin, window.parent.innerHeight - rect.height - margin);
-                        parentPanel.style.left = `${Math.min(Math.max(moveEvent.clientX - offsetX, margin), maxLeft)}px`;
-                        parentPanel.style.top = `${Math.min(Math.max(moveEvent.clientY - offsetY, margin), maxTop)}px`;
-                    };
-
-                    const stopMoving = () => {
-                        document.removeEventListener('mousemove', movePanel);
-                        document.removeEventListener('mouseup', stopMoving);
-                    };
-
-                    document.addEventListener('mousemove', movePanel);
-                    document.addEventListener('mouseup', stopMoving);
-                });
+        div.addEventListener('mousedown', (e) => {
+            if (
+                e.target.tagName === 'INPUT' ||
+                e.target.tagName === 'TEXTAREA' ||
+                e.target.tagName === 'BUTTON' ||
+                e.target.tagName === 'SELECT'
+            ) {
+                return;
             }
+
+            e.preventDefault();
+            bringToFront(div);
+
+            const rect = div.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            // The modal is initially centered with translate(-50%, -50%).
+            // Convert it to viewport coordinates before dragging so the
+            // pointer keeps the same position on the modal.
+            div.style.position = 'fixed';
+            div.style.transform = 'none';
+            div.style.left = `${rect.left}px`;
+            div.style.top = `${rect.top}px`;
+            isDragging = true;
         });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) {
+                return;
+            }
+
+            div.style.left = `${e.clientX - offsetX}px`;
+            div.style.top = `${e.clientY - offsetY}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+    };
+            makeDivMovableOnce(document.getElementById('movableDiv194'));      
+});
     </script>
 
     
