@@ -15,6 +15,9 @@
         <form action="/account/createAccount" method="post" enctype="multipart/form-data">
                 <div class="account-form-header">
                     <h3>Create a New Account</h3>
+                    <div class="form-close-controls">
+                        <button type="button" class="member-close-button member-close-x" id="closeCreateAccount" aria-label="Close">X</button>
+                    </div>
                 </div>
                <div class="navigation">
                     <a href="#" class="toggle-link" data-target="general-information">General Information</a>
@@ -826,10 +829,13 @@ function updatePhotoAPI() {
             });
 
             activateSection('general-information');
-            document.getElementById('cancelCreateAccount').addEventListener('click', () => {
+            const closeAccountPanel = () => {
                 const parentPanel = window.parent.document.getElementById('movableDiv195');
                 if (parentPanel) parentPanel.style.display = 'none';
-            });
+            };
+
+            document.getElementById('cancelCreateAccount').addEventListener('click', closeAccountPanel);
+            document.getElementById('closeCreateAccount').addEventListener('click', closeAccountPanel);
         });
 
     </script>

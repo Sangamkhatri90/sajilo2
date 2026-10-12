@@ -22,8 +22,11 @@ body {
 }
 
 .account-form-header {
+    position: relative;
     min-height: 28px;
     margin-bottom: 10px;
+    cursor: default;
+    user-select: none;
 }
 
 .account-form-header h3 {
@@ -32,6 +35,29 @@ body {
     color: #004d80;
     font-size: 18px;
     text-align: center;
+}
+
+.form-close-controls {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+.member-close-button {
+    padding: 3px 9px;
+    border: 1px solid #7aa7c7;
+    border-radius: 3px;
+    background: #f0f0f0;
+    color: #333;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.member-close-x {
+    padding: 3px 7px;
+    border-color: #c82333;
+    background: #dc3545;
+    color: #fff;
 }
 
 fieldset {

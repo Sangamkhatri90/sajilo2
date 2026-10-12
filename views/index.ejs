@@ -728,15 +728,12 @@
     </script>
 
     <div class="movableDiv" id="movableDiv195"
-        style="display: none; position: fixed; top: 80px; left: 3%; width: 94%; height: calc(100vh - 100px); padding: 0; overflow: hidden; z-index: 10000;">
+        style="display: none; position: fixed; top: 50px; left: 3%; width: 94%; height: calc(100vh - 60px); padding: 0; overflow: hidden; z-index: 10000;">
         <button type="button" id="toggleButton195" hidden></button>
-        <div style="height: 32px; padding: 5px 10px; background: #2d72ad; color: #fff; cursor: move;">
-            <strong>Create a New Account</strong>
-            <button type="button" id="closeButton195" style="float: right; margin-left: 6px;">X</button>
-            <button type="button" id="cancelButton195" style="float: right;">Close</button>
-        </div>
+        <button type="button" id="closeButton195" hidden></button>
+        <button type="button" id="cancelButton195" hidden></button>
         <iframe id="createAccountFrame" src="about:blank" title="Create a New Account"
-            style="width: 100%; height: calc(100% - 32px); border: 0;"></iframe>
+            style="width: 100%; height: 100%; border: 0;"></iframe>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -753,10 +750,48 @@
         });
 
         document.getElementById('createAccountFrame').addEventListener('load', function () {
-            this.contentDocument.addEventListener('keydown', function (event) {
+            const frame = this;
+            const accountPanel = document.getElementById('movableDiv195');
+            const frameDocument = frame.contentDocument;
+
+            frameDocument.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
                     document.getElementById('movableDiv195').style.display = 'none';
                 }
+            });
+
+            const dragHandle = frameDocument.querySelector('.account-form-header');
+            if (!dragHandle || !accountPanel) return;
+
+            let isDragging = false;
+            let offsetX = 0;
+            let offsetY = 0;
+
+            dragHandle.addEventListener('mousedown', function (event) {
+                if (event.button !== 0 || event.target.closest('button')) return;
+
+                event.preventDefault();
+                const panelRect = accountPanel.getBoundingClientRect();
+                const frameRect = frame.getBoundingClientRect();
+                offsetX = frameRect.left + event.clientX - panelRect.left;
+                offsetY = frameRect.top + event.clientY - panelRect.top;
+                isDragging = true;
+            });
+
+            frameDocument.addEventListener('mousemove', function (event) {
+                if (!isDragging) return;
+
+                const frameRect = frame.getBoundingClientRect();
+                const panelRect = accountPanel.getBoundingClientRect();
+                const margin = 8;
+                const maxLeft = Math.max(margin, window.innerWidth - panelRect.width - margin);
+                const maxTop = Math.max(margin, window.innerHeight - panelRect.height - margin);
+                accountPanel.style.left = `${Math.min(Math.max(frameRect.left + event.clientX - offsetX, margin), maxLeft)}px`;
+                accountPanel.style.top = `${Math.min(Math.max(frameRect.top + event.clientY - offsetY, margin), maxTop)}px`;
+            });
+
+            frameDocument.addEventListener('mouseup', function () {
+                isDragging = false;
             });
         });
     </script>
