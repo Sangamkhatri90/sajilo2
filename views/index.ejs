@@ -744,7 +744,9 @@
                 const memberId = document.getElementById('searchedMemberId').value;
                 if (memberId) {
                     document.getElementById('createAccountFrame').src = `/account/createAccount?MemberId=${encodeURIComponent(memberId)}`;
-                    document.getElementById('toggleButton195').click();
+                    const accountPanel = document.getElementById('movableDiv195');
+                    accountPanel.style.zIndex = '10000';
+                    accountPanel.style.display = 'block';
                 }
             });
         });
