@@ -130,47 +130,7 @@ app.get("/login", (req, res) => {
 // Route 2: Automatically use searchDigit from session
 app.get("/account/createAccount", async (req, res) => {
   const memberId = req.query.MemberId;
-  const conn = req.session.conn;
-  let transactionHistory = [];
-
-  if (conn && memberId) {
-    const transactionQuery = `
-      SELECT
-        jm.JV_Miti,
-        jm.VoucherNo,
-        ISNULL(jm.TransType, '') AS Description,
-        ISNULL(jd.DrAmount, 0) AS DrAmount,
-        ISNULL(jd.CrAmount, 0) AS CrAmount
-      FROM dbo.tbMemberMaster AS m
-      INNER JOIN dbo.tbSubLedgerMaster AS s ON s.MemberID = m.MemberID
-      INNER JOIN dbo.tbJournalDetails AS jd ON jd.SLID = s.SLID
-      INNER JOIN dbo.tbJournalMaster AS jm ON jm.JournalID = jd.JournalID
-      WHERE m.MemberAlias = ?
-      ORDER BY jm.JV_Date, jm.JournalID, jd.SNo
-    `;
-
-    try {
-      const rows = await new Promise((resolve, reject) => {
-        sql.query(conn, transactionQuery, [memberId], (err, result) => {
-          if (err) return reject(err);
-          resolve(result || []);
-        });
-      });
-
-      let balance = 0;
-      transactionHistory = rows.map((row, index) => {
-        const drAmount = Number(row.DrAmount || 0);
-        const crAmount = Number(row.CrAmount || 0);
-        balance += crAmount - drAmount;
-
-        return { ...row, SNo: index + 1, Balance: balance };
-      });
-    } catch (err) {
-      console.error("Error fetching account transaction history:", err);
-    }
-  }
-
-  res.render("createAcc", { memberId, transactionHistory });
+  res.render("createAcc", { memberId });
 });
 
 

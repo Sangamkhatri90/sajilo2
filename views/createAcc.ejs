@@ -13,11 +13,12 @@
 <body>
     <div class="container">
         <form action="/account/createAccount" method="post" enctype="multipart/form-data">
-                <h1 style="margin-bottom: 10px; text-align: center; color: #f9e800;">CREATE A NEW ACCOUNT</h1>
+                <div class="account-form-header">
+                    <h3>Create a New Account</h3>
+                </div>
                <div class="navigation">
                     <a href="#" class="toggle-link" data-target="general-information">General Information</a>
-                    <a href="#" class="toggle-link" data-target="transaction">Transaction</a>
-                    <a href="#" class="toggle-link" id="installment" data-target="installment-schedule">Installment Schedule</a>
+                    <a href="#" class="toggle-link is-disabled" id="installment" data-target="installment-schedule" aria-disabled="true" tabindex="-1">Installment Schedule</a>
                     <a href="#" class="toggle-link" id="collateral" data-target="collateral-details">Collateral Details</a>
                 </div>
 
@@ -245,52 +246,67 @@
                             <input type="text" name="Remarks">
                         </div>
                     </div>
-
-
-                <div id="transaction" class="section">
-                    <!-- Transaction Content -->
-                 <fieldset>
-                    <legend>Transaction</legend>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>S.NO</th>
-                                    <th>Date</th>
-                                    <th>Description</th>
-                                    <th>Document</th>
-                                    <th>Dr.Amount</th>
-                                    <th>Cr.Amount</th>
-                                    <th>Balance</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% if (transactionHistory.length) { %>
-                                    <% transactionHistory.forEach(function (transaction) { %>
-                                        <tr>
-                                            <td><%= transaction.SNo %></td>
-                                            <td><%= transaction.JV_Miti || '' %></td>
-                                            <td><%= transaction.Description || '' %></td>
-                                            <td><%= transaction.VoucherNo || '' %></td>
-                                            <td><%= transaction.DrAmount %></td>
-                                            <td><%= transaction.CrAmount %></td>
-                                            <td><%= transaction.Balance %></td>
-                                        </tr>
-                                    <% }); %>
-                                <% } else { %>
-                                    <tr>
-                                        <td colspan="7">No transaction history found.</td>
-                                    </tr>
-                                <% } %>
-                            </tbody>
-                        </table>
-                    </div>
-                 </fieldset>
-                </div>
-
                 <div id="installment-schedule" class="section">
-                    <h2>Installment Schedule</h2>
                     <!-- Installment Schedule Content -->
+                     <fieldset>
+                        <legend>Installment Schedule</legend>
+                        <div class="form-style-horizontal">
+                            <div>
+                                <label for="schedule">Schedule</label>
+                                <select name="schedule" id="schedule">
+                                    <option value="Optional">Optional</option>
+                                    <option value="Daily">Daily</option>
+                                    <option value="Weekly">Weekly</option>
+                                    <option value="Monthly">Monthly</option>
+                                    <option value="2 Monthly">2 Monthly</option>
+                                    <option value="3 Monthly">3 Monthly</option>
+                                    <option value="4 Monthly">4 Monthly</option>
+                                    <option value="6 Monthly">6 Monthly</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="onlastdayofmonth">On Last Day of Month</label>
+                                <input type="checkbox" name="onlastdayofmonth" id="onlastdayofmonth">
+                            </div>
+                            <div>
+                                <label for="schema">Schema</label>
+                                <select name="schemaselect" id="schemaselect">
+                                    <option value="Standard">Equal Principle</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button type="button" id="generateSchedule">Generate Schedule</button>
+                            </div>
+                        </div>
+                        <div class="form-style-horizontal">
+                            <div>
+                                <label for="Grace Month">Grace Month</label>
+                                <input type="number" name="graceMonth" id="Grace Month">
+                            </div>
+                            <div>
+                                <button type="button" id="generatePrintSchedule"> Print Schedule</button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>S.NO</th>
+                                        <th>Installment Date</th>
+                                         <th>Principal Amount</th>
+                                         <th>Interest Amount</th>
+                                        <th>Installment Amount</th>
+                                        <th>Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="installmentTableBody">
+                                    <!-- Installment schedule rows will be dynamically added here -->
+                                </tbody>
+                            </table>
+
+                        </div>
+                     </fieldset>
                 </div>
                 
             <div id="collateral-details" class="section">
@@ -450,8 +466,8 @@
                         </fieldset>
                     </div>
             <div class="button-row">
-                <div><button type="submit" class="button"><img src="">Save</button></div>
-                <div><button type="button" class="button"><img src="" alt="">Cancel</button></div>
+                <button type="submit" class="button save"><img src="/PNG/save.png" alt="">Save</button>
+                <button type="button" class="button cancel" id="cancelCreateAccount"><img src="/PNG/cancel.png" alt="">Cancel</button>
             </div>
         </form>
                 <div id="customAlert" class="modal" style="display: none;">
@@ -531,15 +547,28 @@ function updatePhotoAPI() {
 
     <script src="/js/enable.js"></script>
     <script>
-        document.getElementById('accountType').addEventListener('blur', function () {
-            const accountType = this.value.trim();
-        
-            if (accountType === '') {
-                return; // Do nothing if the input is empty
-            }
-        
-            // Fetch data from the server
-            fetch(`/check-account-type?accountType=${encodeURIComponent(accountType)}`)
+        document.addEventListener('DOMContentLoaded', () => {
+            const accountTypeInput = document.getElementById('accountType');
+            const installmentLink = document.getElementById('installment');
+
+            const setInstallmentAccess = (isLoan) => {
+                installmentLink.classList.toggle('is-disabled', !isLoan);
+                installmentLink.setAttribute('aria-disabled', String(!isLoan));
+                installmentLink.tabIndex = isLoan ? 0 : -1;
+
+                if (!isLoan && document.getElementById('installment-schedule').classList.contains('active')) {
+                    document.querySelector('[data-target="general-information"]').click();
+                }
+            };
+
+            const updateAccountTypeAccess = () => {
+                const accountType = accountTypeInput.value.trim();
+                if (!accountType) {
+                    setInstallmentAccess(false);
+                    return;
+                }
+
+                fetch(`/check-account-type?accountType=${encodeURIComponent(accountType)}`)
                 .then(response => response.json())
                 .then(data => {
                     const savingElements = [
@@ -561,14 +590,25 @@ function updatePhotoAPI() {
                     if (data.savingOrLoan === 'Saving') {
                         toggleElements(savingElements, true);
                         toggleElements(loanElements, false);
+                        setInstallmentAccess(false);
                     } else if (data.savingOrLoan === 'Loan') {
                         toggleElements(savingElements, false);
                         toggleElements(loanElements, true);
+                        setInstallmentAccess(true);
+                    } else {
+                        setInstallmentAccess(false);
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching account type:', error);
+                    setInstallmentAccess(false);
                 });
+            };
+
+            accountTypeInput.addEventListener('input', () => setInstallmentAccess(false));
+            accountTypeInput.addEventListener('blur', updateAccountTypeAccess);
+            accountTypeInput.addEventListener('change', updateAccountTypeAccess);
+            setInstallmentAccess(false);
         });
     </script>
     
@@ -768,62 +808,29 @@ function updatePhotoAPI() {
     <script src="/js/result.js"></script>
     <script src="/js/div.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const tabs = document.querySelectorAll(".toggle-link");
-            const contents = document.querySelectorAll(".content > div");
+        document.addEventListener("DOMContentLoaded", () => {
+            const links = document.querySelectorAll(".toggle-link");
+            const sections = document.querySelectorAll(".section");
 
-            function deactivateAll() {
-                tabs.forEach(tab => tab.classList.remove("active"));
-                contents.forEach(content => content.style.display = "none");
-            }
+            const activateSection = targetId => {
+                sections.forEach(section => section.classList.toggle("active", section.id === targetId));
+                links.forEach(link => link.classList.toggle("active", link.dataset.target === targetId));
+            };
 
-            function activateDefaultTab() {
-                if (tabs.length > 0 && contents.length > 0) {
-                    tabs[0].classList.add("active");
-                    contents[0].style.display = "block"; // Change if you want a different default tab
-                }
-            }
-
-            tabs.forEach(tab => {
-                tab.addEventListener("click", function (event) {
+            links.forEach(link => {
+                link.addEventListener("click", event => {
                     event.preventDefault();
-                    const target = tab.getAttribute("data-target");
-                    console.log(`Clicked tab: ${target}`); // Debugging line
-                    const contentToShow = document.querySelector(`.${target}`);
-
-                    if (contentToShow) {
-                        deactivateAll();
-                        tab.classList.add("active");
-                        contentToShow.style.display = "block";
-                    } else {
-                        console.error(`No content found for ${target}`);
-                    }
+                    if (link.classList.contains('is-disabled')) return;
+                    activateSection(link.dataset.target);
                 });
             });
 
-            deactivateAll();
-            activateDefaultTab();
-        });
-
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-    const links = document.querySelectorAll(".toggle-link");
-    const sections = document.querySelectorAll(".section");
-
-    links.forEach(link => {
-        link.addEventListener("click", event => {
-            event.preventDefault();
-            const targetId = link.getAttribute("data-target");
-
-            sections.forEach(section => {
-                section.classList.remove("active");
+            activateSection('general-information');
+            document.getElementById('cancelCreateAccount').addEventListener('click', () => {
+                const parentPanel = window.parent.document.getElementById('movableDiv195');
+                if (parentPanel) parentPanel.style.display = 'none';
             });
-
-            document.getElementById(targetId).classList.add("active");
         });
-    });
-});
 
     </script>
    

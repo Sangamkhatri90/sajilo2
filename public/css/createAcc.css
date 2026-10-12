@@ -6,19 +6,32 @@
 
 body {
     font-family: Arial, sans-serif;
-    background-color: #f9f9f9;
+    background: linear-gradient(to bottom, #e6f2f8, #cde1ed);
     color: #333;
-    padding: 20px;
+    padding: 0;
     font-size: 0.75em; /* Set font size to 0.75em */
 }
 
 .container {
-    max-width: 80%; /* Adjust the width for centering */
-    margin: 0 auto; /* Center the container */
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: none;
+    min-height: 100vh;
+    margin: 0;
+    background: linear-gradient(to bottom, #e6f2f8, #cde1ed);
+    padding: 12px;
+}
+
+.account-form-header {
+    min-height: 28px;
+    margin-bottom: 10px;
+}
+
+.account-form-header h3 {
+    margin: 0;
+    padding: 4px 90px;
+    color: #004d80;
+    font-size: 18px;
+    text-align: center;
 }
 
 fieldset {
@@ -43,6 +56,12 @@ h1 {
     display: flex;
     gap: 5px;
     margin-bottom: 10px;
+}
+
+.navigation .is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .toggle-link {
@@ -130,11 +149,6 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid #000000; /* Bolder border */
 }
 
-#installment:disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
 .button-row {
     display: flex;
     justify-content: space-between;
@@ -189,6 +203,41 @@ input:focus, select:focus, textarea:focus {
   z-index: 1000;
   border-radius: 5px;
   padding: 5px 0;
+}
+
+.button-row .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: none;
+  max-height: none;
+  padding: 5px 10px;
+  border: 1px solid #7aa7c7;
+  font-size: 13px;
+}
+
+.button-row .button img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.button-row .button.save {
+  background: #28a745;
+  border-color: #218838;
+}
+
+.button-row .button.save:hover {
+  background: #218838;
+}
+
+.button-row .button.cancel {
+  background: #dc3545;
+  border-color: #c82333;
+}
+
+.button-row .button.cancel:hover {
+  background: #c82333;
 }
 /* Initially hide the suggestions list */
 .suggestions-list1,.suggestions-list2,.suggestions-list3 {

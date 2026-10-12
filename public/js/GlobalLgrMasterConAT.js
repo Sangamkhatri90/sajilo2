@@ -84,7 +84,9 @@
                     const div = document.createElement('div');
                     div.textContent = `${item.GLName} - ${item.GLAlias}`;
                     div.onclick = function () {
-                        document.getElementById(inputId).value = item.GLName;
+                        const input = document.getElementById(inputId);
+                        input.value = item.GLName;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
                         listElement.style.display = 'none';
                     };
                     listElement.appendChild(div);
@@ -125,5 +127,3 @@
         lgrMasATFields.forEach(field => {
             attachLgrMasATAutocomplete(field.inputId, field.listId, '/fetchLgrMasterAT');
         });
-
-  
