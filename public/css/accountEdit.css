@@ -1,0 +1,158 @@
+/* Account Edit mirrors the Create Account form without affecting other panels. */
+#movableDiv184 {
+  background-color: #f4f4f4;
+  position: fixed;
+  top: 50px;
+  left: 3%;
+  width: 94%;
+  height: calc(100vh - 60px);
+  display: none;
+  padding: 10px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  overflow: auto;
+  z-index: 10000;
+}
+
+#movableDiv184 .container {
+  position: static;
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  max-width: none;
+  margin: 0 auto;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#movableDiv184 #closeButton184 {
+  z-index: 1;
+}
+
+#myForm184 {
+  font-family: Arial, sans-serif;
+  color: #333;
+  font-size: 0.75em;
+}
+
+#myForm184 fieldset {
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 8px;
+  margin: 5px 0;
+}
+
+#myForm184 legend {
+  font-size: 12px;
+  font-weight: bold;
+  color: #0b62e4;
+}
+
+#myForm184 .navigation {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+#myForm184 .toggle-content {
+  padding: 4px 8px;
+  margin: 0 2px;
+  color: #555;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  font-size: 0.8em;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+#myForm184 .toggle-content.active,
+#myForm184 .toggle-content:hover {
+  background-color: #45a049;
+  color: white;
+}
+
+#myForm184 .section {
+  display: none;
+}
+
+#myForm184 .section.active {
+  display: block;
+}
+
+#myForm184 .form-style-horizontal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+#myForm184 .form-style-horizontal > div {
+  flex: 1;
+  min-width: 120px;
+}
+
+#myForm184 input,
+#myForm184 select,
+#myForm184 textarea {
+  width: 100%;
+  padding: 3px;
+  margin: 2px 0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+#myForm184 input:focus,
+#myForm184 select:focus,
+#myForm184 textarea:focus {
+  border-color: #4CAF50;
+  outline: none;
+}
+
+#myForm184 .table-container {
+  width: 100%;
+  max-width: 970px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+#myForm184 .table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  text-align: left;
+}
+
+#myForm184 .table-container th,
+#myForm184 .table-container td {
+  padding: 12px 15px;
+  border: 1px solid #000;
+}
+
+#myForm184 .button-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 10px 0;
+}
+
+#myForm184 .button {
+  padding: 4px 10px;
+  color: white;
+  background-color: #0b62e4;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+#myForm184 .button:hover {
+  background-color: #094bba;
+}

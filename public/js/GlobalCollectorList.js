@@ -139,9 +139,10 @@
                     { inputId: 'collmastersearchcollector', listId: 'collmastersearchcollectordiv' },
                     { inputId: 'DEJVcopyCollector', listId: 'collectorClassDEJVMcopy' },
                     { inputId: 'DERVMcopyCollector', listId: 'collectorClassDERVMcopy' },
+                    { inputId: 'PCollector', listId: 'NewAccCollectorsList' },
                 ];
 
                 // Attach events for all fields (single fetch for all)
                 collectorFields.forEach(field => {
-                    attachCollectorAutocomplete(field.inputId, field.listId, '/fetchCollectors');
+                    attachCollectorAutocomplete(field.inputId, field.listId, '/fetchcollectors');
                 });

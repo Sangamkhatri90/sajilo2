@@ -43,7 +43,6 @@ app.use(useragent.express());
 // If using express.json() or express.urlencoded(), increase the limit
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.json()); // for parsing application/json
 app.use(express.urlencoded({ extended: true }));
 
 // Prevent browser caching of protected pages so the back button cannot show a logged-in page after logout.
@@ -93,33 +92,18 @@ app.use((req, res, next) => {
 });
 
 
-app.get("/search", (req, res) => {
-  res.redirect("/index");
-});
-
 // Route to handle login
 
 app.get("/index", async (req, res) => {
   const searchDigit = req.query.searchDigit || "";
-  let data = [];
 
   if (searchDigit) {
     req.session.searchDigit = searchDigit; // Save searchDigit in the session
-
-    // Search using searchDigit
-    data = await Account.find({
-      $or: [
-        { id: { $regex: searchDigit, $options: "i" } },
-        { accName: { $regex: searchDigit, $options: "i" } },
-      ],
-    }).exec();
   }
 
   res.render("index", {
-    data,
     searchDigit,
     message: null,
-    searchedMemberId: [],
   });
 });
 
@@ -484,7 +468,7 @@ app.post("/update-db", (req, res) => {
   req.session.conn = createConnectionString(newDbName);
   console.log("Session updated:", req.session);
 
-  res.render("index", { data: [], searchedMemberId: [] });
+  res.render("index", {});
 });
 
 const backupSqlDatabase = (backupConnectionString, backupQuery) => {
@@ -842,9 +826,13 @@ app.get("/api/membersearchdigitcheck", (req, res) => {
 
 
 
-app.post("/search", async (req, res) => {
+app.post("/api/search", async (req, res) => {
   const conn = req.session.conn;
-  const memberAlias = req.body.alias;
+  const memberAlias = String(req.body.alias || "").trim();
+
+  if (!memberAlias) {
+    return res.status(400).json({ ok: false, error: "Member alias is required." });
+  }
 
   try {
     // =========================
@@ -864,10 +852,8 @@ app.post("/search", async (req, res) => {
     });
 
     if (!checkResult || checkResult.length === 0) {
-      return res.status(404).render("index", {
-        memberName: null,
-        data: [],
-        searchedMemberId: [],
+      return res.status(404).json({
+        ok: false,
         error: "The given member alias seems to be invalid or not found. Please check and provide the right member alias.",
       });
     }
@@ -919,12 +905,7 @@ app.post("/search", async (req, res) => {
     });
 
     if (!results || results.length === 0) {
-      return res.render("index", {
-        memberName: null,
-        data: [],
-        searchedMemberId: [],
-        error: "No member found.",
-      });
+      return res.status(404).json({ ok: false, error: "No member found." });
     }
 
     const memberName = results[0].MemberName;
@@ -954,14 +935,14 @@ app.post("/search", async (req, res) => {
       });
 
       const memberPhoto = memberPhotoResult[0] || {};
-      return res.render("index", {
+      return res.json({
+        ok: true,
         memberName,
-        data: results.map((item) => ({
+        rows: results.map((item) => ({
           ...item,
           Photo: encodeToBase64(memberPhoto.Photo),
           Sign1: encodeToBase64(memberPhoto.Sign1),
         })),
-        searchedMemberId: memberAlias,
       });
     }
 
@@ -1144,30 +1125,19 @@ app.post("/search", async (req, res) => {
     });
 
     // =========================
-    // 10. Render
+    // 10. Respond
     // =========================
-    return res.render("index", {
+    return res.json({
+      ok: true,
       memberName,
-      data: finalData,
-      searchedMemberId: memberAlias,
+      rows: finalData,
     });
 
   } catch (err) {
     console.error("Search Route Error:", err);
 
-    return res.render("index", {
-      memberName: null,
-      data: [],
-      searchedMemberId: [],
-      error: "Database error occurred.",
-    });
+    return res.status(500).json({ ok: false, error: "Database error occurred." });
   }
-});
-
-app.get("/search", (req, res) => {
-  res.render("index", {
-    data: [],
-  });
 });
 
 app.get("/transaction", (req, res) => {

@@ -53,6 +53,12 @@ function showSessionExpiredUI() {
 
         if (cancelBtn) cancelBtn.style.display = 'none';
         if (closeBtn) closeBtn.style.display = 'none';
+
+        // Reload the existing organization list after the database session is
+        // lost, so the selector is not showing stale or empty rows.
+        if (typeof window.fetchOrgData === "function") {
+            window.fetchOrgData();
+        }
     } else {
         console.error("movableDiv81 not found in DOM, redirecting to login.");
         setTimeout(() => window.location.href = LOGIN_PAGE_URL, 1000);
@@ -94,10 +100,19 @@ window.fetch = async function(url, options = {}) {
         if (isExcluded) return response;
 
         // Handle session expired codes
-        if ([440, 401, 419].includes(response.status)) {
-            console.warn("Session expired detected in fetch.");
+        if (response.status === 440) {
+            console.warn("Database session expired detected in fetch.");
             showSessionExpiredUI();
             return Promise.reject(new Error("Session expired"));
+        }
+
+        // Without an authenticated user, the database list cannot be loaded
+        // safely; the user must sign in again.
+        if ([401, 419].includes(response.status)) {
+            console.warn("Login session expired detected in fetch.");
+            alert("Your session has expired. You will be redirected to the login page.");
+            window.location.href = LOGIN_PAGE_URL;
+            return Promise.reject(new Error("Login session expired"));
         }
 
         return response;

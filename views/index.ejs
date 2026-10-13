@@ -230,6 +230,7 @@
     <link rel="stylesheet" href="/css/voucherApprove.css">
     <link rel="stylesheet" href="/css/logoutForm.css">
     <link rel="stylesheet" href="/css/editMember.css">
+    <link rel="stylesheet" href="/css/accountEdit.css">
     <link rel="stylesheet" href="/css/MainTransaction.css">
     <link rel="stylesheet" href="/css/MainMultiTransaction.css">
     <link rel="stylesheet" href="/css/MainOpeningBalance.css">
@@ -629,14 +630,14 @@
 
                 <li class="menu-item">
                     <div>
-                        <form action="/search" method="POST" class="search-form">
+                        <form class="search-form">
                             <div class="navbar-search">
                                 <!-- 1️⃣ Auto-format checkbox -->
                                 <label style="color: white; font-size : 11px">
                                     <input type="checkbox" id="autoformatmemberalias" checked>
                                     Auto-format
                                 </label>
-                                <input type="number" id="alias" name="alias" class="main-search"
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" id="alias" name="alias" class="main-search"
                                     placeholder="Search Account">
                                 <button type="submit" id="search" style="margin-right: 8px;"><img src="/PNG/search.png"
                                         alt="">GO</button>
@@ -812,144 +813,7 @@
     <input type="hidden" class="benchods" name="" id="">
 
 
-    <% if (data.length> 0) { %>
-        <div class="body1">
-
-            <form id="searcheddataform">
-
-                <fieldset class="pvm-fieldset">
-                    <legend class="search-result">Searched Results</legend>
-                    <button type="button" id="closeSearchedDataForm" class="close-x"
-                        title="Close search results">&times;</button>
-                    <input type="hidden" id="searchedMemberId" name="MemberId" value="<%= searchedMemberId %>">
-
-
-                    <div class="display-table">
-                        <% if (memberName) { %>
-                            <fieldset id="searched-member-details">
-                                <legend>Member Details</legend>
-                                <div id="searched-member-header">
-                                    <div>
-                                        <h2 id="membervalue">Member Name: <%= memberName %>
-                                        </h2>
-                                    </div>
-                                    <div id="searched-member-media">
-                                        <div class="searched-member-media-item">
-                                            <span>Photo</span>
-                                            <% if (data[0] && data[0].Photo && data[0].Photo !=='No Photo Available' ) {
-                                                %>
-                                                <img src="<%= data[0].Photo %>" alt="Member photo">
-                                                <% } else { %>
-                                                    <div class="searched-member-media-fallback">No photo available</div>
-                                                    <% } %>
-                                        </div>
-                                        <div class="searched-member-media-item">
-                                            <span>Signature</span>
-                                            <% if (data[0] && data[0].Sign1 && data[0].Sign1 !=='No Photo Available' ) {
-                                                %>
-                                                <img src="<%= data[0].Sign1 %>" alt="Member signature">
-                                                <% } else { %>
-                                                    <div class="searched-member-media-fallback">No signature available
-                                                    </div>
-                                                    <% } %>
-                                        </div>
-                                    </div>
-                                </div>
-                            </fieldset>
-                            <% } else { %>
-                                <h2>No member found.</h2>
-                                <% } %>
-                                 
-                                    <div class="searched-data-actions">
-                                       
-                                            
-                                        <div>
-                                            <button type="button" id="createMemberBtn" class="Crebtn">New
-                                                Account</button>
-                                        </div>
-                                        <div class="choose-transaction">
-                                            <label for="actionSelect">Choose an action:</label>
-                                            <select id="actionSelect"
-                                                style="background-color: #dedada; border: 1px solid #ccc;">
-                                                <option value="transaction">Transaction</option>
-                                                <option value="bigTransaction">Multi Transaction</option>
-                                                <option value="openingBalance">Opening Balance</option>
-                                            </select>
-                                        </div>
-                                        
-                                    </div>
-                                    
-                                    <fieldset id="searched-account-details">
-                                        <legend>Account Details</legend>
-                                        <table border="1" id="selectedTable" class="highlight-table">
-                                            <thead>
-                                                <tr>
-                                                    <th class="display-table-th">Account Id</th>
-                                                    <th class="display-table-th">Account Type</th>
-                                                    <th class="display-table-th">Account Name</th>
-                                                    <th class="display-table-th">Balance</th>
-                                                    <th class="display-table-th">Accrued Interest</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <% data.forEach(item=> { %>
-                                                    <tr ondblclick="handleRowClick( 
-                    '<%= item.SlAlias %>', 
-                    '<%= item.GLName %>', 
-                    '<%= item.MemberAlias %>',
-                    '<%= item.SLName %>', 
-                    '<%= item.Address1 %>', 
-                    '<%= item.Phone1 %>', 
-                    '<%= item.Mobile %>', 
-                    '<%= item.AccountOpenDate%>',
-                    '<%= item.Photo %>', 
-                    '<%= item.Sign1 %>', 
-                    '<%= item.Sign2 %>', 
-                    '<%= item.Sign3 %>', 
-                    '<%= item.Sign4 %>',  
-                    '<%= item.Gender %>', 
-                    '<%= item.NextofKinName %>', 
-                    '<%= item.NextofKinAddress %>', 
-                    '<%= item.NextofKinContactNumber %>', 
-                    '<%= item.Relation %>', 
-                    '<%= item.DOB %>', 
-                    '<%= item.JV_Miti %>', 
-                    '<%= item.VoucherNo %>', 
-                    '<%=item.MemberName %>',
-                    '<%= JSON.stringify(item.JournalEntries) %>',
-                    
-                     
-                                            )">
-
-                                                        <td class="display-table-td">
-                                                            <%= item.SlAlias %>
-                                                        </td>
-                                                        <td class="display-table-td">
-                                                            <%= item.GLName %>
-                                                        </td>
-                                                        <td class="display-table-td">
-                                                            <%= item.SLName %>
-                                                        </td>
-                                                        <td class="balance"
-                                                            data-balance="<%= Number(item.Balance).toFixed(2) %>">
-                                                            <%= Number(item.Balance).toFixed(2) %>
-                                                        </td>
-                                                        <td>
-
-                                                        </td>
-
-                                                    </tr>
-                                                    <% }) %>
-                                            </tbody>
-                                        </table>
-                                    </fieldset>
-
-                    </div>
-                </fieldset>
-
-            </form>
-        </div>
-        <% } %>
+    <div id="searchResultContainer"></div>
 
             <form action="/items" method="get">
                 <table id="itemsTable" border="0" class="table">
@@ -27455,7 +27319,7 @@ async function loadEarningsData() {
                 <button id="closeButton184">&times;</button>
                 <div class="container">
                     <form action="" method="post" enctype="multipart/form-data" id="myForm184">
-                        <h1 style="margin-bottom: 10px; text-align: center; color: #f9e800;"> ACCOUNT EDIT</h1>
+                        <h1 style="margin-bottom: 10px; text-align: center; color: #004d80;"> ACCOUNT EDIT</h1>
                         <div class="navigation">
                             <a href="#" class="toggle-content" id="" data-target="general-information-edit">General
                                 Information</a>
@@ -29375,11 +29239,9 @@ async function loadEarningsData() {
                     </script>
                     <script>
                         document.addEventListener('DOMContentLoaded', function () {
-                            const memberHeading = document.getElementById('membervalue');
-                            const selectedMemberId = document.getElementById('searchedMemberId');
                             const memberEditPanel = document.getElementById('ccapctmemedit');
 
-                            if (!memberHeading || !selectedMemberId || !memberEditPanel) return;
+                            if (!memberEditPanel) return;
 
                             const setValue = (id, value) => {
                                 const field = document.getElementById(id);
@@ -29391,7 +29253,10 @@ async function loadEarningsData() {
                             };
                             const toInputDate = value => value ? String(value).replaceAll('/', '-') : '';
 
-                            memberHeading.addEventListener('dblclick', async function (event) {
+                            document.addEventListener('dblclick', async function (event) {
+                                const memberHeading = event.target.closest('#membervalue');
+                                const selectedMemberId = document.getElementById('searchedMemberId');
+                                if (!memberHeading || !selectedMemberId) return;
                                 event.preventDefault();
                                 const memberAlias = selectedMemberId.value.trim();
                                 const memberName = memberHeading.textContent.replace(/^Member Name:\s*/, '').trim();
@@ -48840,22 +48705,6 @@ async function loadEarningsData() {
 
                             let allSuggestions = [];
                             let typingTimeout = null;
-                            let aliasLength = 7; // default
-
-                            async function fetchAliasLength() {
-                                try {
-                                    const res = await fetch('/api/membersearchdigitcheck');
-                                    const data = await res.json();
-                                    aliasLength = parseInt(data.bodyLength) || 7;
-                                } catch (err) {
-                                    console.warn("⚠️ Using default alias length (7) due to error:", err);
-                                }
-                            }
-                            fetchAliasLength();
-
-                            function formatAlias(val) {
-                                return val.toString().padStart(aliasLength, '0');
-                            }
 
                             async function fetchSuggestions(partial) {
                                 const res = await fetch('/api/suggestionmemberalias', {
@@ -48878,7 +48727,6 @@ async function loadEarningsData() {
 
                                 typingTimeout = setTimeout(async () => {
                                     if (checkbox.checked) {
-                                        aliasInput.value = formatAlias(val);
                                         suggestionBox.style.display = 'none';
                                         return;
                                     }
@@ -53739,6 +53587,7 @@ async function loadEarningsData() {
                     <script src="/js/GlobalLgrMasterLoan.js"></script>
                     <script src="/js/globalTableSort.js"></script>
                     <script src="/js/inputBehavior.js"></script>
+                    <script src="/js/memberSearch.js"></script>
                     <script>
                         document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {
                             event.preventDefault();
