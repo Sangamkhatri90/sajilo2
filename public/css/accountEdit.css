@@ -2,10 +2,10 @@
 #movableDiv184 {
   background: linear-gradient(to bottom, #e6f2f8, #cde1ed);
   position: fixed;
-  top: 50px;
-  left: 3%;
-  width: 94%;
-  height: calc(100vh - 60px);
+  top: 45px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 45px);
   display: none;
   padding: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
@@ -44,6 +44,7 @@
 }
 
 #myForm184 {
+  width: 100%;
   font-family: Arial, sans-serif;
   color: #333;
   font-size: 0.75em;
@@ -56,6 +57,8 @@
 }
 
 #myForm184 fieldset {
+  width: 100%;
+  box-sizing: border-box;
   border: 1px solid black;
   border-radius: 5px;
   padding: 8px;
@@ -97,6 +100,7 @@
 
 #myForm184 .section.active {
   display: block;
+  width: 100%;
 }
 
 #myForm184 .form-style-horizontal {
@@ -107,19 +111,33 @@
 }
 
 #myForm184 .form-style-horizontal > div {
+  display: block;
   flex: 1;
   min-width: 120px;
+}
+
+#myForm184 label {
+  display: block;
+  font-size: 13px;
+  font-weight: normal;
 }
 
 #myForm184 input,
 #myForm184 select,
 #myForm184 textarea {
   width: 100%;
+  box-sizing: border-box;
   padding: 3px;
   margin: 2px 0;
+  background: #fff;
+  color: #333;
   border: 1px solid #ccc;
   border-radius: 3px;
   font-size: 11px;
+}
+
+#myForm184 input[type="checkbox"] {
+  width: auto;
 }
 
 #myForm184 input:focus,
@@ -131,7 +149,7 @@
 
 #myForm184 .table-container {
   width: 100%;
-  max-width: 970px;
+  max-width: none;
   margin: 0 auto;
   overflow-x: auto;
 }
@@ -159,17 +177,46 @@
 }
 
 #myForm184 .button {
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: none;
+  max-height: none;
+  padding: 5px 10px;
   color: white;
   background-color: #0b62e4;
-  border: none;
+  border: 1px solid #7aa7c7;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: bold;
   transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
 #myForm184 .button:hover {
   background-color: #094bba;
+}
+
+#myForm184 .button img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+#myForm184 .button.save {
+  background: #28a745;
+  border-color: #218838;
+}
+
+#myForm184 .button.save:hover {
+  background: #218838;
+}
+
+#myForm184 .button.cancel {
+  background: #dc3545;
+  border-color: #c82333;
+}
+
+#myForm184 .button.cancel:hover {
+  background: #c82333;
 }
