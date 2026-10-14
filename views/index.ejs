@@ -27646,8 +27646,66 @@ async function loadEarningsData() {
                         </div>
 
                         <div id="installment-schedule-edit" class="section">
-                            <h2>Installment Schedule</h2>
-                            <!-- Installment Schedule Content -->
+                           <fieldset>
+                                <legend>Installment Schedule</legend>
+                                 <div class="form-style-horizontal">
+                                    <div>
+                                        <label>Schedule </label>
+                                        <select name="Schedule" id="scheduleSelect">
+                                            <option value="Optional">Optional</option>
+                                            <option value="Daily">Daily</option>
+                                            <option value="Weekly">Weekly</option>
+                                            <option value="Monthly">Monthly</option>
+                                            <option value="Quarterly">Quarterly</option>
+                                            <option value="Half-Yearly">Half-Yearly</option>
+                                            <option value="Yearly">Yearly</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label>On last day of month</label>
+                                        <input type="checkbox" name="lastDayOfMonth" id="lastDayOfMonthCheckbox">
+                                    </div>
+                                    <div>
+                                        <label for="schemaSelect">Schema</label>
+                                        <select name="Schema" id="schemaSelect">
+                                            <option value="Equal Principal">Equal Principal</option>
+                                            <option value="Equal Amount">Equal Amount</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <button type="button" id="generateScheduleBtn">Generate Schedule</button>
+                                    </div>
+                                </div>
+                                <div class="form-style-horizontal">
+                                    <div>
+                                        <label for="Gracemonth">Grace Month</label>
+                                        <input type="text" name="Gracemonth" id="Gracemonth">
+
+                                    </div>
+                                    <div>
+                                        <button type ="button" id="printScheduleBtn">Print Schedule</button>
+                                    </div>
+                                    
+                                </div>
+                                <div class="table-container">
+                                    <table id="installment-schedule-table" class="highlight-table">
+                                        <thead>
+                                            <tr>
+                                                <th>S.NO</th>
+                                                <th>Installment Date</th>
+                                                <th>Principal Amount</th>
+                                                <th>Interest Amount</th>
+                                                <th>Total Amount</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        </tbody>
+
+                                    </table>
+                                </div>
+                            </fieldset>
                         </div>
 
                         <div id="collateral-details-edit" class="section">
