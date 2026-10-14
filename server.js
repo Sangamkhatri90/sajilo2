@@ -38584,6 +38584,42 @@ app.post("/fetch-chequeCashNNonCashUC-filterdata2", (req, res) => {
 });
 
 
+app.get("/api/matured-accounts", (req, res) => {
+  const conn = req.session.conn;
+
+  if (!conn) {
+    return res.status(401).json({ error: "Your session has expired." });
+  }
+
+  const query = `
+    SELECT
+      SLM.SLID,
+      SLM.SLName,
+      SLM.SlAlias,
+      MM.MemberAlias,
+      LM.GLName,
+      SLM.MaturityDate,
+      SLM.Phone1,
+      SLM.Mobile
+    FROM dbo.tbSubLedgerMaster SLM
+    LEFT JOIN dbo.tbMemberMaster MM ON MM.MemberID = SLM.MemberID
+    LEFT JOIN dbo.tbLedgerMaster LM ON LM.GLID = SLM.GLID
+    WHERE ISNULL(SLM.Closed, 0) = 0
+      AND SLM.MaturityDate IS NOT NULL
+      AND SLM.MaturityDate <= CAST(GETDATE() AS DATE)
+    ORDER BY SLM.MaturityDate ASC, SLM.SLName ASC
+  `;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("Error fetching matured accounts:", err);
+      return res.status(500).json({ error: "Unable to fetch matured accounts." });
+    }
+
+    res.json(rows || []);
+  });
+});
+
 // Assuming you use req.session.conn with sql.query
 app.get("/subledger-maturity", (req, res) => {
     const conn = req.session.conn;

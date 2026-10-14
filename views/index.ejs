@@ -167,6 +167,7 @@
     <link rel="stylesheet" href="/css/pearls.css">
     <link rel="stylesheet" href="/css/divisionReport.css">
     <link rel="stylesheet" href="/css/maturedaAc.css">
+    <link rel="stylesheet" href="/css/notifications.css">
     <link rel="stylesheet" href="/css/ageingReport.css">
     <link rel="stylesheet" href="/css/costOfFund.css">
     <link rel="stylesheet" href="/css/thresholdtransReport.css">
@@ -27838,8 +27839,11 @@ async function loadEarningsData() {
 
                     <script>
                         document.addEventListener("DOMContentLoaded", () => {
-                            const links = document.querySelectorAll(".toggle-content");
-                            const sections = document.querySelectorAll(".section");
+                            const form = document.getElementById("myForm184");
+                            const links = form.querySelectorAll(".toggle-content");
+                            const sections = form.querySelectorAll(".section");
+
+                            links[0].classList.add("active");
 
                             links.forEach(link => {
                                 link.addEventListener("click", event => {
@@ -27849,8 +27853,10 @@ async function loadEarningsData() {
                                     sections.forEach(section => {
                                         section.classList.remove("active");
                                     });
+                                    links.forEach(tab => tab.classList.remove("active"));
 
                                     document.getElementById(targetId).classList.add("active");
+                                    link.classList.add("active");
 
                                 });
                             });
@@ -28059,6 +28065,29 @@ async function loadEarningsData() {
                         <div id="insertIndicator" class="indicator">INS</div>
                         <div id="scrollLockIndicator" class="indicator">SCRL</div>
                         <div id="scrollLockIndicator" class="indicator">KANA</div>
+                        <div class="app-notifications">
+                            <button id="notificationBell" class="notification-bell" type="button"
+                                aria-label="Open messages" aria-expanded="false">
+                                <i class="fa fa-bell" aria-hidden="true"></i>
+                                <span class="notification-badge">2</span>
+                            </button>
+                            <div id="notificationMenu" class="notification-menu" hidden>
+                                <section class="notification-section">
+                                    <h4>System Messages</h4>
+                                    <button id="maturedAccountsMessage" class="notification-item" type="button">
+                                        <i class="fa fa-exclamation-circle" aria-hidden="true"></i>
+                                        <span>There are matured accounts that require attention.</span>
+                                    </button>
+                                </section>
+                                <section class="notification-section">
+                                    <h4>Admin Messages</h4>
+                                    <div class="notification-item notification-item-static">
+                                        <i class="fa fa-info-circle" aria-hidden="true"></i>
+                                        <span>Message from the system administrator.</span>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
 
 
                     </div>
@@ -53529,6 +53558,7 @@ async function loadEarningsData() {
                     <script src="/js/autoNumSetting.js"></script>
                     <script src="/js/systemSettings.js"></script>
                     <script src="/js/indicator.js"></script>
+                    <script src="/js/notifications.js"></script>
                     <script src="/js/red.js"></script>
                     <script src="/js/fiscalYearDate.js"></script>
                     <script src="/js/active.js"></script>

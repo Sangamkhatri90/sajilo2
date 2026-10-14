@@ -1,0 +1,119 @@
+.app-notifications {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.notification-bell {
+  position: relative;
+  border: 0;
+  border-radius: 3px;
+  padding: 3px 7px;
+  background: #e1e1e1;
+  color: #555;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.notification-bell .fa-bell {
+  display: inline-block;
+  animation: notification-bell-ring 2.5s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: #d9534f;
+  color: #fff;
+  font: 10px/14px Arial, sans-serif;
+  text-align: center;
+}
+
+.notification-menu {
+  position: absolute;
+  z-index: 10000;
+  bottom: calc(100% + 7px);
+  right: 0;
+  width: 300px;
+  padding: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+  color: #333;
+}
+
+.notification-section + .notification-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.notification-section h4 {
+  margin: 0;
+  padding: 0 12px 5px;
+  font-size: 12px;
+}
+
+.notification-item {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  align-items: flex-start;
+  border: 0;
+  padding: 8px 12px;
+  background: transparent;
+  color: inherit;
+  font: 12px Arial, sans-serif;
+  text-align: left;
+}
+
+button.notification-item { cursor: pointer; }
+button.notification-item:hover { background: #f1f6ff; }
+.notification-item .fa-exclamation-circle { color: #e67e22; }
+.notification-item .fa-info-circle { color: #337ab7; }
+
+.matured-accounts-modal[hidden] { display: none; }
+.matured-accounts-modal {
+  position: fixed;
+  z-index: 10001;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .35);
+}
+
+.matured-accounts-dialog {
+  width: min(950px, 100%);
+  max-height: 80vh;
+  overflow: auto;
+  padding: 18px;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.matured-accounts-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.matured-accounts-heading h3 { margin: 0; font-size: 17px; }
+.matured-accounts-close { border: 0; background: transparent; font-size: 24px; cursor: pointer; }
+.matured-accounts-table { width: 100%; border-collapse: collapse; font: 12px Arial, sans-serif; }
+.matured-accounts-table th, .matured-accounts-table td { padding: 7px; border: 1px solid #ddd; text-align: left; }
+.matured-accounts-table th { background: #f3f3f3; }
+
+@keyframes notification-bell-ring {
+  0%, 88%, 100% { transform: rotate(0); }
+  90%, 94%, 98% { transform: rotate(12deg); }
+  92%, 96% { transform: rotate(-12deg); }
+}
