@@ -94,6 +94,12 @@
   color: white;
 }
 
+#myForm184 .toggle-content.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 #myForm184 .section {
   display: none;
 }
@@ -168,12 +174,39 @@
   border: 1px solid #000;
 }
 
+#myForm184 .account-edit-transaction-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 8px;
+}
+
+#myForm184 #ccactranstablefd tbody tr {
+  cursor: pointer;
+}
+
+#myForm184 #ccactranstablefd tbody tr.pcb-selected td {
+  background: #f7c7d7;
+}
+
+#myForm184 #ccactranstablefd tbody tr.pcb-checked td {
+  background: #d4edda;
+}
+
+#myForm184 #ccactranstablefd tbody tr.pcb-checked.pcb-selected td {
+  background: #e9b8cc;
+}
+
 #myForm184 .button-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   gap: 15px;
-  margin: 10px 0;
+  margin: 10px 0 0;
+  padding: 10px 0;
+  background: linear-gradient(to bottom, rgba(230, 242, 248, 0.9), #cde1ed);
 }
 
 #myForm184 .button {

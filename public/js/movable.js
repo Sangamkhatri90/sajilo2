@@ -208,7 +208,10 @@ function bindAdditionalToggleButton({ buttonId, popupId, getAccountNumber, getSl
                 document.getElementById('accpost-viewdetials-account-number').value = data.SLAlias || '';
                 document.getElementById('accopendate-viewaccdeteditaccposting').value = data.AccountOpenDate || '';
                 document.getElementById('acc-name-viewaccdeteditaccposting').value = data.SLName || '';
-                document.getElementById('ccacceditvd-accountType').value = data.GLName || '';
+                const accountTypeInput = document.getElementById('ccacceditvd-accountType');
+                accountTypeInput.value = data.GLName || '';
+                accountTypeInput.dataset.originalAccountType = data.GLName || '';
+                accountTypeInput.dispatchEvent(new Event('change'));
                 document.getElementById('acc-address-viewaccdeteditaccposting').value = data.Address1 || '';
                 document.getElementById('acc-address2-viewaccdeteditaccposting').value = data.Address2 || '';
                 document.getElementById('acc-phone-viewaccdeteditaccposting').value = data.Phone1 || '';
@@ -258,6 +261,7 @@ function bindAdditionalToggleButton({ buttonId, popupId, getAccountNumber, getSl
             if (data.success && data.transactions.length > 0) {
                 data.transactions.forEach((txn, index) => {
                     const row = document.createElement("tr");
+                    row.dataset.jvDate = txn.JV_Date || '';
                     row.innerHTML = `
                         <td>${index + 1}</td>
                         <td>${txn.JV_Date || ''}</td>
@@ -269,6 +273,17 @@ function bindAdditionalToggleButton({ buttonId, popupId, getAccountNumber, getSl
                     `;
                     tbody.appendChild(row);
                 });
+                const passbookResponse = await fetch('/api/passbook-checks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slAlias })
+                });
+                const passbookData = await passbookResponse.json();
+                if (passbookResponse.ok && passbookData.checkedThrough) {
+                    tbody.querySelectorAll('tr[data-jv-date]').forEach(row => {
+                        row.classList.toggle('pcb-checked', row.dataset.jvDate <= passbookData.checkedThrough);
+                    });
+                }
             } else {
                 tbody.innerHTML = `<tr><td colspan="7">No transactions found</td></tr>`;
             }

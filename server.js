@@ -7243,6 +7243,101 @@ app.get("/check-account-type", (req, res) => {
   });
 });
 
+// Account type changes are only allowed before the account has transactions.
+app.post("/api/account-type-change-permitted", async (req, res) => {
+  const { accountNo, accountType, originalAccountType } = req.body || {};
+  const conn = req.session.conn;
+
+  if (!conn) {
+    return res.status(500).json({ permitted: false, message: "Database connection error" });
+  }
+  if (!accountNo || !accountType) {
+    return res.status(400).json({ permitted: false, message: "Account number and account type are required" });
+  }
+
+  try {
+    const accountRows = await runQuery(conn, `
+      SELECT s.SLID, l.GLName AS CurrentAccountType
+      FROM tbSubLedgerMaster s
+      INNER JOIN tbLedgerMaster l ON l.GLID = s.GLID
+      WHERE s.SlAlias = ?
+    `, [accountNo]);
+    const ledgerRows = await runQuery(conn,
+      "SELECT SavingorLoan FROM tbLedgerMaster WHERE GLName = ?", [accountType]);
+
+    if (!accountRows.length || !ledgerRows.length) {
+      return res.status(400).json({ permitted: false, message: "Account or account type was not found" });
+    }
+
+    const currentAccountType = accountRows[0].CurrentAccountType || originalAccountType;
+    if (currentAccountType === accountType) {
+      return res.json({ permitted: true, savingOrLoan: ledgerRows[0].SavingorLoan });
+    }
+
+    const transactionRows = await runQuery(conn,
+      "SELECT TOP 1 JournalID FROM tbJournalDetails WHERE SLID = ?", [accountRows[0].SLID]);
+    if (transactionRows.length) {
+      return res.json({
+        permitted: false,
+        savingOrLoan: null,
+        message: "You cannot change account type of any Account which already have transaction. If you want to change you must first delete all the transaction associated with this account."
+      });
+    }
+
+    return res.json({ permitted: true, savingOrLoan: ledgerRows[0].SavingorLoan });
+  } catch (error) {
+    console.error("Error checking account type change permission:", error);
+    return res.status(500).json({ permitted: false, message: "Unable to verify account type change permission" });
+  }
+});
+
+app.post("/api/passbook-checks", async (req, res) => {
+  const { slAlias } = req.body || {};
+  const conn = req.session.conn;
+  if (!conn || !slAlias) {
+    return res.status(400).json({ success: false, message: "Account number is required" });
+  }
+
+  try {
+    const accountRows = await runQuery(conn, "SELECT SLID FROM tbSubLedgerMaster WHERE SlAlias = ?", [slAlias]);
+    if (!accountRows.length) return res.status(404).json({ success: false, message: "Account not found" });
+
+    const rows = await runQuery(conn, `
+      SELECT CONVERT(varchar(10), MAX(CheckDate), 23) AS CheckedThrough
+      FROM tbPassBookCheck
+      WHERE SLID = ?
+    `, [accountRows[0].SLID]);
+    return res.json({ success: true, checkedThrough: rows[0]?.CheckedThrough || null });
+  } catch (error) {
+    console.error("Error loading passbook checks:", error);
+    return res.status(500).json({ success: false, message: "Unable to load passbook checks" });
+  }
+});
+
+app.post("/api/passbook-check", async (req, res) => {
+  const { accountNo, jvDate } = req.body || {};
+  const conn = req.session.conn;
+  if (!conn || !accountNo || !jvDate) {
+    return res.status(400).json({ success: false, message: "Account number and transaction date are required" });
+  }
+
+  try {
+    const accountRows = await runQuery(conn, "SELECT SLID FROM tbSubLedgerMaster WHERE SlAlias = ?", [accountNo]);
+    if (!accountRows.length) return res.status(404).json({ success: false, message: "Account not found" });
+
+    const SLID = accountRows[0].SLID;
+    await runQuery(conn, `
+      IF NOT EXISTS (SELECT 1 FROM tbPassBookCheck WHERE SLID = ? AND CONVERT(date, CheckDate) = CONVERT(date, ?))
+        INSERT INTO tbPassBookCheck (SLID, CheckDate) VALUES (?, ?)
+    `, [SLID, jvDate, SLID, jvDate]);
+
+    return res.json({ success: true, checkedThrough: jvDate, message: "Passbook checked through the selected date." });
+  } catch (error) {
+    console.error("Error saving passbook check:", error);
+    return res.status(500).json({ success: false, message: "Unable to save passbook check" });
+  }
+});
+
 app.post(
   "/account/createAccount",
   upload.fields([

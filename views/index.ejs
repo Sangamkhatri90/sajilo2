@@ -27326,7 +27326,7 @@ async function loadEarningsData() {
                                 Information</a>
                             <a href="#" class="toggle-content" id="cceditvadtrans"
                                 data-target="transaction-edit">Transaction</a>
-                            <a href="#" class="toggle-content" id="" data-target="installment-schedule-edit">Installment
+                            <a href="#" class="toggle-content is-disabled" id="installmentEditLink" data-target="installment-schedule-edit">Installment
                                 Schedule</a>
                             <a href="#" class="toggle-content" id="" data-target="collateral-details-edit">Collateral
                                 Details</a>
@@ -27623,6 +27623,9 @@ async function loadEarningsData() {
                             <!-- Transaction Content -->
                             <fieldset>
                                 <legend>Transaction</legend>
+                                <div class="account-edit-transaction-actions">
+                                    <button type="button" id="passbookCheckButton" class="button" title="Passbook checked till selected date">PCB</button>
+                                </div>
                                 <div class="table-container">
                                     <table id="ccactranstablefd" class="highlight-table">
                                         <thead>
@@ -27900,6 +27903,53 @@ async function loadEarningsData() {
                             const form = document.getElementById("myForm184");
                             const links = form.querySelectorAll(".toggle-content");
                             const sections = form.querySelectorAll(".section");
+                            const accountTypeInput = document.getElementById("ccacceditvd-accountType");
+                            const installmentLink = document.getElementById("installmentEditLink");
+                            const notify = typeof showCustomAlert === 'function' ? showCustomAlert : alert;
+
+                            const setInstallmentAccess = (isLoan) => {
+                                installmentLink.classList.toggle("is-disabled", !isLoan);
+                                installmentLink.setAttribute("aria-disabled", String(!isLoan));
+                                installmentLink.tabIndex = isLoan ? 0 : -1;
+
+                                if (!isLoan && document.getElementById("installment-schedule-edit").classList.contains("active")) {
+                                    links[0].click();
+                                }
+                            };
+
+                            const updateAccountTypeAccess = async () => {
+                                const accountType = accountTypeInput.value.trim();
+                                const accountNo = document.getElementById("accpost-viewdetials-account-number").value.trim();
+                                const originalAccountType = accountTypeInput.dataset.originalAccountType || "";
+
+                                if (!accountType) {
+                                    setInstallmentAccess(false);
+                                    return;
+                                }
+
+                                try {
+                                    const response = await fetch('/api/account-type-change-permitted', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ accountNo, accountType, originalAccountType })
+                                    });
+                                    const result = await response.json();
+
+                                    if (!response.ok || !result.permitted) {
+                                        accountTypeInput.value = originalAccountType;
+                                        setInstallmentAccess(result.savingOrLoan === 'Loan');
+                                        notify(result.message || 'You cannot change account type of any Account which already have transaction. If you want to change you must first delete all the transaction associated with this account.');
+                                        return;
+                                    }
+
+                                    setInstallmentAccess(result.savingOrLoan === 'Loan');
+                                } catch (error) {
+                                    console.error('Error checking account type:', error);
+                                    accountTypeInput.value = originalAccountType;
+                                    setInstallmentAccess(false);
+                                    notify('Unable to verify whether the account type can be changed.');
+                                }
+                            };
 
                             links[0].classList.add("active");
 
@@ -27917,6 +27967,55 @@ async function loadEarningsData() {
                                     link.classList.add("active");
 
                                 });
+                            });
+
+                            accountTypeInput.addEventListener('input', () => setInstallmentAccess(false));
+                            accountTypeInput.addEventListener('blur', updateAccountTypeAccess);
+                            accountTypeInput.addEventListener('change', updateAccountTypeAccess);
+                            setInstallmentAccess(false);
+
+                            document.getElementById('movableDiv184').addEventListener('mousedown', () => {
+                                bringMovableToFront(document.getElementById('movableDiv184'));
+                            });
+
+                            const transactionTable = document.getElementById('ccactranstablefd');
+                            const passbookCheckButton = document.getElementById('passbookCheckButton');
+
+                            transactionTable.tBodies[0].addEventListener('click', event => {
+                                const row = event.target.closest('tr[data-jv-date]');
+                                if (!row) return;
+
+                                transactionTable.tBodies[0].querySelectorAll('tr.pcb-selected')
+                                    .forEach(item => item.classList.remove('pcb-selected'));
+                                row.classList.add('pcb-selected');
+                            });
+
+                            passbookCheckButton.addEventListener('click', async () => {
+                                const selectedRow = transactionTable.tBodies[0].querySelector('tr.pcb-selected');
+                                const accountNo = document.getElementById('accpost-viewdetials-account-number').value.trim();
+                                if (!selectedRow || !accountNo) {
+                                    notify('Select a transaction row first.');
+                                    return;
+                                }
+
+                                try {
+                                    const response = await fetch('/api/passbook-check', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ accountNo, jvDate: selectedRow.dataset.jvDate })
+                                    });
+                                    const result = await response.json();
+                                    if (!response.ok || !result.success) throw new Error(result.message || 'Unable to mark the passbook check.');
+
+                                    transactionTable.tBodies[0].querySelectorAll('tr[data-jv-date]').forEach(row => {
+                                        row.classList.toggle('pcb-checked', row.dataset.jvDate <= result.checkedThrough);
+                                    });
+                                    selectedRow.classList.remove('pcb-selected');
+                                    notify(result.message);
+                                } catch (error) {
+                                    console.error('Error saving passbook check:', error);
+                                    notify(error.message || 'Unable to mark the passbook check.');
+                                }
                             });
                         });
 
