@@ -7,9 +7,9 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background: linear-gradient(to bottom, #e6f2f8, #cde1ed);
-  width: 950px;
-  height: 900px;
-  max-height: 95vh;
+  width: 823px;
+  height: 895px;
+  max-height: 88vh;
   overflow-y: auto;
   border: 1px solid #7aa7c7;
   border-radius: 6px;
@@ -89,6 +89,7 @@
   border-radius: 4px;
   margin-bottom: 10px;
   padding: 8px;
+  width: 770px;
 }
 
 #mainmultitransaction legend {

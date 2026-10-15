@@ -8,9 +8,9 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background: linear-gradient(to bottom, #e6f2f8, #cde1ed);
-  width: min(750px, calc(100vw - 32px));
-  height: 900px;
-  max-height: 89vh;
+  width: min(823px, calc(100vw - 32px));
+  height: 895px;
+  max-height: 88vh;
   overflow-y: auto;
   overflow-x: hidden;
   border: 1px solid #7aa7c7;
@@ -70,10 +70,6 @@
   font-size: 16px;
   font-weight: 600;
   color: #004d80;
-}
-
-#mainCreatTransDiv .maintrans-account-details {
-  margin-top: -107px;
 }
 
 /* Labels and Inputs */
@@ -160,7 +156,7 @@
 }
 
 #mainCreatTransDForm > .fieldset {
-  width: 700px;
+  width: 770px;
   box-sizing: border-box;
   margin-left: 0;
   margin-right: 0;
@@ -187,10 +183,7 @@
 #mainCreatTransDiv .form-row.buttons {
   justify-content: space-between;
 }
-.Maintransmembertableforaccedit{
-  margin-top: 20px;
-      margin-bottom: 110px;
-}
+
 /* Table Styling */
 #mainCreatTransDiv .do-table-containerforeditacc table {
   width: 100%;
@@ -311,4 +304,32 @@
 }
 #mainCreatTransDiv button.action-button:hover {
   background: #e6f2f8;
+}
+
+#mainCreatTransDiv .transaction-member-and-inputs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* Keep the member panel stable when toggling to a short transaction table. */
+#mainCreatTransDiv .maintranstablefeildset {
+    min-height: 340px;
+}
+
+#mainCreatTransDiv .transaction-account-fields .maintrans-account-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+}
+
+#mainCreatTransDiv .transaction-account-fields .maintrans-account-details legend {
+    grid-column: 1 / -1;
+}
+#mainCreatTransDiv .maintranstablefeildset{
+  margin:0;
 }

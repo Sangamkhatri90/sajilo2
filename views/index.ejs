@@ -640,8 +640,7 @@
                                 </label>
                                 <input type="text" inputmode="numeric" pattern="[0-9]*" id="alias" name="alias" class="main-search"
                                     placeholder="Search Account">
-                                <button type="submit" id="search" style="margin-right: 8px;"><img src="/PNG/search.png"
-                                        alt="">GO</button>
+                                <button type="submit" id="search" style="margin-right: 8px;">GO</button>
                             </div>
                         </form>
                         <!-- 4️⃣ Suggestion result area -->
@@ -739,10 +738,10 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const createMemberBtn = document.getElementById('createMemberBtn');
-            if (!createMemberBtn) return;
+            const createAccountBtn = document.getElementById('createAccountBtn');
+            if (!createAccountBtn) return;
 
-            createMemberBtn.addEventListener('click', function () {
+            createAccountBtn.addEventListener('click', function () {
                 const memberId = document.getElementById('searchedMemberId').value;
                 if (memberId) {
                     document.getElementById('createAccountFrame').src = `/account/createAccount?MemberId=${encodeURIComponent(memberId)}`;
@@ -6216,7 +6215,7 @@
                                     </div>
                                     <div>
                                         <button type="button" class="is-button" id="cancelButton44"><img
-                                                src="css/cancel.png" alt="">Cancel</button>
+                                                src="PNG/cancel.png" alt="">Cancel</button>
                                     </div>
                                 </div>
                             </fieldset>
@@ -10163,7 +10162,7 @@ async function loadEarningsData() {
                                 <div class="aa-button-row">
                                     <div><button type="submit" class="aa-button" type="submit">Save</button></div>
                                     <button type="button" class="aa-button" id="cancelButton82"><img
-                                            src="css/cancel.png" alt="">Cancel</button>
+                                            src="PNG/cancel.png" alt="">Cancel</button>
                                 </div>
                             </fieldset>
                         </form>
@@ -13138,7 +13137,7 @@ async function loadEarningsData() {
                                     </div>
                                     <div>
                                         <button type="button" class="mas-button" id="cancelButton103"><img
-                                                src="css/cancel.png" alt="">Cancel</button>
+                                                src="PNG/cancel.png" alt="">Cancel</button>
                                     </div>
                                 </div>
                             </fieldset>
@@ -13314,7 +13313,7 @@ async function loadEarningsData() {
                                     </div>
                                     <div>
                                         <button type="button" class="ci-button" id="cancelButton105"><img
-                                                src="css/cancel.png" alt="">Cancel</button>
+                                                src="PNG/cancel.png" alt="">Cancel</button>
                                     </div>
                                 </div>
                             </fieldset>
@@ -22477,7 +22476,7 @@ async function loadEarningsData() {
                                 </div>
                                 <div>
                                     <button type="button" class="is-button" id="cancelButton163"><img
-                                            src="css/cancel.png" alt="">Cancel</button>
+                                            src="PNG/cancel.png" alt="">Cancel</button>
                                 </div>
                             </div>
                         </fieldset>
@@ -22570,7 +22569,7 @@ async function loadEarningsData() {
                                 </div>
                                 <div>
                                     <button type="button" class="is-button" id="cancelButton164"><img
-                                            src="css/cancel.png" alt="">Cancel</button>
+                                            src="PNG/cancel.png" alt="">Cancel</button>
                                 </div>
                             </div>
                         </fieldset>
@@ -22944,7 +22943,7 @@ async function loadEarningsData() {
                                 </div>
                                 <div>
                                     <button type="button" class="ci-button" id="cancelButton170"><img
-                                            src="css/cancel.png" alt="">Cancel</button>
+                                            src="PNG/cancel.png" alt="">Cancel</button>
                                 </div>
                             </div>
                         </fieldset>
@@ -23021,7 +23020,7 @@ async function loadEarningsData() {
                                 </div>
                                 <div>
                                     <button type="button" class="ci-button" id="cancelButton171"><img
-                                            src="css/cancel.png" alt="">Cancel</button>
+                                            src="PNG/cancel.png" alt="">Cancel</button>
                                 </div>
                             </div>
                         </fieldset>
@@ -23175,7 +23174,7 @@ async function loadEarningsData() {
                                 </div>
                                 <div>
                                     <button type="button" class="mas-button" id="cancelButton173"><img
-                                            src="css/cancel.png" alt="">Cancel</button>
+                                            src="PNG/cancel.png" alt="">Cancel</button>
                                 </div>
                             </div>
                         </fieldset>
@@ -23257,7 +23256,7 @@ async function loadEarningsData() {
                                 </div>
                                 <div>
                                     <button type="button" class="mas-button" id="cancelButton174"><img
-                                            src="css/cancel.png" alt="">Cancel</button>
+                                            src="PNG/cancel.png" alt="">Cancel</button>
                                 </div>
                             </div>
                         </fieldset>
@@ -26135,8 +26134,9 @@ async function loadEarningsData() {
                                     <input type="number" id="Maintransbearer" name="bearer">
                                 </div>
                             </div>
-                            <div class="Maintransmembertableforaccedit">
-                                <fieldset class="fieldset1">
+                            <div class="transaction-member-and-inputs">
+                                <div class="Maintransmembertableforaccedit">
+                                <fieldset class="maintranstablefeildset">
                                     <legend class="legend">Member</legend>
                                     <!-- Toggle Button -->
                                     <button type="button" id="MaintranstoggleBtn">...</button>
@@ -26181,11 +26181,11 @@ async function loadEarningsData() {
                                     </div>
 
                                 </fieldset>
-                            </div>
-
-                            <fieldset class="maintrans-account-details">
+                                </div>
+                                <div class="transaction-account-fields">
+                                <fieldset class="maintrans-account-details">
                                 <legend>Account Details</legend>
-                                <div class="maintrans-three-columns">
+                                
                                     <div>
                                         <label for="account-number">Account Number
                                             <input type="checkbox" name="" id="MaintransaccnumCbforaccedit">
@@ -26203,23 +26203,14 @@ async function loadEarningsData() {
                                         <input type="text" name="Glname" id="Maintransacctypeforaccpostingedit" readonly
                                             title="Double-click to edit this account type">
                                     </div>
-                                </div>
+                                
 
-                                <div class="maintrans-three-columns" style="margin-top: 10px;">
+                                
                                     <div>
                                         <label for="source of fund">Source of Fund</label>
                                         <input type="text" name="sourceofFund" id="MaintranssrcofFund">
                                     </div>
-                                    <div style="align-self: end;">
-                                        <button type="button" id="MaintranstoggleButton184"> View A/c Details </button>
-                                    </div>
-                                    <div style="align-self: end;">
-                                        <button type="button" id="MaintransPostIntBtn"
-                                            class="action-button post-interest">Post Interest</button>
-                                    </div>
-                                </div>
-
-                                <div class="maintrans-three-columns">
+                                
                                     <div>
                                         <label for="interest-balance">Interest Balance</label>
                                         <input type="text" id="MaintransinterestBal" name="account-name" value="">
@@ -26232,10 +26223,28 @@ async function loadEarningsData() {
                                         <label for="amount">Interest Amount</label>
                                         <input type="number" id="MaintransintAmount" name="amount">
                                     </div>
+                                    
+                                    <div>
+                                        <button type="button" id="MaintranstoggleButton184"> View A/c Details </button>
+                                    </div>
+                                     <div>
+                                    <a href="#" id="MaintranstoggleButton187" class="decoration"><button type="button"
+                                            class="action-button bill">Bill</button></a>
                                 </div>
-
-                            </fieldset>
-
+                                    <div>
+                                        <button type="button" id="MaintransPostIntBtn"
+                                            class="action-button post-interest">Post Interest</button>
+                                    </div>
+                                    
+                                <div>
+                                    <a href="#" id="MaintranstoggleButton188" class="decoration"><button type="button"
+                                            class="action-button renew" id="MaintransRenewbtn">Renew</button></a>
+                                </div>
+                                <div>
+                                    </div>
+                                </fieldset>
+                                </div>
+                            </div>
                             <div class="maintrans-three-columns">
                                 <div>
                                     <label for="int-receive-date">Int. Receive Till Date</label>
@@ -26274,21 +26283,6 @@ async function loadEarningsData() {
                                     <label for="Total-Amount">Total-Amount</label>
                                     <input type="number" id="Maintranstotal" name="total" readonly placeholder="Total">
                                 </div>
-                                <div style="align-self: end;">
-                                    <a href="#" id="MaintranstoggleButton187" class="decoration"><button type="button"
-                                            class="action-button bill">Bill</button></a>
-                                </div>
-                                <div style="align-self: end;">
-                                    <a href="#" id="MaintranstoggleButton188" class="decoration"><button type="button"
-                                            class="action-button renew" id="MaintransRenewbtn">Renew</button></a>
-                                </div>
-                            </div>
-
-                            <div class="tc-form-style1">
-                                <div style="width: 184px;">
-                                    <textarea id="MaintranstotalInWords" placeholder="Amount in words" rows="4"
-                                        cols="50" readonly></textarea>
-                                </div>
                                 <div class="maintrans-checkbox">
                                     <input type="checkbox" id="Maintranssuspicious-trans" name="suspicious-trans">
                                     <label for="Maintranssuspicious-trans">Suspicious
@@ -26302,8 +26296,12 @@ async function loadEarningsData() {
                                 </div>
                             </div>
 
-                            <div class="maintrans-three-columns">
+                            <div class="tc-form-style1">
                                 <div>
+                                    <textarea id="MaintranstotalInWords" placeholder="Amount in words" rows="3"
+                                        cols="50" readonly></textarea>
+                                </div>
+                                  <div>
                                     <label for="MaintranscollateralAmt">Collateral Amount For Others</label>
                                     <input type="number" name="" id="MaintranscollateralAmt">
                                 </div>
@@ -26311,22 +26309,25 @@ async function loadEarningsData() {
                                     <label for="MaintransdepositBy">Deposited By</label>
                                     <input type="text" id="MaintransdepositBy" name="deposit-by">
                                 </div>
+                            </div>
+
+                            <div class="maintrans-three-columns">
+                              
                                 <div>
                                     <label for="MaintranscontactNumber">Contact Number</label>
                                     <input type="number" id="MaintranscontactNumber" name="contact-number">
                                 </div>
-                            </div>
-
-                            <div class="maintrans-two-columns">
-                                <div>
-                                    <label for="Maintransremark">Remark</label>
-                                    <textarea id="Maintransremark" name="remark" placeholder="Remark"></textarea>
-                                </div>
-                                <div>
+                                 <div>
                                     <label for="Mainrefund-amount">Refund Amount</label>
                                     <input type="number" id="Mainrefund-amount" name="refund-amount">
                                 </div>
+                                 <div>
+                                    <label for="Maintransremark">Remark</label>
+                                    <input id="Maintransremark" name="remark" placeholder="Remark"></input>
+                                </div>
                             </div>
+
+                        
 
                             <div class="form-row buttons">
                                 <button id="MaintranssaveBtn" class="save" type="submit"><img src="PNG/save.png"
@@ -26458,7 +26459,7 @@ async function loadEarningsData() {
                                     <input type="text" id="MainMultitransDocclass" name="doc-class"
                                         placeholder="Type or click to get lists.">
                                     <div id="DocClassMainMultitrans" class="suggestions-list"
-                                        >
+                                       style ="display:none" >
                                     </div>
                                 </div>
                                 <div>
@@ -28529,12 +28530,12 @@ async function loadEarningsData() {
                         // Handle row click and pass the SlAlias to the "Create Member" form
                         // Enable the "Create Member" button if there is valid data
                         document.addEventListener('DOMContentLoaded', function () {
-                            const createMemberBtn = document.getElementById('createMemberBtn');
+                            const createAccountBtn = document.getElementById('createAccountBtn');
                             const table = document.getElementById('selectedTable');
 
                             // Check if there is any data in the table
                             if (table && table.rows.length >= 0) { // Check if there is more than just the header row
-                                createMemberBtn.disabled = false; // Enable the button
+                                createAccountBtn.disabled = false; // Enable the button
                             }
                         });
 

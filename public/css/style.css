@@ -925,11 +925,14 @@ input[type="number"]::-webkit-inner-spin-button {
   cursor: pointer;
   font-size: 11px; /* Reduced font size */
   width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 
 
-#createMemberBtn:disabled{
+#createAccountBtn:disabled{
   opacity: 0.5;
   pointer-events: none;
 }

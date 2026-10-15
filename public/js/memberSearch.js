@@ -114,7 +114,8 @@
                                 </div>
                             </fieldset>
                             <div class="searched-data-actions">
-                                <div><button type="button" id="createMemberBtn" class="Crebtn">New Account</button></div>
+                                <div><button type="button" id="createAccountBtn" class="Crebtn"><img
+                                        src="PNG/add.png" alt="">New Account</button></div>
                                 <div class="choose-transaction">
                                     <label for="actionSelect">Choose an action:</label>
                                     <select id="actionSelect" style="background-color: #dedada; border: 1px solid #ccc;">
@@ -216,7 +217,7 @@
                 window.hideSearchedDataForm?.();
                 return;
             }
-            if (event.target.closest('#createMemberBtn')) {
+            if (event.target.closest('#createAccountBtn')) {
                 const memberId = document.getElementById('searchedMemberId')?.value;
                 if (!memberId) return;
                 document.getElementById('createAccountFrame').src = `/account/createAccount?MemberId=${encodeURIComponent(memberId)}`;

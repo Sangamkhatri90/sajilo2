@@ -156,7 +156,7 @@ window.onload = () => {
     const savedStartDateLocal = localStorage.getItem('selectedStartDateLocal');
     const savedEndDateLocal = localStorage.getItem('selectedEndDateLocal');
 
-    if (savedOrgName && savedStartDate && savedEndDate) {
+    if (savedOrgName && savedStartDateLocal && savedEndDateLocal) {
          document.getElementById('organization-name').value = savedOrgName;
         document.getElementById('organization-name1').value = savedOrgName;
         document.getElementById('startDateInput').textContent = `Fiscal Start Date: ${savedStartDateLocal}`;
@@ -164,9 +164,9 @@ window.onload = () => {
     }
 };
 
-document.getElementById('cancelButton1454').addEventListener('click',function(){
-    document.getElementById("movableDiv81").style.display='none'
-})
+// document.getElementById('cancelButton1454').addEventListener('click',function(){
+//     document.getElementById("movableDiv81").style.display='none'
+// })
 document.getElementById('okyaaa').addEventListener('click',function(){
     document.getElementById("movableDiv81").style.display='none'
 })
