@@ -91,7 +91,7 @@
                 <td class="display-table-td">${esc(row.GLName)}</td>
                 <td class="display-table-td">${esc(row.SLName)}</td>
                 <td class="balance" data-balance="${esc(money(row.Balance))}">${esc(money(row.Balance))}</td>
-                <td></td>
+                
             </tr>`).join('');
 
         const container = document.getElementById('searchResultContainer');
@@ -127,7 +127,7 @@
                             <fieldset id="searched-account-details">
                                 <legend>Account Details</legend>
                                 <table border="1" id="selectedTable" class="highlight-table">
-                                    <thead><tr><th class="display-table-th">Account Id</th><th class="display-table-th">Account Type</th><th class="display-table-th">Account Name</th><th class="display-table-th">Balance</th><th class="display-table-th">Accrued Interest</th></tr></thead>
+                                    <thead><tr><th class="display-table-th">Account Id</th><th class="display-table-th">Account Type</th><th class="display-table-th">Account Name</th><th class="display-table-th">Balance</th></tr></thead>
                                     <tbody>${accountRows}</tbody>
                                 </table>
                             </fieldset>

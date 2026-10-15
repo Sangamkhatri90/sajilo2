@@ -477,7 +477,7 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
 
 }
 
-document.getElementById('Maintransacctypeforaccpostingedit').addEventListener('dblclick', function() {
+document.getElementById('Maintransacctypeforaccpostingedit').addEventListener('dblclick',async function() {
     const accountType = this.value.trim();
     const editPanel = document.getElementById('movableDiv156');
     if (!accountType) {
@@ -498,6 +498,167 @@ document.getElementById('Maintransacctypeforaccpostingedit').addEventListener('d
     });
     editPanel.style.display = 'block';
     editPanel.style.zIndex = '10002';
+
+    // ---------- helpers ----------
+const $ = (id) => document.getElementById(id);
+
+const postJSON = async (url, body) => {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    return res.json();
+};
+
+const setSelectValue = (select, value) => {
+    const target = String(value ?? '').trim();
+    const index = [...select.options].findIndex(o => o.value.trim() === target);
+    select.selectedIndex = index; // -1 if not found
+    if (index === -1) console.log(`No matching option for ${select.id}:`, value);
+};
+
+const toDateInput = (value) =>
+    value ? new Date(value).toISOString().split('T')[0] : '';
+
+// ---------- config ----------
+const CHECKBOX_MAP = {
+    UseOpenTimeInterateRateAlways:        'EditAccTypeMasGenIntRateAccopenDate',
+    InterestCapitalized:                  'EditAccTypeMasGenCapInt',
+    ChequeIssue:                          'EditAccTypeMasGenIssueCheque',
+    Collateralable:                       'EditAccTypeMasSaveCollaterable',
+    OverDraft:                            'EditAccTypeMasSaveOverDraft',
+    Penalty:                              'EditAccTypeMasSavePenaltyonFD',
+    MinBalanceDrawable:                   'EditAccTypeMasSaveMinBalDraw',
+    PreNoticeonWithDraw:                  'EditAccTypeMasSavePreNoticeonWD',
+    PenaltyRebateBasedOnPaymentDay:       'EditAccTypeMasLoanPandRCalBasedOnpayDay',
+    Revolving:                            'EditAccTypeMasLoanRevolving',
+    RebatePenaltyBasedonInterestPostDate: 'EditAccTypeMasLoanpenaltyBasedONIntPostingdate',
+    PenaltyBasedOnTotalDuePrincipal:      'EditAccTypeMasLoanTotalPrincipalBal',
+    PenaltyonInstallment:                 'EditAccTypeMasLoanPonFInstPayMent',
+    PenaltyonInterest:                    'EditAccTypeMasLoanPonFInterestPayMent',
+};
+
+const FIELD_MAP = {
+    Remarks:           'EditAccTypeMasRemarks',
+    ANPrefix:          'EditAccTypeMasPrefix',
+    ANSuffix:          'EditAccTypeMasSuffix',
+    ANStartFrom:       'EditAccTypeMasStartFrom',
+    ANEndTo:           'EditAccTypeMasEndTo',
+    ANBodyLength:      'EditAccTypeMasBodyLength',
+    ANFillChar:        'EditAccTypeMasFillBy',
+    AltAlias:          'EditAccTypeMasAltAlias',
+    Duration:          'EditAccTypeMasDuration',
+    ValidFrom:         'EditAccTypeMasValidFrom',
+    ValidTo:           'EditAccTypeMasValidTo',
+    MaxLoanAmount:     'EditAccTypeMasMaxLoanAmt',
+    EMIScheme:         'EditAccTypeMasLoan-RepaymentScheme',
+    OverdraftAmount:   'EditAccTypeMasSaveOverDraftAmt',
+    MinBalance:        'EditAccTypeMasSaveMinBalance',
+    PreNoticeAmount:   'EditAccTypeMasSaveAmtMoreThan',
+    PreNoticeDays:     'EditAccTypeMasSavePreNoticeDays',
+    NatureofAccount:   'EditAccTypeMasNatureofAcc',
+    ConvertAge:        'EditAccTypeMasSaveAccHolderageCross',
+    ConvertAcDuration: 'EditAccTypeMasSaveAcrunningyearCross',
+};
+
+const DATE_FIELDS = new Set(['ValidFrom', 'ValidTo']);
+
+// ---------- UI behaviour (bound ONCE, not per dblclick) ----------
+const categorySelect = $('EditAccTypeMas-Category');
+const togglerLinks   = document.querySelectorAll('.toggler-link');
+
+function updateLinkPermissions() {
+    const category = categorySelect.value;
+
+    togglerLinks.forEach(link => {
+        const target = link.dataset.target.toLowerCase();
+        const enabled =
+            target === 'generalcontent1' ||
+            (category === 'Loan'   && target.includes('loan')) ||
+            (category === 'Saving' && target.includes('saving'));
+
+        link.style.pointerEvents = enabled ? 'auto' : 'none';
+        link.style.opacity       = enabled ? '1' : '0.5';
+    });
+}
+
+const setEnabled = (el, on) => {
+    if (!on) el.value = '';
+    el.style.pointerEvents = on ? 'auto' : 'none';
+};
+
+function toggleOverdraftAmt() {
+    setEnabled($('EditAccTypeMasSaveOverDraftAmt'), $('EditAccTypeMasSaveOverDraft').checked);
+}
+
+function togglePreNoticeWd() {
+    const on = $('EditAccTypeMasSavePreNoticeonWD').checked;
+    setEnabled($('EditAccTypeMasSaveAmtMoreThan'), on);
+    setEnabled($('EditAccTypeMasSavePreNoticeDays'), on);
+}
+
+categorySelect.addEventListener('change', updateLinkPermissions);
+$('EditAccTypeMasSaveOverDraft').addEventListener('change', toggleOverdraftAmt);
+$('EditAccTypeMasSavePreNoticeonWD').addEventListener('change', togglePreNoticeWd);
+
+// ---------- populate functions ----------
+function populateBasicInfo(data) {
+    $('EditAccTypeMas-Alias').value  = data.GLAlias;
+    $('LedgerGroup6').value          = data.LgrGrpName;
+    $('EditAccTypeMasAltAlias').value = data.AltAlias || '';
+
+    setSelectValue(categorySelect, data.SaveorLoanRes);
+    setSelectValue($('EditAccTypeMas-Schedule'), data.Schedule);
+    updateLinkPermissions();
+}
+
+function populateDetails(data) {
+    Object.entries(CHECKBOX_MAP).forEach(([key, id]) => {
+        $(id).checked = data[key] === true;
+    });
+
+    Object.entries(FIELD_MAP).forEach(([key, id]) => {
+        const el = $(id);
+        if (!el) return;
+        const value = data[key] ?? '';
+
+        if (DATE_FIELDS.has(key))          el.value = toDateInput(value);
+        else if (el.tagName === 'SELECT')  setSelectValue(el, value);
+        else                               el.value = value;
+    });
+
+    toggleOverdraftAmt();
+    togglePreNoticeWd();
+}
+
+    const accType =  document.getElementById('EditAccTypeMas-Name').value.trim();
+
+    if (!accType) {
+        alert('Please make sure you have value in Account type field');
+        return; // <-- was missing
+    }
+    $('EditAccTypeMas-Name').value = accType;
+
+    const nameBody = { EditAccTypeMasSelectedName: accType };
+
+    try {
+        const [basic, details, postingLedger, saveLedger] = await Promise.all([
+            postJSON('/api/Editaccounttypesdetails', { EditCollChequemasAccTypeforaccposting: accType }),
+            postJSON('/fetchacctypemasDetailsForEdit', nameBody),
+            postJSON('/fetchacctypemasMoreDetailsForEdit', nameBody),
+            postJSON('/fetchacctypemasMoreDetailsForEditSave', nameBody),
+        ]);
+
+        if (basic.success) populateBasicInfo(basic);
+        populateDetails(details);
+        $('PostingLedger7').value = postingLedger.GLName || '';
+        $('PostingLedger9').value = saveLedger.GLName || '';
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+
+
 });
 
 document.getElementById('mainopeningbalanceForm').addEventListener('submit', async function(event) {

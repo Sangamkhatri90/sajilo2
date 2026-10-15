@@ -8,7 +8,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background: linear-gradient(to bottom, #e6f2f8, #cde1ed);
-  width: min(700px, calc(100vw - 32px));
+  width: min(750px, calc(100vw - 32px));
   height: 900px;
   max-height: 89vh;
   overflow-y: auto;
@@ -160,7 +160,7 @@
 }
 
 #mainCreatTransDForm > .fieldset {
-  width: 655px;
+  width: 700px;
   box-sizing: border-box;
   margin-left: 0;
   margin-right: 0;

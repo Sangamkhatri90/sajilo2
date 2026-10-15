@@ -5,6 +5,8 @@
 .nat-container {
     padding: 8px;
     max-width: 590px;
+    height: 500px;
+    overflow: auto;
   }
   
 .nat-fieldset {

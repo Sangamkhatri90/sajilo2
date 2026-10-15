@@ -49831,375 +49831,169 @@ async function loadEarningsData() {
                                             const AccTypeBtn = document.getElementById('acctypeforaccpostingedit');
 
                                             const myForm156 = document.getElementById('movableDiv156');
-                                            AccTypeBtn.addEventListener('dblclick', () => {
-                                                if (!EditCollChequemasAccTypeforaccposting) {
-                                                    alert('Please make sure you have value in Accout type field')
-                                                }
+                                            // ---------- helpers ----------
+const $ = (id) => document.getElementById(id);
 
-                                                myForm156.style.display = 'block';
-                                                document.getElementById("EditAccTypeMas-Name").value = EditCollChequemasAccTypeforaccposting;
+const postJSON = async (url, body) => {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    return res.json();
+};
 
-                                                fetch('/api/Editaccounttypesdetails', {
-                                                    method: 'POST',
-                                                    headers: {
-                                                        'Content-Type': 'application/json'
-                                                    },
-                                                    body: JSON.stringify({ EditCollChequemasAccTypeforaccposting })
-                                                })
-                                                    .then(response => response.json())
-                                                    .then(data => {
-                                                        if (data.success) {
-                                                            const Glalias = data.GLAlias;
-                                                            const savingorloan = data.SaveorLoanRes;
-                                                            const LgrGrpName = data.LgrGrpName;
-                                                            const Schedule = data.Schedule;
+const setSelectValue = (select, value) => {
+    const target = String(value ?? '').trim();
+    const index = [...select.options].findIndex(o => o.value.trim() === target);
+    select.selectedIndex = index; // -1 if not found
+    if (index === -1) console.log(`No matching option for ${select.id}:`, value);
+};
 
-                                                            console.log("Received value  of schedule", Schedule)
-                                                            document.getElementById('EditAccTypeMas-Alias').value = Glalias;
-                                                            document.getElementById('LedgerGroup6').value = LgrGrpName;
-                                                            document.getElementById('EditAccTypeMasAltAlias').value = data.AltAlias || '';
+const toDateInput = (value) =>
+    value ? new Date(value).toISOString().split('T')[0] : '';
 
-                                                            // Populate the Method dropdown for category
-                                                            const methodSelectCategory = document.getElementById('EditAccTypeMas-Category');
-                                                            const optionsCategory = methodSelectCategory.options;
-                                                            let methodSelectedCategory = false;
+// ---------- config ----------
+const CHECKBOX_MAP = {
+    UseOpenTimeInterateRateAlways:        'EditAccTypeMasGenIntRateAccopenDate',
+    InterestCapitalized:                  'EditAccTypeMasGenCapInt',
+    ChequeIssue:                          'EditAccTypeMasGenIssueCheque',
+    Collateralable:                       'EditAccTypeMasSaveCollaterable',
+    OverDraft:                            'EditAccTypeMasSaveOverDraft',
+    Penalty:                              'EditAccTypeMasSavePenaltyonFD',
+    MinBalanceDrawable:                   'EditAccTypeMasSaveMinBalDraw',
+    PreNoticeonWithDraw:                  'EditAccTypeMasSavePreNoticeonWD',
+    PenaltyRebateBasedOnPaymentDay:       'EditAccTypeMasLoanPandRCalBasedOnpayDay',
+    Revolving:                            'EditAccTypeMasLoanRevolving',
+    RebatePenaltyBasedonInterestPostDate: 'EditAccTypeMasLoanpenaltyBasedONIntPostingdate',
+    PenaltyBasedOnTotalDuePrincipal:      'EditAccTypeMasLoanTotalPrincipalBal',
+    PenaltyonInstallment:                 'EditAccTypeMasLoanPonFInstPayMent',
+    PenaltyonInterest:                    'EditAccTypeMasLoanPonFInterestPayMent',
+};
 
-                                                            // Loop through the options to match the value (trim whitespace and ensure case consistency)
-                                                            for (let i = 0; i < optionsCategory.length; i++) {
-                                                                if (optionsCategory[i].value.trim() === savingorloan.trim()) {
-                                                                    methodSelectCategory.selectedIndex = i;  // Set the correct index
-                                                                    methodSelectedCategory = true;
-                                                                    break;
-                                                                }
-                                                            }
+const FIELD_MAP = {
+    Remarks:           'EditAccTypeMasRemarks',
+    ANPrefix:          'EditAccTypeMasPrefix',
+    ANSuffix:          'EditAccTypeMasSuffix',
+    ANStartFrom:       'EditAccTypeMasStartFrom',
+    ANEndTo:           'EditAccTypeMasEndTo',
+    ANBodyLength:      'EditAccTypeMasBodyLength',
+    ANFillChar:        'EditAccTypeMasFillBy',
+    AltAlias:          'EditAccTypeMasAltAlias',
+    Duration:          'EditAccTypeMasDuration',
+    ValidFrom:         'EditAccTypeMasValidFrom',
+    ValidTo:           'EditAccTypeMasValidTo',
+    MaxLoanAmount:     'EditAccTypeMasMaxLoanAmt',
+    EMIScheme:         'EditAccTypeMasLoan-RepaymentScheme',
+    OverdraftAmount:   'EditAccTypeMasSaveOverDraftAmt',
+    MinBalance:        'EditAccTypeMasSaveMinBalance',
+    PreNoticeAmount:   'EditAccTypeMasSaveAmtMoreThan',
+    PreNoticeDays:     'EditAccTypeMasSavePreNoticeDays',
+    NatureofAccount:   'EditAccTypeMasNatureofAcc',
+    ConvertAge:        'EditAccTypeMasSaveAccHolderageCross',
+    ConvertAcDuration: 'EditAccTypeMasSaveAcrunningyearCross',
+};
 
-                                                            if (!methodSelectedCategory) {
-                                                                console.log('No matching method found in dropdown:', savingorloan);
-                                                                methodSelectCategory.selectedIndex = -1; // Optionally set a default value
-                                                            }
+const DATE_FIELDS = new Set(['ValidFrom', 'ValidTo']);
 
-                                                            // Log the selected method for debugging
-                                                            console.log('Category selected:', methodSelectCategory.value); // Log the selected method
+// ---------- UI behaviour (bound ONCE, not per dblclick) ----------
+const categorySelect = $('EditAccTypeMas-Category');
+const togglerLinks   = document.querySelectorAll('.toggler-link');
 
+function updateLinkPermissions() {
+    const category = categorySelect.value;
 
-                                                            const categorySelect = document.getElementById("EditAccTypeMas-Category");
-                                                            const links = document.querySelectorAll(".toggler-link");
+    togglerLinks.forEach(link => {
+        const target = link.dataset.target.toLowerCase();
+        const enabled =
+            target === 'generalcontent1' ||
+            (category === 'Loan'   && target.includes('loan')) ||
+            (category === 'Saving' && target.includes('saving'));
 
-                                                            function updateLinkPermissions(methodSelectedCategory) {
-                                                                const selectedCategory = categorySelect.value;
+        link.style.pointerEvents = enabled ? 'auto' : 'none';
+        link.style.opacity       = enabled ? '1' : '0.5';
+    });
+}
 
-                                                                links.forEach(link => {
-                                                                    const target = link.getAttribute("data-target").toLowerCase();
+const setEnabled = (el, on) => {
+    if (!on) el.value = '';
+    el.style.pointerEvents = on ? 'auto' : 'none';
+};
 
-                                                                    // Skip the General section (always enabled)
-                                                                    if (target === "generalcontent1") {
-                                                                        link.style.pointerEvents = "auto";
-                                                                        link.style.opacity = "1";
-                                                                        return;
-                                                                    }
+function toggleOverdraftAmt() {
+    setEnabled($('EditAccTypeMasSaveOverDraftAmt'), $('EditAccTypeMasSaveOverDraft').checked);
+}
 
-                                                                    // Control Saving and Loan links
-                                                                    if (
-                                                                        (selectedCategory === "Loan" && target.includes("loan")) ||
-                                                                        (selectedCategory === "Saving" && target.includes("saving"))
-                                                                    ) {
-                                                                        // Allow the matching one
-                                                                        link.style.pointerEvents = "auto";
-                                                                        link.style.opacity = "1";
-                                                                    } else {
-                                                                        // Disable the other one
-                                                                        link.style.pointerEvents = "none";
-                                                                        link.style.opacity = "0.5";
-                                                                    }
-                                                                });
-                                                            }
+function togglePreNoticeWd() {
+    const on = $('EditAccTypeMasSavePreNoticeonWD').checked;
+    setEnabled($('EditAccTypeMasSaveAmtMoreThan'), on);
+    setEnabled($('EditAccTypeMasSavePreNoticeDays'), on);
+}
 
-                                                            categorySelect.addEventListener("change", updateLinkPermissions);
+categorySelect.addEventListener('change', updateLinkPermissions);
+$('EditAccTypeMasSaveOverDraft').addEventListener('change', toggleOverdraftAmt);
+$('EditAccTypeMasSavePreNoticeonWD').addEventListener('change', togglePreNoticeWd);
 
-                                                            // Optional: run once at load
-                                                            updateLinkPermissions(methodSelectedCategory);
+// ---------- populate functions ----------
+function populateBasicInfo(data) {
+    $('EditAccTypeMas-Alias').value  = data.GLAlias;
+    $('LedgerGroup6').value          = data.LgrGrpName;
+    $('EditAccTypeMasAltAlias').value = data.AltAlias || '';
 
+    setSelectValue(categorySelect, data.SaveorLoanRes);
+    setSelectValue($('EditAccTypeMas-Schedule'), data.Schedule);
+    updateLinkPermissions();
+}
 
-                                                            // Populate the Method dropdown for schedule
-                                                            const methodSelectSchedule = document.getElementById('EditAccTypeMas-Schedule');
-                                                            const optionsSchedule = methodSelectSchedule.options;
-                                                            let methodSelectedSchedule = false;
+function populateDetails(data) {
+    Object.entries(CHECKBOX_MAP).forEach(([key, id]) => {
+        $(id).checked = data[key] === true;
+    });
 
-                                                            // Loop through the options to match the value (trim whitespace and ensure case consistency)
-                                                            for (let i = 0; i < optionsSchedule.length; i++) {
-                                                                if (optionsSchedule[i].value.trim() === Schedule.trim()) {
-                                                                    methodSelectSchedule.selectedIndex = i;  // Set the correct index
-                                                                    methodSelectedSchedule = true;
-                                                                    break;
-                                                                }
-                                                            }
+    Object.entries(FIELD_MAP).forEach(([key, id]) => {
+        const el = $(id);
+        if (!el) return;
+        const value = data[key] ?? '';
 
-                                                            if (!methodSelectedSchedule) {
-                                                                console.log('No matching method found in dropdown:', Schedule);
-                                                                methodSelectSchedule.selectedIndex = -1; // Optionally set a default value
-                                                            }
+        if (DATE_FIELDS.has(key))          el.value = toDateInput(value);
+        else if (el.tagName === 'SELECT')  setSelectValue(el, value);
+        else                               el.value = value;
+    });
 
-                                                            // Log the selected schedule for debugging
-                                                            console.log('Schedule selected:', methodSelectSchedule.value); // Log the selected schedule
-                                                        }
-                                                    })
+    toggleOverdraftAmt();
+    togglePreNoticeWd();
+}
 
-                                                    .catch(error => {
-                                                        console.error('Error fetching data:', error);
-                                                    });
+// ---------- main handler ----------
+AccTypeBtn.addEventListener('dblclick', async () => {
+    const accType = EditCollChequemasAccTypeforaccposting;
 
-                                                // Inside the fetch call for detail information
-                                                fetch('/fetchacctypemasDetailsForEdit', {
-                                                    method: 'POST',
-                                                    headers: {
-                                                        'Content-Type': 'application/json'
-                                                    },
-                                                    body: JSON.stringify({ EditAccTypeMasSelectedName: EditCollChequemasAccTypeforaccposting })  // Send the EditAccTypeMasSelectedName to the backend
-                                                })
-                                                    .then(response => response.json())
-                                                    .then(data => {
-                                                        const GenIntrateAcopenDate = document.getElementById('EditAccTypeMasGenIntRateAccopenDate');
-                                                        if (data.UseOpenTimeInterateRateAlways === true) {
-                                                            GenIntrateAcopenDate.checked = true;
-                                                        }
-                                                        else {
-                                                            GenIntrateAcopenDate.checked = false;
-                                                        }
-                                                        const GenCapatilizedInterest = document.getElementById('EditAccTypeMasGenCapInt');
-                                                        if (data.InterestCapitalized === true) {
-                                                            GenCapatilizedInterest.checked = true;
-                                                        }
-                                                        else {
-                                                            GenCapatilizedInterest.checked = false;
-                                                        }
-                                                        const GenChequeIssue = document.getElementById('EditAccTypeMasGenIssueCheque');
-                                                        if (data.ChequeIssue === true) {
-                                                            GenChequeIssue.checked = true;
-                                                        }
-                                                        else {
-                                                            GenChequeIssue.checked = false;
-                                                        }
-                                                        const saveCollaterable = document.getElementById('EditAccTypeMasSaveCollaterable');
-                                                        if (data.Collateralable === true) {
-                                                            saveCollaterable.checked = true;
-                                                        }
-                                                        else {
-                                                            saveCollaterable.checked = false;
-                                                        }
-                                                        const overdraftCB = data.OverDraft;
-                                                        const saveOverDraft = document.getElementById('EditAccTypeMasSaveOverDraft');
-                                                        if (data.OverDraft === true) {
-                                                            saveOverDraft.checked = true;
-                                                        }
-                                                        else {
-                                                            saveOverDraft.checked = false;
-                                                        }
-                                                        const savePenaltyonFD = document.getElementById('EditAccTypeMasSavePenaltyonFD');
-                                                        if (data.Penalty === true) {
-                                                            savePenaltyonFD.checked = true;
-                                                        }
-                                                        else {
-                                                            savePenaltyonFD.checked = false;
-                                                        }
-                                                        const saveMinBalanceDrawable = document.getElementById('EditAccTypeMasSaveMinBalDraw');
-                                                        if (data.MinBalanceDrawable === true) {
-                                                            saveMinBalanceDrawable.checked = true;
-                                                        }
-                                                        else {
-                                                            saveMinBalanceDrawable.checked = false;
-                                                        }
-                                                        const prenoticedaysCB = data.PreNoticeonWithDraw;
-                                                        const savePreNoticeonWD = document.getElementById('EditAccTypeMasSavePreNoticeonWD');
-                                                        if (data.PreNoticeonWithDraw === true) {
-                                                            savePreNoticeonWD.checked = true;
-                                                        }
-                                                        else {
-                                                            savePreNoticeonWD.checked = false;
-                                                        }
-                                                        const loanPandRcalBasedonPDay = document.getElementById('EditAccTypeMasLoanPandRCalBasedOnpayDay');
-                                                        if (data.PenaltyRebateBasedOnPaymentDay === true) {
-                                                            loanPandRcalBasedonPDay.checked = true;
-                                                        }
-                                                        else {
-                                                            loanPandRcalBasedonPDay.checked = false;
-                                                        }
-                                                        const loanRevolving = document.getElementById('EditAccTypeMasLoanRevolving');
-                                                        if (data.Revolving === true) {
-                                                            loanRevolving.checked = true;
-                                                        }
-                                                        else {
-                                                            loanRevolving.checked = false;
-                                                        }
-                                                        const loanpenaltyBasedONPostingDate = document.getElementById('EditAccTypeMasLoanpenaltyBasedONIntPostingdate');
-                                                        if (data.RebatePenaltyBasedonInterestPostDate === true) {
-                                                            loanpenaltyBasedONPostingDate.checked = true;
-                                                        }
-                                                        else {
-                                                            loanpenaltyBasedONPostingDate.checked = false;
-                                                        }
-                                                        const loanPenCalconTotPrincipalBal = document.getElementById('EditAccTypeMasLoanTotalPrincipalBal');
-                                                        if (data.PenaltyBasedOnTotalDuePrincipal === true) {
-                                                            loanPenCalconTotPrincipalBal.checked = true;
-                                                        }
-                                                        else {
-                                                            loanPenCalconTotPrincipalBal.checked = false;
-                                                        }
-                                                        const loanPonFInstPayMent = document.getElementById('EditAccTypeMasLoanPonFInstPayMent');
-                                                        if (data.PenaltyonInstallment === true) {
-                                                            loanPonFInstPayMent.checked = true;
-                                                        }
-                                                        else {
-                                                            loanPonFInstPayMent.checked = false;
-                                                        }
-                                                        const loanPonFInterestPayMent = document.getElementById('EditAccTypeMasLoanPonFInterestPayMent');
-                                                        if (data.PenaltyonInterest === true) {
-                                                            loanPonFInterestPayMent.checked = true;
-                                                        }
-                                                        else {
-                                                            loanPonFInterestPayMent.checked = false;
-                                                        }
-                                                        // Define the fields to populate
-                                                        const fields = [
-                                                            { key: 'Remarks', elementId: 'EditAccTypeMasRemarks' },
-                                                            { key: 'ANPrefix', elementId: 'EditAccTypeMasPrefix' },
-                                                            { key: 'ANSuffix', elementId: 'EditAccTypeMasSuffix' },
-                                                            { key: 'ANStartFrom', elementId: 'EditAccTypeMasStartFrom' },
-                                                            { key: 'ANEndTo', elementId: 'EditAccTypeMasEndTo' },
-                                                            { key: 'ANBodyLength', elementId: 'EditAccTypeMasBodyLength' },
-                                                            { key: 'ANFillChar', elementId: 'EditAccTypeMasFillBy' },
-                                                            { key: 'AltAlias', elementId: 'EditAccTypeMasAltAlias' },
-                                                            { key: 'Duration', elementId: 'EditAccTypeMasDuration' },
-                                                            { key: 'ValidFrom', elementId: 'EditAccTypeMasValidFrom' },
-                                                            { key: 'ValidTo', elementId: 'EditAccTypeMasValidTo' },
-                                                            { key: 'MaxLoanAmount', elementId: 'EditAccTypeMasMaxLoanAmt' },
-                                                            { key: 'EMIScheme', elementId: 'EditAccTypeMasLoan-RepaymentScheme' },
-                                                            { key: 'OverdraftAmount', elementId: 'EditAccTypeMasSaveOverDraftAmt' },
-                                                            { key: 'MinBalance', elementId: 'EditAccTypeMasSaveMinBalance' },
-                                                            { key: 'PreNoticeAmount', elementId: 'EditAccTypeMasSaveAmtMoreThan' },
-                                                            { key: 'PreNoticeDays', elementId: 'EditAccTypeMasSavePreNoticeDays' },
-                                                            { key: 'NatureofAccount', elementId: 'EditAccTypeMasNatureofAcc' },
-                                                            { key: 'ConvertAge', elementId: 'EditAccTypeMasSaveAccHolderageCross' },
-                                                            { key: 'ConvertAcDuration', elementId: 'EditAccTypeMasSaveAcrunningyearCross' },
-                                                        ];
-                                                        const checkbox1 = document.getElementById('EditAccTypeMasSaveOverDraft');
-                                                        const overdraftamt = document.getElementById('EditAccTypeMasSaveOverDraftAmt');
+    if (!accType) {
+        alert('Please make sure you have value in Account type field');
+        return; // <-- was missing
+    }
 
-                                                        const checkbox2 = document.getElementById('EditAccTypeMasSavePreNoticeonWD');
-                                                        const amtmorethan = document.getElementById('EditAccTypeMasSaveAmtMoreThan');
-                                                        const prenoticedays = document.getElementById('EditAccTypeMasSavePreNoticeDays');
+    myForm156.style.display = 'block';
+    $('EditAccTypeMas-Name').value = accType;
 
-                                                        function toggleOverdraftAmt() {
-                                                            if (checkbox1.checked) {
-                                                                overdraftamt.style.pointerEvents = 'auto';
-                                                            } else {
-                                                                overdraftamt.value = '';
-                                                                overdraftamt.style.pointerEvents = 'none';
-                                                            }
-                                                        }
+    const nameBody = { EditAccTypeMasSelectedName: accType };
 
-                                                        function togglePreNoticeWd() {
-                                                            if (checkbox2.checked) {
-                                                                amtmorethan.style.pointerEvents = 'auto';
-                                                                prenoticedays.style.pointerEvents = 'auto';
-                                                            } else {
-                                                                amtmorethan.value = '';
-                                                                amtmorethan.style.pointerEvents = 'none';
-                                                                prenoticedays.value = '';
-                                                                prenoticedays.style.pointerEvents = 'none';
-                                                            }
-                                                        }
-                                                        // Run on page load in case the checkbox is pre-checked/unchecked
-                                                        toggleOverdraftAmt(overdraftCB);
-                                                        togglePreNoticeWd(prenoticedaysCB);
+    try {
+        const [basic, details, postingLedger, saveLedger] = await Promise.all([
+            postJSON('/api/Editaccounttypesdetails', { EditCollChequemasAccTypeforaccposting: accType }),
+            postJSON('/fetchacctypemasDetailsForEdit', nameBody),
+            postJSON('/fetchacctypemasMoreDetailsForEdit', nameBody),
+            postJSON('/fetchacctypemasMoreDetailsForEditSave', nameBody),
+        ]);
 
-                                                        // Add event listener
-                                                        checkbox1.addEventListener('change', toggleOverdraftAmt);
-                                                        checkbox2.addEventListener('change', togglePreNoticeWd);
-
-                                                        // Iterate over the fields array and update the corresponding input elements
-                                                        fields.forEach(field => {
-                                                            const value = data[field.key] || ''; // Default to empty string if field is not present
-                                                            const element = document.getElementById(field.elementId);
-
-                                                            // If the field is a date, convert the value to YYYY-MM-DD format
-                                                            if (field.key === 'ValidFrom' || field.key === 'ValidTo') {
-                                                                if (value) {
-                                                                    const date = new Date(value); // Create a Date object from the value
-                                                                    const formattedDate = date.toISOString().split('T')[0]; // Format to YYYY-MM-DD
-                                                                    if (element) {
-                                                                        element.value = formattedDate; // Set the value to the formatted date
-                                                                    }
-                                                                } else if (element) {
-                                                                    element.value = ''; // Set the input to empty if no date is available
-                                                                }
-                                                            }
-                                                            // If the element is a select dropdown, handle it separately
-                                                            else if (element && element.tagName === 'SELECT') {
-                                                                let optionFound = false;
-                                                                // Loop through the options of the select dropdown to find a match
-                                                                for (let i = 0; i < element.options.length; i++) {
-                                                                    if (element.options[i].value.trim() === value.trim()) {
-                                                                        element.selectedIndex = i; // Set the correct option as selected
-                                                                        optionFound = true;
-                                                                        break;
-                                                                    }
-                                                                }
-                                                                if (!optionFound) {
-                                                                    console.log(`No matching option found for ${field.key}: ${value}`);
-                                                                }
-                                                            }
-                                                            // For other input fields (text, number, etc.)
-                                                            else if (element) {
-                                                                element.value = value; // Set the value directly
-                                                            }
-                                                        });
-                                                    })
-                                                    .catch(error => {
-                                                        console.error('Error fetching data:', error);
-                                                    });
-                                                fetch('/fetchacctypemasMoreDetailsForEdit', {
-                                                    method: 'POST',
-                                                    headers: {
-                                                        'Content-Type': 'application/json'
-                                                    },
-                                                    body: JSON.stringify({ EditAccTypeMasSelectedName: EditCollChequemasAccTypeforaccposting })  // Send the EditAccTypeMasSelectedName to the backend
-                                                })
-                                                    .then(response => response.json())
-                                                    .then(data => {
-                                                        console.log('Second fetch response:', data);
-
-                                                        // Populate the fields based on the response of the second fetch call (e.g., GLName)
-                                                        const GLName = data.GLName || '';  // Default to empty if not found
-                                                        document.getElementById('PostingLedger7').value = GLName; // Example of populating GLName
-
-
-                                                    })
-                                                    .catch(error => {
-                                                        console.error('Error fetching data:', error);
-                                                    });
-                                                fetch('/fetchacctypemasMoreDetailsForEditSave', {
-                                                    method: 'POST',
-                                                    headers: {
-                                                        'Content-Type': 'application/json'
-                                                    },
-                                                    body: JSON.stringify({ EditAccTypeMasSelectedName: EditCollChequemasAccTypeforaccposting })  // Send the EditAccTypeMasSelectedName to the backend
-                                                })
-                                                    .then(response => response.json())
-                                                    .then(data => {
-                                                        console.log('Third fetch response:', data);
-
-                                                        // Populate the fields based on the response of the second fetch call (e.g., GLName)
-                                                        const GLNameSave = data.GLName || '';  // Default to empty if not found
-                                                        document.getElementById('PostingLedger9').value = GLNameSave; // Example of populating GLName
-
-
-                                                    })
-                                                    .catch(error => {
-                                                        console.error('Error fetching data:', error);
-                                                    });
-
-
-                                            });
+        if (basic.success) populateBasicInfo(basic);
+        populateDetails(details);
+        $('PostingLedger7').value = postingLedger.GLName || '';
+        $('PostingLedger9').value = saveLedger.GLName || '';
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+});
 
                                         } else {
                                             document.getElementById('membervalueforedit').value = "";
