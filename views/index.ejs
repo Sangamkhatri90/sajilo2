@@ -16818,8 +16818,9 @@ async function loadEarningsData() {
                                                 <div>
                                                     <label for="SSACProfitLoss">Profit/Loss</label>
                                                     <input type="text" class="ss-text" name="SSACProfitLoss"
-                                                        id="SSACProfitLoss">
+                                                        id="SSACProfitLoss" placeholder="Type or click to get lists.">
                                                 </div>
+                                                <div id="SSACProfitLossDiv" class="suggestions-list2"></div>
                                             </div>
                                             <fieldset class="ss-fieldset">
                                                 <legend class="ss-legend">Ledger Mapping</legend>
@@ -16832,8 +16833,9 @@ async function loadEarningsData() {
                                                 <div>
                                                     <label for="SSACInterestExpenseAc">Interest Expenses</label>
                                                     <input type="text" class="ss-text" name="SSACInterestExpenseAc"
-                                                        id="SSACInterestExpenseAc">
+                                                        id="SSACInterestExpenseAc" placeholder="Type or click to get lists.">
                                                 </div>
+                                                 <div id="SSACInterestExpenseAcList" class="suggestions-list" style="display:none"></div>
                                                 <div>
                                                     <label for="SSACRebateAc">Rebate</label>
                                                     <input type="text" class="ss-text" name="SSACRebateAc"
@@ -52750,7 +52752,14 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/GlobalLgrMasterConO.js"></script>
                     <script src="/js/GlobalLgrMasterConBAndC.js"></script>
                     <script src="/js/GlobalLgrMasterConB.js"></script>
+                    <script src="/js/GlobalLgrMasterConC.js"></script>
                     <script src="/js/GlobalLgrMasterSaving.js"></script>
+                    <script src="/js/GlobalLgrMasterLoan.js"></script>
+                    <script src="/js/GlobalLgrMasterConLgrGrpId19.js"></script>
+                    <script src="/js/GlobalLgrMasterConLgrGrpId20.js"></script>
+                    <script src="/js/GlobalLgrMasterForRebate.js"></script>
+                    <script src="/js/GlobalLgrMasterForPenalty.js"></script>
+                    <script src="/js/globalTableSort.js"></script>
                     <script src="/js/costofFund.js"></script>
                     <script src="/js/thresholdTransactionReport.js"></script>
                     <script src="/js/ageingReport.js"></script>
@@ -52762,11 +52771,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/PageLoader.js"></script>
                     <script src="/js/FetchMemberName.js"></script>
                     <script src="/js/BooksCbbResult.js"></script>
-                    <script src="/js/GlobalLgrMasterLoan.js"></script>
-                    <script src="/js/GlobalLgrMasterConLgrGrpId20.js"></script>
-                    <script src="/js/GlobalLgrMasterForRebate.js"></script>
-                    <script src="/js/GlobalLgrMasterForPenalty.js"></script>
-                    <script src="/js/globalTableSort.js"></script>
+                    
                     <script src="/js/inputBehavior.js"></script>
                     <script src="/js/memberSearch.js"></script>
                     <script>

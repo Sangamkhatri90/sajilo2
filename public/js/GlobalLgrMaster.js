@@ -139,6 +139,7 @@
             { inputId: 'DE-TVM-searchledger', listId: 'LedgerListForDETVMsearchDIV' },
             { inputId: 'DE-RPVM-searchledger', listId: 'LedgerListForDERPVMsearchDIV' },
             { inputId: 'VPNUPledgergrp', listId: 'voucherpostingsuggestionDIV' },
+            { inputId: 'SSACProfitLoss', listId: 'SSACProfitLossDiv' },
         ];
 
         // Attach events for all fields (single fetch for all)
