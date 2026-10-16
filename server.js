@@ -5309,7 +5309,7 @@ app.get("/fetchLgrMaster", (req, res) => {
 
 // Fetch Ledger Master where category is 'AT' 
 app.get("/fetchLgrMasterAT", (req, res) => {
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'AT'`;
+  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'AT'`;
 
   const conn = req.session.conn;
 
@@ -5332,7 +5332,7 @@ app.get("/fetchLgrMasterAT", (req, res) => {
 
 // Fetch Ledger Master where category is 'O' 
 app.get("/fetchLgrMasterO", (req, res) => {
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'O'`;
+  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'O'`;
 
   const conn = req.session.conn;
 
@@ -5354,7 +5354,7 @@ app.get("/fetchLgrMasterO", (req, res) => {
 });
 // Fetch Ledger Master where category is 'B' 
 app.get("/fetchLgrMasterB", (req, res) => {
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'B'`;
+  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'B'`;
 
   const conn = req.session.conn;
 
@@ -5376,7 +5376,7 @@ app.get("/fetchLgrMasterB", (req, res) => {
 });
 // Fetch Ledger Master where category is 'C' 
 app.get("/fetchLgrMasterC", (req, res) => {
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Category = 'C'`;
+  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Category = 'C'`;
 
   const conn = req.session.conn;
 
@@ -5399,7 +5399,7 @@ app.get("/fetchLgrMasterC", (req, res) => {
 // Fetch Ledger Master where SavingorLoan is 'saving'
 app.get("/fetchLgrMasterSaving", (req, res) => {
   
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='saving'`;
+  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='saving'`;
 
   const conn = req.session.conn; // Get the database connection from the session
 
@@ -5449,7 +5449,7 @@ app.get("/fetchPostingLedgerForDataEntryallNew", (req, res) => {
 
 app.get("/fetchLgrMasterLoanAcc", (req, res) => {
  
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='Loan'`;
+  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='Loan'`;
 
   const conn = req.session.conn; // Get the database connection from the session
 
@@ -5475,7 +5475,7 @@ app.get("/fetchLgrMasterLoanAcc", (req, res) => {
 });
 app.get("/fetchPostingLedger13", (req, res) => {
 
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE LgrGrpID=20`;
+  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE LgrGrpID=20`;
 
   const conn = req.session.conn; // Get the database connection from the session
 
@@ -15910,9 +15910,10 @@ app.post("/copy-AccInterest", (req, res) => {
     }
   });
 });
-app.get("/fetchListsForPenaltyNew", (req, res) => {
+//Fetch Global list for penalty 
+app.get("/fetchGlobalListsForPenalty", (req, res) => {
   // Define query to fetch both GLName and GLAlias
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Schedule = 'Monthly' AND Duration IS NOT NULL`;
+  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE Schedule = 'Monthly' AND Duration IS NOT NULL`;
 
   // Get the database connection from the session
   const conn = req.session.conn;
@@ -15943,39 +15944,7 @@ app.get("/fetchListsForPenaltyNew", (req, res) => {
     return res.status(404).json({ message: "No PenaltyNames found" });
   });
 });
-app.get("/fetchListsForPenaltyEdit", (req, res) => {
-  // Define query to fetch both GLName and GLAlias
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Schedule = 'Monthly' AND Duration IS NOT NULL`;
 
-  // Get the database connection from the session
-  const conn = req.session.conn;
-
-  // Validate the database connection
-  if (!conn) {
-    console.error("Database connection is not available in the session.");
-    return res.status(500).json({ error: "Database connection not found" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).json({
-        error: "Error fetching GLNames and GLAlias",
-        details: err.message,
-      });
-    }
-
-    // Check if any rows are returned
-    if (rows && rows.length > 0) {
-      // Respond with the data under the key 'PenaltyList'
-      return res.json({ PenaltyList: rows });
-    }
-
-    // If no rows are found, return a 404 response
-    return res.status(404).json({ message: "No PenaltyNames found" });
-  });
-});
 app.post("/delete-accpenaltyset-class", (req, res) => {
   const { name, effectiveDate } = req.body;  // Get name and effectiveDate from the frontend
   const conn = req.session.conn;  // Get the database connection from the session
@@ -16451,39 +16420,7 @@ app.post("/updateCheckboxData", async (req, res) => {
     res.status(500).send("Error processing the update.");
   }
 });
-app.get("/fetchListsForPenaltyCopy", (req, res) => {
-  // Define query to fetch both GLName and GLAlias
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE Schedule = 'Monthly' AND Duration IS NOT NULL`;
 
-  // Get the database connection from the session
-  const conn = req.session.conn;
-
-  // Validate the database connection
-  if (!conn) {
-    console.error("Database connection is not available in the session.");
-    return res.status(500).json({ error: "Database connection not found" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).json({
-        error: "Error fetching GLNames and GLAlias",
-        details: err.message,
-      });
-    }
-
-    // Check if any rows are returned
-    if (rows && rows.length > 0) {
-      // Respond with the data under the key 'PenaltyList'
-      return res.json({ PenaltyList: rows });
-    }
-
-    // If no rows are found, return a 404 response
-    return res.status(404).json({ message: "No PenaltyNames found" });
-  });
-});
 app.post("/fetchAccPenaltyDetailsForCopy", (req, res) => {
   const { CopyAccTypePenaltySelectedName, formattedDate } = req.body; // Retrieve the selected AccTypeIntSet for edit
   console.log(
@@ -16762,9 +16699,10 @@ app.post("/copyTablepenaltyData", (req, res) => {
     message: "Table data inserted successfully into dbo.tbPenaltyCalculationMethodsDetails.",
   });
 });
-app.get("/fetchListsForRebateNew", (req, res) => {
+// Fetch Global rebate list 
+app.get("/fetchGlobalListsForRebate", (req, res) => {
   // Define query to fetch both GLName and GLAlias
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='Loan' AND Schedule = 'Monthly' AND Duration IS NOT NULL`;
+  const query = `SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='Loan' AND Schedule = 'Monthly' AND Duration IS NOT NULL`;
 
   // Get the database connection from the session
   const conn = req.session.conn;
@@ -16795,72 +16733,7 @@ app.get("/fetchListsForRebateNew", (req, res) => {
     return res.status(404).json({ message: "No RebateNames found" });
   });
 });
-app.get("/fetchListsForRebateEdit", (req, res) => {
-  // Define query to fetch both GLName and GLAlias for Rebate Edit
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE SavingorLoan='Loan' AND Schedule = 'Monthly' AND Duration IS NOT NULL`;
 
-  // Get the database connection from the session
-  const conn = req.session.conn;
-
-  // Validate the database connection
-  if (!conn) {
-    console.error("Database connection is not available in the session.");
-    return res.status(500).json({ error: "Database connection not found" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).json({
-        error: "Error fetching GLNames and GLAlias for Rebate Edit",
-        details: err.message,
-      });
-    }
-
-    // Check if any rows are returned
-    if (rows && rows.length > 0) {
-      // Respond with the data under the key 'RebateList' for the Rebate Edit context
-      return res.json({ RebateList: rows });
-    }
-
-    // If no rows are found, return a 404 response
-    return res.status(404).json({ message: "No RebateNames found" });
-  });
-});
-app.get("/fetchListsForRebateCopy", (req, res) => {
-  // Define query to fetch both GLName and GLAlias for Rebate Copy
-  const query = `SELECT GLName, GLAlias FROM dbo.tbLedgerMaster WHERE  SavingorLoan='Loan' AND Schedule = 'Monthly' AND Duration IS NOT NULL`;
-
-  // Get the database connection from the session
-  const conn = req.session.conn;
-
-  // Validate the database connection
-  if (!conn) {
-    console.error("Database connection is not available in the session.");
-    return res.status(500).json({ error: "Database connection not found" });
-  }
-
-  // Execute the SQL query
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("SQL error:", err);
-      return res.status(500).json({
-        error: "Error fetching GLNames and GLAlias for Rebate Copy",
-        details: err.message,
-      });
-    }
-
-    // Check if any rows are returned
-    if (rows && rows.length > 0) {
-      // Respond with the data under the key 'RebateList' for the Rebate Copy context
-      return res.json({ RebateList: rows });
-    }
-
-    // If no rows are found, return a 404 response
-    return res.status(404).json({ message: "No RebateNames found" });
-  });
-});
 app.post("/delete-accrebateset-class", (req, res) => {
   const { name, effectiveDate } = req.body;  // Get name and effectiveDate from the frontend
   const conn = req.session.conn;  // Get the database connection from the session

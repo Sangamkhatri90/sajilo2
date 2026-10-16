@@ -3913,7 +3913,7 @@
                 <div class="movableDiv" id="movableDiv23">
                     <button id="closeButton23">&times;</button>
                     <div class="dc-container">
-                        <form id="dateorm">
+                        <form id="myForm23">
                             <fieldset class="dc-fieldset">
                                 <legend class="dc-legend">Day Count</legend>
                                 <div class="dc-form-style-horizontal3">
@@ -7289,8 +7289,7 @@ async function loadEarningsData() {
                                     <div>
                                         <label for="">Account Type*</label>
                                         <input type="text" name="NPSAccountType" class="nps-text" id="PenaltyMasterNew"
-                                            onfocus="fetchPenaltyList(true)" oninput="filterPenaltyList()"
-                                            placeholder="Type or Click to get List">
+                                            placeholder="Type or click to get lists.">
                                     </div>
                                     <div id="PenaltyMasterNewlistDiv" class="suggestions-list2"></div>
                                     <div>
@@ -7348,9 +7347,7 @@ async function loadEarningsData() {
                                 <div class="nrs-form-style-horizontal3">
                                     <div>
                                         <label for="">Account Type*</label>
-                                        <input type="text" name="NRSAccountType" class="nrs-text"
-                                            onfocus="fetchRebateListForNew(true)" oninput="filterRebateListForNew()"
-                                            placeholder="Type or Click to get List">
+                                        <input type="text" name="NRSAccountType" class="nrs-text" id="RebateMasterInputNew"  placeholder="Type or click to get lists.">
                                     </div>
                                     <div id="RebateMasterNewlistDiv" class="suggestions-list2"></div>
                                     <div>
@@ -10046,7 +10043,7 @@ async function loadEarningsData() {
                                 <legend class="lo-legend">Organization/ Fiscal Year</legend>
                                 <div class="lo-table-container">
                                     <input type="hidden" id="dbNameInputs" name="newDbName" style="margin-left: 100px;">
-                                    <table>
+                                    <table id="organization-table">
                                         <thead>
                                             <tr>
                                                 <th>S.N</th>
@@ -16815,7 +16812,7 @@ async function loadEarningsData() {
                                                 <div>
                                                     <label for="SSACCashBook">Cash Book</label>
                                                     <input type="text" class="ss-text" name="SSACCashBook"
-                                                        id="SSACCashBook">
+                                                        id="SSACCashBook" placeholder="Type or click to get lists.">
                                                 </div>
                                                 <div id="SSACCashBookDiv" class="suggestions-list2"></div>
                                                 <div>
@@ -16827,10 +16824,11 @@ async function loadEarningsData() {
                                             <fieldset class="ss-fieldset">
                                                 <legend class="ss-legend">Ledger Mapping</legend>
                                                 <div>
-                                                    <label for="SSACInterestIncomeAc">Interest Income From Loan</label>
+                                                    <label for="SSACInterestIncomeAc">Interest Income </label>
                                                     <input type="text" class="ss-text" id="SSACInterestIncomeAc"
-                                                        name="SSACInterestIncomeAc">
+                                                        name="SSACInterestIncomeAc" placeholder="Type or click to get lists.">
                                                 </div>
+                                                <div id="SSACInterestIncomeAcList" class="suggestions-list" style="display:none"></div>
                                                 <div>
                                                     <label for="SSACInterestExpenseAc">Interest Expenses</label>
                                                     <input type="text" class="ss-text" name="SSACInterestExpenseAc"
@@ -22589,8 +22587,7 @@ async function loadEarningsData() {
                                 <div>
                                     <label for="">Account Type*</label>
                                     <input type="text" name="EditAccTypePenaltysetName" class="nps-text"
-                                        id="EditAccTypePenaltySetAT" onfocus="fetchPenaltyListForEdit(true)"
-                                        oninput="filterPenaltyListForEdit()">
+                                        id="EditAccTypePenaltySetAT" placeholder='Type or click to get lists.'>
                                     <input type="hidden" name="EditAccTypePenaltySelectedName"
                                         id="EditAccTypePenaltySelectedAT">
                                 </div>
@@ -22644,9 +22641,7 @@ async function loadEarningsData() {
                             <div class="nps-form-style-horizontal3">
                                 <div>
                                     <label for="">Account Type*</label>
-                                    <input type="text" name="" class="nps-text" id="CopyAccTypePenaltySetAT"
-                                        onfocus="fetchPenaltyListForCopy(true)" oninput="filterPenaltyListForCopy()"
-                                        placeholder="Type or Click to get list">
+                                    <input type="text" name="" class="nps-text" id="CopyAccTypePenaltySetAT" placeholder="Type or click to get lists.">
                                     <input type="hidden" class="nps-text" id="CopyAccTypePenaltySelectedAT">
                                 </div>
                                 <div id="PenaltyMasterCopylistDiv" class="suggestions-list2"></div>
@@ -22699,8 +22694,7 @@ async function loadEarningsData() {
                             <div class="nrs-form-style-horizontal3">
                                 <div>
                                     <label for="">Account Type*</label>
-                                    <input type="text" name="" class="nrs-text" id="EditAccTypeRebateSetAT"
-                                        onfocus="fetchRebateListForEdit(true)" oninput="filterRebateListForEdit()">
+                                    <input type="text" name="" class="nrs-text" id="EditAccTypeRebateSetAT" placeholder="Type or click to get lists.">
                                     <input type="hidden" class="nrs-text" id="EditAccTypeRebateSelectedAT">
                                 </div>
                                 <div id="RebateMasterEditlistDiv" class="suggestions-list2"></div>
@@ -22757,9 +22751,7 @@ async function loadEarningsData() {
                             <div class="nrs-form-style-horizontal3">
                                 <div>
                                     <label for="">Account Type*</label>
-                                    <input type="text" name="" class="nrs-text" id="CopyAccTypeRebateSetAT"
-                                        onfocus="fetchRebateListForCopy(true)" oninput="filterRebateListForCopy()"
-                                        placeholder="Type or Click to get List">
+                                    <input type="text" name="" class="nrs-text" id="CopyAccTypeRebateSetAT" placeholder="Type or click to get lists.">
                                     <input type="hidden" id="CopyAccTypeRebateSelectedAT">
                                 </div>
                                 <div id="RebateMasterCopylistDiv" class="suggestions-list2"></div>
@@ -28022,77 +28014,6 @@ async function loadEarningsData() {
 
                     </script>
 
-
-                    <script>
-                        // Function to make the div movable
-                        function makeDivMovable(divId, headerId) {
-                            const div = document.getElementById(divId);
-                            const header = document.getElementById(headerId);
-
-                            // Variables for drag functionality
-                            let isDragging = false;
-                            let offsetX, offsetY;
-
-                            // Event listener for mouse down (to initiate drag)
-                            header.addEventListener('mousedown', function (e) {
-                                isDragging = true;
-                                offsetX = e.clientX - div.offsetLeft;
-                                offsetY = e.clientY - div.offsetTop;
-                                document.body.style.cursor = 'move';
-                            });
-
-                            // Event listener for mouse move (to update position while dragging)
-                            document.addEventListener('mousemove', function (e) {
-                                if (isDragging) {
-                                    div.style.left = e.clientX - offsetX + 'px';
-                                    div.style.top = e.clientY - offsetY + 'px';
-                                }
-                            });
-
-                            // Event listener for mouse up (to stop dragging)
-                            document.addEventListener('mouseup', function () {
-                                isDragging = false;
-                                document.body.style.cursor = 'default';
-                            });
-                        }
-
-                        // Function to close the div when the close button is clicked
-                        document.getElementById('accountanalysisclosebutton').addEventListener('click', function () {
-                            document.getElementById('accountanalysisresult').style.display = 'none';
-                        });
-
-                        // Making the account analysis result div movable
-                        makeDivMovable('accountanalysisresult', 'accountanalysisclosebutton');
-
-                        // Event listener for the "Ok" button in the Account Analysis form
-                        document.getElementById('aa-ok-button').addEventListener('click', function (event) {
-                            event.preventDefault(); // Prevent form submission
-
-                            const isMemberDetailsChecked = document.getElementById('show-zero-balance').checked;
-                            const isSummaryChecked = document.getElementById('summary-only').checked;
-                            const isSelectAllChecked = document.getElementById('select-all').checked;
-
-                            // Example of dynamically populating the table based on checked checkboxes
-                            if (isMemberDetailsChecked) {
-                                // Show the results div
-                                document.getElementById('accountanalysisresult').style.display = 'block';
-
-                                // Example: Populate table dynamically based on the checked checkboxes
-                                const tbody = document.querySelector('#accountanalysisresult table tbody');
-                                tbody.innerHTML = ''; // Clear existing rows
-
-                                // Adding some dummy rows for demonstration
-                                for (let i = 1; i <= 5; i++) {
-                                    const row = document.createElement('tr');
-                                    row.innerHTML = `<td>${i}</td><td>Member ${i}</td><td>${i * 100}</td>`;
-                                    tbody.appendChild(row);
-                                }
-                            }
-                        });
-
-                    </script>
-
-
                     <!-- Improved Loader: overlay, spinner, and smooth progress -->
                     <style>
                         .loader-overlay.hidden {
@@ -28605,17 +28526,6 @@ async function loadEarningsData() {
                     </script>
                     <script src="/js/listfetch.js"></script>
                     <script>
-
-                        document.getElementById('exitButton').onclick = function () {
-
-                            window.location.replace('index.html');
-                        };
-
-
-
-
-                    </script>
-                    <script>
                         function selectRadio(radioButton, groupName) {
                             // This function is triggered when any individual radio button is clicked
                             console.log('Selected radio button from group: ' + groupName);
@@ -28662,9 +28572,9 @@ async function loadEarningsData() {
                                 newMemberBtn.style.pointerEvents = 'none';
                             }
 
-                            // Hide the organization table
-                            const orgTable = document.getElementById('organization-table');
-                            if (orgTable) orgTable.style.display = 'none';
+                            // Hide the organization div
+                            const organizationDiv = document.getElementById('movableDiv81');
+                            if (organizationDiv) organizationDiv.style.display = 'none';
 
                             // Reset row selection status
                             isRowSelected = false;
@@ -28672,7 +28582,7 @@ async function loadEarningsData() {
 
                         // Function to display the table when "Load Organization" is clicked
                         function loadOrganization() {
-                            document.getElementById('organization-table').style.display = 'block';
+                            document.getElementById('movableDiv81').style.display = 'block';
                             isRowSelected = false; // Ensure row selection is reset
                             enableAllLinks(); // Enable all links after "Load Organization" is clicked
 
@@ -28825,62 +28735,6 @@ async function loadEarningsData() {
                         });
                     </script>
 
-                    <!--<script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Automatically check and fill the English date when the Nepali date is already present on page load
-            const nepaliDateInput = document.getElementById('define-nepali-date');
-            const englishDateInput = document.getElementById('define-english-date');
-
-            // If there's a pre-loaded Nepali date on page load, trigger the function to fetch English date
-            if (nepaliDateInput.value) {
-                fetchEnglishDate(nepaliDateInput.value);
-            }
-
-            // Event listener for changes to the Nepali date input field
-            nepaliDateInput.addEventListener('change', function () {
-                const nepaliDate = nepaliDateInput.value;
-                if (nepaliDate) {
-                    fetchEnglishDate(nepaliDate);
-                }
-            });
-
-            // Function to fetch the English date from the backend
-            function fetchEnglishDate(nepaliDate) {
-                fetch('/get-english-date', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ nepaliDateInput: nepaliDate })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.englishDate) {
-                            // Auto-fill the Starting English Date input field with the returned English date
-                            englishDateInput.value = data.englishDate;
-                        } else {
-                            console.error('No English date returned from the server.');
-                            showCustomAlert('Could not convert Nepali date to English date.');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching English date:', error);
-                        showCustomAlert('Error fetching English date.');
-                    });
-            }
-
-            // If there's any predefined Nepali date in the input on page load, fetch its English counterpart
-            function init() {
-                const nepaliDate = nepaliDateInput.value;
-                if (nepaliDate) {
-                    fetchEnglishDate(nepaliDate);
-                }
-            }
-
-            init();  // Call the init function to check for pre-loaded Nepali date
-        });
-
-    </script>-->
                     <script>
                         async function refreshFiscalYearList() {
                             return fetch('/fiscal-master-years')
@@ -29267,101 +29121,10 @@ async function loadEarningsData() {
                         }
 
                     </script>
-                    <script>
-                        document.getElementById('myForm23').addEventListener('submit', function (event) {
-                            event.preventDefault();
-
-                            // Get the dates from the input fields
-                            var date1 = document.getElementById('nepali-date').value;
-                            var date2 = document.getElementById('nepali-date1').value;
-
-                            // Check if both dates are valid
-                            if (date1 && date2) {
-                                console.log("Date 1:", date1);  // Debugging line
-                                console.log("Date 2:", date2);  // Debugging line
-
-                                // Convert the date strings to Date objects
-                                var d1 = new Date(date1);
-                                var d2 = new Date(date2);
-
-                                console.log("Parsed Date 1:", d1);  // Debugging line
-                                console.log("Parsed Date 2:", d2);  // Debugging line
-
-                                // Normalize both dates to midnight to avoid time zone issues
-                                d1.setHours(0, 0, 0, 0);
-                                d2.setHours(0, 0, 0, 0);
-
-                                console.log("Normalized Date 1:", d1);  // Debugging line
-                                console.log("Normalized Date 2:", d2);  // Debugging line
-
-                                // Calculate the difference in milliseconds
-                                var timeDifference = Math.abs(d2 - d1);
-
-                                console.log("Time Difference in milliseconds:", timeDifference);  // Debugging line
-
-                                // Convert milliseconds to days
-                                var dayCount = timeDifference / (1000 * 3600 * 24);
-
-                                console.log("Calculated Day Count:", dayCount);  // Debugging line
-
-                                // Round down to ensure a whole number of days
-                                document.querySelector('.dc-text').value = Math.floor(dayCount); // Display the result
-                            } else {
-                                // If either date is empty, clear the result
-                                document.querySelector('.dc-text').value = '';
-                            }
-                        });
-
-                        document.getElementById('cancelButton23').addEventListener('click', function () {
-                            document.getElementById('myForm23').reset();
-                            document.querySelector('.dc-text').value = '';  // Clear the result
-                        });
-                    </script>
-
 
 
                     <script src="/js/fetchShare.js"></script>
-
-                    <script>
-                        // Function to display the selected date and its corresponding day of the week
-                        function displayDateAndDay(dateId, dayId) {
-                            const dateValue = document.getElementById(dateId).value;
-                            const dateObj = new Date(dateValue);
-
-                            // Get the corresponding day of the week
-                            const dayOfWeek = getDayOfWeek(dateObj);
-
-                            // Set the value of the day of the week text field
-                            document.getElementById(dayId).value = dayOfWeek;
-                        }
-
-                        // Function to get the day of the week from a date object
-                        function getDayOfWeek(date) {
-                            const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-                            return daysOfWeek[date.getDay()];
-                        }
-
-                        // Function to calculate the day difference between Date 1 and Date 2
-                        function calculateDayDifference() {
-                            const date1 = new Date(document.getElementById('date1').value);
-                            const date2 = new Date(document.getElementById('date2').value);
-
-                            // Ensure both dates are selected
-                            if (!date1 || !date2) {
-                                showCustomAlert('Please select both dates!');
-                                return;
-                            }
-
-                            // Calculate the difference in milliseconds
-                            const timeDifference = date2 - date1;
-
-                            // Convert milliseconds to days
-                            const dayCount = timeDifference / (1000 * 3600 * 24);
-
-                            // Display the day count
-                            document.getElementById('dayCount').value = Math.abs(dayCount);
-                        }
-                    </script>
+                    <script src="/js/DayCount.js"></script>
 
 
                     <script>
@@ -29604,90 +29367,7 @@ async function loadEarningsData() {
                             });
                         });
                     </script>
-                    <script>
-                        let selectedLedgerForSystem = null;  // To store the currently selected ledger
-
-                        // Function to fetch ledgers from the server and display the list
-                        function showLedgersList() {
-                            const ledgerListDiv = document.getElementById('ledgerList');
-                            ledgerListDiv.innerHTML = ''; // Clear any existing data
-                            ledgerListDiv.style.display = 'none'; // Hide the list initially
-
-                            // Fetch ledger data from the server
-                            fetch('/fetchLedgersForSystem')
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.ledgers && data.ledgers.length > 0) {
-                                        allLedgers = data.ledgers;  // Store the fetched ledgers
-                                        displayLedgers(allLedgers); // Display the fetched ledgers
-                                    } else {
-                                        const noResult = document.createElement('div');
-                                        noResult.textContent = 'No ledgers found';
-                                        noResult.style.color = 'gray';
-                                        ledgerListDiv.appendChild(noResult);
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error fetching ledgers:', error);
-                                    const errorMessage = document.createElement('div');
-                                    errorMessage.textContent = 'Error fetching ledgers';
-                                    errorMessage.style.color = 'red';
-                                    ledgerListDiv.appendChild(errorMessage);
-                                });
-                        }
-
-                        // Function to display ledgers in the suggestions list
-                        function displayLedgers(ledgers) {
-                            const ledgerListDiv = document.getElementById('ledgerList');
-                            ledgerListDiv.innerHTML = ''; // Clear previous suggestions
-
-                            // Create an "X" button to close the list
-                            const closeButton = document.createElement('button');
-                            closeButton.textContent = 'X';
-                            closeButton.className = 'close-button'; // Add a class for styling
-                            closeButton.onclick = function (event) {
-                                event.preventDefault();  // Prevent default action like form submission
-                                ledgerListDiv.style.display = 'none';  // Hide the ledger list
-                            };
-
-                            ledgerListDiv.appendChild(closeButton); // Add the close button to the list
-
-                            // Sort the ledgers alphabetically
-                            ledgers.sort((a, b) => a.GLName.localeCompare(b.GLName));
-
-                            if (ledgers.length > 0) {
-                                ledgerListDiv.style.display = 'block'; // Show the suggestions list
-                                ledgers.forEach(ledger => {
-                                    const div = document.createElement('div');
-                                    div.className = 'suggestion-item';
-                                    div.textContent = `${ledger.GLName} - ${ledger.GlAlias}`; // Show both GLName and GlAlias
-
-                                    // When a ledger is clicked, fill the input field with the selected ledger
-                                    div.onclick = function () {
-                                        document.getElementById('ledger-input').value = ledger.GLName;  // Populate the input field
-                                        selectedLedgerForSystem = ledger;  // Store the selected ledger
-                                        ledgerListDiv.style.display = 'none'; // Hide the suggestions list
-                                    };
-                                    ledgerListDiv.appendChild(div);
-                                });
-                            }
-                        }
-
-                        // Function to reset the ledger selection and input fields
-                        function resetSelection() {
-                            selectedLedgerForSystem = null;  // Clear the selected ledger
-
-                            // Clear input fields
-                            document.getElementById('ledger-input').value = '';  // Clear the ledger input field
-
-                            // Optionally clear any other UI elements like the displayed ledger list
-                            const ledgerListDiv = document.getElementById('ledgerList');
-                            ledgerListDiv.innerHTML = '';  // Clear any remaining suggestions
-                            ledgerListDiv.style.display = 'none';  // Hide the ledger list if needed
-                        }
-
-
-                    </script>
+                    
                     <script>
                         document.getElementById('myFrom47').addEventListener('submit', async function (e) {
                             e.preventDefault();
@@ -36353,249 +36033,7 @@ async function loadEarningsData() {
                                 });
                         });
                     </script>
-                    <script>
-                        let allPenaltyList = [];  // Store both GLName and GLAlias fetched from the server for PenaltyMasterNew
-                        let filteredPenaltyList = [];  // Store filtered GLNames and GLAlias based on user input for PenaltyMasterNew
-
-                        // Function to fetch GLNames and GLAlias for PenaltyMasterNew from the server and display them as suggestions
-                        function fetchPenaltyList(isInitialFocus) {
-                            const penaltyListDiv = document.getElementById('PenaltyMasterNewlistDiv');
-                            penaltyListDiv.innerHTML = '';  // Clear any existing suggestions
-                            penaltyListDiv.style.display = 'none';  // Hide suggestions list initially
-
-                            if (allPenaltyList.length === 0 || isInitialFocus) {
-                                // Fetch GLNames and GLAlias for PenaltyMasterNew from the backend if not already fetched
-                                fetch('/fetchListsForPenaltyNew')  // Updated route to reflect the new path
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.PenaltyList && data.PenaltyList.length > 0) {
-                                            allPenaltyList = data.PenaltyList;  // Store fetched GLNames and GLAlias
-                                            filteredPenaltyList = [...allPenaltyList];  // Initially show all GLNames
-                                            displayPenaltyList(filteredPenaltyList);  // Display the full list on initial focus
-                                        } else {
-                                            const noResult = document.createElement('div');
-                                            noResult.textContent = 'No GLNames found';
-                                            penaltyListDiv.appendChild(noResult);
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error fetching GLNames:', error);
-                                        const errorMessage = document.createElement('div');
-                                        errorMessage.textContent = 'Error fetching GLNames';
-                                        penaltyListDiv.appendChild(errorMessage);
-                                    });
-                            } else {
-                                displayPenaltyList(filteredPenaltyList);  // Display the filtered list
-                            }
-                        }
-
-                        // Function to filter GLNames and GLAlias based on user input for PenaltyMasterNew
-                        function filterPenaltyList() {
-                            const input = document.getElementById('PenaltyMasterNew').value.toLowerCase();
-                            if (input === '') {
-                                filteredPenaltyList = [...allPenaltyList];  // Show the full list when input is empty
-                            } else {
-                                filteredPenaltyList = allPenaltyList.filter(item =>
-                                    item.GLName.toLowerCase().includes(input) || item.GLAlias.toLowerCase().includes(input)
-                                );
-                            }
-                            displayPenaltyList(filteredPenaltyList);
-                        }
-
-                        // Function to display GLNames and GLAlias in the suggestion list for PenaltyMasterNew
-                        function displayPenaltyList(names) {
-                            const penaltyListDiv = document.getElementById('PenaltyMasterNewlistDiv');
-                            penaltyListDiv.innerHTML = '';  // Clear previous suggestions
-
-                            // Create and append the close button
-                            const closeButton = document.createElement('button');
-                            closeButton.textContent = 'X';
-                            closeButton.onclick = function (event) {
-                                event.preventDefault();
-                                penaltyListDiv.style.display = 'none';  // Hide the suggestions list when the close button is clicked
-                            };
-                            penaltyListDiv.appendChild(closeButton);  // Append the close button to the list
-
-                            if (names.length > 0) {
-                                penaltyListDiv.style.display = 'block';  // Show the suggestions list
-                                names.forEach(item => {
-                                    const div = document.createElement('div');
-                                    div.textContent = `${item.GLName} - ${item.GLAlias}`;  // Show both GLName and GLAlias
-                                    div.onclick = function () {
-                                        document.getElementById('PenaltyMasterNew').value = item.GLName;  // Set the input value to GLName
-                                        penaltyListDiv.style.display = 'none';  // Hide the suggestions list
-                                    };
-                                    penaltyListDiv.appendChild(div);
-                                });
-                            } else {
-                                const noResult = document.createElement('div');
-                                noResult.textContent = 'No matching GLNames found';
-                                penaltyListDiv.appendChild(noResult);
-                            }
-                        }
-                    </script>
-                    <script>
-                        let allPenaltyListForEdit = [];  // Store both GLName and GLAlias fetched from the server for PenaltyMasterEdit
-                        let filteredPenaltyListForEdit = [];  // Store filtered GLNames and GLAlias based on user input for PenaltyMasterEdit
-
-                        // Function to fetch GLNames and GLAlias for PenaltyMasterEdit from the server and display them as suggestions
-                        function fetchPenaltyListForEdit(isInitialFocus) {
-                            const penaltyListDiv = document.getElementById('PenaltyMasterEditlistDiv');
-                            penaltyListDiv.innerHTML = '';  // Clear any existing suggestions
-                            penaltyListDiv.style.display = 'none';  // Hide suggestions list initially
-
-                            if (allPenaltyListForEdit.length === 0 || isInitialFocus) {
-                                // Fetch GLNames and GLAlias for PenaltyMasterEdit from the backend if not already fetched
-                                fetch('/fetchListsForPenaltyEdit')  // Updated route to reflect the new path
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.PenaltyList && data.PenaltyList.length > 0) {
-                                            allPenaltyListForEdit = data.PenaltyList;  // Store fetched GLNames and GLAlias
-                                            filteredPenaltyListForEdit = [...allPenaltyListForEdit];  // Initially show all GLNames
-                                            displayPenaltyListForEdit(filteredPenaltyListForEdit);  // Display the full list on initial focus
-                                        } else {
-                                            const noResult = document.createElement('div');
-                                            noResult.textContent = 'No GLNames found';
-                                            penaltyListDiv.appendChild(noResult);
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error fetching GLNames:', error);
-                                        const errorMessage = document.createElement('div');
-                                        errorMessage.textContent = 'Error fetching GLNames';
-                                        penaltyListDiv.appendChild(errorMessage);
-                                    });
-                            } else {
-                                displayPenaltyListForEdit(filteredPenaltyListForEdit);  // Display the filtered list
-                            }
-                        }
-
-                        // Function to filter GLNames and GLAlias based on user input for PenaltyMasterEdit
-                        function filterPenaltyListForEdit() {
-                            const input = document.getElementById('EditAccTypePenaltySetAT').value.toLowerCase();
-                            if (input === '') {
-                                filteredPenaltyListForEdit = [...allPenaltyListForEdit];  // Show the full list when input is empty
-                            } else {
-                                filteredPenaltyListForEdit = allPenaltyListForEdit.filter(item =>
-                                    item.GLName.toLowerCase().includes(input) || item.GLAlias.toLowerCase().includes(input)
-                                );
-                            }
-                            displayPenaltyListForEdit(filteredPenaltyListForEdit);
-                        }
-
-                        // Function to display GLNames and GLAlias in the suggestion list for PenaltyMasterEdit
-                        function displayPenaltyListForEdit(names) {
-                            const penaltyListDiv = document.getElementById('PenaltyMasterEditlistDiv');
-                            penaltyListDiv.innerHTML = '';  // Clear previous suggestions
-
-                            // Create and append the close button
-                            const closeButton = document.createElement('button');
-                            closeButton.textContent = 'X';
-                            closeButton.onclick = function (event) {
-                                event.preventDefault();
-                                penaltyListDiv.style.display = 'none';  // Hide the suggestions list when the close button is clicked
-                            };
-                            penaltyListDiv.appendChild(closeButton);  // Append the close button to the list
-
-                            if (names.length > 0) {
-                                penaltyListDiv.style.display = 'block';  // Show the suggestions list
-                                names.forEach(item => {
-                                    const div = document.createElement('div');
-                                    div.textContent = `${item.GLName} - ${item.GLAlias}`;  // Show both GLName and GLAlias
-                                    div.onclick = function () {
-                                        document.getElementById('EditAccTypePenaltySetAT').value = item.GLName;  // Set the input value to GLName
-                                        penaltyListDiv.style.display = 'none';  // Hide the suggestions list
-                                    };
-                                    penaltyListDiv.appendChild(div);
-                                });
-                            } else {
-                                const noResult = document.createElement('div');
-                                noResult.textContent = 'No matching GLNames found';
-                                penaltyListDiv.appendChild(noResult);
-                            }
-                        }
-                    </script>
-                    <script>
-                        let allPenaltyListForCopy = [];  // Store both GLName and GLAlias fetched from the server for PenaltyMasterCopy
-                        let filteredPenaltyListForCopy = [];  // Store filtered GLNames and GLAliases based on user input for PenaltyMasterCopy
-
-                        // Function to fetch GLNames and GLAlias for PenaltyMasterCopy from the server and display them as suggestions
-                        function fetchPenaltyListForCopy(isInitialFocus) {
-                            const penaltyListDiv = document.getElementById('PenaltyMasterCopylistDiv');
-                            penaltyListDiv.innerHTML = '';  // Clear any existing suggestions
-                            penaltyListDiv.style.display = 'none';  // Hide suggestions list initially
-
-                            if (allPenaltyListForCopy.length === 0 || isInitialFocus) {
-                                // Fetch GLNames and GLAliases for PenaltyMasterCopy from the backend if not already fetched
-                                fetch('/fetchListsForPenaltyCopy')  // Updated route to reflect the new path
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.PenaltyList && data.PenaltyList.length > 0) {
-                                            allPenaltyListForCopy = data.PenaltyList;  // Store fetched GLNames and GLAliases
-                                            filteredPenaltyListForCopy = [...allPenaltyListForCopy];  // Initially show all GLNames
-                                            displayPenaltyListForCopy(filteredPenaltyListForCopy);  // Display the full list on initial focus
-                                        } else {
-                                            const noResult = document.createElement('div');
-                                            noResult.textContent = 'No GLNames found';
-                                            penaltyListDiv.appendChild(noResult);
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error fetching GLNames:', error);
-                                        const errorMessage = document.createElement('div');
-                                        errorMessage.textContent = 'Error fetching GLNames';
-                                        penaltyListDiv.appendChild(errorMessage);
-                                    });
-                            } else {
-                                displayPenaltyListForCopy(filteredPenaltyListForCopy);  // Display the filtered list
-                            }
-                        }
-
-                        // Function to filter GLNames and GLAlias based on user input for PenaltyMasterCopy
-                        function filterPenaltyListForCopy() {
-                            const input = document.getElementById('CopyAccTypePenaltySetAT').value.toLowerCase();
-                            if (input === '') {
-                                filteredPenaltyListForCopy = [...allPenaltyListForCopy];  // Show the full list when input is empty
-                            } else {
-                                filteredPenaltyListForCopy = allPenaltyListForCopy.filter(item =>
-                                    item.GLName.toLowerCase().includes(input) || item.GLAlias.toLowerCase().includes(input)
-                                );
-                            }
-                            displayPenaltyListForCopy(filteredPenaltyListForCopy);
-                        }
-
-                        // Function to display GLNames and GLAlias in the suggestion list for PenaltyMasterCopy
-                        function displayPenaltyListForCopy(names) {
-                            const penaltyListDiv = document.getElementById('PenaltyMasterCopylistDiv');
-                            penaltyListDiv.innerHTML = '';  // Clear previous suggestions
-
-                            // Create and append the close button
-                            const closeButton = document.createElement('button');
-                            closeButton.textContent = 'X';
-                            closeButton.onclick = function (event) {
-                                event.preventDefault();
-                                penaltyListDiv.style.display = 'none';  // Hide the suggestions list when the close button is clicked
-                            };
-                            penaltyListDiv.appendChild(closeButton);  // Append the close button to the list
-
-                            if (names.length > 0) {
-                                penaltyListDiv.style.display = 'block';  // Show the suggestions list
-                                names.forEach(item => {
-                                    const div = document.createElement('div');
-                                    div.textContent = `${item.GLName} - ${item.GLAlias}`;  // Show both GLName and GLAlias
-                                    div.onclick = function () {
-                                        document.getElementById('CopyAccTypePenaltySetAT').value = item.GLName;  // Set the input value to GLName
-                                        penaltyListDiv.style.display = 'none';  // Hide the suggestions list
-                                    };
-                                    penaltyListDiv.appendChild(div);
-                                });
-                            } else {
-                                const noResult = document.createElement('div');
-                                noResult.textContent = 'No matching GLNames found';
-                                penaltyListDiv.appendChild(noResult);
-                            }
-                        }
-                    </script>
+               
                     <script>
                         // Handle row selection in the results table
                         const tableForAccPenaltySet = document.getElementById('PS-results-table');
@@ -37271,249 +36709,7 @@ async function loadEarningsData() {
                                 });
                         });
                     </script>
-                    <script>
-                        let allRebateListForNew = [];  // Store both GLName and GLAlias fetched from the server for RebateMasterNew
-                        let filteredRebateListForNew = [];  // Store filtered GLNames and GLAliases based on user input for RebateMasterNew
 
-                        // Function to fetch GLNames and GLAlias for RebateMasterNew from the server and display them as suggestions
-                        function fetchRebateListForNew(isInitialFocus) {
-                            const rebateListDiv = document.getElementById('RebateMasterNewlistDiv');
-                            rebateListDiv.innerHTML = '';  // Clear any existing suggestions
-                            rebateListDiv.style.display = 'none';  // Hide suggestions list initially
-
-                            if (allRebateListForNew.length === 0 || isInitialFocus) {
-                                // Fetch GLNames and GLAliases for RebateMasterNew from the backend if not already fetched
-                                fetch('/fetchListsForRebateNew')  // Updated route to reflect the new path
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.RebateList && data.RebateList.length > 0) {
-                                            allRebateListForNew = data.RebateList;  // Store fetched GLNames and GLAliases
-                                            filteredRebateListForNew = [...allRebateListForNew];  // Initially show all GLNames
-                                            displayRebateListForNew(filteredRebateListForNew);  // Display the full list on initial focus
-                                        } else {
-                                            const noResult = document.createElement('div');
-                                            noResult.textContent = 'No GLNames found';
-                                            rebateListDiv.appendChild(noResult);
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error fetching GLNames:', error);
-                                        const errorMessage = document.createElement('div');
-                                        errorMessage.textContent = 'Error fetching GLNames';
-                                        rebateListDiv.appendChild(errorMessage);
-                                    });
-                            } else {
-                                displayRebateListForNew(filteredRebateListForNew);  // Display the filtered list
-                            }
-                        }
-
-                        // Function to filter GLNames and GLAlias based on user input for RebateMasterNew
-                        function filterRebateListForNew() {
-                            const input = document.getElementById('RebateAccTypeSetAT').value.toLowerCase();
-                            if (input === '') {
-                                filteredRebateListForNew = [...allRebateListForNew];  // Show the full list when input is empty
-                            } else {
-                                filteredRebateListForNew = allRebateListForNew.filter(item =>
-                                    item.GLName.toLowerCase().includes(input) || item.GLAlias.toLowerCase().includes(input)
-                                );
-                            }
-                            displayRebateListForNew(filteredRebateListForNew);
-                        }
-
-                        // Function to display GLNames and GLAlias in the suggestion list for RebateMasterNew
-                        function displayRebateListForNew(names) {
-                            const rebateListDiv = document.getElementById('RebateMasterNewlistDiv');
-                            rebateListDiv.innerHTML = '';  // Clear previous suggestions
-
-                            // Create and append the close button
-                            const closeButton = document.createElement('button');
-                            closeButton.textContent = 'X';
-                            closeButton.onclick = function (event) {
-                                event.preventDefault();
-                                rebateListDiv.style.display = 'none';  // Hide the suggestions list when the close button is clicked
-                            };
-                            rebateListDiv.appendChild(closeButton);  // Append the close button to the list
-
-                            if (names.length > 0) {
-                                rebateListDiv.style.display = 'block';  // Show the suggestions list
-                                names.forEach(item => {
-                                    const div = document.createElement('div');
-                                    div.textContent = `${item.GLName} - ${item.GLAlias}`;  // Show both GLName and GLAlias
-                                    div.onclick = function () {
-                                        document.getElementById('RebateAccTypeSetAT').value = item.GLName;  // Set the input value to GLName
-                                        rebateListDiv.style.display = 'none';  // Hide the suggestions list
-                                    };
-                                    rebateListDiv.appendChild(div);
-                                });
-                            } else {
-                                const noResult = document.createElement('div');
-                                noResult.textContent = 'No matching GLNames found';
-                                rebateListDiv.appendChild(noResult);
-                            }
-                        }
-                    </script>
-                    <script>
-                        let allRebateListForEdit = [];  // Store both GLName and GLAlias fetched from the server for RebateMasterEdit
-                        let filteredRebateListForEdit = [];  // Store filtered GLNames and GLAliases based on user input for RebateMasterEdit
-
-                        // Function to fetch GLNames and GLAlias for RebateMasterEdit from the server and display them as suggestions
-                        function fetchRebateListForEdit(isInitialFocus) {
-                            const rebateListDiv = document.getElementById('RebateMasterEditlistDiv');
-                            rebateListDiv.innerHTML = '';  // Clear any existing suggestions
-                            rebateListDiv.style.display = 'none';  // Hide suggestions list initially
-
-                            if (allRebateListForEdit.length === 0 || isInitialFocus) {
-                                // Fetch GLNames and GLAliases for RebateMasterEdit from the backend if not already fetched
-                                fetch('/fetchListsForRebateEdit')  // Updated route to reflect the new path
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.RebateList && data.RebateList.length > 0) {
-                                            allRebateListForEdit = data.RebateList;  // Store fetched GLNames and GLAliases
-                                            filteredRebateListForEdit = [...allRebateListForEdit];  // Initially show all GLNames
-                                            displayRebateListForEdit(filteredRebateListForEdit);  // Display the full list on initial focus
-                                        } else {
-                                            const noResult = document.createElement('div');
-                                            noResult.textContent = 'No GLNames found';
-                                            rebateListDiv.appendChild(noResult);
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error fetching GLNames:', error);
-                                        const errorMessage = document.createElement('div');
-                                        errorMessage.textContent = 'Error fetching GLNames';
-                                        rebateListDiv.appendChild(errorMessage);
-                                    });
-                            } else {
-                                displayRebateListForEdit(filteredRebateListForEdit);  // Display the filtered list
-                            }
-                        }
-
-                        // Function to filter GLNames and GLAlias based on user input for RebateMasterEdit
-                        function filterRebateListForEdit() {
-                            const input = document.getElementById('EditAccTypeRebateSetAT').value.toLowerCase();
-                            if (input === '') {
-                                filteredRebateListForEdit = [...allRebateListForEdit];  // Show the full list when input is empty
-                            } else {
-                                filteredRebateListForEdit = allRebateListForEdit.filter(item =>
-                                    item.GLName.toLowerCase().includes(input) || item.GLAlias.toLowerCase().includes(input)
-                                );
-                            }
-                            displayRebateListForEdit(filteredRebateListForEdit);
-                        }
-
-                        // Function to display GLNames and GLAlias in the suggestion list for RebateMasterEdit
-                        function displayRebateListForEdit(names) {
-                            const rebateListDiv = document.getElementById('RebateMasterEditlistDiv');
-                            rebateListDiv.innerHTML = '';  // Clear previous suggestions
-
-                            // Create and append the close button
-                            const closeButton = document.createElement('button');
-                            closeButton.textContent = 'X';
-                            closeButton.onclick = function (event) {
-                                event.preventDefault();
-                                rebateListDiv.style.display = 'none';  // Hide the suggestions list when the close button is clicked
-                            };
-                            rebateListDiv.appendChild(closeButton);  // Append the close button to the list
-
-                            if (names.length > 0) {
-                                rebateListDiv.style.display = 'block';  // Show the suggestions list
-                                names.forEach(item => {
-                                    const div = document.createElement('div');
-                                    div.textContent = `${item.GLName} - ${item.GLAlias}`;  // Show both GLName and GLAlias
-                                    div.onclick = function () {
-                                        document.getElementById('EditAccTypeRebateSetAT').value = item.GLName;  // Set the input value to GLName
-                                        rebateListDiv.style.display = 'none';  // Hide the suggestions list
-                                    };
-                                    rebateListDiv.appendChild(div);
-                                });
-                            } else {
-                                const noResult = document.createElement('div');
-                                noResult.textContent = 'No matching GLNames found';
-                                rebateListDiv.appendChild(noResult);
-                            }
-                        }
-                    </script>
-                    <script>
-                        let allRebateListForCopy = [];  // Store both GLName and GLAlias fetched from the server for RebateMasterCopy
-                        let filteredRebateListForCopy = [];  // Store filtered GLNames and GLAliases based on user input for RebateMasterCopy
-
-                        // Function to fetch GLNames and GLAlias for RebateMasterCopy from the server and display them as suggestions
-                        function fetchRebateListForCopy(isInitialFocus) {
-                            const rebateListDiv = document.getElementById('RebateMasterCopylistDiv');
-                            rebateListDiv.innerHTML = '';  // Clear any existing suggestions
-                            rebateListDiv.style.display = 'none';  // Hide suggestions list initially
-
-                            if (allRebateListForCopy.length === 0 || isInitialFocus) {
-                                // Fetch GLNames and GLAliases for RebateMasterCopy from the backend if not already fetched
-                                fetch('/fetchListsForRebateCopy')  // Updated route to reflect the new path
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.RebateList && data.RebateList.length > 0) {
-                                            allRebateListForCopy = data.RebateList;  // Store fetched GLNames and GLAliases
-                                            filteredRebateListForCopy = [...allRebateListForCopy];  // Initially show all GLNames
-                                            displayRebateListForCopy(filteredRebateListForCopy);  // Display the full list on initial focus
-                                        } else {
-                                            const noResult = document.createElement('div');
-                                            noResult.textContent = 'No GLNames found';
-                                            rebateListDiv.appendChild(noResult);
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error fetching GLNames:', error);
-                                        const errorMessage = document.createElement('div');
-                                        errorMessage.textContent = 'Error fetching GLNames';
-                                        rebateListDiv.appendChild(errorMessage);
-                                    });
-                            } else {
-                                displayRebateListForCopy(filteredRebateListForCopy);  // Display the filtered list
-                            }
-                        }
-
-                        // Function to filter GLNames and GLAlias based on user input for RebateMasterCopy
-                        function filterRebateListForCopy() {
-                            const input = document.getElementById('CopyAccTypeRebateSetAT').value.toLowerCase();
-                            if (input === '') {
-                                filteredRebateListForCopy = [...allRebateListForCopy];  // Show the full list when input is empty
-                            } else {
-                                filteredRebateListForCopy = allRebateListForCopy.filter(item =>
-                                    item.GLName.toLowerCase().includes(input) || item.GLAlias.toLowerCase().includes(input)
-                                );
-                            }
-                            displayRebateListForCopy(filteredRebateListForCopy);
-                        }
-
-                        // Function to display GLNames and GLAlias in the suggestion list for RebateMasterCopy
-                        function displayRebateListForCopy(names) {
-                            const rebateListDiv = document.getElementById('RebateMasterCopylistDiv');
-                            rebateListDiv.innerHTML = '';  // Clear previous suggestions
-
-                            // Create and append the close button
-                            const closeButton = document.createElement('button');
-                            closeButton.textContent = 'X';
-                            closeButton.onclick = function (event) {
-                                event.preventDefault();
-                                rebateListDiv.style.display = 'none';  // Hide the suggestions list when the close button is clicked
-                            };
-                            rebateListDiv.appendChild(closeButton);  // Append the close button to the list
-
-                            if (names.length > 0) {
-                                rebateListDiv.style.display = 'block';  // Show the suggestions list
-                                names.forEach(item => {
-                                    const div = document.createElement('div');
-                                    div.textContent = `${item.GLName} - ${item.GLAlias}`;  // Show both GLName and GLAlias
-                                    div.onclick = function () {
-                                        document.getElementById('CopyAccTypeRebateSetAT').value = item.GLName;  // Set the input value to GLName
-                                        rebateListDiv.style.display = 'none';  // Hide the suggestions list
-                                    };
-                                    rebateListDiv.appendChild(div);
-                                });
-                            } else {
-                                const noResult = document.createElement('div');
-                                noResult.textContent = 'No matching GLNames found';
-                                rebateListDiv.appendChild(noResult);
-                            }
-                        }
-                    </script>
                     <script>
                         // Handle row selection in the results table
                         const tableForAccRebateSet = document.getElementById('RS-results-table');
@@ -53567,6 +52763,9 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/FetchMemberName.js"></script>
                     <script src="/js/BooksCbbResult.js"></script>
                     <script src="/js/GlobalLgrMasterLoan.js"></script>
+                    <script src="/js/GlobalLgrMasterConLgrGrpId20.js"></script>
+                    <script src="/js/GlobalLgrMasterForRebate.js"></script>
+                    <script src="/js/GlobalLgrMasterForPenalty.js"></script>
                     <script src="/js/globalTableSort.js"></script>
                     <script src="/js/inputBehavior.js"></script>
                     <script src="/js/memberSearch.js"></script>

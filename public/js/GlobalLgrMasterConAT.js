@@ -57,7 +57,7 @@
             } else {
                 LgrMasFilteredAT[inputId] = LgrMasCacheAT.filter(item =>
                     item.GLName.toLowerCase().includes(inputVal) ||
-                    item.GLAlias.toLowerCase().includes(inputVal)
+                    item.GlAlias.toLowerCase().includes(inputVal)
                 );
             }
             displayLgrMasSuggestionsAT(inputId, listId);
@@ -82,7 +82,7 @@
                 listElement.style.display = 'block';
                 suggestions.forEach(item => {
                     const div = document.createElement('div');
-                    div.textContent = `${item.GLName} - ${item.GLAlias}`;
+                    div.textContent = `${item.GLName} - ${item.GlAlias}`;
                     div.onclick = function () {
                         const input = document.getElementById(inputId);
                         input.value = item.GLName;
