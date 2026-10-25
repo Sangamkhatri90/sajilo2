@@ -7736,6 +7736,40 @@ END
     });
   }
 );
+// Route to fetch ledger data for system (LgrGrpID = 19)
+app.get("/fetchLedgersForSystem19", (req, res) => {
+  // SQL query to fetch GLName and GlAlias where LgrGrpID is 19
+  const query =
+    "SELECT GLName, GlAlias FROM dbo.tbLedgerMaster WHERE LgrGrpID = 19";
+  const conn = req.session.conn; // Ensure that the connection object is available
+
+  if (!conn) {
+    return res
+      .status(400)
+      .send({ message: "No database connection available", success: false });
+  }
+
+  // Execute the SQL query
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      // Log the error and send a generic message to the client
+      console.error("Error fetching ledgers for system:", err);
+      return res
+        .status(500)
+        .send({ message: "Error fetching ledgers for system", success: false });
+    }
+
+    // Check if rows exist and send the appropriate response
+    if (rows && rows.length > 0) {
+      return res.json({ ledgers: rows, success: true });
+    } else {
+      return res.json({
+        message: "No ledgers found with LgrGrpID = 19 for system",
+        success: true,
+      });
+    }
+  });
+});
 
 // Route to fetch ledger data for system (LgrGrpID = 20)
 app.get("/fetchLedgersForSystem", (req, res) => {
