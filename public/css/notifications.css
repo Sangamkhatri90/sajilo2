@@ -100,6 +100,25 @@ button.notification-item:hover { background: #f1f6ff; }
   background: #fff;
 }
 
+.login-matured-fd-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(1400px, 100%);
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.login-matured-fd-dialog .matured-accounts-content {
+  min-height: 0;
+  overflow: auto;
+}
+
+.login-matured-fd-table {
+  min-width: 1100px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
 .matured-accounts-heading {
   display: flex;
   justify-content: space-between;
@@ -111,6 +130,21 @@ button.notification-item:hover { background: #f1f6ff; }
 .matured-accounts-table { width: 100%; border-collapse: collapse; font: 12px Arial, sans-serif; }
 .matured-accounts-table th, .matured-accounts-table td { padding: 7px; border: 1px solid #ddd; text-align: left; }
 .matured-accounts-table th { background: #f3f3f3; }
+
+.login-matured-fd-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: #fff;
+  background: #073b63;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.login-matured-fd-table td { background: #fff; }
+.login-matured-fd-table tbody tr:nth-child(even) td { background: #f3f7fa; }
+.login-matured-fd-table tbody tr:hover td { background: #e4f1f8; }
+.login-matured-fd-table td:nth-child(9) { text-align: center; }
 
 @keyframes notification-bell-ring {
   0%, 88%, 100% { transform: rotate(0); }

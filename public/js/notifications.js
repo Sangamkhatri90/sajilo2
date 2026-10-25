@@ -103,6 +103,66 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(modal);
   };
 
+  const showLoginMaturedFds = (accounts) => {
+    const modal = document.createElement("div");
+    modal.className = "matured-accounts-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.innerHTML = '<div class="matured-accounts-dialog login-matured-fd-dialog"><div class="matured-accounts-heading"><h3>Matured FD Accounts</h3><button class="matured-accounts-close" type="button" aria-label="Close">&times;</button></div><div class="matured-accounts-content"></div></div>';
+
+    const content = modal.querySelector(".matured-accounts-content");
+    if (!accounts.length) {
+      content.textContent = "No matured FD accounts were found.";
+    } else {
+      const table = document.createElement("table");
+      table.className = "matured-accounts-table login-matured-fd-table";
+      table.innerHTML = "<thead><tr><th>S.No</th><th>A/c Type</th><th>A/c Number</th><th>A/c</th><th>Member ID</th><th>Address</th><th>Contact No.</th><th>Mobile</th><th></th><th>End Date</th><th>Transfer A/c</th><th>A/c Name</th></tr></thead>";
+      const body = document.createElement("tbody");
+      accounts.forEach((account, index) => {
+        const row = document.createElement("tr");
+        [
+          index + 1,
+          account.GLName,
+          account.SlAlias,
+          account.SLName,
+          account.MemberAlias,
+          account.Address1,
+          account.Phone1,
+          account.Mobile
+        ].forEach((value) => appendCell(row, value));
+
+        const checkboxCell = document.createElement("td");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = Boolean(String(account.Mobile || "").trim());
+        checkboxCell.appendChild(checkbox);
+        row.appendChild(checkboxCell);
+        appendCell(row, formatDate(account.MaturityDate));
+        appendCell(row, account.TransferSlAlias);
+        appendCell(row, account.TransferSLName);
+        body.appendChild(row);
+      });
+      table.appendChild(body);
+      content.appendChild(table);
+    }
+
+    const close = () => modal.remove();
+    modal.querySelector(".matured-accounts-close").addEventListener("click", close);
+    modal.addEventListener("click", (event) => { if (event.target === modal) close(); });
+    document.body.appendChild(modal);
+  };
+
+  fetch("/api/matured-fd-login")
+    .then((response) => {
+      if (!response.ok) throw new Error("Unable to load matured FD accounts.");
+      return response.json();
+    })
+    .then(showLoginMaturedFds)
+    .catch((error) => {
+      console.error("Failed to load login matured FD accounts:", error);
+      alert(error.message);
+    });
+
   maturedMessage.addEventListener("click", async () => {
     closeMenu();
     setMaturedAccountsLoading(true);

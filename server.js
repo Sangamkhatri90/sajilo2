@@ -38622,6 +38622,47 @@ app.get("/api/matured-accounts", (req, res) => {
   });
 });
 
+app.get("/api/matured-fd-login", (req, res) => {
+  const conn = req.session.conn;
+
+  if (!conn) {
+    return res.status(401).json({ error: "Your session has expired." });
+  }
+
+  const query = `
+    SELECT
+      LM.GLName,
+      SLM.SlAlias,
+      SLM.SLName,
+      MM.MemberAlias,
+      SLM.Address1,
+      SLM.Phone1,
+      SLM.Mobile,
+      SLM.MaturityDate,
+      TransferSL.SlAlias AS TransferSlAlias,
+      TransferSL.SLName AS TransferSLName
+    FROM dbo.tbSubLedgerMaster SLM
+    INNER JOIN dbo.tbMemberMaster MM ON MM.MemberID = SLM.MemberID
+    INNER JOIN dbo.tbLedgerMaster LM ON LM.GLID = SLM.GLID
+    LEFT JOIN dbo.tbLedgerGroup LG ON LG.LgrGrpID = LM.LgrGrpID
+    LEFT JOIN dbo.tbSubLedgerMaster TransferSL ON TransferSL.SLID = SLM.SLIDTransfer
+    WHERE SLM.Closed = 0
+      AND SLM.MaturityDate IS NOT NULL
+      AND SLM.MaturityDate <= CAST(GETDATE() AS DATE)
+      AND LG.LgrGrpID = 7
+    ORDER BY SLM.SLName ASC
+  `;
+
+  sql.query(conn, query, (err, rows) => {
+    if (err) {
+      console.error("Error fetching login matured FD accounts:", err);
+      return res.status(500).json({ error: "Unable to fetch matured FD accounts." });
+    }
+
+    res.json(rows || []);
+  });
+});
+
 // Assuming you use req.session.conn with sql.query
 app.get("/subledger-maturity", (req, res) => {
     const conn = req.session.conn;
