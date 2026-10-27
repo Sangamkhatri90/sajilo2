@@ -578,7 +578,7 @@
                                         </ul>
                                     </div>
                                 </li>
-                                <li><a href="#">Interest Calculation</a></li>
+                                <li><a href="#" id="toggleButton191">Interest Calculation</a></li>
                             </ul>
                         </div>
                     </div>
@@ -16475,7 +16475,7 @@ async function loadEarningsData() {
                     </div>
                 </div>
 
-                <!--Interest Calculation-->
+                
                 <div class="movableDiv" id="movableDiv122">
                     <button id="closeButton122">&times;</button>
                     <div class="ss-container">
@@ -18398,7 +18398,8 @@ async function loadEarningsData() {
             </div>
             </div>
 
-            <script>
+            <!-- Financail Report Trial Balance .js -->
+            <!-- <script>
                 let sessionExcelData = null;
                 let sessionExcelData2 = null;
 
@@ -20192,7 +20193,7 @@ async function loadEarningsData() {
 
                     });
                 });
-            </script>
+            </script> -->
 
 
 
@@ -52774,6 +52775,35 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     
                     <script src="/js/inputBehavior.js"></script>
                     <script src="/js/memberSearch.js"></script>
+                    <script src="/js/FinancialReportTrialBalResult.js"></script>
+                    <style>
+                        #GeneralLedgerTrialTable tr.tb-head td,
+#TrialBalanceTable tr.tb-head td {
+  font-weight: bold;
+  background-color: #f0f0f0;
+  color: #003366;
+}
+
+#GeneralLedgerTrialTable tr.tb-head.tb-d0 td,
+#TrialBalanceTable tr.tb-head.tb-d0 td {
+  background-color: #d0e0ff;
+  color: #1a1a1a;
+}
+
+#GeneralLedgerTrialTable tr.tb-total td,
+#TrialBalanceTable tr.tb-total td {
+  font-weight: bold;
+  background-color: #e6e6e6;
+  color: #1a1a1a;
+}
+
+#GeneralLedgerTrialTable tr.tb-grand td,
+#TrialBalanceTable tr.tb-grand td {
+  font-weight: bold;
+  background-color: #cccccc;
+  color: #000000;
+}
+                    </style>
                     <script>
                         document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {
                             event.preventDefault();
