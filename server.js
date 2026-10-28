@@ -90,7 +90,11 @@ app.use((req, res, next) => {
 
   return checkSessionDB(req, res, next); // Apply check for everything else
 });
-require('./routes/trialBalanceRoute')(app, sql); 
+require('./routes/trialBalanceRoute')(app, sql);
+const createGroupTotals = require('./routes/helpers/groupTotals');
+const { computeGroupTotals, resolveCategory } = createGroupTotals(sql);
+require('./routes/receiptPaymentRoute')(app, sql, computeGroupTotals, resolveCategory);
+require('./routes/groupSummaryRoute')(app, sql);
 
 // Route to handle login
 
@@ -23751,744 +23755,292 @@ function queryAsync(conn, query, params = []) {
   });
 }
 
-app.post("/api/fetchdataofreceiptandpaymentTformattttt", async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate, excelData } = req.body;
-
-  console.log("📦 /api/fetchdataofreceiptandpaymentTformat HIT");
-  console.log("📅 fromDate:", fromDate, "toDate:", toDate);
-
-  try {
-    // 1️⃣ Calculate previous fiscal year range
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const newFromDate = `${fromYear}/04/01`;
-    const newToDate = `${toYear}/03/31`;
-
-    console.log("📅 Opening range:", newFromDate, newToDate);
-
-    // 2️⃣ Get all ledgers with group info
-    const ledgersQuery = `
-      SELECT GLID, LgrGrpID, GLName, Category
-      FROM dbo.tbLedgerMaster
-    `;
-
-    const ledgers = await new Promise((resolve, reject) => {
-      sql.query(conn, ledgersQuery, (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-
-    console.log(`✅ Found ${ledgers.length} ledgers`);
-
-    const groupTotals = {}; // key = LgrGrpID
-
-    // 3️⃣ Process each ledger
-    for (const ledger of ledgers) {
-      const { GLID, LgrGrpID, Category } = ledger;
-      if (!GLID || !LgrGrpID) continue;
-
-      // Fetch period Dr/Cr
-      const periodQuery = `
-        SELECT
-          ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-          ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-        FROM dbo.tbJournal
-        WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-      `;
-      const periodResult = await new Promise((resolve, reject) => {
-        sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      const period = periodResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
-
-      // Fetch opening Dr/Cr (previous fiscal year)
-      const openingResult = await new Promise((resolve, reject) => {
-        sql.query(conn, periodQuery, [GLID, newFromDate, newToDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      const opening = openingResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
-
-      // Accumulate in groupTotals
-      if (!groupTotals[LgrGrpID]) {
-        groupTotals[LgrGrpID] = {
-          periodDebit: 0,
-          periodCredit: 0,
-          openingDebit: 0,
-          openingCredit: 0,
-          categories: new Set(),
-          GLIDs: new Set()
-        };
-      }
-
-      groupTotals[LgrGrpID].periodDebit += period.TotalDrAmount;
-      groupTotals[LgrGrpID].periodCredit += period.TotalCrAmount;
-      groupTotals[LgrGrpID].openingDebit += opening.TotalDrAmount;
-      groupTotals[LgrGrpID].openingCredit += opening.TotalCrAmount;
-      groupTotals[LgrGrpID].categories.add(Category);
-      groupTotals[LgrGrpID].GLIDs.add(GLID);
-    }
-
-    console.log("✅ Group Totals Calculated");
-
-    // 4️⃣ Get group names & aliases
-    const groupIds = Object.keys(groupTotals);
-    const groupsQuery = `
-      SELECT LgrGrpID, GrpName, GrpAlias
-      FROM dbo.tbLedgerGroup
-      WHERE LgrGrpID IN (${groupIds.map(() => '?').join(',')})
-    `;
-    const groupsResult = await new Promise((resolve, reject) => {
-      sql.query(conn, groupsQuery, groupIds, (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-
-    const groupInfoMap = {};
-    for (const row of groupsResult) {
-      groupInfoMap[row.LgrGrpID] = {
-        name: row.GrpName || "Ungrouped",
-        alias: row.GrpAlias || ""
-      };
-    }
-
-    // 5️⃣ Organize final sections
-    const OpeningBalance = [];
-    const Transaction = [];
-    const Balance = [];
-
-    for (const groupId of groupIds) {
-      const totals = groupTotals[groupId];
-      const categories = Array.from(totals.categories);
-      const category = categories.includes("C") ? "C" :
-        categories.includes("B") ? "B" : "Other";
-
-      const groupName = groupInfoMap[groupId]?.name || "Ungrouped";
-      const groupAlias = groupInfoMap[groupId]?.alias || "";
-
-      if (category === "C" || category === "B") {
-        // ➜ Opening Balance section
-        if (totals.periodDebit !== 0 || totals.periodCredit !== 0) {
-          OpeningBalance.push({
-            particular: groupName,
-            alias: groupAlias,
-            periodDebit: totals.periodDebit,
-            periodCredit: totals.periodCredit
-          });
-        }
-
-        // ➜ Balance section: new calculation
-        const totalDebit = totals.openingDebit + totals.periodDebit;
-        const totalCredit = totals.openingCredit + totals.periodCredit;
-        const balanceAmount = Math.abs(totalDebit - totalCredit);
-
-        let receipt = 0;
-        let payment = 0;
-
-        if (balanceAmount > 0) {
-          if (totalDebit > totalCredit) {
-            receipt = balanceAmount;
-          } else if (totalCredit > totalDebit) {
-            payment = balanceAmount;
-          }
-
-          Balance.push({
-            particular: groupName,
-            alias: groupAlias,
-            periodDebit: receipt,
-            periodCredit: payment
-          });
-        }
-
-      } else {
-        // ➜ Transaction section
-        if (totals.periodDebit !== 0 || totals.periodCredit !== 0) {
-          Transaction.push({
-            particular: groupName,
-            alias: groupAlias,
-            periodDebit: totals.periodDebit,
-            periodCredit: totals.periodCredit
-          });
-        }
-      }
-    }
-
-
-    // 6️⃣ Respond with final data
-    console.log("✅ Final sections prepared");
-    return res.json({
-      OpeningBalance,
-      Transaction,
-      Balance
-    });
-
-  } catch (error) {
-    console.error("❌ Error in /api/fetchdataofreceiptandpaymentTformat:", error);
-    return res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
-
-app.post("/api/fetchdataofreceiptandpaymentNormalFormattttt", async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate } = req.body;
-
-  try {
-    // 👇 1. Query tbLedgerMaster to get all ledgers with needed columns
-    const ledgerQuery = `
-      SELECT GLID, GLName, LgrGrpID, Category
-      FROM dbo.tbLedgerMaster
-    `;
-    const ledgers = await new Promise((resolve, reject) => {
-      sql.query(conn, ledgerQuery, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
-
-    const result = { OpeningBalance: [], Transaction: [], Balance: [] };
-
-    // 👇 Compute Balance Dates
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const newFromDate = `${fromYear}/04/01`;
-    const newToDate = `${toYear}/03/31`;
-
-    for (const ledger of ledgers) {
-      const { GLID, GLName, LgrGrpID, Category } = ledger;
-
-      // 👇 Fetch Group Name & Alias
-      const groupResult = await new Promise((resolve, reject) => {
-        sql.query(conn,
-          `SELECT TOP 1 GrpName, GrpAlias FROM dbo.tbLedgerGroup WHERE LgrGrpID = ?`,
-          [LgrGrpID],
-          (err, rows) => err ? reject(err) : resolve(rows)
-        );
-      });
-      const groupName = groupResult?.[0]?.GrpName || "Ungrouped";
-      const groupAlias = groupResult?.[0]?.GrpAlias || "";
-
-      // 👇 Period Debit/Credit (Transaction)
-      const periodResult = await new Promise((resolve, reject) => {
-        sql.query(conn,
-          `SELECT ISNULL(SUM(DrAmount),0) AS TotalDrAmount, ISNULL(SUM(CrAmount),0) AS TotalCrAmount 
-           FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?`,
-          [GLID, fromDate, toDate],
-          (err, rows) => err ? reject(err) : resolve(rows)
-        );
-      });
-      const periodDebit = periodResult[0].TotalDrAmount;
-      const periodCredit = periodResult[0].TotalCrAmount;
-
-      // 👇 Opening Debit/Credit (one fiscal year back)
-      const openingResult = await new Promise((resolve, reject) => {
-        sql.query(conn,
-          `SELECT ISNULL(SUM(DrAmount),0) AS TotalDrAmount, ISNULL(SUM(CrAmount),0) AS TotalCrAmount 
-           FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?`,
-          [GLID, newFromDate, newToDate],
-          (err, rows) => err ? reject(err) : resolve(rows)
-        );
-      });
-      const openingDebit = openingResult[0].TotalDrAmount;
-      const openingCredit = openingResult[0].TotalCrAmount;
-
-      // 👇 Add to Opening Balance if Category is B or C
-      if (Category === "B" || Category === "C") {
-        result.OpeningBalance.push({
-          particular: groupName,
-          alias: groupAlias,
-          amount: openingDebit > openingCredit ? openingDebit - openingCredit : openingCredit - openingDebit
-        });
-      }
-
-      // 👇 Add to Balance section if Category is B or C
-      if (Category === "B" || Category === "C") {
-        const totalDebit = openingDebit + periodDebit;
-        const totalCredit = openingCredit + periodCredit;
-        const balanceAmount = Math.abs(totalDebit - totalCredit);
-        result.Balance.push({
-          particular: groupName,
-          alias: groupAlias,
-          amount: balanceAmount
-        });
-      }
-
-      // 👇 Always consider Transaction
-      result.Transaction.push({
-        particular: groupName,
-        alias: groupAlias,
-        receipt: periodDebit,
-        payment: periodCredit
-      });
-    }
-
-    res.json(result);
-
-  } catch (error) {
-    console.error("❌ Error in /api/fetchdataofreceiptandpaymentNormalFormat:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
-
-// =============================================================================
-// SHARED HELPER
-// Extracted from both routes — identical queries, identical order of
-// operations, identical fallback logic. Nothing about the calculations
-// was changed, only moved into one place so both routes call it.
-// =============================================================================
-async function computeGroupTotals(conn, fromDate, toDate, excelData) {
-  // 1️⃣ Previous fiscal year range
-  const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-  const toYear = parseInt(fromDate.split("/")[0]);
-  const newFromDate = `${fromYear}/04/01`;
-  const newToDate = `${toYear}/03/31`;
-  console.log("📅 Opening range:", newFromDate, newToDate);
-
-  // 2️⃣ Get all ledgers
-  const ledgersQuery = `
-    SELECT GLID, LgrGrpID, GLName, Category
-    FROM dbo.tbLedgerMaster
-  `;
-  const ledgers = await new Promise((resolve, reject) => {
-    sql.query(conn, ledgersQuery, (err, result) => {
-      if (err) return reject(err);
-      resolve(result);
-    });
-  });
-  console.log(`✅ Found ${ledgers.length} ledgers`);
-
-  // 3️⃣ Check if journal entries exist for previous fiscal year
-  // (date lives in tbJournalMaster now, not tbJournal)
-  const checkDateQuery = `
-    SELECT COUNT(*) as Count
-    FROM dbo.tbJournalMaster
-    WHERE JV_Miti BETWEEN ? AND ?
-  `;
-  const openingCountResult = await new Promise((resolve, reject) => {
-    sql.query(conn, checkDateQuery, [newFromDate, newToDate], (err, result) => {
-      if (err) return reject(err);
-      resolve(result);
-    });
-  });
-  const openingJournalCount = openingCountResult?.[0]?.Count || 0;
-  console.log("📊 Opening journal entries count:", openingJournalCount);
-
-  const groupTotals = {}; // key = LgrGrpID
-  const emptyTotals = { TotalDrAmount: 0, TotalCrAmount: 0 };
-
-  // ---------------------------------------------------------------------
-  // PERFORMANCE: instead of one SELECT ... WHERE GLID = ? per ledger
-  // (N sequential round-trips), fetch ALL ledgers' totals in a single
-  // GROUP BY query, then look them up in memory below. Same numbers,
-  // far fewer queries.
-  //
-  // Date now validated against tbJournalMaster.JV_Miti; amounts pulled
-  // from tbJournalDetails, joined on JournalID.
-  // ---------------------------------------------------------------------
-  const periodAggQuery = `
-    SELECT d.GLID,
-           ISNULL(SUM(d.DrAmount),0) AS TotalDrAmount,
-           ISNULL(SUM(d.CrAmount),0) AS TotalCrAmount
-    FROM dbo.tbJournalMaster m
-    INNER JOIN dbo.tbJournalDetails d ON d.JournalID = m.JournalID
-    WHERE m.JV_Miti BETWEEN ? AND ?
-    GROUP BY d.GLID
-  `;
-  const periodAggRows = await new Promise((resolve, reject) => {
-    sql.query(conn, periodAggQuery, [fromDate, toDate], (err, result) => {
-      if (err) return reject(err);
-      resolve(result);
-    });
-  });
-  const periodTotalsByGLID = {};
-  for (const row of periodAggRows) {
-    periodTotalsByGLID[row.GLID] = { TotalDrAmount: row.TotalDrAmount, TotalCrAmount: row.TotalCrAmount };
-  }
-  console.log(`✅ Period totals fetched for ${periodAggRows.length} ledgers (1 query)`);
-
-  // Opening-range aggregate — only needed if opening journal entries exist,
-  // exactly like the original per-ledger version only queried when
-  // openingJournalCount > 0.
-  let openingTotalsByGLID = {};
-  if (openingJournalCount > 0) {
-    const openingAggRows = await new Promise((resolve, reject) => {
-      sql.query(conn, periodAggQuery, [newFromDate, newToDate], (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-    for (const row of openingAggRows) {
-      openingTotalsByGLID[row.GLID] = { TotalDrAmount: row.TotalDrAmount, TotalCrAmount: row.TotalCrAmount };
-    }
-    console.log(`✅ Opening totals fetched for ${openingAggRows.length} ledgers (1 query)`);
-  }
-
-  const accumulate = (LgrGrpID, Category, GLID, period, openingDebit = 0, openingCredit = 0) => {
-    if (!groupTotals[LgrGrpID]) {
-      groupTotals[LgrGrpID] = {
-        periodDebit: 0, periodCredit: 0,
-        openingDebit: 0, openingCredit: 0,
-        categories: new Set(), GLIDs: new Set()
-      };
-    }
-    groupTotals[LgrGrpID].periodDebit += period.TotalDrAmount;
-    groupTotals[LgrGrpID].periodCredit += period.TotalCrAmount;
-    groupTotals[LgrGrpID].openingDebit += openingDebit;
-    groupTotals[LgrGrpID].openingCredit += openingCredit;
-    groupTotals[LgrGrpID].categories.add(Category);
-    groupTotals[LgrGrpID].GLIDs.add(GLID);
-  };
-
-  // 4️⃣ Process OpeningBalance ledgers (Category B/C)
-  const openingLedgers = ledgers.filter(l => l.Category === 'B' || l.Category === 'C');
-  console.log(`📌 Ledgers considered for OpeningBalance: ${openingLedgers.length}`);
-
-  for (const ledger of openingLedgers) {
-    const { GLID, LgrGrpID, Category, GLName } = ledger;
-    if (!GLID || !LgrGrpID) continue;
-    console.log(`🔹 Processing OpeningBalance ledger: ${GLName} (Category: ${Category})`);
-
-    // Period totals — looked up from the single aggregate query above
-    // instead of a fresh SELECT per ledger.
-    const period = periodTotalsByGLID[GLID] || emptyTotals;
-    console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
-
-    // Opening balances
-    let openingDebit = 0, openingCredit = 0;
-    if (openingJournalCount > 0) {
-      const openingRow = openingTotalsByGLID[GLID] || emptyTotals;
-      openingDebit = openingRow.TotalDrAmount || 0;
-      openingCredit = openingRow.TotalCrAmount || 0;
-      console.log(`📊 DB Opening: Dr=${openingDebit}, Cr=${openingCredit}`);
-    } else if (excelData && excelData.length > 0) {
-      const excelRow = excelData.find(row => (row.particular?.trim() || '') === GLName);
-      if (excelRow) {
-        openingDebit = parseFloat(excelRow.OpeningBalanceDr || 0);
-        openingCredit = parseFloat(excelRow.OpeningBalanceCr || 0);
-        console.log(`📊 Excel Opening: ${GLName} → Dr=${openingDebit}, Cr=${openingCredit}`);
-      } else {
-        console.log(`⚠️ No Excel row found for ledger: ${GLName}`);
-      }
-    }
-
-    accumulate(LgrGrpID, Category, GLID, period, openingDebit, openingCredit);
-  }
-
-  console.log("✅ OpeningBalance Group Totals Calculated");
-
-  // 5️⃣ Process other ledgers (for Transaction section)
-  const transactionLedgers = ledgers.filter(l => l.Category !== 'B' && l.Category !== 'C');
-  console.log(`📌 Ledgers considered for Transaction: ${transactionLedgers.length}`);
-
-  for (const ledger of transactionLedgers) {
-    const { GLID, LgrGrpID, Category, GLName } = ledger;
-    if (!GLID || !LgrGrpID) continue;
-    console.log(`🔹 Processing Transaction ledger: ${GLName} (Category: ${Category})`);
-
-    // Looked up from the single aggregate query above instead of a
-    // fresh SELECT per ledger.
-    const period = periodTotalsByGLID[GLID] || emptyTotals;
-    console.log(`📌 Period totals: Dr=${period.TotalDrAmount}, Cr=${period.TotalCrAmount}`);
-
-    // openingDebit/credit = 0 for these
-    accumulate(LgrGrpID, Category, GLID, period);
-  }
-
-  console.log("✅ Transaction group totals calculated");
-
-  // 6️⃣ Get group names & aliases
-  const groupIds = Object.keys(groupTotals);
-  const groupsQuery = `
-    SELECT LgrGrpID, GrpName, GrpAlias
-    FROM dbo.tbLedgerGroup
-    WHERE LgrGrpID IN (${groupIds.map(() => '?').join(',')})
-  `;
-  const groupsResult = await new Promise((resolve, reject) => {
-    sql.query(conn, groupsQuery, groupIds, (err, result) => {
-      if (err) return reject(err);
-      resolve(result);
-    });
-  });
-  const groupInfoMap = {};
-  for (const row of groupsResult) {
-    groupInfoMap[row.LgrGrpID] = { name: row.GrpName || "Ungrouped", alias: row.GrpAlias || "" };
-  }
-
-  return { groupIds, groupTotals, groupInfoMap };
-}
-
-// Small shared helper used by both routes to resolve a group's rollup category
-function resolveCategory(categories) {
-  return categories.includes("C") ? "C" :
-    categories.includes("B") ? "B" : "Other";
-}
-
-// =============================================================================
-// ROUTE 1: T-Format
-// =============================================================================
-app.post("/api/fetchdataofreceiptandpaymentTformat", async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate, excelData } = req.body;
-
-  console.log("📦 /api/fetchdataofreceiptandpaymentTformat HIT");
-  console.log("📅 fromDate:", fromDate, "toDate:", toDate);
-
-  try {
-    const { groupIds, groupTotals, groupInfoMap } =
-      await computeGroupTotals(conn, fromDate, toDate, excelData);
-
-    // 7️⃣ Organize final sections (T-format specific)
-    const OpeningBalance = [];
-    const Transaction = [];
-    const Balance = [];
-
-    for (const groupId of groupIds) {
-      const totals = groupTotals[groupId];
-      const category = resolveCategory(Array.from(totals.categories));
-
-      const groupName = groupInfoMap[groupId]?.name || "Ungrouped";
-      const groupAlias = groupInfoMap[groupId]?.alias || "";
-
-      if (category === "C" || category === "B") {
-        if (totals.openingDebit !== 0 || totals.openingCredit !== 0) {
-          OpeningBalance.push({ particular: groupName, alias: groupAlias, openingDebit: totals.openingDebit, openingCredit: totals.openingCredit });
-        }
-
-        // Balance section
-        const totalDebit = totals.openingDebit + totals.periodDebit;
-        const totalCredit = totals.openingCredit + totals.periodCredit;
-        const balanceAmount = Math.abs(totalDebit - totalCredit);
-
-        let receipt = 0, payment = 0;
-        if (balanceAmount > 0) {
-          if (totalDebit > totalCredit) receipt = balanceAmount;
-          else if (totalCredit > totalDebit) payment = balanceAmount;
-          Balance.push({ particular: groupName, alias: groupAlias, periodDebit: receipt, periodCredit: payment });
-        }
-
-      } else {
-        // Transaction section
-        if (totals.periodDebit !== 0 || totals.periodCredit !== 0) {
-          Transaction.push({ particular: groupName, alias: groupAlias, periodDebit: totals.periodDebit, periodCredit: totals.periodCredit });
-        }
-      }
-    }
-
-    console.log("✅ Final sections prepared");
-    return res.json({ OpeningBalance, Transaction, Balance });
-
-  } catch (error) {
-    console.error("❌ Error in /api/fetchdataofreceiptandpaymentTformat:", error);
-    return res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
-
-// =============================================================================
-// ROUTE 2: Normal Format
-// =============================================================================
-app.post("/api/fetchdataofreceiptandpaymentNormalFormat", async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate, excelData } = req.body; // NOTE: excelData added to destructure — see note below
-
-  try {
-    console.log("=== Fetching Receipt & Payment Normal Format ===");
-    console.log("From:", fromDate, "To:", toDate);
-
-    const { groupIds, groupTotals, groupInfoMap } =
-      await computeGroupTotals(conn, fromDate, toDate, excelData);
-
-    // 7️⃣ Organize final sections (Normal-format specific)
-    const OpeningBalance = [];
-    const TransactionReceipt = [];
-    const TransactionPayment = [];
-    const Balance = [];
-
-    for (const groupId of groupIds) {
-      const totals = groupTotals[groupId];
-      const category = resolveCategory(Array.from(totals.categories));
-
-      const groupName = groupInfoMap[groupId]?.name || "Ungrouped";
-      const groupAlias = groupInfoMap[groupId]?.alias || "";
-
-      if (category === "C" || category === "B") {
-        if (totals.openingDebit !== 0 || totals.openingCredit !== 0) {
-          OpeningBalance.push({ particular: groupName, alias: groupAlias, openingDebit: totals.openingDebit, openingCredit: totals.openingCredit });
-        }
-
-        // Balance section
-        const totalDebit = totals.openingDebit + totals.periodDebit;
-        const totalCredit = totals.openingCredit + totals.periodCredit;
-        const balanceAmount = Math.abs(totalDebit - totalCredit);
-
-        if (balanceAmount > 0) {
-          Balance.push({ particular: groupName, alias: groupAlias, Balanceamt: balanceAmount });
-        }
-
-      } else {
-        // TransactionReceipt / TransactionPayment sections
-        if (totals.periodCredit !== 0) {
-          TransactionReceipt.push({ particular: groupName, alias: groupAlias, periodCredit: totals.periodCredit });
-        }
-        if (totals.periodDebit !== 0) {
-          TransactionPayment.push({ particular: groupName, alias: groupAlias, periodDebit: totals.periodDebit });
-        }
-      }
-    }
-
-    console.log("✅ Final sections prepared");
-    console.log("📌 TransactionReceipt Section:");
-    console.table(TransactionReceipt);
-    console.log("📌 TransactionPayment Section:");
-    console.table(TransactionPayment);
-    console.log("📌 Balance Section:");
-    console.table(Balance);
-
-    return res.json({ OpeningBalance, TransactionReceipt, TransactionPayment, Balance });
-
-  } catch (error) {
-    console.error("❌ Error in /api/fetchdataofreceiptandpaymentNormalFormat:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
-
-
-
-app.post("/api/gs/sotablepop", async (req, res) => {
-  const conn = req.session.conn;
-  const { subGroupNames, fromDate, toDate } = req.body;
-
-  console.log("✅ /api/gs/sotablepop HIT");
-  console.log("📜 subGroupNames:", subGroupNames);
-
-  if (!Array.isArray(subGroupNames) || subGroupNames.length === 0) {
-    return res.status(400).json({ error: "subGroupNames is required and must be a non-empty array" });
-  }
-
-  try {
-    const results = [];
-
-    for (const subGroupName of subGroupNames) {
-      console.log(`🔎 Processing SubGroupName: ${subGroupName}`);
-
-      // Step 1: Get SubGroup details
-      const subGrpQuery = `
-        SELECT TOP 1 LgrSubGrpID, SubGrpAlias, LgrGrpID
-        FROM dbo.tbLedgerSubGroup
-        WHERE RTRIM(LTRIM(SubGrpName)) = RTRIM(LTRIM(?))
-      `;
-
-      const subGrpResult = await new Promise((resolve, reject) => {
-        sql.query(conn, subGrpQuery, [subGroupName], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      const subGrpRow = subGrpResult?.[0];
-      if (!subGrpRow) {
-        console.warn(`⚠️ SubGroupName "${subGroupName}" not found`);
-        results.push({
-          mainGroupName: "Unknown",
-          mainGroupAlias: "",
-          subGroupName,
-          subGroupAlias: "",
-          amount: 0
-        });
-        continue;
-      }
-
-      const subGrpID = subGrpRow.LgrSubGrpID;
-      const subGrpAlias = subGrpRow.SubGrpAlias || "";
-      const lgrGrpID = subGrpRow.LgrGrpID;
-
-      // Step 2: Get Main Group details
-      let mainGroupName = "Unknown";
-      let mainGroupAlias = "";
-      if (lgrGrpID) {
-        const grpQuery = `
-          SELECT TOP 1 GrpName, GrpAlias
-          FROM dbo.tbLedgerGroup
-          WHERE LgrGrpID = ?
-        `;
-        const grpResult = await new Promise((resolve, reject) => {
-          sql.query(conn, grpQuery, [lgrGrpID], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-        if (grpResult?.[0]) {
-          mainGroupName = grpResult[0].GrpName || "Unknown";
-          mainGroupAlias = grpResult[0].GrpAlias || "";
-        }
-      }
-
-      // Step 3: Get all GLIDs under this sub-group
-      const glidQuery = `
-        SELECT GLID
-        FROM dbo.tbLedgerMaster
-        WHERE LgrSubGrpID = ?
-      `;
-
-      const glidResult = await new Promise((resolve, reject) => {
-        sql.query(conn, glidQuery, [subGrpID], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      const glids = glidResult.map(r => r.GLID);
-      console.log(`🗂️ GLIDs for ${subGroupName}:`, glids);
-
-      // Step 4: Sum DrAmount and CrAmount for all GLIDs
-      let totalDr = 0;
-      let totalCr = 0;
-
-      if (glids.length > 0) {
-        for (const glid of glids) {
-          const totalQuery = `
-            SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-                   ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-            FROM dbo.tbJournal
-            WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-          `;
-
-          const totalResult = await new Promise((resolve, reject) => {
-            sql.query(conn, totalQuery, [glid, fromDate, toDate], (err, result) => {
-              if (err) return reject(err);
-              resolve(result);
-            });
-          });
-
-          totalDr += totalResult?.[0]?.TotalDrAmount || 0;
-          totalCr += totalResult?.[0]?.TotalCrAmount || 0;
-        }
-      }
-
-      const amount = totalDr - totalCr;
-
-      // Step 5: Add final object
-      results.push({
-        mainGroupName,
-        mainGroupAlias,
-        subGroupName,
-        subGrpAlias,
-        amount
-      });
-    }
-
-    console.log("✅ Computed Results:", results);
-    return res.json(results);
-
-  } catch (error) {
-    console.error("❌ Error in /api/gs/sotablepop:", error);
-    return res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
+// // These 2 endpoints hasnt been used in frontend so commented out.
+// app.post("/api/fetchdataofreceiptandpaymentTformattttt", async (req, res) => {
+//   const conn = req.session.conn;
+//   const { fromDate, toDate, excelData } = req.body;
+
+//   console.log("📦 /api/fetchdataofreceiptandpaymentTformat HIT");
+//   console.log("📅 fromDate:", fromDate, "toDate:", toDate);
+
+//   try {
+//     // 1️⃣ Calculate previous fiscal year range
+//     const fromYear = parseInt(fromDate.split("/")[0]) - 1;
+//     const toYear = parseInt(fromDate.split("/")[0]);
+//     const newFromDate = `${fromYear}/04/01`;
+//     const newToDate = `${toYear}/03/31`;
+
+//     console.log("📅 Opening range:", newFromDate, newToDate);
+
+//     // 2️⃣ Get all ledgers with group info
+//     const ledgersQuery = `
+//       SELECT GLID, LgrGrpID, GLName, Category
+//       FROM dbo.tbLedgerMaster
+//     `;
+
+//     const ledgers = await new Promise((resolve, reject) => {
+//       sql.query(conn, ledgersQuery, (err, result) => {
+//         if (err) return reject(err);
+//         resolve(result);
+//       });
+//     });
+
+//     console.log(`✅ Found ${ledgers.length} ledgers`);
+
+//     const groupTotals = {}; // key = LgrGrpID
+
+//     // 3️⃣ Process each ledger
+//     for (const ledger of ledgers) {
+//       const { GLID, LgrGrpID, Category } = ledger;
+//       if (!GLID || !LgrGrpID) continue;
+
+//       // Fetch period Dr/Cr
+//       const periodQuery = `
+//         SELECT
+//           ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
+//           ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
+//         FROM dbo.tbJournal
+//         WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
+//       `;
+//       const periodResult = await new Promise((resolve, reject) => {
+//         sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, result) => {
+//           if (err) return reject(err);
+//           resolve(result);
+//         });
+//       });
+//       const period = periodResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
+
+//       // Fetch opening Dr/Cr (previous fiscal year)
+//       const openingResult = await new Promise((resolve, reject) => {
+//         sql.query(conn, periodQuery, [GLID, newFromDate, newToDate], (err, result) => {
+//           if (err) return reject(err);
+//           resolve(result);
+//         });
+//       });
+//       const opening = openingResult?.[0] || { TotalDrAmount: 0, TotalCrAmount: 0 };
+
+//       // Accumulate in groupTotals
+//       if (!groupTotals[LgrGrpID]) {
+//         groupTotals[LgrGrpID] = {
+//           periodDebit: 0,
+//           periodCredit: 0,
+//           openingDebit: 0,
+//           openingCredit: 0,
+//           categories: new Set(),
+//           GLIDs: new Set()
+//         };
+//       }
+
+//       groupTotals[LgrGrpID].periodDebit += period.TotalDrAmount;
+//       groupTotals[LgrGrpID].periodCredit += period.TotalCrAmount;
+//       groupTotals[LgrGrpID].openingDebit += opening.TotalDrAmount;
+//       groupTotals[LgrGrpID].openingCredit += opening.TotalCrAmount;
+//       groupTotals[LgrGrpID].categories.add(Category);
+//       groupTotals[LgrGrpID].GLIDs.add(GLID);
+//     }
+
+//     console.log("✅ Group Totals Calculated");
+
+//     // 4️⃣ Get group names & aliases
+//     const groupIds = Object.keys(groupTotals);
+//     const groupsQuery = `
+//       SELECT LgrGrpID, GrpName, GrpAlias
+//       FROM dbo.tbLedgerGroup
+//       WHERE LgrGrpID IN (${groupIds.map(() => '?').join(',')})
+//     `;
+//     const groupsResult = await new Promise((resolve, reject) => {
+//       sql.query(conn, groupsQuery, groupIds, (err, result) => {
+//         if (err) return reject(err);
+//         resolve(result);
+//       });
+//     });
+
+//     const groupInfoMap = {};
+//     for (const row of groupsResult) {
+//       groupInfoMap[row.LgrGrpID] = {
+//         name: row.GrpName || "Ungrouped",
+//         alias: row.GrpAlias || ""
+//       };
+//     }
+
+//     // 5️⃣ Organize final sections
+//     const OpeningBalance = [];
+//     const Transaction = [];
+//     const Balance = [];
+
+//     for (const groupId of groupIds) {
+//       const totals = groupTotals[groupId];
+//       const categories = Array.from(totals.categories);
+//       const category = categories.includes("C") ? "C" :
+//         categories.includes("B") ? "B" : "Other";
+
+//       const groupName = groupInfoMap[groupId]?.name || "Ungrouped";
+//       const groupAlias = groupInfoMap[groupId]?.alias || "";
+
+//       if (category === "C" || category === "B") {
+//         // ➜ Opening Balance section
+//         if (totals.periodDebit !== 0 || totals.periodCredit !== 0) {
+//           OpeningBalance.push({
+//             particular: groupName,
+//             alias: groupAlias,
+//             periodDebit: totals.periodDebit,
+//             periodCredit: totals.periodCredit
+//           });
+//         }
+
+//         // ➜ Balance section: new calculation
+//         const totalDebit = totals.openingDebit + totals.periodDebit;
+//         const totalCredit = totals.openingCredit + totals.periodCredit;
+//         const balanceAmount = Math.abs(totalDebit - totalCredit);
+
+//         let receipt = 0;
+//         let payment = 0;
+
+//         if (balanceAmount > 0) {
+//           if (totalDebit > totalCredit) {
+//             receipt = balanceAmount;
+//           } else if (totalCredit > totalDebit) {
+//             payment = balanceAmount;
+//           }
+
+//           Balance.push({
+//             particular: groupName,
+//             alias: groupAlias,
+//             periodDebit: receipt,
+//             periodCredit: payment
+//           });
+//         }
+
+//       } else {
+//         // ➜ Transaction section
+//         if (totals.periodDebit !== 0 || totals.periodCredit !== 0) {
+//           Transaction.push({
+//             particular: groupName,
+//             alias: groupAlias,
+//             periodDebit: totals.periodDebit,
+//             periodCredit: totals.periodCredit
+//           });
+//         }
+//       }
+//     }
+
+
+//     // 6️⃣ Respond with final data
+//     console.log("✅ Final sections prepared");
+//     return res.json({
+//       OpeningBalance,
+//       Transaction,
+//       Balance
+//     });
+
+//   } catch (error) {
+//     console.error("❌ Error in /api/fetchdataofreceiptandpaymentTformat:", error);
+//     return res.status(500).json({ error: "Internal Server Error", details: error.message });
+//   }
+// });
+
+// app.post("/api/fetchdataofreceiptandpaymentNormalFormattttt", async (req, res) => {
+//   const conn = req.session.conn;
+//   const { fromDate, toDate } = req.body;
+
+//   try {
+//     // 👇 1. Query tbLedgerMaster to get all ledgers with needed columns
+//     const ledgerQuery = `
+//       SELECT GLID, GLName, LgrGrpID, Category
+//       FROM dbo.tbLedgerMaster
+//     `;
+//     const ledgers = await new Promise((resolve, reject) => {
+//       sql.query(conn, ledgerQuery, (err, rows) => {
+//         if (err) reject(err);
+//         else resolve(rows);
+//       });
+//     });
+
+//     const result = { OpeningBalance: [], Transaction: [], Balance: [] };
+
+//     // 👇 Compute Balance Dates
+//     const fromYear = parseInt(fromDate.split("/")[0]) - 1;
+//     const toYear = parseInt(fromDate.split("/")[0]);
+//     const newFromDate = `${fromYear}/04/01`;
+//     const newToDate = `${toYear}/03/31`;
+
+//     for (const ledger of ledgers) {
+//       const { GLID, GLName, LgrGrpID, Category } = ledger;
+
+//       // 👇 Fetch Group Name & Alias
+//       const groupResult = await new Promise((resolve, reject) => {
+//         sql.query(conn,
+//           `SELECT TOP 1 GrpName, GrpAlias FROM dbo.tbLedgerGroup WHERE LgrGrpID = ?`,
+//           [LgrGrpID],
+//           (err, rows) => err ? reject(err) : resolve(rows)
+//         );
+//       });
+//       const groupName = groupResult?.[0]?.GrpName || "Ungrouped";
+//       const groupAlias = groupResult?.[0]?.GrpAlias || "";
+
+//       // 👇 Period Debit/Credit (Transaction)
+//       const periodResult = await new Promise((resolve, reject) => {
+//         sql.query(conn,
+//           `SELECT ISNULL(SUM(DrAmount),0) AS TotalDrAmount, ISNULL(SUM(CrAmount),0) AS TotalCrAmount 
+//            FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?`,
+//           [GLID, fromDate, toDate],
+//           (err, rows) => err ? reject(err) : resolve(rows)
+//         );
+//       });
+//       const periodDebit = periodResult[0].TotalDrAmount;
+//       const periodCredit = periodResult[0].TotalCrAmount;
+
+//       // 👇 Opening Debit/Credit (one fiscal year back)
+//       const openingResult = await new Promise((resolve, reject) => {
+//         sql.query(conn,
+//           `SELECT ISNULL(SUM(DrAmount),0) AS TotalDrAmount, ISNULL(SUM(CrAmount),0) AS TotalCrAmount 
+//            FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?`,
+//           [GLID, newFromDate, newToDate],
+//           (err, rows) => err ? reject(err) : resolve(rows)
+//         );
+//       });
+//       const openingDebit = openingResult[0].TotalDrAmount;
+//       const openingCredit = openingResult[0].TotalCrAmount;
+
+//       // 👇 Add to Opening Balance if Category is B or C
+//       if (Category === "B" || Category === "C") {
+//         result.OpeningBalance.push({
+//           particular: groupName,
+//           alias: groupAlias,
+//           amount: openingDebit > openingCredit ? openingDebit - openingCredit : openingCredit - openingDebit
+//         });
+//       }
+
+//       // 👇 Add to Balance section if Category is B or C
+//       if (Category === "B" || Category === "C") {
+//         const totalDebit = openingDebit + periodDebit;
+//         const totalCredit = openingCredit + periodCredit;
+//         const balanceAmount = Math.abs(totalDebit - totalCredit);
+//         result.Balance.push({
+//           particular: groupName,
+//           alias: groupAlias,
+//           amount: balanceAmount
+//         });
+//       }
+
+//       // 👇 Always consider Transaction
+//       result.Transaction.push({
+//         particular: groupName,
+//         alias: groupAlias,
+//         receipt: periodDebit,
+//         payment: periodCredit
+//       });
+//     }
+
+//     res.json(result);
+
+//   } catch (error) {
+//     console.error("❌ Error in /api/fetchdataofreceiptandpaymentNormalFormat:", error);
+//     res.status(500).json({ error: "Internal Server Error", details: error.message });
+//   }
+// });
+
+
 app.post("/api/gs/soszbtablepop", async (req, res) => {
   const conn = req.session.conn;
   const { subGroupNames, fromDate, toDate } = req.body;
@@ -24620,1090 +24172,8 @@ app.post("/api/gs/soszbtablepop", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
-app.post("/api/gs/szbiotablepop", async (req, res) => {
-  const conn = req.session.conn;
-  const { subGroupNames, fromDate, toDate, excelData } = req.body;
 
-  console.log("✅ /api/gs/szbiotablepop HIT");
-  console.log("📜 subGroupNames:", subGroupNames);
 
-  if (!Array.isArray(subGroupNames) || subGroupNames.length === 0) {
-    return res.status(400).json({ error: "subGroupNames is required and must be a non-empty array" });
-  }
-
-  try {
-    // 1️⃣ Calculate opening date range
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const openingFromDate = `${fromYear}/04/01`;
-    const openingToDate = `${toYear}/03/31`;
-
-    console.log(`🗓️ Opening Period: ${openingFromDate} to ${openingToDate}`);
-
-    const results = [];
-
-    for (const subGroupName of subGroupNames) {
-      console.log(`🔎 Processing SubGroupName: ${subGroupName}`);
-
-      // Step 2️⃣ Get SubGroup details
-      const subGrpQuery = `
-        SELECT TOP 1 LgrSubGrpID, SubGrpAlias, LgrGrpID
-        FROM dbo.tbLedgerSubGroup
-        WHERE RTRIM(LTRIM(SubGrpName)) = RTRIM(LTRIM(?))
-      `;
-
-      const subGrpResult = await new Promise((resolve, reject) => {
-        sql.query(conn, subGrpQuery, [subGroupName], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      const subGrpRow = subGrpResult?.[0];
-      if (!subGrpRow) {
-        console.warn(`⚠️ SubGroupName "${subGroupName}" not found`);
-        results.push({
-          mainGroupName: "Unknown",
-          mainGroupAlias: "",
-          subGroupName,
-          subGrpAlias: "",
-          amount: 0
-        });
-        continue;
-      }
-
-      const subGrpID = subGrpRow.LgrSubGrpID;
-      const subGrpAlias = subGrpRow.SubGrpAlias || "";
-      const lgrGrpID = subGrpRow.LgrGrpID;
-
-      // Step 3️⃣ Get Main Group details
-      let mainGroupName = "Unknown";
-      let mainGroupAlias = "";
-      if (lgrGrpID) {
-        const grpQuery = `
-          SELECT TOP 1 GrpName, GrpAlias
-          FROM dbo.tbLedgerGroup
-          WHERE LgrGrpID = ?
-        `;
-        const grpResult = await new Promise((resolve, reject) => {
-          sql.query(conn, grpQuery, [lgrGrpID], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-        if (grpResult?.[0]) {
-          mainGroupName = grpResult[0].GrpName || "Unknown";
-          mainGroupAlias = grpResult[0].GrpAlias || "";
-        }
-      }
-
-      // Step 4️⃣ Get all GLIDs under this sub-group
-      const glidQuery = `
-        SELECT GLID, GLName
-        FROM dbo.tbLedgerMaster
-        WHERE LgrSubGrpID = ?
-      `;
-
-      const glidResult = await new Promise((resolve, reject) => {
-        sql.query(conn, glidQuery, [subGrpID], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      const glids = glidResult;
-      console.log(`🗂️ GLIDs for ${subGroupName}:`, glids);
-
-      // Step 5️⃣ Sum Dr/Cr for all GLIDs
-      let totalPeriodDr = 0;
-      let totalPeriodCr = 0;
-      let totalOpeningDr = 0;
-      let totalOpeningCr = 0;
-
-      for (const { GLID, GLName } of glids) {
-        // 5.1️⃣ Period Dr/Cr
-        const periodQuery = `
-          SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-                 ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-
-        const periodResult = await new Promise((resolve, reject) => {
-          sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-
-        totalPeriodDr += periodResult?.[0]?.TotalDrAmount || 0;
-        totalPeriodCr += periodResult?.[0]?.TotalCrAmount || 0;
-
-        // 5.2️⃣ Opening Dr/Cr
-        const openingQuery = `
-          SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-                 ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-
-        const openingResult = await new Promise((resolve, reject) => {
-          sql.query(conn, openingQuery, [GLID, openingFromDate, openingToDate], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-
-        let openingDr = openingResult?.[0]?.TotalDrAmount || 0;
-        let openingCr = openingResult?.[0]?.TotalCrAmount || 0;
-
-        // 5.3️⃣ Add Excel amounts if matching GLName
-        if (excelData && Array.isArray(excelData)) {
-          const matchedRow = excelData.find(
-            (row) => row.particular?.trim() === GLName?.trim()
-          );
-
-          if (matchedRow) {
-            console.log(`✅ Matched Excel row for ${GLName}`);
-            openingDr += matchedRow.openingDebit || 0;
-            openingCr += matchedRow.openingCredit || 0;
-          }
-        }
-
-        totalOpeningDr += openingDr;
-        totalOpeningCr += openingCr;
-      }
-
-      const periodAmount = totalPeriodDr - totalPeriodCr;
-      const openingAmount = totalOpeningDr - totalOpeningCr;
-      const finalAmount = openingAmount + periodAmount;
-
-      // Step 6️⃣ Add final object
-      results.push({
-        mainGroupName,
-        mainGroupAlias,
-        subGroupName,
-        subGrpAlias,
-        amount: finalAmount
-      });
-    }
-
-    console.log("✅ Computed Results:", results);
-    return res.json(results);
-
-  } catch (error) {
-    console.error("❌ Error in /api/gs/szbiotablepop:", error);
-    return res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
-app.post("/api/gs/soiotablepop", async (req, res) => {
-  const conn = req.session.conn;
-  const { subGroupNames, fromDate, toDate, excelData } = req.body;
-
-  console.log("✅ /api/gs/soiotablepop HIT");
-  console.log("📜 subGroupNames:", subGroupNames);
-
-  if (!Array.isArray(subGroupNames) || subGroupNames.length === 0) {
-    return res.status(400).json({ error: "subGroupNames is required and must be a non-empty array" });
-  }
-
-  try {
-    // 1️⃣ Calculate opening date range
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const openingFromDate = `${fromYear}/04/01`;
-    const openingToDate = `${toYear}/03/31`;
-
-    console.log(`🗓️ Opening Period: ${openingFromDate} to ${openingToDate}`);
-
-    const results = [];
-
-    for (const subGroupName of subGroupNames) {
-      console.log(`🔎 Processing SubGroupName: ${subGroupName}`);
-
-      // Step 2️⃣ Get SubGroup details
-      const subGrpQuery = `
-        SELECT TOP 1 LgrSubGrpID, SubGrpAlias, LgrGrpID
-        FROM dbo.tbLedgerSubGroup
-        WHERE RTRIM(LTRIM(SubGrpName)) = RTRIM(LTRIM(?))
-      `;
-
-      const subGrpResult = await new Promise((resolve, reject) => {
-        sql.query(conn, subGrpQuery, [subGroupName], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      const subGrpRow = subGrpResult?.[0];
-      if (!subGrpRow) {
-        console.warn(`⚠️ SubGroupName "${subGroupName}" not found`);
-        results.push({
-          mainGroupName: "Unknown",
-          mainGroupAlias: "",
-          subGroupName,
-          subGrpAlias: "",
-          amount: 0
-        });
-        continue;
-      }
-
-      const subGrpID = subGrpRow.LgrSubGrpID;
-      const subGrpAlias = subGrpRow.SubGrpAlias || "";
-      const lgrGrpID = subGrpRow.LgrGrpID;
-
-      // Step 3️⃣ Get Main Group details
-      let mainGroupName = "Unknown";
-      let mainGroupAlias = "";
-      if (lgrGrpID) {
-        const grpQuery = `
-          SELECT TOP 1 GrpName, GrpAlias
-          FROM dbo.tbLedgerGroup
-          WHERE LgrGrpID = ?
-        `;
-        const grpResult = await new Promise((resolve, reject) => {
-          sql.query(conn, grpQuery, [lgrGrpID], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-        if (grpResult?.[0]) {
-          mainGroupName = grpResult[0].GrpName || "Unknown";
-          mainGroupAlias = grpResult[0].GrpAlias || "";
-        }
-      }
-
-      // Step 4️⃣ Get all GLIDs under this sub-group
-      const glidQuery = `
-        SELECT GLID, GLName
-        FROM dbo.tbLedgerMaster
-        WHERE LgrSubGrpID = ?
-      `;
-
-      const glidResult = await new Promise((resolve, reject) => {
-        sql.query(conn, glidQuery, [subGrpID], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      const glids = glidResult;
-      console.log(`🗂️ GLIDs for ${subGroupName}:`, glids);
-
-      // Step 5️⃣ Sum Dr/Cr for all GLIDs
-      let totalPeriodDr = 0;
-      let totalPeriodCr = 0;
-      let totalOpeningDr = 0;
-      let totalOpeningCr = 0;
-
-      for (const { GLID, GLName } of glids) {
-        // 5.1️⃣ Period Dr/Cr
-        const periodQuery = `
-          SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-                 ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-
-        const periodResult = await new Promise((resolve, reject) => {
-          sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-
-        totalPeriodDr += periodResult?.[0]?.TotalDrAmount || 0;
-        totalPeriodCr += periodResult?.[0]?.TotalCrAmount || 0;
-
-        // 5.2️⃣ Opening Dr/Cr
-        const openingQuery = `
-          SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-                 ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-
-        const openingResult = await new Promise((resolve, reject) => {
-          sql.query(conn, openingQuery, [GLID, openingFromDate, openingToDate], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-
-        let openingDr = openingResult?.[0]?.TotalDrAmount || 0;
-        let openingCr = openingResult?.[0]?.TotalCrAmount || 0;
-
-        // 5.3️⃣ Add Excel amounts if matching GLName
-        if (excelData && Array.isArray(excelData)) {
-          const matchedRow = excelData.find(
-            (row) => row.particular?.trim() === GLName?.trim()
-          );
-
-          if (matchedRow) {
-            console.log(`✅ Matched Excel row for ${GLName}`);
-            openingDr += matchedRow.openingDebit || 0;
-            openingCr += matchedRow.openingCredit || 0;
-          }
-        }
-
-        totalOpeningDr += openingDr;
-        totalOpeningCr += openingCr;
-      }
-
-      const periodAmount = totalPeriodDr - totalPeriodCr;
-      const openingAmount = totalOpeningDr - totalOpeningCr;
-      const finalAmount = openingAmount + periodAmount;
-
-      // Step 6️⃣ Add final object
-      results.push({
-        mainGroupName,
-        mainGroupAlias,
-        subGroupName,
-        subGrpAlias,
-        amount: finalAmount
-      });
-    }
-
-    console.log("✅ Computed Results:", results);
-    return res.json(results);
-
-  } catch (error) {
-    console.error("❌ Error in /api/gs/soiotablepop:", error);
-    return res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
-
-
-
-app.post("/api/gs/IOtablepop", async (req, res) => {
-  const conn = req.session.conn;
-  const { ledgerNames, fromDate, toDate, excelData } = req.body;
-
-  console.log("📦 /api/gs/IOtablepop HIT");
-  console.log("📝 Ledger Names:", ledgerNames);
-  console.log("📅 From:", fromDate, "To:", toDate);
-
-  if (!Array.isArray(ledgerNames) || ledgerNames.length === 0) {
-    return res.status(400).json({ error: "ledgerNames array is required" });
-  }
-
-  if (!Array.isArray(excelData) || excelData.length === 0) {
-    return res.status(400).json({ error: "excelData is required" });
-  }
-
-  try {
-    const results = [];
-
-    // Calculate opening date range
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const openingFromDate = `${fromYear}/04/01`;
-    const openingToDate = `${toYear}/03/31`;
-
-    for (const ledgerName of ledgerNames) {
-      // Step 1: Get GLID, SubGrpID, GrpID from LedgerMaster
-      const masterQuery = `
-        SELECT TOP 1 GLID, LgrSubGrpID, LgrGrpID, GlAlias
-        FROM dbo.tbLedgerMaster
-        WHERE RTRIM(LTRIM(GLName)) = RTRIM(LTRIM(?))
-      `;
-
-      const masterResult = await new Promise((resolve, reject) => {
-        sql.query(conn, masterQuery, [ledgerName], (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows);
-        });
-      });
-
-      const masterRow = masterResult?.[0];
-      if (!masterRow) {
-        console.warn(`Ledger "${ledgerName}" not found in tbLedgerMaster`);
-        continue;
-      }
-
-      const { GLID, LgrSubGrpID, LgrGrpID, GlAlias } = masterRow;
-
-      // Step 2: Get SubGroup info
-      let subGrpName = "Unknown";
-      let subGrpAlias = "";
-
-      if (LgrSubGrpID) {
-        const subGrpQuery = `
-          SELECT TOP 1 SubGrpName, SubGrpAlias
-          FROM dbo.tbLedgerSubGroup
-          WHERE LgrSubGrpID = ?
-        `;
-
-        const subGrpResult = await new Promise((resolve, reject) => {
-          sql.query(conn, subGrpQuery, [LgrSubGrpID], (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-          });
-        });
-
-        if (subGrpResult?.[0]) {
-          subGrpName = subGrpResult[0].SubGrpName || "Unknown";
-          subGrpAlias = subGrpResult[0].SubGrpAlias || "";
-        }
-      }
-
-      // Step 3: Get Group info
-      let grpName = "Unknown";
-      let grpAlias = "";
-
-      if (LgrGrpID) {
-        const grpQuery = `
-          SELECT TOP 1 GrpName, GrpAlias
-          FROM dbo.tbLedgerGroup
-          WHERE LgrGrpID = ?
-        `;
-
-        const grpResult = await new Promise((resolve, reject) => {
-          sql.query(conn, grpQuery, [LgrGrpID], (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-          });
-        });
-
-        if (grpResult?.[0]) {
-          grpName = grpResult[0].GrpName || "Unknown";
-          grpAlias = grpResult[0].GrpAlias || "";
-        }
-      }
-
-      // Step 4: Get Journal opening + period Dr/Cr
-      let periodDr = 0;
-      let periodCr = 0;
-      let openingDr = 0;
-      let openingCr = 0;
-
-      if (GLID) {
-        // Period totals
-        const periodQuery = `
-          SELECT
-            ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-            ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-
-        const periodResult = await new Promise((resolve, reject) => {
-          sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-          });
-        });
-
-        if (periodResult?.[0]) {
-          periodDr = periodResult[0].TotalDrAmount || 0;
-          periodCr = periodResult[0].TotalCrAmount || 0;
-        }
-
-        // Opening (previous fiscal year) totals
-        const openingQuery = `
-          SELECT
-            ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-            ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-
-        const openingResult = await new Promise((resolve, reject) => {
-          sql.query(conn, openingQuery, [GLID, openingFromDate, openingToDate], (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-          });
-        });
-
-        if (openingResult?.[0]) {
-          openingDr = openingResult[0].TotalDrAmount || 0;
-          openingCr = openingResult[0].TotalCrAmount || 0;
-        }
-      }
-
-      // 🟠 Step 5: Add Excel opening balances if they match
-      let excelOpeningDr = 0;
-      let excelOpeningCr = 0;
-
-      const excelRow = excelData.find(row =>
-        row.particular?.trim().toLowerCase() === ledgerName.trim().toLowerCase()
-      );
-
-      if (excelRow) {
-        excelOpeningDr = parseFloat(excelRow.openingDebit || 0);
-        excelOpeningCr = parseFloat(excelRow.openingCredit || 0);
-      }
-
-      // Combine:
-      const newOpeningDr = openingDr + excelOpeningDr;
-      const newOpeningCr = openingCr + excelOpeningCr;
-
-      // Final balance
-      const finalDr = newOpeningDr + periodDr;
-      const finalCr = newOpeningCr + periodCr;
-      const amount = finalDr - finalCr;
-
-      // Build response object
-      results.push({
-        grpName,
-        grpAlias,
-        subGrpName,
-        subGrpAlias,
-        ledgerName,
-        ledgerAlias: GlAlias || "",
-        amount
-      });
-    }
-
-    console.log("✅ Final results preview:", results.slice(0, 5));
-    res.json(results);
-
-  } catch (error) {
-    console.error("❌ Error in /api/gs/IOtablepop:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
-
-
-app.post('/api/gs/SLtablepop', async (req, res) => {
-  const conn = req.session.conn;
-  const { ledgerNames, fromDate, toDate } = req.body;
-
-  console.log('🔥 /api/gs/SLtablepop HIT');
-  console.log('📝 ledgerNames:', ledgerNames);
-  console.log('📅 fromDate:', fromDate, 'toDate:', toDate);
-
-  try {
-    const finalOutput = [];
-
-    for (const ledgerName of ledgerNames) {
-      // 1️⃣ Get Ledger Info: GLID, LgrSubGrpID
-      const ledgerQuery = `
-        SELECT TOP 1 GLID, LgrSubGrpID
-        FROM dbo.tbLedgerMaster
-        WHERE RTRIM(LTRIM(GLName)) = RTRIM(LTRIM(?))
-      `;
-      const ledgerResult = await new Promise((resolve, reject) => {
-        sql.query(conn, ledgerQuery, [ledgerName], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      if (!ledgerResult?.length) continue;
-
-      const { GLID, LgrSubGrpID } = ledgerResult[0];
-
-      // 2️⃣ Get Sub Group Info: SubGrpName, SubGrpAlias, LgrGrpID
-      let SubGrpName = 'Ungrouped';
-      let SubGrpAlias = '';
-      let LgrGrpID = null;
-
-      if (LgrSubGrpID) {
-        const subGrpQuery = `
-          SELECT TOP 1 SubGrpName, SubGrpAlias, LgrGrpID
-          FROM dbo.tbLedgerSubGroup
-          WHERE LgrSubGrpID = ?
-        `;
-        const subGrpResult = await new Promise((resolve, reject) => {
-          sql.query(conn, subGrpQuery, [LgrSubGrpID], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-        if (subGrpResult?.length) {
-          SubGrpName = subGrpResult[0].SubGrpName || 'Ungrouped';
-          SubGrpAlias = subGrpResult[0].SubGrpAlias || '';
-          LgrGrpID = subGrpResult[0].LgrGrpID;
-        }
-      }
-
-      // 3️⃣ Get Main Group Info
-      let GrpName = 'Ungrouped';
-      let GrpAlias = '';
-      if (LgrGrpID) {
-        const grpQuery = `
-          SELECT TOP 1 GrpName, GrpAlias
-          FROM dbo.tbLedgerGroup
-          WHERE LgrGrpID = ?
-        `;
-        const grpResult = await new Promise((resolve, reject) => {
-          sql.query(conn, grpQuery, [LgrGrpID], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-        if (grpResult?.length) {
-          GrpName = grpResult[0].GrpName || 'Ungrouped';
-          GrpAlias = grpResult[0].GrpAlias || '';
-        }
-      }
-
-      // 4️⃣ Calculate Ledger Amount (Dr - Cr)
-      let amount = 0;
-      const totalQuery = `
-        SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-               ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-        FROM dbo.tbJournal
-        WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-      `;
-      const totalResult = await new Promise((resolve, reject) => {
-        sql.query(conn, totalQuery, [GLID, fromDate, toDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      const DrTotal = totalResult?.[0]?.TotalDrAmount || 0;
-      const CrTotal = totalResult?.[0]?.TotalCrAmount || 0;
-      amount = DrTotal - CrTotal;
-
-      // 5️⃣ Get Sub-Ledger Transactions (sub-elements)
-      const subLedgerQuery = `
-        SELECT SLID, DrAmount, CrAmount
-        FROM dbo.tbJournal
-        WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-          AND SLID IS NOT NULL
-      `;
-      const subLedgerResult = await new Promise((resolve, reject) => {
-        sql.query(conn, subLedgerQuery, [GLID, fromDate, toDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      const subLedgers = [];
-      if (subLedgerResult?.length) {
-        for (const row of subLedgerResult) {
-          const { SLID, DrAmount, CrAmount } = row;
-
-          if (!SLID) continue;
-
-          // Get SLName and SLAlias
-          const slQuery = `
-            SELECT TOP 1 SLName, SLAlias
-            FROM dbo.tbSubLedgerMaster
-            WHERE SLID = ?
-          `;
-          const slResult = await new Promise((resolve, reject) => {
-            sql.query(conn, slQuery, [SLID], (err, result) => {
-              if (err) return reject(err);
-              resolve(result);
-            });
-          });
-
-          const SLName = slResult?.[0]?.SLName || 'Unknown SubLedger';
-          const SLAlias = slResult?.[0]?.SLAlias || '';
-
-          // Determine Amount
-          let subAmount = 0;
-          if (DrAmount && DrAmount !== 0) {
-            subAmount = -DrAmount;
-          } else if (CrAmount && CrAmount !== 0) {
-            subAmount = CrAmount;
-          }
-
-          subLedgers.push({
-            subLedgerName: SLName,
-            subLedgerAlias: SLAlias,
-            amount: subAmount
-          });
-        }
-      }
-
-      // 6️⃣ Build final data structure for this ledger
-      finalOutput.push({
-        grpName: GrpName,
-        grpAlias: GrpAlias,
-        subGrpName: SubGrpName,
-        subGrpAlias: SubGrpAlias,
-        ledgerName: ledgerName,
-        ledgerAlias: ledgerResult[0].GLAlias || '',
-        amount,
-        subLedgers
-      });
-    }
-
-    console.log('✅ Returning sub-ledger enriched data:', finalOutput.length);
-    return res.json(finalOutput);
-
-  } catch (error) {
-    console.error('❌ Error in /api/gs/SLtablepop:', error);
-    return res.status(500).json({ error: 'Internal Server Error', details: error.message });
-  }
-});
-app.post('/api/gs/SLIOSZBtablepop', async (req, res) => {
-  const conn = req.session.conn;
-  const { ledgerNames, fromDate, toDate, excelData, excelData2 } = req.body;
-
-  console.log('🔥 /api/gs/SLIOSZBtablepop HIT');
-  console.log('📝 ledgerNames:', ledgerNames);
-  console.log('📅 fromDate:', fromDate, 'toDate:', toDate);
-
-  if (!excelData || !excelData2) {
-    return res.status(400).json({ error: 'Excel data (both sheets) required' });
-  }
-
-  try {
-    const finalOutput = [];
-
-    // Compute 1 fiscal year back range for opening
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const openingFromDate = `${fromYear}/04/01`;
-    const openingToDate = `${toYear}/03/31`;
-
-    for (const ledgerName of ledgerNames) {
-      // 1️⃣ Ledger Master Info
-      const ledgerQuery = `
-        SELECT TOP 1 GLID, LgrSubGrpID, GlAlias
-        FROM dbo.tbLedgerMaster
-        WHERE RTRIM(LTRIM(GLName)) = RTRIM(LTRIM(?))
-      `;
-      const ledgerResult = await sqlQuery(conn, ledgerQuery, [ledgerName]);
-      if (!ledgerResult.length) continue;
-
-      const { GLID, LgrSubGrpID, GlAlias } = ledgerResult[0];
-
-      // 2️⃣ Sub Group Info
-      let SubGrpName = 'Ungrouped';
-      let SubGrpAlias = '';
-      let LgrGrpID = null;
-      if (LgrSubGrpID) {
-        const subGrpQuery = `
-          SELECT TOP 1 SubGrpName, SubGrpAlias, LgrGrpID
-          FROM dbo.tbLedgerSubGroup
-          WHERE LgrSubGrpID = ?
-        `;
-        const subGrpResult = await sqlQuery(conn, subGrpQuery, [LgrSubGrpID]);
-        if (subGrpResult.length) {
-          SubGrpName = subGrpResult[0].SubGrpName || 'Ungrouped';
-          SubGrpAlias = subGrpResult[0].SubGrpAlias || '';
-          LgrGrpID = subGrpResult[0].LgrGrpID;
-        }
-      }
-
-      // 3️⃣ Main Group Info
-      let GrpName = 'Ungrouped';
-      let GrpAlias = '';
-      if (LgrGrpID) {
-        const grpQuery = `
-          SELECT TOP 1 GrpName, GrpAlias
-          FROM dbo.tbLedgerGroup
-          WHERE LgrGrpID = ?
-        `;
-        const grpResult = await sqlQuery(conn, grpQuery, [LgrGrpID]);
-        if (grpResult.length) {
-          GrpName = grpResult[0].GrpName || 'Ungrouped';
-          GrpAlias = grpResult[0].GrpAlias || '';
-        }
-      }
-
-      // 4️⃣ Ledger Opening Dr/Cr (previous fiscal year from Journal)
-      let openingDr_DB = 0;
-      let openingCr_DB = 0;
-      if (GLID) {
-        const openingQuery = `
-          SELECT ISNULL(SUM(DrAmount), 0) AS TotalDr, ISNULL(SUM(CrAmount), 0) AS TotalCr
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-        const openingResult = await sqlQuery(conn, openingQuery, [GLID, openingFromDate, openingToDate]);
-        if (openingResult.length) {
-          openingDr_DB = openingResult[0].TotalDr || 0;
-          openingCr_DB = openingResult[0].TotalCr || 0;
-        }
-      }
-
-      // 5️⃣ Ledger Opening from Excel (sheet1)
-      let excelOpeningDr = 0;
-      let excelOpeningCr = 0;
-      const excelLedgerRow = excelData.find(e => e.particular.trim() === ledgerName.trim());
-      if (excelLedgerRow) {
-        excelOpeningDr = excelLedgerRow.openingDebit || 0;
-        excelOpeningCr = excelLedgerRow.openingCredit || 0;
-      }
-
-      // Final Ledger Opening
-      const finalOpeningDr = openingDr_DB + excelOpeningDr;
-      const finalOpeningCr = openingCr_DB + excelOpeningCr;
-
-      // 6️⃣ Period Dr/Cr
-      let periodDr = 0;
-      let periodCr = 0;
-      if (GLID) {
-        const periodQuery = `
-          SELECT ISNULL(SUM(DrAmount), 0) AS TotalDr, ISNULL(SUM(CrAmount), 0) AS TotalCr
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-        const periodResult = await sqlQuery(conn, periodQuery, [GLID, fromDate, toDate]);
-        if (periodResult.length) {
-          periodDr = periodResult[0].TotalDr || 0;
-          periodCr = periodResult[0].TotalCr || 0;
-        }
-      }
-
-      // 7️⃣ Final Ledger Amount
-      const totalDr = finalOpeningDr + periodDr;
-      const totalCr = finalOpeningCr + periodCr;
-      const ledgerNetAmount = totalDr - totalCr;
-
-      // 8️⃣ Sub-ledgers
-      const subLedgerQuery = `
-        SELECT SLID, ISNULL(SUM(DrAmount),0) AS DrAmount, ISNULL(SUM(CrAmount),0) AS CrAmount
-        FROM dbo.tbJournal
-        WHERE GLID = ? AND JV_Miti BETWEEN ? AND ? AND SLID IS NOT NULL
-        GROUP BY SLID
-      `;
-      const subLedgerResult = await sqlQuery(conn, subLedgerQuery, [GLID, fromDate, toDate]);
-
-      const subLedgers = [];
-      for (const row of subLedgerResult) {
-        const { SLID, DrAmount, CrAmount } = row;
-        if (!SLID) continue;
-
-        // Get SLName and SLAlias
-        const slQuery = `
-          SELECT TOP 1 SLName, SLAlias
-          FROM dbo.tbSubLedgerMaster
-          WHERE SLID = ?
-        `;
-        const slResult = await sqlQuery(conn, slQuery, [SLID]);
-        const SLName = slResult?.[0]?.SLName || 'Unknown SubLedger';
-        const SLAlias = slResult?.[0]?.SLAlias || '';
-
-        // Get opening from Excel sheet2 (no DB opening for subledger!)
-        let excelSLRow = excelData2.find(e => e.particular.trim() === SLName.trim());
-        let excelOpeningDrSL = 0;
-        let excelOpeningCrSL = 0;
-        if (excelSLRow) {
-          excelOpeningDrSL = excelSLRow.openingDebit || 0;
-          excelOpeningCrSL = excelSLRow.openingCredit || 0;
-        }
-
-        // Period amounts from journal
-        const periodDrSL = DrAmount || 0;
-        const periodCrSL = CrAmount || 0;
-
-        // Final amounts
-        const totalDrSL = excelOpeningDrSL + periodDrSL;
-        const totalCrSL = excelOpeningCrSL + periodCrSL;
-        const netAmountSL = totalDrSL - totalCrSL;
-
-        subLedgers.push({
-          subLedgerName: SLName,
-          subLedgerAlias: SLAlias,
-          amount: netAmountSL
-        });
-      }
-
-      // 9️⃣ Final Result Push
-      finalOutput.push({
-        grpName: GrpName,
-        grpAlias: GrpAlias,
-        subGrpName: SubGrpName,
-        subGrpAlias: SubGrpAlias,
-        ledgerName,
-        ledgerAlias: GlAlias || '',
-        amount: ledgerNetAmount,
-        subLedgers
-      });
-    }
-
-    console.log('✅ Returning sub-ledger enriched data:', finalOutput.length);
-    res.json(finalOutput);
-
-  } catch (error) {
-    console.error('❌ Error in /api/gs/SLIOSZBtablepop:', error);
-    res.status(500).json({ error: 'Internal Server Error', details: error.message });
-  }
-});
-app.post('/api/gs/SLIOtablepop', async (req, res) => {
-  const conn = req.session.conn;
-  const { ledgerNames, fromDate, toDate, excelData, excelData2 } = req.body;
-
-  console.log('🔥 /api/gs/SLIOtablepop HIT');
-  console.log('📝 ledgerNames:', ledgerNames);
-  console.log('📅 fromDate:', fromDate, 'toDate:', toDate);
-
-  if (!excelData || !excelData2) {
-    return res.status(400).json({ error: 'Excel data (both sheets) required' });
-  }
-
-  try {
-    const finalOutput = [];
-
-    // Compute 1 fiscal year back range for opening
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const openingFromDate = `${fromYear}/04/01`;
-    const openingToDate = `${toYear}/03/31`;
-
-    for (const ledgerName of ledgerNames) {
-      // 1️⃣ Ledger Master Info
-      const ledgerQuery = `
-        SELECT TOP 1 GLID, LgrSubGrpID, GlAlias
-        FROM dbo.tbLedgerMaster
-        WHERE RTRIM(LTRIM(GLName)) = RTRIM(LTRIM(?))
-      `;
-      const ledgerResult = await sqlQuery(conn, ledgerQuery, [ledgerName]);
-      if (!ledgerResult.length) continue;
-
-      const { GLID, LgrSubGrpID, GlAlias } = ledgerResult[0];
-
-      // 2️⃣ Sub Group Info
-      let SubGrpName = 'Ungrouped';
-      let SubGrpAlias = '';
-      let LgrGrpID = null;
-      if (LgrSubGrpID) {
-        const subGrpQuery = `
-          SELECT TOP 1 SubGrpName, SubGrpAlias, LgrGrpID
-          FROM dbo.tbLedgerSubGroup
-          WHERE LgrSubGrpID = ?
-        `;
-        const subGrpResult = await sqlQuery(conn, subGrpQuery, [LgrSubGrpID]);
-        if (subGrpResult.length) {
-          SubGrpName = subGrpResult[0].SubGrpName || 'Ungrouped';
-          SubGrpAlias = subGrpResult[0].SubGrpAlias || '';
-          LgrGrpID = subGrpResult[0].LgrGrpID;
-        }
-      }
-
-      // 3️⃣ Main Group Info
-      let GrpName = 'Ungrouped';
-      let GrpAlias = '';
-      if (LgrGrpID) {
-        const grpQuery = `
-          SELECT TOP 1 GrpName, GrpAlias
-          FROM dbo.tbLedgerGroup
-          WHERE LgrGrpID = ?
-        `;
-        const grpResult = await sqlQuery(conn, grpQuery, [LgrGrpID]);
-        if (grpResult.length) {
-          GrpName = grpResult[0].GrpName || 'Ungrouped';
-          GrpAlias = grpResult[0].GrpAlias || '';
-        }
-      }
-
-      // 4️⃣ Ledger Opening Dr/Cr (previous fiscal year from Journal)
-      let openingDr_DB = 0;
-      let openingCr_DB = 0;
-      if (GLID) {
-        const openingQuery = `
-          SELECT ISNULL(SUM(DrAmount), 0) AS TotalDr, ISNULL(SUM(CrAmount), 0) AS TotalCr
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-        const openingResult = await sqlQuery(conn, openingQuery, [GLID, openingFromDate, openingToDate]);
-        if (openingResult.length) {
-          openingDr_DB = openingResult[0].TotalDr || 0;
-          openingCr_DB = openingResult[0].TotalCr || 0;
-        }
-      }
-
-      // 5️⃣ Ledger Opening from Excel (sheet1)
-      let excelOpeningDr = 0;
-      let excelOpeningCr = 0;
-      const excelLedgerRow = excelData.find(e => e.particular.trim() === ledgerName.trim());
-      if (excelLedgerRow) {
-        excelOpeningDr = excelLedgerRow.openingDebit || 0;
-        excelOpeningCr = excelLedgerRow.openingCredit || 0;
-      }
-
-      // Final Ledger Opening
-      const finalOpeningDr = openingDr_DB + excelOpeningDr;
-      const finalOpeningCr = openingCr_DB + excelOpeningCr;
-
-      // 6️⃣ Period Dr/Cr
-      let periodDr = 0;
-      let periodCr = 0;
-      if (GLID) {
-        const periodQuery = `
-          SELECT ISNULL(SUM(DrAmount), 0) AS TotalDr, ISNULL(SUM(CrAmount), 0) AS TotalCr
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-        const periodResult = await sqlQuery(conn, periodQuery, [GLID, fromDate, toDate]);
-        if (periodResult.length) {
-          periodDr = periodResult[0].TotalDr || 0;
-          periodCr = periodResult[0].TotalCr || 0;
-        }
-      }
-
-      // 7️⃣ Final Ledger Amount
-      const totalDr = finalOpeningDr + periodDr;
-      const totalCr = finalOpeningCr + periodCr;
-      const ledgerNetAmount = totalDr - totalCr;
-
-      // 8️⃣ Sub-ledgers
-      const subLedgerQuery = `
-        SELECT SLID, ISNULL(SUM(DrAmount),0) AS DrAmount, ISNULL(SUM(CrAmount),0) AS CrAmount
-        FROM dbo.tbJournal
-        WHERE GLID = ? AND JV_Miti BETWEEN ? AND ? AND SLID IS NOT NULL
-        GROUP BY SLID
-      `;
-      const subLedgerResult = await sqlQuery(conn, subLedgerQuery, [GLID, fromDate, toDate]);
-
-      const subLedgers = [];
-      for (const row of subLedgerResult) {
-        const { SLID, DrAmount, CrAmount } = row;
-        if (!SLID) continue;
-
-        // Get SLName and SLAlias
-        const slQuery = `
-          SELECT TOP 1 SLName, SLAlias
-          FROM dbo.tbSubLedgerMaster
-          WHERE SLID = ?
-        `;
-        const slResult = await sqlQuery(conn, slQuery, [SLID]);
-        const SLName = slResult?.[0]?.SLName || 'Unknown SubLedger';
-        const SLAlias = slResult?.[0]?.SLAlias || '';
-
-        // Get opening from Excel sheet2 (no DB opening for subledger!)
-        let excelSLRow = excelData2.find(e => e.particular.trim() === SLName.trim());
-        let excelOpeningDrSL = 0;
-        let excelOpeningCrSL = 0;
-        if (excelSLRow) {
-          excelOpeningDrSL = excelSLRow.openingDebit || 0;
-          excelOpeningCrSL = excelSLRow.openingCredit || 0;
-        }
-
-        // Period amounts from journal
-        const periodDrSL = DrAmount || 0;
-        const periodCrSL = CrAmount || 0;
-
-        // Final amounts
-        const totalDrSL = excelOpeningDrSL + periodDrSL;
-        const totalCrSL = excelOpeningCrSL + periodCrSL;
-        const netAmountSL = totalDrSL - totalCrSL;
-
-        subLedgers.push({
-          subLedgerName: SLName,
-          subLedgerAlias: SLAlias,
-          amount: netAmountSL
-        });
-      }
-
-      // 9️⃣ Final Result Push
-      finalOutput.push({
-        grpName: GrpName,
-        grpAlias: GrpAlias,
-        subGrpName: SubGrpName,
-        subGrpAlias: SubGrpAlias,
-        ledgerName,
-        ledgerAlias: GlAlias || '',
-        amount: ledgerNetAmount,
-        subLedgers
-      });
-    }
-
-    console.log('✅ Returning sub-ledger enriched data:', finalOutput.length);
-    res.json(finalOutput);
-
-  } catch (error) {
-    console.error('❌ Error in /api/gs/SLIOtablepop:', error);
-    res.status(500).json({ error: 'Internal Server Error', details: error.message });
-  }
-});
 // Utility promise wrapper for MSSQL
 function sqlQuery(conn, query, params = []) {
   return new Promise((resolve, reject) => {
@@ -25715,206 +24185,6 @@ function sqlQuery(conn, query, params = []) {
 }
 
 
-
-// POST /api/gs/SelectAllTablePop
-app.post("/api/gs/SelectAllTablePop", async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate } = req.body;
-
-  console.log("📦 /api/gs/SelectAllTablePop HIT");
-  console.log("📅 From:", fromDate, "To:", toDate);
-
-  try {
-    // Step 1: Get all groups
-    const groupQuery = `SELECT LgrGrpID, GrpName, GrpAlias FROM dbo.tbLedgerGroup`;
-    const groups = await new Promise((resolve, reject) => {
-      sql.query(conn, groupQuery, (err, rows) => {
-        if (err) return reject(err);
-        resolve(rows);
-      });
-    });
-
-    const result = [];
-
-    for (const group of groups) {
-      const { LgrGrpID, GrpName, GrpAlias } = group;
-
-      // Step 2: Get sub-groups under this group
-      const subGroupQuery = `SELECT LgrSubGrpID, SubGrpName, SubGrpAlias FROM dbo.tbLedgerSubGroup WHERE LgrGrpID = ?`;
-      const subGroups = await new Promise((resolve, reject) => {
-        sql.query(conn, subGroupQuery, [LgrGrpID], (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows);
-        });
-      });
-
-      const subGroupResults = [];
-
-      for (const sub of subGroups) {
-        const { LgrSubGrpID, SubGrpName, SubGrpAlias } = sub;
-
-        // Step 3: Get ledgers under this subgroup
-        const ledgerQuery = `SELECT GLID, GLName, GlAlias FROM dbo.tbLedgerMaster WHERE LgrSubGrpID = ?`;
-        const ledgers = await new Promise((resolve, reject) => {
-          sql.query(conn, ledgerQuery, [LgrSubGrpID], (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-          });
-        });
-
-        const ledgerResults = [];
-
-        for (const ledger of ledgers) {
-          const { GLID, GLName, GlAlias } = ledger;
-
-          // Step 4: Calculate amount
-          const totalQuery = `
-            SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-                   ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-            FROM dbo.tbJournal
-            WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-          `;
-
-          const total = await new Promise((resolve, reject) => {
-            sql.query(conn, totalQuery, [GLID, fromDate, toDate], (err, rows) => {
-              if (err) return reject(err);
-              resolve(rows[0]);
-            });
-          });
-
-          const amount = (total?.TotalDrAmount || 0) - (total?.TotalCrAmount || 0);
-
-          ledgerResults.push({
-            ledgerName: GLName,
-            ledgerAlias: GlAlias || '',
-            amount
-          });
-        }
-
-        subGroupResults.push({
-          subGrpName: SubGrpName,
-          subGrpAlias: SubGrpAlias || '',
-          ledgers: ledgerResults
-        });
-      }
-
-      result.push({
-        grpName: GrpName,
-        grpAlias: GrpAlias || '',
-        subGroups: subGroupResults
-      });
-    }
-
-    console.log("✅ Final select-all structure preview:", JSON.stringify(result.slice(0, 1), null, 2));
-    return res.json(result);
-  } catch (err) {
-    console.error("❌ Error in /api/gs/SelectAllTablePop:", err);
-    return res.status(500).json({ error: "Internal Server Error", detail: err.message });
-  }
-});
-app.post("/api/gs/SelectAllSummaryOnlyPop", async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate } = req.body;
-
-  try {
-    // 1. Get all sub-groups with their LgrGrpID
-    const subGroupQuery = `
-      SELECT LgrSubGrpID, SubGrpName, SubGrpAlias, LgrGrpID
-      FROM dbo.tbLedgerSubGroup
-    `;
-
-    const subGroups = await new Promise((resolve, reject) => {
-      sql.query(conn, subGroupQuery, (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-
-    const results = [];
-
-    for (const sub of subGroups) {
-      const { LgrSubGrpID, SubGrpName, SubGrpAlias, LgrGrpID } = sub;
-
-      // 2. Get Main Group info
-      let grpName = "Unknown";
-      let grpAlias = "";
-
-      if (LgrGrpID) {
-        const grpQuery = `
-          SELECT TOP 1 GrpName, GrpAlias
-          FROM dbo.tbLedgerGroup
-          WHERE LgrGrpID = ?
-        `;
-
-        const grpResult = await new Promise((resolve, reject) => {
-          sql.query(conn, grpQuery, [LgrGrpID], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-
-        if (grpResult?.[0]) {
-          grpName = grpResult[0].GrpName || "Unknown";
-          grpAlias = grpResult[0].GrpAlias || "";
-        }
-      }
-
-      // 3. Get all GLIDs in this sub-group
-      const ledgerQuery = `
-        SELECT GLID
-        FROM dbo.tbLedgerMaster
-        WHERE LgrSubGrpID = ?
-      `;
-
-      const ledgers = await new Promise((resolve, reject) => {
-        sql.query(conn, ledgerQuery, [LgrSubGrpID], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      let subGroupTotal = 0;
-
-      for (const ledger of ledgers) {
-        const GLID = ledger.GLID;
-
-        const totalQuery = `
-          SELECT
-            ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-            ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-
-        const totalResult = await new Promise((resolve, reject) => {
-          sql.query(conn, totalQuery, [GLID, fromDate, toDate], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-
-        if (totalResult?.[0]) {
-          const dr = totalResult[0].TotalDrAmount || 0;
-          const cr = totalResult[0].TotalCrAmount || 0;
-          subGroupTotal += dr - cr;
-        }
-      }
-
-      results.push({
-        grpName,
-        grpAlias,
-        subGroupName: SubGrpName,
-        subGroupAlias: SubGrpAlias,
-        amount: subGroupTotal
-      });
-    }
-
-    res.json(results);
-  } catch (error) {
-    console.error("Error in /api/gs/SelectAllSummaryOnlyPop:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
 app.post("/api/gs/SelectAllSummaryOnlyandSZBPop", async (req, res) => {
   const conn = req.session.conn;
   const { fromDate, toDate } = req.body;
@@ -26018,301 +24288,8 @@ app.post("/api/gs/SelectAllSummaryOnlyandSZBPop", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
-app.post("/api/gs/SelectAllSummaryOnlyandSZBandIOPop", async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate, excelData } = req.body;
 
-  console.log("✅ /api/gs/SelectAllSummaryOnlyandSZBandIOPop HIT");
-  console.log("📅 Period:", fromDate, toDate);
 
-  if (!excelData || !Array.isArray(excelData)) {
-    return res.status(400).json({ error: "Excel data is required." });
-  }
-
-  // 1️⃣ Calculate opening date range
-  const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-  const toYear = parseInt(fromDate.split("/")[0]);
-  const openingFromDate = `${fromYear}/04/01`;
-  const openingToDate = `${toYear}/03/31`;
-
-  console.log("🗓️ Opening Period:", openingFromDate, openingToDate);
-
-  try {
-    // 2️⃣ Get all sub-groups with their IDs
-    const subGroupQuery = `
-      SELECT LgrSubGrpID, SubGrpName, SubGrpAlias, LgrGrpID
-      FROM dbo.tbLedgerSubGroup
-    `;
-    const subGroups = await new Promise((resolve, reject) => {
-      sql.query(conn, subGroupQuery, (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-
-    const results = [];
-
-    for (const sub of subGroups) {
-      const { LgrSubGrpID, SubGrpName, SubGrpAlias, LgrGrpID } = sub;
-
-      // 3️⃣ Get Main Group info
-      let grpName = "Unknown";
-      let grpAlias = "";
-
-      if (LgrGrpID) {
-        const grpQuery = `
-          SELECT TOP 1 GrpName, GrpAlias
-          FROM dbo.tbLedgerGroup
-          WHERE LgrGrpID = ?
-        `;
-        const grpResult = await new Promise((resolve, reject) => {
-          sql.query(conn, grpQuery, [LgrGrpID], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-        if (grpResult?.[0]) {
-          grpName = grpResult[0].GrpName || "Unknown";
-          grpAlias = grpResult[0].GrpAlias || "";
-        }
-      }
-
-      // 4️⃣ Get all GLIDs + GLName in this sub-group
-      const ledgerQuery = `
-        SELECT GLID, GLName
-        FROM dbo.tbLedgerMaster
-        WHERE LgrSubGrpID = ?
-      `;
-      const ledgers = await new Promise((resolve, reject) => {
-        sql.query(conn, ledgerQuery, [LgrSubGrpID], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      let subGroupTotal = 0;
-
-      for (const ledger of ledgers) {
-        const GLID = ledger.GLID;
-        const GLName = ledger.GLName?.trim() || "";
-
-        // 5️⃣ Sum Period Dr/Cr
-        const periodQuery = `
-          SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-                 ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-        const periodResult = await new Promise((resolve, reject) => {
-          sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-        const periodDr = periodResult?.[0]?.TotalDrAmount || 0;
-        const periodCr = periodResult?.[0]?.TotalCrAmount || 0;
-
-        // 6️⃣ Sum Opening Dr/Cr
-        const openingQuery = `
-          SELECT ISNULL(SUM(DrAmount), 0) AS OpeningDrAmount,
-                 ISNULL(SUM(CrAmount), 0) AS OpeningCrAmount
-          FROM dbo.tbJournal
-          WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-        `;
-        const openingResult = await new Promise((resolve, reject) => {
-          sql.query(conn, openingQuery, [GLID, openingFromDate, openingToDate], (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-        let openingDr = openingResult?.[0]?.OpeningDrAmount || 0;
-        let openingCr = openingResult?.[0]?.OpeningCrAmount || 0;
-
-        // 7️⃣ Check ExcelData for match and add
-        const excelMatch = excelData.find(row =>
-          row.particular?.trim() === GLName
-        );
-
-        if (excelMatch) {
-          console.log(`✨ Matched Excel for ${GLName}`);
-          openingDr += parseFloat(excelMatch.openingDebit || 0);
-          openingCr += parseFloat(excelMatch.openingCredit || 0);
-        }
-
-        // 8️⃣ Add to subGroupTotal
-        const ledgerAmount = (openingDr - openingCr) + (periodDr - periodCr);
-        subGroupTotal += ledgerAmount;
-      }
-
-      // 9️⃣ Push final object
-      results.push({
-        grpName,
-        grpAlias,
-        subGroupName: SubGrpName,
-        subGroupAlias: SubGrpAlias,
-        amount: subGroupTotal
-      });
-    }
-
-    console.log("✅ Computed Results:", results.length);
-    res.json(results);
-
-  } catch (error) {
-    console.error("❌ Error in /api/gs/SelectAllSummaryOnlyandSZBandIOPop:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-});
-app.post("/api/gs/SelectAllandIOTablePop", async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate, excelData } = req.body;
-
-  console.log("📦 /api/gs/SelectAllandIOTablePop HIT");
-  console.log("📅 From:", fromDate, "To:", toDate);
-
-  if (!excelData || !Array.isArray(excelData)) {
-    return res.status(400).json({ error: "Excel data is required." });
-  }
-
-  // 1️⃣ Calculate opening date range
-  const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-  const toYear = parseInt(fromDate.split("/")[0]);
-  const openingFromDate = `${fromYear}/04/01`;
-  const openingToDate = `${toYear}/03/31`;
-
-  console.log("🗓️ Opening Period:", openingFromDate, openingToDate);
-
-  try {
-    // Step 2️⃣ Get all groups
-    const groupQuery = `SELECT LgrGrpID, GrpName, GrpAlias FROM dbo.tbLedgerGroup`;
-    const groups = await new Promise((resolve, reject) => {
-      sql.query(conn, groupQuery, (err, rows) => {
-        if (err) return reject(err);
-        resolve(rows);
-      });
-    });
-
-    const result = [];
-
-    for (const group of groups) {
-      const { LgrGrpID, GrpName, GrpAlias } = group;
-
-      // Step 3️⃣ Get sub-groups under this group
-      const subGroupQuery = `
-        SELECT LgrSubGrpID, SubGrpName, SubGrpAlias
-        FROM dbo.tbLedgerSubGroup
-        WHERE LgrGrpID = ?
-      `;
-      const subGroups = await new Promise((resolve, reject) => {
-        sql.query(conn, subGroupQuery, [LgrGrpID], (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows);
-        });
-      });
-
-      const subGroupResults = [];
-
-      for (const sub of subGroups) {
-        const { LgrSubGrpID, SubGrpName, SubGrpAlias } = sub;
-
-        // Step 4️⃣ Get ledgers under this subgroup
-        const ledgerQuery = `
-          SELECT GLID, GLName, GlAlias
-          FROM dbo.tbLedgerMaster
-          WHERE LgrSubGrpID = ?
-        `;
-        const ledgers = await new Promise((resolve, reject) => {
-          sql.query(conn, ledgerQuery, [LgrSubGrpID], (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-          });
-        });
-
-        const ledgerResults = [];
-
-        for (const ledger of ledgers) {
-          const { GLID, GLName, GlAlias } = ledger;
-
-          let totalPeriodDr = 0;
-          let totalPeriodCr = 0;
-
-          let totalOpeningDr = 0;
-          let totalOpeningCr = 0;
-
-          // 5️⃣ Period amounts
-          const periodQuery = `
-            SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount,
-                   ISNULL(SUM(CrAmount), 0) AS TotalCrAmount
-            FROM dbo.tbJournal
-            WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-          `;
-          const periodResult = await new Promise((resolve, reject) => {
-            sql.query(conn, periodQuery, [GLID, fromDate, toDate], (err, rows) => {
-              if (err) return reject(err);
-              resolve(rows[0]);
-            });
-          });
-          totalPeriodDr = periodResult?.TotalDrAmount || 0;
-          totalPeriodCr = periodResult?.TotalCrAmount || 0;
-
-          // 6️⃣ Opening amounts
-          const openingQuery = `
-            SELECT ISNULL(SUM(DrAmount), 0) AS OpeningDrAmount,
-                   ISNULL(SUM(CrAmount), 0) AS OpeningCrAmount
-            FROM dbo.tbJournal
-            WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-          `;
-          const openingResult = await new Promise((resolve, reject) => {
-            sql.query(conn, openingQuery, [GLID, openingFromDate, openingToDate], (err, rows) => {
-              if (err) return reject(err);
-              resolve(rows[0]);
-            });
-          });
-          totalOpeningDr = openingResult?.OpeningDrAmount || 0;
-          totalOpeningCr = openingResult?.OpeningCrAmount || 0;
-
-          // 7️⃣ Adjust with ExcelData if matching
-          const matchedExcel = excelData.find(row =>
-            row.particular?.trim() === GLName?.trim()
-          );
-
-          if (matchedExcel) {
-            totalOpeningDr += parseFloat(matchedExcel.openingDebit || 0);
-            totalOpeningCr += parseFloat(matchedExcel.openingCredit || 0);
-            console.log(`✅ Excel match for ${GLName}: +${matchedExcel.openingDebit} Dr, +${matchedExcel.openingCredit} Cr`);
-          }
-
-          // 8️⃣ Calculate final amount
-          const finalAmount = (totalOpeningDr - totalOpeningCr) + (totalPeriodDr - totalPeriodCr);
-
-          ledgerResults.push({
-            ledgerName: GLName,
-            ledgerAlias: GlAlias || '',
-            amount: finalAmount
-          });
-        }
-
-        subGroupResults.push({
-          subGrpName: SubGrpName,
-          subGrpAlias: SubGrpAlias || '',
-          ledgers: ledgerResults
-        });
-      }
-
-      result.push({
-        grpName: GrpName,
-        grpAlias: GrpAlias || '',
-        subGroups: subGroupResults
-      });
-    }
-
-    console.log("✅ Final select-all structure preview:", JSON.stringify(result.slice(0, 1), null, 2));
-    return res.json(result);
-
-  } catch (err) {
-    console.error("❌ Error in /api/gs/SelectAllandIOTablePop:", err);
-    return res.status(500).json({ error: "Internal Server Error", detail: err.message });
-  }
-});
 app.post("/api/gs/SelectAllandIOSZBTablePop", async (req, res) => {
   const conn = req.session.conn;
   const { fromDate, toDate, excelData } = req.body;
@@ -26464,589 +24441,6 @@ app.post("/api/gs/SelectAllandIOSZBTablePop", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error", detail: err.message });
   }
 });
-
-
-app.post('/api/gs/SelectAllSubledgerPop', async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate } = req.body;
-
-  console.log('📦 /api/gs/SelectAllSubledgerPop HIT');
-  console.log('📅 From:', fromDate, 'To:', toDate);
-
-  try {
-    const finalOutput = [];
-
-    // 1️⃣ Get all groups
-    const groups = await new Promise((resolve, reject) => {
-      sql.query(conn, `SELECT LgrGrpID, GrpName, GrpAlias FROM dbo.tbLedgerGroup`, (err, rows) => {
-        if (err) return reject(err);
-        resolve(rows);
-      });
-    });
-
-    for (const group of groups) {
-      const { LgrGrpID, GrpName, GrpAlias } = group;
-
-      // 2️⃣ Get subgroups
-      const subGroups = await new Promise((resolve, reject) => {
-        sql.query(conn, `SELECT LgrSubGrpID, SubGrpName, SubGrpAlias FROM dbo.tbLedgerSubGroup WHERE LgrGrpID = ?`, [LgrGrpID], (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows);
-        });
-      });
-
-      for (const sub of subGroups) {
-        const { LgrSubGrpID, SubGrpName, SubGrpAlias } = sub;
-
-        // 3️⃣ Get ledgers in this subgroup
-        const ledgers = await new Promise((resolve, reject) => {
-          sql.query(conn, `SELECT GLID, GLName, GlAlias FROM dbo.tbLedgerMaster WHERE LgrSubGrpID = ?`, [LgrSubGrpID], (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-          });
-        });
-
-        for (const ledger of ledgers) {
-          const { GLID, GLName, GlAlias } = ledger;
-
-          // 4️⃣ Calculate main ledger amount
-          const totalResult = await new Promise((resolve, reject) => {
-            sql.query(conn,
-              `SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount, ISNULL(SUM(CrAmount), 0) AS TotalCrAmount FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?`,
-              [GLID, fromDate, toDate],
-              (err, rows) => {
-                if (err) return reject(err);
-                resolve(rows[0]);
-              });
-          });
-          const DrTotal = totalResult?.TotalDrAmount || 0;
-          const CrTotal = totalResult?.TotalCrAmount || 0;
-          const amount = DrTotal - CrTotal;
-
-          // 5️⃣ Fetch sub-ledgers for this ledger
-          const subLedgerResult = await new Promise((resolve, reject) => {
-            sql.query(conn,
-              `SELECT SLID, DrAmount, CrAmount FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ? AND SLID IS NOT NULL`,
-              [GLID, fromDate, toDate],
-              (err, rows) => {
-                if (err) return reject(err);
-                resolve(rows);
-              });
-          });
-
-          const subLedgers = [];
-          for (const row of subLedgerResult) {
-            const { SLID, DrAmount, CrAmount } = row;
-            if (!SLID) continue;
-
-            const slResult = await new Promise((resolve, reject) => {
-              sql.query(conn,
-                `SELECT TOP 1 SLName, SLAlias FROM dbo.tbSubLedgerMaster WHERE SLID = ?`,
-                [SLID],
-                (err, rows) => {
-                  if (err) return reject(err);
-                  resolve(rows);
-                });
-            });
-
-            const SLName = slResult?.[0]?.SLName || 'Unknown SubLedger';
-            const SLAlias = slResult?.[0]?.SLAlias || '';
-
-            let subAmount = 0;
-            if (DrAmount && DrAmount !== 0) subAmount = -DrAmount;
-            else if (CrAmount && CrAmount !== 0) subAmount = CrAmount;
-
-            subLedgers.push({
-              subLedgerName: SLName,
-              subLedgerAlias: SLAlias,
-              amount: subAmount
-            });
-          }
-
-          // 6️⃣ Add to final
-          finalOutput.push({
-            grpName: GrpName,
-            grpAlias: GrpAlias || '',
-            subGrpName: SubGrpName,
-            subGrpAlias: SubGrpAlias || '',
-            ledgerName: GLName,
-            ledgerAlias: GlAlias || '',
-            amount,
-            subLedgers
-          });
-        }
-      }
-    }
-
-    console.log('✅ Returning full select-all + subledger enriched data:', finalOutput.length);
-    return res.json(finalOutput);
-
-  } catch (err) {
-    console.error('❌ Error in /api/gs/SelectAllSubledgerPop:', err);
-    return res.status(500).json({ error: 'Internal Server Error', details: err.message });
-  }
-});
-app.post('/api/gs/SelectAllSubledgerandSZBPop', async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate } = req.body;
-
-  console.log('📦 /api/gs/SelectAllSubledgerandSZBPop HIT');
-  console.log('📅 From:', fromDate, 'To:', toDate);
-
-  try {
-    const finalOutput = [];
-
-    // 1️⃣ Get all groups
-    const groups = await new Promise((resolve, reject) => {
-      sql.query(conn, `SELECT LgrGrpID, GrpName, GrpAlias FROM dbo.tbLedgerGroup`, (err, rows) => {
-        if (err) return reject(err);
-        resolve(rows);
-      });
-    });
-
-    for (const group of groups) {
-      const { LgrGrpID, GrpName, GrpAlias } = group;
-
-      // 2️⃣ Get subgroups
-      const subGroups = await new Promise((resolve, reject) => {
-        sql.query(conn, `SELECT LgrSubGrpID, SubGrpName, SubGrpAlias FROM dbo.tbLedgerSubGroup WHERE LgrGrpID = ?`, [LgrGrpID], (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows);
-        });
-      });
-
-      for (const sub of subGroups) {
-        const { LgrSubGrpID, SubGrpName, SubGrpAlias } = sub;
-
-        // 3️⃣ Get ledgers in this subgroup
-        const ledgers = await new Promise((resolve, reject) => {
-          sql.query(conn, `SELECT GLID, GLName, GlAlias FROM dbo.tbLedgerMaster WHERE LgrSubGrpID = ?`, [LgrSubGrpID], (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-          });
-        });
-
-        for (const ledger of ledgers) {
-          const { GLID, GLName, GlAlias } = ledger;
-
-          // 4️⃣ Calculate main ledger amount
-          const totalResult = await new Promise((resolve, reject) => {
-            sql.query(conn,
-              `SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount, ISNULL(SUM(CrAmount), 0) AS TotalCrAmount FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?`,
-              [GLID, fromDate, toDate],
-              (err, rows) => {
-                if (err) return reject(err);
-                resolve(rows[0]);
-              });
-          });
-          const DrTotal = totalResult?.TotalDrAmount || 0;
-          const CrTotal = totalResult?.TotalCrAmount || 0;
-          const amount = DrTotal - CrTotal;
-
-          // 5️⃣ Fetch sub-ledgers for this ledger
-          const subLedgerResult = await new Promise((resolve, reject) => {
-            sql.query(conn,
-              `SELECT SLID, DrAmount, CrAmount FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ? AND SLID IS NOT NULL`,
-              [GLID, fromDate, toDate],
-              (err, rows) => {
-                if (err) return reject(err);
-                resolve(rows);
-              });
-          });
-
-          const subLedgers = [];
-          for (const row of subLedgerResult) {
-            const { SLID, DrAmount, CrAmount } = row;
-            if (!SLID) continue;
-
-            const slResult = await new Promise((resolve, reject) => {
-              sql.query(conn,
-                `SELECT TOP 1 SLName, SLAlias FROM dbo.tbSubLedgerMaster WHERE SLID = ?`,
-                [SLID],
-                (err, rows) => {
-                  if (err) return reject(err);
-                  resolve(rows);
-                });
-            });
-
-            const SLName = slResult?.[0]?.SLName || 'Unknown SubLedger';
-            const SLAlias = slResult?.[0]?.SLAlias || '';
-
-            let subAmount = 0;
-            if (DrAmount && DrAmount !== 0) subAmount = -DrAmount;
-            else if (CrAmount && CrAmount !== 0) subAmount = CrAmount;
-
-            subLedgers.push({
-              subLedgerName: SLName,
-              subLedgerAlias: SLAlias,
-              amount: subAmount
-            });
-          }
-
-          // 6️⃣ Add to final
-          finalOutput.push({
-            grpName: GrpName,
-            grpAlias: GrpAlias || '',
-            subGrpName: SubGrpName,
-            subGrpAlias: SubGrpAlias || '',
-            ledgerName: GLName,
-            ledgerAlias: GlAlias || '',
-            amount,
-            subLedgers
-          });
-        }
-      }
-    }
-
-    console.log('✅ Returning full select-all + subledger enriched data:', finalOutput.length);
-    return res.json(finalOutput);
-
-  } catch (err) {
-    console.error('❌ Error in /api/gs/SelectAllSubledgerandSZBPop:', err);
-    return res.status(500).json({ error: 'Internal Server Error', details: err.message });
-  }
-});
-app.post('/api/gs/SelectAllSubledgerIOPop', async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate, excelData = [], excelData2 = [] } = req.body;
-
-  console.log('📦 /api/gs/SelectAllSubledgerIOPop HIT');
-  console.log('📅 From:', fromDate, 'To:', toDate);
-
-  try {
-    // 1️⃣ Opening fiscal range
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const openingFromDate = `${fromYear}/04/01`;
-    const openingToDate = `${toYear}/03/31`;
-
-    const finalOutput = [];
-
-    // 2️⃣ Get all groups
-    const groups = await new Promise((resolve, reject) => {
-      sql.query(conn, `SELECT LgrGrpID, GrpName, GrpAlias FROM dbo.tbLedgerGroup`, (err, rows) => {
-        if (err) return reject(err);
-        resolve(rows);
-      });
-    });
-
-    for (const group of groups) {
-      const { LgrGrpID, GrpName, GrpAlias } = group;
-
-      // 3️⃣ Get subgroups
-      const subGroups = await new Promise((resolve, reject) => {
-        sql.query(conn, `SELECT LgrSubGrpID, SubGrpName, SubGrpAlias FROM dbo.tbLedgerSubGroup WHERE LgrGrpID = ?`, [LgrGrpID], (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows);
-        });
-      });
-
-      for (const sub of subGroups) {
-        const { LgrSubGrpID, SubGrpName, SubGrpAlias } = sub;
-
-        // 4️⃣ Get ledgers
-        const ledgers = await new Promise((resolve, reject) => {
-          sql.query(conn, `SELECT GLID, GLName, GlAlias FROM dbo.tbLedgerMaster WHERE LgrSubGrpID = ?`, [LgrSubGrpID], (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-          });
-        });
-
-        for (const ledger of ledgers) {
-          const { GLID, GLName, GlAlias } = ledger;
-
-          // ➜ 4.1 Calculate period Dr/Cr
-          const periodResult = await new Promise((resolve, reject) => {
-            sql.query(conn,
-              `SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount, ISNULL(SUM(CrAmount), 0) AS TotalCrAmount FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?`,
-              [GLID, fromDate, toDate],
-              (err, rows) => {
-                if (err) return reject(err);
-                resolve(rows[0]);
-              });
-          });
-          let periodDr = periodResult?.TotalDrAmount || 0;
-          let periodCr = periodResult?.TotalCrAmount || 0;
-
-          // ➜ 4.2 Calculate opening Dr/Cr from previous fiscal year
-          const openingResult = await new Promise((resolve, reject) => {
-            sql.query(conn,
-              `SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount, ISNULL(SUM(CrAmount), 0) AS TotalCrAmount FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?`,
-              [GLID, openingFromDate, openingToDate],
-              (err, rows) => {
-                if (err) return reject(err);
-                resolve(rows[0]);
-              });
-          });
-          let openingDr = openingResult?.TotalDrAmount || 0;
-          let openingCr = openingResult?.TotalCrAmount || 0;
-
-          // ➜ 4.3 Add ExcelData (sheet1) for this ledger
-          const excelLedgerRow = excelData.find(r => r.particular?.trim() === GLName?.trim());
-          let excelOpeningDr = 0;
-          let excelOpeningCr = 0;
-          if (excelLedgerRow) {
-            excelOpeningDr = parseFloat(excelLedgerRow.openingDebit) || 0;
-            excelOpeningCr = parseFloat(excelLedgerRow.openingCredit) || 0;
-          }
-
-          // ➜ 4.4 Final ledger amount
-          const ledgerAmount = (periodDr - periodCr) + (openingDr - openingCr) + (excelOpeningDr - excelOpeningCr);
-
-          // ➜ 4.5 SubLedgers
-          const subLedgerResult = await new Promise((resolve, reject) => {
-            sql.query(conn,
-              `SELECT SLID, DrAmount, CrAmount FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ? AND SLID IS NOT NULL`,
-              [GLID, fromDate, toDate],
-              (err, rows) => {
-                if (err) return reject(err);
-                resolve(rows);
-              });
-          });
-
-          const subLedgers = [];
-          for (const row of subLedgerResult) {
-            const { SLID, DrAmount, CrAmount } = row;
-            if (!SLID) continue;
-
-            const slResult = await new Promise((resolve, reject) => {
-              sql.query(conn,
-                `SELECT TOP 1 SLName, SLAlias FROM dbo.tbSubLedgerMaster WHERE SLID = ?`,
-                [SLID],
-                (err, rows) => {
-                  if (err) return reject(err);
-                  resolve(rows);
-                });
-            });
-
-            const SLName = slResult?.[0]?.SLName || 'Unknown SubLedger';
-            const SLAlias = slResult?.[0]?.SLAlias || '';
-
-            // ➜ 4.6 Add ExcelData2 (sheet2) opening
-            const excelSubRow = excelData2.find(r => r.particular?.trim() === SLName?.trim());
-            let excelSubOpeningDr = 0;
-            let excelSubOpeningCr = 0;
-            if (excelSubRow) {
-              excelSubOpeningDr = parseFloat(excelSubRow.openingDebit) || 0;
-              excelSubOpeningCr = parseFloat(excelSubRow.openingCredit) || 0;
-            }
-
-            let subAmount = 0;
-            if (DrAmount && DrAmount !== 0) subAmount = -DrAmount;
-            else if (CrAmount && CrAmount !== 0) subAmount = CrAmount;
-
-            // ➜ 4.7 Final subledger amount
-            const finalSubAmount = subAmount + (excelSubOpeningDr - excelSubOpeningCr);
-
-            subLedgers.push({
-              subLedgerName: SLName,
-              subLedgerAlias: SLAlias,
-              amount: finalSubAmount
-            });
-          }
-
-          // 5️⃣ Add to final
-          finalOutput.push({
-            grpName: GrpName,
-            grpAlias: GrpAlias || '',
-            subGrpName: SubGrpName,
-            subGrpAlias: SubGrpAlias || '',
-            ledgerName: GLName,
-            ledgerAlias: GlAlias || '',
-            amount: ledgerAmount,
-            subLedgers
-          });
-        }
-      }
-    }
-
-    console.log('✅ Returning select-all + subledgers with Excel:', finalOutput.length);
-    return res.json(finalOutput);
-
-  } catch (err) {
-    console.error('❌ Error in /api/gs/SelectAllSubledgerIOPop:', err);
-    return res.status(500).json({ error: 'Internal Server Error', details: err.message });
-  }
-});
-app.post('/api/gs/SelectAllSubledgerIOSZBPop', async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate, excelData = [], excelData2 = [] } = req.body;
-
-  console.log('📦 /api/gs/SelectAllSubledgerIOSZBPop HIT');
-  console.log('📅 From:', fromDate, 'To:', toDate);
-
-  try {
-    // 1️⃣ Opening fiscal range
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const openingFromDate = `${fromYear}/04/01`;
-    const openingToDate = `${toYear}/03/31`;
-
-    const finalOutput = [];
-
-    // 2️⃣ Get all groups
-    const groups = await new Promise((resolve, reject) => {
-      sql.query(conn, `SELECT LgrGrpID, GrpName, GrpAlias FROM dbo.tbLedgerGroup`, (err, rows) => {
-        if (err) return reject(err);
-        resolve(rows);
-      });
-    });
-
-    for (const group of groups) {
-      const { LgrGrpID, GrpName, GrpAlias } = group;
-
-      // 3️⃣ Get subgroups
-      const subGroups = await new Promise((resolve, reject) => {
-        sql.query(conn, `SELECT LgrSubGrpID, SubGrpName, SubGrpAlias FROM dbo.tbLedgerSubGroup WHERE LgrGrpID = ?`, [LgrGrpID], (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows);
-        });
-      });
-
-      for (const sub of subGroups) {
-        const { LgrSubGrpID, SubGrpName, SubGrpAlias } = sub;
-
-        // 4️⃣ Get ledgers
-        const ledgers = await new Promise((resolve, reject) => {
-          sql.query(conn, `SELECT GLID, GLName, GlAlias FROM dbo.tbLedgerMaster WHERE LgrSubGrpID = ?`, [LgrSubGrpID], (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-          });
-        });
-
-        for (const ledger of ledgers) {
-          const { GLID, GLName, GlAlias } = ledger;
-
-          // ➜ 4.1 Calculate period Dr/Cr
-          const periodResult = await new Promise((resolve, reject) => {
-            sql.query(conn,
-              `SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount, ISNULL(SUM(CrAmount), 0) AS TotalCrAmount FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?`,
-              [GLID, fromDate, toDate],
-              (err, rows) => {
-                if (err) return reject(err);
-                resolve(rows[0]);
-              });
-          });
-          let periodDr = periodResult?.TotalDrAmount || 0;
-          let periodCr = periodResult?.TotalCrAmount || 0;
-
-          // ➜ 4.2 Calculate opening Dr/Cr from previous fiscal year
-          const openingResult = await new Promise((resolve, reject) => {
-            sql.query(conn,
-              `SELECT ISNULL(SUM(DrAmount), 0) AS TotalDrAmount, ISNULL(SUM(CrAmount), 0) AS TotalCrAmount FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?`,
-              [GLID, openingFromDate, openingToDate],
-              (err, rows) => {
-                if (err) return reject(err);
-                resolve(rows[0]);
-              });
-          });
-          let openingDr = openingResult?.TotalDrAmount || 0;
-          let openingCr = openingResult?.TotalCrAmount || 0;
-
-          // ➜ 4.3 Add ExcelData (sheet1) for this ledger
-          const excelLedgerRow = excelData.find(r => r.particular?.trim() === GLName?.trim());
-          let excelOpeningDr = 0;
-          let excelOpeningCr = 0;
-          if (excelLedgerRow) {
-            excelOpeningDr = parseFloat(excelLedgerRow.openingDebit) || 0;
-            excelOpeningCr = parseFloat(excelLedgerRow.openingCredit) || 0;
-          }
-
-          // ➜ 4.4 Final ledger amount
-          const ledgerAmount = (periodDr - periodCr) + (openingDr - openingCr) + (excelOpeningDr - excelOpeningCr);
-
-          // ➜ 4.5 SubLedgers
-          const subLedgerResult = await new Promise((resolve, reject) => {
-            sql.query(conn,
-              `SELECT SLID, DrAmount, CrAmount FROM dbo.tbJournal WHERE GLID = ? AND JV_Miti BETWEEN ? AND ? AND SLID IS NOT NULL`,
-              [GLID, fromDate, toDate],
-              (err, rows) => {
-                if (err) return reject(err);
-                resolve(rows);
-              });
-          });
-
-          const subLedgers = [];
-          for (const row of subLedgerResult) {
-            const { SLID, DrAmount, CrAmount } = row;
-            if (!SLID) continue;
-
-            const slResult = await new Promise((resolve, reject) => {
-              sql.query(conn,
-                `SELECT TOP 1 SLName, SLAlias FROM dbo.tbSubLedgerMaster WHERE SLID = ?`,
-                [SLID],
-                (err, rows) => {
-                  if (err) return reject(err);
-                  resolve(rows);
-                });
-            });
-
-            const SLName = slResult?.[0]?.SLName || 'Unknown SubLedger';
-            const SLAlias = slResult?.[0]?.SLAlias || '';
-
-            // ➜ 4.6 Add ExcelData2 (sheet2) opening
-            const excelSubRow = excelData2.find(r => r.particular?.trim() === SLName?.trim());
-            let excelSubOpeningDr = 0;
-            let excelSubOpeningCr = 0;
-            if (excelSubRow) {
-              excelSubOpeningDr = parseFloat(excelSubRow.openingDebit) || 0;
-              excelSubOpeningCr = parseFloat(excelSubRow.openingCredit) || 0;
-            }
-
-            let subAmount = 0;
-            if (DrAmount && DrAmount !== 0) subAmount = -DrAmount;
-            else if (CrAmount && CrAmount !== 0) subAmount = CrAmount;
-
-            // ➜ 4.7 Final subledger amount
-            const finalSubAmount = subAmount + (excelSubOpeningDr - excelSubOpeningCr);
-
-            subLedgers.push({
-              subLedgerName: SLName,
-              subLedgerAlias: SLAlias,
-              amount: finalSubAmount
-            });
-          }
-
-          // 5️⃣ Add to final
-          finalOutput.push({
-            grpName: GrpName,
-            grpAlias: GrpAlias || '',
-            subGrpName: SubGrpName,
-            subGrpAlias: SubGrpAlias || '',
-            ledgerName: GLName,
-            ledgerAlias: GlAlias || '',
-            amount: ledgerAmount,
-            subLedgers
-          });
-        }
-      }
-    }
-
-    console.log('✅ Returning select-all + subledgers with Excel:', finalOutput.length);
-    return res.json(finalOutput);
-
-  } catch (err) {
-    console.error('❌ Error in /api/gs/SelectAllSubledgerIOSZBPop:', err);
-    return res.status(500).json({ error: 'Internal Server Error', details: err.message });
-  }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 app.post("/api/enrichExcelBalancesheet", async (req, res) => {
   const conn = req.session.conn;
@@ -27465,21 +24859,6 @@ app.post("/api/enrichExcelFATFGroupedBySummaryonly", async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 app.post('/api/DR/tablepop', async (req, res) => {
   const conn = req.session.conn;
   const { fromDate, toDate } = req.body;
@@ -27611,9 +24990,6 @@ app.post('/api/DR/tablepop', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 });
-
-
-
 
 
 app.post("/api/FRIS/poptable", async (req, res) => {
@@ -28134,19 +25510,6 @@ app.post("/api/FRIS/SGTpoptable", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // ----------------------
 // 1. SAVE NEW

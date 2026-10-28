@@ -2,76 +2,15 @@
 // Usage: require('./routes/trialBalanceRoute')(app, sql);
 // Must be registered AFTER express.json() and the session middleware.
 
+const createJournalDates = require('./helpers/journalDates');
+
 module.exports = function registerTrialBalance(app, sql) {
-  // ---------- generic helpers ----------
-  const queryAsync = (conn, query, params = []) =>
-    new Promise((resolve, reject) =>
-      sql.query(conn, query, params, (err, rows) => (err ? reject(err) : resolve(rows)))
-    );
+  // Shared journal helpers (tbJournalMaster date + tbJournalDetails amounts, AD/LD aware)
+  const d = createJournalDates(sql);
+  const { queryAsync, norm, num } = d;
 
-  const norm = (v) => String(v ?? '').trim();
   const key = (v) => norm(v).toLowerCase();
-  const num = (v) => Number.parseFloat(v) || 0;
   const ZERO = { dr: 0, cr: 0 };
-
-  // ---------- date helpers ----------
-  // true = AD (English date, JV_Date), false = LD (local/Nepali date, JV_Miti)
-  async function getDateMode(conn) {
-    const rows = await queryAsync(conn, `SELECT TOP 1 DateType FROM dbo.tbSystemSettings`);
-    const t = norm(rows?.[0]?.DateType).toUpperCase();
-
-    if (t === 'AD') return true;
-    if (t === 'LD' || t === 'BS') return false;   // BS kept as an alias
-
-    throw new Error(`Invalid DateType in tbSystemSettings: "${t}"`);
-  }
-
-  // AD -> YYYY-MM-DD, LD -> YYYY/MM/DD
-  const normDate = (d, isAD) => (isAD ? d.replace(/\//g, '-') : d.replace(/-/g, '/'));
-  const dateRegex = (isAD) => (isAD ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{4}\/\d{2}\/\d{2}$/);
-  const dateExpr = (isAD) => (isAD ? 'CAST(JV_Date AS DATE)' : 'JV_Miti');
-
-  // One fiscal year back, in the same format as the input.
-  // LD: month 03 can have 32 days, so the end is 03/32 to avoid dropping the last day.
-  function openingRange(fromDate, isAD) {
-    const y = parseInt(fromDate.slice(0, 4), 10);
-    return isAD
-      ? { from: `${y - 1}-04-01`, to: `${y}-03-31` }
-      : { from: `${y - 1}/04/01`, to: `${y}/03/32` };
-  }
-
-  // ---------- queries ----------
-  async function latestJournalDate(conn, isAD) {
-    const expr = isAD
-      ? `CONVERT(varchar(10), MAX(CAST(JV_Date AS DATE)), 23)`
-      : `MAX(JV_Miti)`;
-    const rows = await queryAsync(conn, `SELECT ${expr} AS maxDate FROM dbo.tbJournal`);
-    return rows?.[0]?.maxDate ? String(rows[0].maxDate) : null;
-  }
-
-  async function hasJournal(conn, isAD, from, to) {
-    const rows = await queryAsync(
-      conn,
-      `SELECT TOP 1 1 AS x FROM dbo.tbJournal WHERE ${dateExpr(isAD)} BETWEEN ? AND ?`,
-      [from, to]
-    );
-    return rows.length > 0;
-  }
-
-  // One grouped query instead of one query per ledger
-  async function journalTotals(conn, isAD, from, to) {
-    const rows = await queryAsync(
-      conn,
-      `SELECT GLID,
-              ISNULL(SUM(DrAmount), 0) AS dr,
-              ISNULL(SUM(CrAmount), 0) AS cr
-       FROM dbo.tbJournal
-       WHERE ${dateExpr(isAD)} BETWEEN ? AND ?
-       GROUP BY GLID`,
-      [from, to]
-    );
-    return new Map(rows.map((r) => [r.GLID, { dr: num(r.dr), cr: num(r.cr) }]));
-  }
 
   // ---------- row builder ----------
   function makeRow(base, opening, period) {
@@ -95,19 +34,19 @@ module.exports = function registerTrialBalance(app, sql) {
   // ---------- core ----------
   async function buildTrialBalance(conn, { fromDate, toDate, isAD, excelLedgers = [], excelSubledgers = [] }) {
     // 1. Requested period is after all DB data -> nothing to show (no Excel fallback)
-    const maxDate = await latestJournalDate(conn, isAD);
+    const maxDate = await d.latestJournalDate(conn, isAD);
     if (maxDate && fromDate > maxDate) {
       return { rows: [], meta: { noData: true } };
     }
 
     // 2. Does the DB cover the opening fiscal year? If not, Excel supplies opening.
-    const opening = openingRange(fromDate, isAD);
-    const openingFromExcel = !(await hasJournal(conn, isAD, opening.from, opening.to));
+    const opening = d.openingRange(fromDate, isAD);
+    const openingFromExcel = !(await d.hasJournal(conn, isAD, opening.from, opening.to));
 
     const dbOpening = openingFromExcel
       ? new Map()
-      : await journalTotals(conn, isAD, opening.from, opening.to);
-    const dbPeriod = await journalTotals(conn, isAD, fromDate, toDate);
+      : await d.journalTotals(conn, isAD, opening.from, opening.to);
+    const dbPeriod = await d.journalTotals(conn, isAD, fromDate, toDate);
 
     // 3. Ledgers + group hierarchy in a single query
     const ledgers = await queryAsync(conn, `
@@ -197,12 +136,12 @@ module.exports = function registerTrialBalance(app, sql) {
 
     try {
       const conn = req.session.conn;
-      const isAD = await getDateMode(conn);
+      const isAD = await d.getDateMode(conn);
 
-      fromDate = normDate(String(fromDate), isAD);
-      toDate = normDate(String(toDate), isAD);
+      fromDate = d.normDate(String(fromDate), isAD);
+      toDate = d.normDate(String(toDate), isAD);
 
-      const re = dateRegex(isAD);
+      const re = d.dateRegex(isAD);
       if (!re.test(fromDate) || !re.test(toDate)) {
         return res.status(400).json({ error: `Dates must be ${isAD ? 'YYYY-MM-DD' : 'YYYY/MM/DD'}.` });
       }
