@@ -24,6 +24,7 @@
             }
         });
     </script>
+    <link rel="stylesheet" href="https://nepalidatepicker.sajanmaharjan.com.np/nepali.datepicker/css/nepali.datepicker.v4.0.4.min.css">
     <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
     <script src="https://nepalidatepicker.sajanmaharjan.com.np/nepali.datepicker/js/nepali.datepicker.v4.0.4.min.js"
         type="text/javascript"></script>
@@ -1997,12 +1998,12 @@
                                 <div class="bi-form-style-horizontal3">
                                     <div>
                                         <label for="">Calculate From</label>
-                                        <input type="date" name="BICalculateFrom" class="start-date-local"
+                                        <input type="date" name="BICalculateFrom" class="start-date-local nepali-date"
                                             id="nepali-date">
                                     </div>
                                     <div>
                                         <label for="">To</label>
-                                        <input type="date" name="BICalculateTo" class="end-date-local"
+                                        <input type="date" name="BICalculateTo" class="end-date-local nepali-date"
                                             id="nepali-date1">
                                     </div>
                                 </div>
@@ -4180,7 +4181,7 @@
                                     <div class="d-form-style-horizontal3">
                                         <div>
                                             <label for="interest-date">Interest Calculated Date</label>
-                                            <input type="date" name="DInterestCalculatedDate" class="end-date-local"
+                                            <input type="date" name="DInterestCalculatedDate" class="end-date-local nepali-date"
                                                 id="nepali-date">
                                         </div>
                                     </div>
@@ -10060,7 +10061,7 @@ async function loadEarningsData() {
 
                                 </div>
                                 <div class="lo-button-row">
-                                    <button type="submit" class="lo-button">Ok</button>
+                                    <button type="submit" class="lo-button" id="okbtn81">Ok</button>
                                     <button type="button" class="lo-button" id="cancelButton81">Cancel</button>
                                 </div>
                             </fieldset>
@@ -29371,7 +29372,7 @@ async function loadEarningsData() {
                     </script>
                     
                     <script>
-                        document.getElementById('myFrom47').addEventListener('submit', async function (e) {
+                        document.getElementById('myForm47').addEventListener('submit', async function (e) {
                             e.preventDefault();
 
                             const formData = new FormData(this);
@@ -42604,7 +42605,7 @@ async function loadEarningsData() {
 
 
 
-                    <script>
+                    <!-- <script>
                         document.getElementById("menuButton").addEventListener("click", function () {
                             document.getElementById("menu").classList.toggle("show");
                         });
@@ -42615,7 +42616,7 @@ async function loadEarningsData() {
                             });
                         });
 
-                    </script>
+                    </script> -->
                     <script>
                         document.getElementById('VPNUPAccountID').addEventListener('blur', function () {
                             const alias = this.value;

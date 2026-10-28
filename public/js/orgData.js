@@ -164,10 +164,10 @@ window.onload = () => {
     }
 };
 
-// document.getElementById('cancelButton1454').addEventListener('click',function(){
-//     document.getElementById("movableDiv81").style.display='none'
-// })
-document.getElementById('okyaaa').addEventListener('click',function(){
+document.getElementById('cancelButton81').addEventListener('click',function(){
+    document.getElementById("movableDiv81").style.display='none'
+})
+document.getElementById('okbtn81').addEventListener('click',function(){
     document.getElementById("movableDiv81").style.display='none'
 })
 
