@@ -1,0 +1,46 @@
+ #GeneralLedgerTrialTable tr.tb-head td,
+#TrialBalanceTable tr.tb-head td {
+  font-weight: bold;
+  background-color: #f0f0f0;
+  color: #003366;
+}
+
+#GeneralLedgerTrialTable tr.tb-head.tb-d0 td,
+#TrialBalanceTable tr.tb-head.tb-d0 td {
+  background-color: #d0e0ff;
+  color: #1a1a1a;
+}
+
+#GeneralLedgerTrialTable tr.tb-total td,
+#TrialBalanceTable tr.tb-total td {
+  font-weight: bold;
+  background-color: #e6e6e6;
+  color: #1a1a1a;
+}
+
+#GeneralLedgerTrialTable tr.tb-grand td,
+#TrialBalanceTable tr.tb-grand td {
+  font-weight: bold;
+  background-color: #cccccc;
+  color: #000000;
+}
+                   
+#RPTfromatTable td.rp-head, #RPNormalfromatTable td.rp-head {
+  font-weight: bold; text-align: left; background-color: #f0f0f0;
+}
+#RPTfromatTable tr.rp-total td, #RPNormalfromatTable tr.rp-total td {
+  font-weight: bold; background-color: #f9f9f9;
+}
+#RPTfromatTable tr.rp-grand td, #RPNormalfromatTable tr.rp-grand td {
+  font-weight: bold; background-color: #d0ffd0;
+}
+                   
+#GroupSummaryMainTable tr.gs-group td { font-weight: bold; background-color: #d0e0ff; color: #1a1a1a; }
+#GroupSummaryMainTable tr.gs-sub td   { font-weight: bold; background-color: #f0f0f0; color: #003366; }
+#GroupSummaryMainTable tr.gs-total td { font-weight: bold; background-color: #cccccc; color: #000000; }
+                   
+#incomeStatementTableBody td { padding: 8px; }
+#incomeStatementTableBody tr.is-header td   { font-weight: bold; background-color: #f0f0f0; }
+#incomeStatementTableBody tr.is-subtotal td { font-weight: bold; }
+#incomeStatementTableBody tr.is-total td    { font-weight: bold; background-color: #d9edf7; }
+#incomeStatementTableBody tr.is-subledger td:nth-child(2) { padding-left: 30px; }

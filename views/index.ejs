@@ -27,40 +27,8 @@
    <link rel="stylesheet" href="css/nepali.datepicker.v5.0.6.min.css">
     <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
    <script src="js/nepali.datepicker.v5.0.6.min.js"></script>
-
+    <link rel="stylesheet" href="css/internetConnBanner.css">
     <script src="js/date.js"></script>
-    <style>
-        #connection-status-banner {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: #ff4d4d;
-            /* Red for offline */
-            color: white;
-            text-align: center;
-            padding: 15px 10px;
-            font-weight: bold;
-            font-family: Arial, sans-serif;
-            display: none;
-            z-index: 9999;
-            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
-        }
-
-        #connection-status-banner.online {
-            background-color: #4CAF50;
-            /* Green for online */
-        }
-
-        .hide-searched-data-form #searcheddataform {
-            display: none !important;
-        }
-
-        .hide-searched-data-form .body1 {
-            display: none !important;
-        }
-    </style>
-
     <script>
         (function () {
             try {
@@ -235,6 +203,7 @@
     <link rel="stylesheet" href="/css/MainTransaction.css">
     <link rel="stylesheet" href="/css/MainMultiTransaction.css">
     <link rel="stylesheet" href="/css/MainOpeningBalance.css">
+    <link rel="stylesheet" href="/css/ReportTableStyle.css">
 
 </head>
 
@@ -2221,304 +2190,7 @@
                     </fieldset>
                 </div>
 
-                <script>
-                    // Function to show the popup with the table
-                    document.addEventListener("DOMContentLoaded", function () {
-
-                        const okButton = document.getElementById("BankRS-ok-button");
-
-                        const brsresult = document.getElementById("popupTableDiv"); // retrieving the value
-
-                        let ExcelData = null;
-                        let sessionnExcelData = null;
-                        let highestZIndex = 3;
-
-                        function bringToFront(element) {
-                            highestZIndex++;
-                            element.style.zIndex = highestZIndex;
-                        }
-
-                        function makeDivMovable(div) {
-                            let isDragging = false;
-                            let offsetX, offsetY;
-
-                            div.addEventListener('mousedown', (e) => {
-                                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                                    return; // Allow interaction with input fields
-                                }
-                                e.preventDefault();
-                                bringToFront(div);
-
-                                const rect = div.getBoundingClientRect();
-                                offsetX = e.clientX - rect.left;
-                                offsetY = e.clientY - rect.top;
-
-                                isDragging = true;
-                            });
-
-                            document.addEventListener('mousemove', (e) => {
-                                if (isDragging) {
-                                    div.style.left = `${e.pageX - offsetX}px`;
-                                    div.style.top = `${e.pageY - offsetY}px`;
-                                    div.style.position = 'absolute';
-                                }
-                            });
-
-                            document.addEventListener('mouseup', () => {
-                                isDragging = false;
-                            });
-                        }
-
-                        makeDivMovable(brsresult);
-
-
-
-
-                        /* ---------- Excelfile input ---------- */
-                        const selectFileBtninBRS = document.getElementById("selectFileBtninFRBRS");
-                        const excelFileInputinBRS = document.getElementById("excelFileInputinFRBRS");
-
-
-                        selectFileBtninBRS.addEventListener("click", () => {
-                            console.log('selectFileBtninBRS clicked');
-                            excelFileInputinBRS.click();
-
-                        });
-
-                        excelFileInputinBRS.addEventListener("change", function (e) {
-                            console.log('excelFileInputinBRS chcnged');
-                            const file = e.target.files[0];
-                            const reader = new FileReader();
-                            reader.onload = function (e) {
-                                const workbook = XLSX.read(e.target.result, { type: 'binary' });
-                                const sheet1 = workbook.Sheets['TbLedgderMaster'];
-                                console.log('Bpp', sheet1)
-                                const sheet2 = workbook.Sheets['TbSubledgerMaster']
-                                if (!sheet1 || !sheet2) return showCustomAlert("Sheet not found.");
-                                const jsonData1 = XLSX.utils.sheet_to_json(sheet1);
-                                sessionnExcelData = jsonData1.map(row => ({
-                                    particular: row.GLName || '',
-                                    alias: row.GlAlias || '',
-                                    openingDebit: parseFloat(row.OpeningBalanceDr || 0),
-                                    openingCredit: parseFloat(row.OpeningBalanceCr || 0)
-                                }));
-
-                                showCustomAlert("Excel file loaded. Click OK to load the table.");
-                            };
-                            reader.readAsBinaryString(file);
-                        });
-
-
-
-
-
-
-
-
-
-                        okButton.addEventListener("click", async function (event) {
-                            event.preventDefault();
-                            // Get the value from the "Bank Book" input field
-                            const bankBookValue = document.getElementById('bank-name-input').value;
-                            const fromDate = document.getElementById("BRSdateFrom").value;
-                            const toDate = document.getElementById("BRSdateTo").value;
-
-                            if (!sessionnExcelData) {
-                                return showCustomAlert(" Excel sheets required (Account Head ).");
-                            }
-
-                            let formattedfromDate = '';
-                            if (fromDate) {
-                                // Check if the input is in 'YYYY-DD-MM' format
-                                if (fromDate.includes('-')) {
-                                    const dateParts = fromDate.split('-'); // Split by hyphens
-                                    formattedfromDate = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]}`; // Convert to 'YYYY/MM/DD'
-
-                                } else {
-                                    formattedfromDate = fromDate; // If not in expected format, return as-is or handle accordingly
-                                }
-                            }
-
-
-
-                            let formattedtoDate = '';
-                            if (toDate) {
-                                // Check if the input is in 'YYYY-DD-MM' format
-                                if (toDate.includes('-')) {
-                                    const dateParts = toDate.split('-'); // Split by hyphens
-                                    formattedtoDate = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]}`; // Convert to 'YYYY/MM/DD'
-
-                                } else {
-                                    formattedtoDate = toDate; // If not in expected format, return as-is or handle accordingly
-                                }
-                            }
-
-
-
-                            // Fetch the totals from the backend by sending the Bank Book name
-                            // Use POST instead of GET to send large JSON
-                            console.log("Sending BBV to BE", bankBookValue);
-                            try {
-                                const response = await fetch('/fetchTotalAmountsForBRS', {
-                                    method: 'POST',
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                        bankBookName: bankBookValue,
-                                        fromDate: formattedfromDate,
-                                        toDate: formattedtoDate,
-                                        excelData: sessionnExcelData
-                                    })
-                                });
-
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! Status: ${response.status}`);
-                                }
-
-                                const data = await response.json();
-
-                                const totalDrAmount = data.totalDrAmount || 0;
-                                const totalCrAmount = data.totalCrAmount || 0;
-                                const addSubRows = data.addSubRows || [];
-                                const lessSubRows = data.lessSubRows || [];
-
-                                // Calculate the Amount (CrAmount - DrAmount)
-                                let amount = totalCrAmount - totalDrAmount;
-                                let amountDisplay = amount < 0
-                                    ? `${Math.abs(amount).toFixed(2)} Dr`
-                                    : `${amount.toFixed(2)} Cr`;
-
-                                const popupTableDiv = document.getElementById("popupTableDiv");
-                                popupTableDiv.style.display = "block";
-
-                                const tableBody = document.querySelector('#popupTableDiv table tbody');
-                                tableBody.innerHTML = ''; // Clear any existing rows
-
-                                // Row 1
-                                const row1 = document.createElement('tr');
-                                row1.innerHTML = `
-        <td class="no-border"><strong>${bankBookValue}</strong></td>
-        <td class="no-border"></td>
-        <td class="no-border"></td>
-        <td class="no-border"></td>
-        <td class="no-border"></td>
-        <td class="no-border"></td>
-        <td class="no-border"></td>
-    `;
-                                tableBody.appendChild(row1);
-
-                                // Row 2
-                                const row2 = document.createElement('tr');
-                                row2.innerHTML = `
-        <td class="hide-column"><strong>BankCash/BankBook</strong></td>
-        <td class="hide-column"></td>
-        <td class="hide-column"></td>
-        <td class="hide-column"></td>
-        <td class="hide-column"></td>
-        <td class="hide-column"></td>
-        <td><strong>${amountDisplay}</strong></td>
-    `;
-                                tableBody.appendChild(row2);
-
-                                // ADD section
-                                const addHeaderRow = document.createElement('tr');
-                                addHeaderRow.innerHTML = `
-        <td colspan="6"><strong>ADD(+): CHEQUE ISSUED BUT NOT PRESENTED</strong></td>
-        <td></td>
-    `;
-                                tableBody.appendChild(addHeaderRow);
-
-                                let addTotal = 0;
-                                addSubRows.forEach(sub => {
-                                    const row = document.createElement('tr');
-                                    row.innerHTML = `
-            <td>${sub.label}</td>
-            <td>${sub.glalias}</td>
-            <td>${sub.chequeno || ''}</td>
-            <td>${sub.chequedate || ''}</td>
-            <td>${sub.voucherno || ''}</td>
-            <td>${sub.jv_miti || ''}</td>
-            <td>${sub.amount}</td>
-        `;
-                                    tableBody.appendChild(row);
-                                    addTotal += parseFloat(sub.amount);
-                                });
-
-                                const addTotalRow = document.createElement('tr');
-                                addTotalRow.innerHTML = `
-        <td colspan="6"><strong>Total of Cheques Issued</strong></td>
-        <td id="add-total-amount"><strong>${addTotal.toFixed(2)}</strong></td>
-    `;
-                                tableBody.appendChild(addTotalRow);
-
-                                // LESS section
-                                const lessHeaderRow = document.createElement('tr');
-                                lessHeaderRow.innerHTML = `
-        <td colspan="6"><strong>LESS(-): CHEQUE DEPOSITED BUT NOT CLEARED</strong></td>
-        <td></td>
-    `;
-                                tableBody.appendChild(lessHeaderRow);
-
-                                let lessTotal = 0;
-                                lessSubRows.forEach(sub => {
-                                    const row = document.createElement('tr');
-                                    row.innerHTML = `
-            <td>${sub.label}</td>
-            <td>${sub.glalias}</td>
-            <td>${sub.chequeno || ''}</td>
-            <td>${sub.chequedate || ''}</td>
-            <td>${sub.voucherno || ''}</td>
-            <td>${sub.jv_miti || ''}</td>
-            <td>${sub.amount}</td>
-        `;
-                                    tableBody.appendChild(row);
-                                    lessTotal += parseFloat(sub.amount);
-                                });
-
-                                const lessTotalRow = document.createElement('tr');
-                                lessTotalRow.innerHTML = `
-        <td colspan="6"><strong>Total of Deposits Not Cleared</strong></td>
-        <td id="less-total-amount"><strong>${lessTotal.toFixed(2)}</strong></td>
-    `;
-                                tableBody.appendChild(lessTotalRow);
-
-                                // ACTUAL BALANCE row
-                                const actualBalanceValue = amount + addTotal - lessTotal;
-                                const actualBalanceDisplay = actualBalanceValue < 0
-                                    ? `${Math.abs(actualBalanceValue).toFixed(2)} Dr`
-                                    : `${actualBalanceValue.toFixed(2)} Cr`;
-
-                                const actualBalanceRow = document.createElement('tr');
-                                actualBalanceRow.innerHTML = `
-        <td colspan="6"><strong>ACTUAL BALANCE</strong></td>
-        <td id="actual-balance"><strong>${actualBalanceDisplay}</strong></td>
-    `;
-                                tableBody.appendChild(actualBalanceRow);
-
-                                // Close & Export handlers
-                                document.getElementById("brs-tb-okbutton").onclick = () => popupTableDiv.style.display = "none";
-                                document.getElementById("brs-tb-exportbutton").onclick = () => {
-                                    const rows = document.querySelectorAll("table tr");
-                                    const csvData = Array.from(rows).map(row =>
-                                        Array.from(row.querySelectorAll("td, th")).map(cell => cell.innerText).join(",")
-                                    ).join("\n");
-                                    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-                                    const link = document.createElement('a');
-                                    link.href = URL.createObjectURL(blob);
-                                    link.download = 'table_data.csv';
-                                    link.click();
-                                };
-                                document.getElementById("closeTableButton").onclick = () => popupTableDiv.style.display = "none";
-
-                            } catch (error) {
-                                console.error('Error fetching data:', error);
-                            }
-
-                        });
-                    });
-
-                </script>
-
-                <!--Cash Bank Book-->
+       <!--Cash Bank Book-->
                 <div class="movableDiv" id="movableDiv11">
                     <button id="closeButton11">&times;</button>
                     <div class="cbb-container">
@@ -44419,221 +44091,8 @@ async function loadEarningsData() {
                         });
                     </script>
 
-                    <script>
-                        document.getElementById('myForm180').addEventListener('submit', async function (event) {
-                            event.preventDefault();
-
-                            // ✅ 1️⃣ Get checkbox states
-                            const summaryOnly = document.getElementById('incomestatement-summary').checked;
-                            const subLedger = document.getElementById('incomestatement-sub-ledger').checked;
-                            const showGroupTotal = document.getElementById('incomestatement-show-group-total').checked;
-                            const dynamicSlide = document.getElementById('incomestatement-dynamic-slide').checked;
-                            const incomestatmenttableDiv = document.getElementById('incomeStatementTableContainer');
-
-                            console.log("✅ Checkbox states:");
-                            console.log("Summary Only:", summaryOnly);
-                            console.log("Sub Ledger:", subLedger);
-                            console.log("Show Group Total:", showGroupTotal);
-                            console.log("Dynamic Slide:", dynamicSlide);
-
-                            // ✅ 2️⃣ Get dates
-                            const fromDate = document.getElementById('FR-IncomeStatement-datefrom').value;
-                            const toDate = document.getElementById('FR_IncomeStatement-dateto').value;
-
-                            if (!fromDate || !toDate) {
-                                alert("Please select both From and To dates.");
-                                return;
-                            }
-
-                            const formattedFrom = fromDate.replaceAll('-', '/');
-                            const formattedTo = toDate.replaceAll('-', '/');
-
-                            /* ---------- utilities ---------- */
-                            let highestZIndex = 3;
-
-                            const bringToFront = el => {
-                                highestZIndex += 1;
-                                el.style.zIndex = highestZIndex;
-                            };
-
-                            const makeDivMovable = div => {
-                                let isDragging = false;
-                                let offsetX, offsetY;
-
-                                div.addEventListener('mousedown', e => {
-                                    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-                                    e.preventDefault();
-                                    bringToFront(div);
-                                    const { left, top } = div.getBoundingClientRect();
-                                    offsetX = e.clientX - left;
-                                    offsetY = e.clientY - top;
-                                    isDragging = true;
-                                });
-
-                                document.addEventListener('mousemove', e => {
-                                    if (!isDragging) return;
-                                    div.style.position = 'absolute';
-                                    div.style.left = `${e.pageX - offsetX}px`;
-                                    div.style.top = `${e.pageY - offsetY}px`;
-                                });
-
-                                document.addEventListener('mouseup', () => { isDragging = false; });
-                            };
-
-                            /* ---------- closers ---------- */
-                            [
-                                { btn: 'incomeStatementTableContainerXbtn', div: incomeStatementTableContainer },
-                                { btn: 'incomeStatementTableContainerOKbtn', div: incomeStatementTableContainer },
-
-                            ].forEach(({ btn, div }) => {
-                                document.getElementById(btn)?.addEventListener('click', e => {
-                                    e.preventDefault();
-                                    div.style.display = 'none';
-                                });
-                            });
-
-                            /* ---------- enable drag ---------- */
-                            [incomestatmenttableDiv].forEach(makeDivMovable);
-
-
-
-
-
-
-
-                            let response;
-
-                            // ✅ 3️⃣ Call the appropriate backend
-                            if (summaryOnly) {
-                                console.log("📌 SummaryOnly mode: Calling /api/FRIS/SOpoptable");
-                                try {
-                                    response = await fetch('/api/FRIS/SOpoptable', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ fromDate: formattedFrom, toDate: formattedTo })
-                                    });
-                                } catch (err) {
-                                    console.error("❌ Error calling summaryOnly backend:", err);
-                                    alert("Error connecting to server (summary only).");
-                                    return;
-                                }
-                            }
-
-                            else if (showGroupTotal) {
-                                console.log("📌 ShowGroupTotal mode: Calling /api/FRIS/SGTpoptable");
-                                try {
-                                    response = await fetch('/api/FRIS/SGTpoptable', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ fromDate: formattedFrom, toDate: formattedTo })
-                                    });
-                                } catch (err) {
-                                    console.error("❌ Error calling showGroupTotal backend:", err);
-                                    alert("Error connecting to server (group total).");
-                                    return;
-                                }
-                            }
-
-                            else {
-                                console.log("📌 Detailed mode: Calling /api/FRIS/poptable");
-                                try {
-                                    response = await fetch('/api/FRIS/poptable', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ fromDate: formattedFrom, toDate: formattedTo })
-                                    });
-                                } catch (err) {
-                                    console.error("❌ Error calling detailed backend:", err);
-                                    alert("Error connecting to server (detailed).");
-                                    return;
-                                }
-                            }
-
-                            if (!response.ok) {
-                                alert("Server returned error: " + response.status);
-                                return;
-                            }
-                            incomestatmenttableDiv.style.display = 'block';
-                            const data = await response.json();
-                            console.log("✅ Data received:", data);
-
-                            const tbody = document.getElementById("incomeStatementTableBody");
-                            // Clear old rows before appending new ones
-                            tbody.innerHTML = "";
-                            // Loop through your data and insert rows
-                            data.forEach(section => {
-                                section.items.forEach(item => {
-                                    const row = document.createElement("tr");
-
-                                    let sno = item.sno;
-                                    let particular = item.particular;
-                                    let alias = item.alias;
-                                    let amount = item.amount;
-
-                                    if (item.level === "header") {
-                                        row.style.backgroundColor = "#f0f0f0";
-                                        row.style.fontWeight = "bold";
-                                    }
-
-                                    if (item.level === "total" || item.level === "balance") {
-                                        row.style.fontWeight = "bold";
-                                        row.style.backgroundColor = "#d9edf7";
-                                    }
-
-                                    if (typeof amount === "number") {
-                                        amount = amount.toLocaleString();
-                                    }
-
-                                    [sno, particular, alias, amount].forEach(value => {
-                                        const td = document.createElement("td");
-                                        td.textContent = value || "";
-                                        td.style.padding = "8px";
-                                        row.appendChild(td);
-                                    });
-
-                                    tbody.appendChild(row);
-                                });
-                            });
-
-                            container.appendChild(table);
-                        });
-                    </script>
-
-
-
-
-
-
-
-                    <script>
-                        document.addEventListener("DOMContentLoaded", function () {
-                            const ISsummaryOnlyCheckbox = document.getElementById("incomestatement-summary");
-                            const ISsubLedgerCheckbox = document.getElementById("incomestatement-sub-ledger");
-                            const ISshowGrouptotal = document.getElementById("incomestatement-show-group-total");
-
-                            function toggleCheckboxesis() {
-                                // Disable Sub Ledger if Summary Only is checked
-                                if (ISsummaryOnlyCheckbox.checked) {
-                                    ISsubLedgerCheckbox.disabled = true;
-                                    ISshowGrouptotal.disabled = true;
-                                    ISsubLedgerCheckbox.checked = false; // Optional: also uncheck it
-                                    ISshowGrouptotal.checked = false;
-                                } else {
-                                    ISsubLedgerCheckbox.disabled = false;
-                                    ISshowGrouptotal.disabled = false;
-                                }
-                            }
-
-                            // Initial state on page load
-                            toggleCheckboxesis();
-
-                            // Add event listener to respond to user changes
-                            ISsummaryOnlyCheckbox.addEventListener("change", toggleCheckboxesis);
-                        });
-                    </script>
-
-
-                    <!-- this is original script of the below script
+    
+<!-- this is original script of the below script
 <script>
         let sessionnExcelData = null;
         let sessionnExcelData2 = null;
@@ -49861,13 +49320,10 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                         });
                     </script>
 
-
-
                     <script src="/js/databaseBackup.js?v=2"></script>
                     <script src="/js/multipleDatabaseBackup.js?v=1"></script>
                     <script src="/js/databaseRestore.js?v=1"></script>
                     <script src="/js/SessiontoIndex.js"></script>
-
                     <script src="/js/changePass.js"></script>
                     <script src="/js/api2.js"></script>
                     <script src="/js/alertsmessages.js"></script>
@@ -49882,24 +49338,16 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/movable.js"></script>
                     <script src="/js/drives.js" defer></script>
                     <script src="/js/calculator.js"></script>
-
-
                     <script src="/js/date.js"></script>
                     <script src="/js/searchData.js"></script>
                     <script src="/js/journalVoucherActions.js"></script>
-
                     <script src="/js/search.js"></script>
-
                     <script src="/js/result.js"></script>
                     <script src="/js/selected.js"></script>
                     <script src="/js/buttonRestriction.js"></script>
-
                     <script src="/js/docClassMaster.js"></script>
                     <script src="/js/orgData.js"></script>
                     <script src="/js/checkboxDate.js"></script>
-
-
-
                     <script src="/js/defineNepalCalendar.js"></script>
                     <script src="/js/Accountanalysisokbut.js"></script>
                     <script src="/js/deletedistrict.js"></script>
@@ -49938,57 +49386,13 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/PageLoader.js"></script>
                     <script src="/js/FetchMemberName.js"></script>
                     <script src="/js/BooksCbbResult.js"></script>
-                    
                     <script src="/js/inputBehavior.js"></script>
                     <script src="/js/memberSearch.js"></script>
                     <script src="/js/FinancialReportTrialBalResult.js"></script>
                     <script src="/js/FinancialReportReceiptPayment.js"></script>
                     <script src="/js/FinancialReportGroupSummary.js"></script>
-                    <style>
-                        #GeneralLedgerTrialTable tr.tb-head td,
-#TrialBalanceTable tr.tb-head td {
-  font-weight: bold;
-  background-color: #f0f0f0;
-  color: #003366;
-}
-
-#GeneralLedgerTrialTable tr.tb-head.tb-d0 td,
-#TrialBalanceTable tr.tb-head.tb-d0 td {
-  background-color: #d0e0ff;
-  color: #1a1a1a;
-}
-
-#GeneralLedgerTrialTable tr.tb-total td,
-#TrialBalanceTable tr.tb-total td {
-  font-weight: bold;
-  background-color: #e6e6e6;
-  color: #1a1a1a;
-}
-
-#GeneralLedgerTrialTable tr.tb-grand td,
-#TrialBalanceTable tr.tb-grand td {
-  font-weight: bold;
-  background-color: #cccccc;
-  color: #000000;
-}
-                    </style>
-                    <style>
-                        #RPTfromatTable td.rp-head, #RPNormalfromatTable td.rp-head {
-  font-weight: bold; text-align: left; background-color: #f0f0f0;
-}
-#RPTfromatTable tr.rp-total td, #RPNormalfromatTable tr.rp-total td {
-  font-weight: bold; background-color: #f9f9f9;
-}
-#RPTfromatTable tr.rp-grand td, #RPNormalfromatTable tr.rp-grand td {
-  font-weight: bold; background-color: #d0ffd0;
-}
-                    </style>
-                    <style>
-                        #GroupSummaryMainTable tr.gs-group td { font-weight: bold; background-color: #d0e0ff; color: #1a1a1a; }
-#GroupSummaryMainTable tr.gs-sub td   { font-weight: bold; background-color: #f0f0f0; color: #003366; }
-#GroupSummaryMainTable tr.gs-total td { font-weight: bold; background-color: #cccccc; color: #000000; }
-                    </style>
-                    
+                    <script src="/js/FinancialReportIncomeStatement.js"></script>
+                    <script src="/js/FinancialReportBRS.js"></script>
                     <script>
                         document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {
                             event.preventDefault();

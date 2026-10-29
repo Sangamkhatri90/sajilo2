@@ -163,7 +163,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return res.json();
             })
             .then(data => {
-                console.log("Fetched signature data:", data);
 
                 // Explicit mapping from backend keys → frontend input IDs
                 const fieldMap = {

@@ -162,7 +162,7 @@ async function fetchCurrentBSDate(nowAD) {
 
         if (!res.ok) throw new Error('Failed to fetch BS date value');
         const data = await res.json();
-        console.log("Received date is", data);
+       
 
        if (data.dateType === 'AD' && data.adDate) {
   const formattedForInput = String(data.adDate).slice(0, 10);

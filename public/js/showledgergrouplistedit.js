@@ -3,8 +3,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let selectedParentGroup = null;
     let selectedLedgerGroupForEdit = null;  // Store the currently selected ledger group for editing
 
-    console.log("Document loaded, attaching event listeners.");
-
     // Prevent the traditional form submission and handle it with fetch
     const myFormLedgerGroup = document.getElementById('myForm86');  // Form ID for ledger groups
     if (myFormLedgerGroup) {

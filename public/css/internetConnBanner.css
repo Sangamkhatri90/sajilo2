@@ -1,0 +1,31 @@
+
+        #connection-status-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ff4d4d;
+            /* Red for offline */
+            color: white;
+            text-align: center;
+            padding: 15px 10px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            display: none;
+            z-index: 9999;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #connection-status-banner.online {
+            background-color: #4CAF50;
+            /* Green for online */
+        }
+
+        .hide-searched-data-form #searcheddataform {
+            display: none !important;
+        }
+
+        .hide-searched-data-form .body1 {
+            display: none !important;
+        }
+   
