@@ -171,14 +171,6 @@ document.getElementById('okbtn81').addEventListener('click',function(){
     document.getElementById("movableDiv81").style.display='none'
 })
 
-document.getElementById('login').addEventListener('click',function(){
-   const login = document.getElementById('username-login').value;
-
-   document.getElementById('username-login').value = login;
-   localStorage.setItem('selectedusername', login);
-
-
-});
 
 const fiscalYearForm = document.querySelector('form[action="/clone-database-set-fiscal"]');
 if (fiscalYearForm) {

@@ -10347,6 +10347,13 @@ app.post("/clone-database-set-fiscal", async (req, res) => {
   const remark = "Default Ledger Group";
   const remark2 = "Default Menu";
 
+  if (!req.session?.loggedIn || !req.session?.userID) {
+    return res.status(401).send({
+      message: "Please sign in before setting up a fiscal year.",
+      success: false,
+    });
+  }
+
   const {
     transactionStartDate,
     fiscalYearStart,
@@ -10383,14 +10390,43 @@ app.post("/clone-database-set-fiscal", async (req, res) => {
         });
       });
 
-    // 1️⃣ Get main existing DB
+    // Verify organization access and use its canonical database name.
+    const authorizedOrgResult = await runQuery(connectionString, `
+      SELECT org.OrgID, org.DBName
+      FROM tbOrgMaster AS org
+      WHERE org.OrgID = ?
+        AND EXISTS (
+          SELECT 1
+          FROM tbUserMaster AS um
+          WHERE um.UserID = ?
+            AND (
+              LOWER(LTRIM(RTRIM(um.UserName))) = 'admin'
+              OR (',' + REPLACE(ISNULL(um.Organization, ''), ' ', '') + ',')
+                 LIKE '%,' + CONVERT(varchar(20), org.OrgID) + ',%'
+            )
+        )
+    `, [orgID, req.session.userID]);
+
+    if (!Array.isArray(authorizedOrgResult) || authorizedOrgResult.length === 0) {
+      return res.status(403).send({
+        message: "You are not authorized to set up this organization's fiscal year.",
+        success: false,
+      });
+    }
+
+    const authorizedOrg = authorizedOrgResult[0];
+    if (!dbName || dbName !== authorizedOrg.DBName) {
+      return res.status(400).send({
+        message: "The selected organization and database do not match.",
+        success: false,
+      });
+    }
+    const CDBName = authorizedOrg.DBName;
+
+    // Get the main existing database.
     const mainDBResult = await runQuery(connectionString, `SELECT DBName FROM tbOrgMaster WHERE OrgId = 1`);
     const existingDatabase = mainDBResult[0].DBName;
     const connectionString1 = `Server=localhost;Database=${existingDatabase};user=sa;password=123;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0};`;
-
-    // 2️⃣ Get new DB name for orgID
-    const orgDBResult = await runQuery(connectionString, `SELECT DBName FROM tbOrgMaster WHERE OrgId = ?`, [orgID]);
-    const CDBName = orgDBResult[0].DBName;
 
     // 3️⃣ Check if the org database already exists
     const dbExistsResult = await runQuery(connectionString1,
@@ -10564,13 +10600,12 @@ app.post("/clone-database-set-fiscal", async (req, res) => {
       responseSent = true;
       
       // Set up session variables for the selected database
-      if (dbName) {
-        req.session.dbName = dbName;
+      req.session.dbName = CDBName;
         req.session.conn = `Server=localhost;Database=${dbName};UID=sa;PWD=123;Driver={ODBC Driver 17 for SQL Server};`;
-        req.session.selectedStartDateLocal = fiscalYearStart;
-        req.session.selectedEndDateLocal = fiscalYearEnd;
-        req.session.orgID = orgID;
-      }
+      req.session.conn = createConnectionString(CDBName);
+      req.session.selectedStartDateLocal = fiscalYearStart;
+      req.session.selectedEndDateLocal = fiscalYearEnd;
+      req.session.orgID = authorizedOrg.OrgID;
       
       // If AJAX request, return JSON
       if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {

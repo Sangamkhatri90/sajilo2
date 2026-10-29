@@ -24,12 +24,11 @@
             }
         });
     </script>
-    <link rel="stylesheet" href="https://nepalidatepicker.sajanmaharjan.com.np/nepali.datepicker/css/nepali.datepicker.v4.0.4.min.css">
+   <link rel="stylesheet" href="css/nepali.datepicker.v5.0.6.min.css">
     <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
-    <script src="https://nepalidatepicker.sajanmaharjan.com.np/nepali.datepicker/js/nepali.datepicker.v4.0.4.min.js"
-        type="text/javascript"></script>
+   <script src="js/nepali.datepicker.v5.0.6.min.js"></script>
 
-
+    <script src="js/date.js"></script>
     <style>
         #connection-status-banner {
             position: fixed;
@@ -11566,7 +11565,7 @@ async function loadEarningsData() {
 
 
                 <!--New Receipt Voucher Master-->
-                <div class="movableDiv" id="movableDiv192">
+                <!-- <div class="movableDiv" id="movableDiv192">
                     <button id="closeButton192">&times;</button>
                     <div class="jv-container">
                         <form action="" id="myForm192">
@@ -11649,7 +11648,7 @@ async function loadEarningsData() {
                                             </tbody>
                                         </table>
                                     </div>
-                                    <!-- Reusable dropdown -->
+                                    
                                     <div id="accountDropdown" class="suggestions-list2"
                                         style="position:absolute; display:none; z-index:1000;"></div>
 
@@ -11662,7 +11661,7 @@ async function loadEarningsData() {
                             </fieldset>
                         </form>
                     </div>
-                </div>
+                </div> -->
 
 
 
@@ -28179,7 +28178,7 @@ async function loadEarningsData() {
                         document.addEventListener('DOMContentLoaded', () => {
                             let docClassSession = sessionStorage.getItem('selectedDocClass');
                             if (!docClassSession) {
-                                console.log('No value found in sessionStorage for selectedDocClass');
+                               
                                 docClassSession = '';  // make it blank if missing
                             }
 
@@ -28586,7 +28585,6 @@ async function loadEarningsData() {
 
                         // Function to display the table when "Load Organization" is clicked
                         function loadOrganization() {
-                            document.getElementById('movableDiv81').style.display = 'block';
                             isRowSelected = false; // Ensure row selection is reset
                             enableAllLinks(); // Enable all links after "Load Organization" is clicked
 
@@ -30080,7 +30078,7 @@ async function loadEarningsData() {
                             let mode8 = null;  // Mode will be 'new8' for adding and 'edit8' for editing
                             let selectedLedgerSubGroupForEdit = null;  // Store the currently selected ledger sub-group for editing
 
-                            console.log("Document loaded, attaching event listeners.");
+                            
 
                             // Prevent the traditional form submission and handle it with fetch
                             const myFormLedgerSubGroup = document.getElementById('myForm90');  // Form ID for ledger sub-groups

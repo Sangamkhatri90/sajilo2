@@ -43,7 +43,7 @@
                     const startDateLocal = toDateInputValue(savedStartDateLocal);
                     const endDateLocal = toDateInputValue(savedEndDateLocal);
 
-                    console.log('values', orgName, startDateLocal)
+                    
                     // Display values in indicators
                     document.getElementById('organization-name').innerText = `${orgName}`;
                     document.getElementById('organization-address1').innerText = `${address1}`;

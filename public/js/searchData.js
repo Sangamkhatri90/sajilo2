@@ -133,7 +133,7 @@ document.getElementById('myForm63').addEventListener('submit', async function (e
 document.addEventListener("DOMContentLoaded", () => {
     const username = localStorage.getItem('selectedusername');
 
-    console.log("VSun:", username);
+    
     const signatoryFieldMap = {
         VoucherCheckedByName: 'approvedBy',
         VoucherCheckedByDesignation: 'verifiedBy',
@@ -3256,7 +3256,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("withdrawamount").value = data.AlertonWithdrawAmount || "0";
         document.getElementById("depositamount").value = data.AlertonDepositAmount || "0";
 
-        console.log("✅ Data loaded successfully", data);
     } catch (err) {
         console.error("❌ Error loading data:", err);
     }

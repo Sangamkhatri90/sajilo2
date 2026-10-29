@@ -1,26 +1,10 @@
 (function () {
   'use strict';
 
-  // 1. Init all pickers by id (nepali-date, nepali-date1 ... nepali-date6)
   const pickerIds = ['nepali-date', ...Array.from({ length: 6 }, (_, i) => `nepali-date${i + 1}`)];
 
-  $(function () {
-    $(pickerIds.map((id) => `#${id}`).join(', ')).nepaliDatePicker({
-      ndpYear: true,
-      ndpMonth: true,
-      ndpYearCount: 10
-    });
-  });
-
-  // 2. Current BS date from the library (accurate calendar data)
   const pad = (n) => String(n).padStart(2, '0');
 
-  function getCurrentBsDate() {
-    const d = NepaliFunctions.GetCurrentBsDate(); // {year, month, day}
-    return `${d.year}/${pad(d.month)}/${pad(d.day)}`;
-  }
-
-  // 3. Validation: YYYY/MM/DD, month 1-12, day 1-32
   function validateNepaliDate(value) {
     const m = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(value);
     if (!m) return false;
@@ -28,7 +12,6 @@
     return month >= 1 && month <= 12 && day >= 1 && day <= 32;
   }
 
-  // 4. Auto-format typed digits into YYYY/MM/DD
   function formatDigits(raw) {
     const d = raw.replace(/\D/g, '').slice(0, 8);
     if (d.length <= 4) return d;
@@ -36,25 +19,43 @@
     return `${d.slice(0, 4)}/${d.slice(4, 6)}/${d.slice(6)}`;
   }
 
-  const dateInput = document.getElementById('dateInput');
-  const errorEl = document.getElementById('error-message');
-  if (!dateInput || !errorEl) return;
+  function init() {
+    // 1. Init pickers (v5 API: called on the element, no jQuery)
+    pickerIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el && typeof el.NepaliDatePicker === 'function') {
+        el.NepaliDatePicker();
+      } else if (el) {
+        console.error('Nepali datepicker v5 not loaded for #' + id);
+      }
+    });
 
-  dateInput.value = getCurrentBsDate();
+    // 2. Manual date input with validation
+    const dateInput = document.getElementById('dateInput');
+    const errorEl = document.getElementById('error-message');
+    if (!dateInput || !errorEl) return;
 
-  dateInput.addEventListener('input', () => {
-    dateInput.value = formatDigits(dateInput.value);
-    // Show error only once the full date is typed
-    errorEl.textContent =
-      dateInput.value.length === 10 && !validateNepaliDate(dateInput.value)
-        ? 'Enter a valid date (YYYY/MM/DD)'
-        : '';
-  });
+    // Only set today's date if the library provides it
+    if (typeof NepaliFunctions !== 'undefined' && NepaliFunctions.GetCurrentBsDate) {
+      const d = NepaliFunctions.GetCurrentBsDate();
+      dateInput.value = `${d.year}/${pad(d.month)}/${pad(d.day)}`;
+    }
 
-  dateInput.addEventListener('blur', () => {
-    errorEl.textContent =
-      dateInput.value && !validateNepaliDate(dateInput.value)
-        ? 'Enter a valid date (YYYY/MM/DD)'
-        : '';
-  });
+    dateInput.addEventListener('input', () => {
+      dateInput.value = formatDigits(dateInput.value);
+      errorEl.textContent =
+        dateInput.value.length === 10 && !validateNepaliDate(dateInput.value)
+          ? 'Enter a valid date (YYYY/MM/DD)'
+          : '';
+    });
+
+    dateInput.addEventListener('blur', () => {
+      errorEl.textContent =
+        dateInput.value && !validateNepaliDate(dateInput.value)
+          ? 'Enter a valid date (YYYY/MM/DD)'
+          : '';
+    });
+  }
+
+  window.addEventListener('load', init);
 })();

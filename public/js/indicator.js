@@ -152,7 +152,7 @@ async function fetchCurrentBSDate(nowAD) {
         alert("It seems date is not available at the moment.");
         return;
     }
-    console.log("AD date sent:", nowAD);
+   
     try {
         const res = await fetch('/api/selectbsdateusingAddate', {
             method: 'POST',
