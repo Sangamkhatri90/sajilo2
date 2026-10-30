@@ -11744,17 +11744,14 @@ async function loadEarningsData() {
                                         <button type="button" class="export-button" id="export-button">
                                             <i class="fas fa-file-export" alt=""></i>Export
                                         </button>
-                                        <a href="" style="text-decoration: none;">
-                                            <button type="button" class="exit-button" id="cancelButton99">
-                                                <i class="fas fa-sign-out-alt" alt=""></i>Exit
-                                            </button>
-                                        </a>
                                     </a>
+                                    <button type="button" class="exit-button" id="cancelButton99">
+                                        <i class="fas fa-sign-out-alt" alt=""></i>Exit
+                                    </button>
                                     <a href="" style="text-decoration: none;">
                                         <button type="button" class="bs-btn">
                                             <i class="fas fa-trash-alt"></i>Trash
                                         </button>
-                                    </a>
                                     </a>
                                     <a href="" style="text-decoration: none;">
                                         <button type="button" class="bs-btn"><i class="fas fa-undo-alt"></i>Reverse
@@ -28496,8 +28493,8 @@ async function loadEarningsData() {
                                             document.getElementById('setfiscalendyear').textContent = `To : ${formatForDisplay(endDate)}`;
 
                                             // Sync the selected dates in localStorage (client-side)
-                                            localStorage.setItem('selectedStartDateLocal', formatForInput(startDate));
-                                            localStorage.setItem('selectedEndDateLocal', formatForInput(endDate));
+                                            localStorage.setItem('selectedStartDateLocal', startDate.trim());
+                                            localStorage.setItem('selectedEndDateLocal', endDate.trim());
                                             // Now send the updated dates to the backend (session store)
                                             fetch('/update-session-dates', {
                                                 method: 'POST',
@@ -28505,8 +28502,8 @@ async function loadEarningsData() {
                                                     'Content-Type': 'application/json',
                                                 },
                                                 body: JSON.stringify({
-                                                    startDateLocal: formatForInput(startDate),
-                                                    endDateLocal: formatForInput(endDate),
+                                                    startDateLocal: startDate.trim(),
+                                                    endDateLocal: endDate.trim(),
                                                 }),
                                             })
                                                 .then(response => response.json())
@@ -49393,6 +49390,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/FinancialReportGroupSummary.js"></script>
                     <script src="/js/FinancialReportIncomeStatement.js"></script>
                     <script src="/js/FinancialReportBRS.js"></script>
+                    <script src="/js/GenerateNextVoucherNumber.js"></script>
                     <script>
                         document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {
                             event.preventDefault();
@@ -49403,27 +49401,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                             transactionForm.style.display = 'block';
                             transactionForm.style.zIndex = '10001';
                             voucherNumber.value = '';
-                            try {
-                                const configResponse = await fetch('/getVoucherConfig?menuName=Transaction');
-                                if (!configResponse.ok) throw new Error('Unable to load Transaction voucher settings.');
-                                const { Prefix, Suffix, BodyLength } = await configResponse.json();
-                                if (!Prefix || BodyLength === undefined || BodyLength === null) throw new Error('Invalid Transaction voucher settings.');
-                                const actualSuffix = Suffix || '';
-                                const numericLength = BodyLength - Prefix.length - actualSuffix.length;
-                                if (numericLength <= 0) throw new Error('Invalid Transaction voucher settings.');
-
-                                const lastResponse = await fetch(`/getLastVoucherNo?prefix=${encodeURIComponent(Prefix)}`);
-                                if (!lastResponse.ok) throw new Error('Unable to load the last Transaction voucher number.');
-                                const { lastVoucherNo } = await lastResponse.json();
-                                const lastNumber = lastVoucherNo
-                                    ? parseInt(lastVoucherNo.slice(Prefix.length, lastVoucherNo.length - actualSuffix.length), 10) || 0
-                                    : 0;
-                                voucherNumber.value = Prefix + String(lastNumber + 1).padStart(numericLength, '0') + actualSuffix;
-                            } catch (error) {
-                                voucherNumber.value = '';
-                                if (typeof showCustomAlert === 'function') showCustomAlert(error.message);
-                                else console.error('Unable to generate Transaction voucher number:', error);
-                            }
+                            await generateVoucherNo(6, voucherNumber);
                         });
                     </script>
 

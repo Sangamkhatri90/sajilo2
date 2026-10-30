@@ -6842,7 +6842,7 @@ app.get("/journal-voucher-list", (req, res) => {
 
 app.get("/getSubLedgerDetails", (req, res) => {
   const { SlAlias } = req.query;
-  console.log("SlAlias", SlAlias);
+ 
   const conn = req.session.conn;
   if (!SlAlias) {
     return res.json({ error: "SlAlias is required" });
@@ -6877,7 +6877,7 @@ app.get("/getSubLedgerDetails", (req, res) => {
         }
 
         const GLName = ledgerResult[0].GLName;
-        console.log("glame", GLName);
+        
 
         // Query to calculate balance from tbJournalDetails
         const queryJournalDetails = `
@@ -6900,7 +6900,7 @@ app.get("/getSubLedgerDetails", (req, res) => {
               const crAmount = row.CrAmount || 0;
               balance += crAmount - drAmount;
             });
-            console.log("balance", balance);
+           
             // Respond with all required details
             res.json({
               SLName,
@@ -30625,7 +30625,7 @@ app.get('/api/indicator-fiscal-dates', (req, res) => {
   if (!conn || !startDate || !endDate) {
     return res.status(400).json({ success: false, message: 'Selected fiscal-year dates are not available.' });
   }
-
+console.log('Indicator fiscal dates request:', { startDate, endDate });
   sql.query(conn, 'SELECT TOP 1 DateType FROM dbo.tbSystemSettings', (settingsError, settingsRows) => {
     if (settingsError) return res.status(500).json({ success: false, message: 'Unable to read date settings.' });
     const dateType = String(settingsRows?.[0]?.DateType || 'AD').trim().toUpperCase();
@@ -30647,11 +30647,14 @@ app.get('/api/indicator-fiscal-dates', (req, res) => {
         return dateType === 'LD' ? row.M_Miti : row.M_date;
       };
 
+      const resolvedStartDate = resolveDate(startDate);
+      const resolvedEndDate = resolveDate(endDate);
+      console.log('Indicator fiscal dates resolved:', { dateType, startDate: resolvedStartDate, endDate: resolvedEndDate });
       return res.json({
         success: true,
         dateType: dateType === 'LD' ? 'LD' : 'AD',
-        startDate: resolveDate(startDate),
-        endDate: resolveDate(endDate)
+        startDate: resolvedStartDate,
+        endDate: resolvedEndDate
       });
     });
   });
@@ -33807,6 +33810,7 @@ app.get("/api/matured-fd-login", (req, res) => {
 
   const query = `
     SELECT
+      SLM.SLID,
       LM.GLName,
       SLM.SlAlias,
       SLM.SLName,
@@ -33837,6 +33841,219 @@ app.get("/api/matured-fd-login", (req, res) => {
 
     res.json(rows || []);
   });
+});
+
+app.post("/api/matured-fd-transfer", async (req, res) => {
+  const conn = req.session.conn;
+  const sourceSLID = Number(req.body?.sourceSLID);
+  const userID = Number(req.session.userID);
+
+  if (!conn) return res.status(401).json({ message: "Your session has expired." });
+  if (!Number.isInteger(sourceSLID) || sourceSLID <= 0) return res.status(400).json({ message: "Select a valid matured account." });
+  if (!Number.isInteger(userID) || userID <= 0) return res.status(401).json({ message: "The logged-in user could not be resolved." });
+  let journalID;
+  try {
+    const settingsRows = await sql.promises.query(conn, 'SELECT TOP 1 DateType FROM dbo.tbSystemSettings');
+    const dateType = String(settingsRows[0]?.DateType || "").trim().toUpperCase();
+    const currentText = String(req.body?.currentDate || "");
+    const startText = String(req.body?.startDate || "");
+    const endText = String(req.body?.endDate || "");
+    let currentDateMatch, startDateMatch, endDateMatch, currentDateKey, startDateKey, endDateKey, currentDateCalendarValue;
+
+    if (dateType === "AD") {
+      currentDateMatch = currentText.match(/\d{4}-\d{2}-\d{2}/);
+      startDateMatch = startText.match(/\d{4}-\d{2}-\d{2}/);
+      endDateMatch = endText.match(/\d{4}-\d{2}-\d{2}/);
+      currentDateKey = currentDateMatch?.[0];
+      startDateKey = startDateMatch?.[0];
+      endDateKey = endDateMatch?.[0];
+    } else if (dateType === "LD") {
+      currentDateMatch = currentText.match(/\d{4}\/\d{2}\/\d{2}/);
+      startDateMatch = startText.match(/\d{2}\/\d{2}\/\d{4}/);
+      endDateMatch = endText.match(/\d{2}\/\d{2}\/\d{4}/);
+      if (currentDateMatch) {
+        const [, year, month, day] = currentDateMatch[0].match(/(\d{4})\/(\d{2})\/(\d{2})/);
+        currentDateKey = `${year}-${month}-${day}`;
+        currentDateCalendarValue = `${day}/${month}/${year}`;
+      }
+      const toIsoDate = (match) => {
+        if (!match) return "";
+        const [, day, month, year] = match[0].match(/(\d{2})\/(\d{2})\/(\d{4})/);
+        return `${year}-${month}-${day}`;
+      };
+      startDateKey = toIsoDate(startDateMatch);
+      endDateKey = toIsoDate(endDateMatch);
+    }
+
+    const isWithinFiscalRange = Boolean(currentDateKey && startDateKey && endDateKey && currentDateKey >= startDateKey && currentDateKey <= endDateKey);
+    console.log("Matured FD fiscal date check:", {
+      dateType,
+      received: { currentDate: currentText, startDate: startText, endDate: endText },
+      parsed: {
+        currentDate: currentDateMatch?.[0] || null,
+        startDate: startDateMatch?.[0] || null,
+        endDate: endDateMatch?.[0] || null
+      },
+      normalized: { currentDate: currentDateKey || null, startDate: startDateKey || null, endDate: endDateKey || null },
+      isWithinFiscalRange
+    });
+    if (!isWithinFiscalRange) {
+      return res.status(400).json({ message: "Make sure the current date lies within the Fiscal year range." });
+    }
+
+    const localDateRows = dateType === "AD"
+      ? await sql.promises.query(conn, `
+          SELECT TOP 1 CONVERT(varchar(10), M_date, 23) AS M_date, M_Miti
+          FROM SAJILODB.dbo.tbLocalDate
+          WHERE CONVERT(date, M_date) = CONVERT(date, ?, 23)
+        `, [currentDateKey])
+      : await sql.promises.query(conn, `
+          SELECT TOP 1 CONVERT(varchar(10), M_date, 23) AS M_date, M_Miti
+          FROM SAJILODB.dbo.tbLocalDate
+          WHERE LTRIM(RTRIM(M_Miti)) = ?
+        `, [currentDateCalendarValue || ""]);
+    if (!localDateRows.length) return res.status(400).json({ message: "Make sure the current date lies within the Fiscal year range." });
+    const voucherDates = { jvDate: localDateRows[0].M_date, jvMiti: normalizeJVMiti(localDateRows[0].M_Miti) };
+    console.log("Matured FD resolved accounting date:", { dateType, voucherDates });
+    const fiscalRows = await sql.promises.query(conn, `
+      SELECT TOP 1 StartDate, EndDate
+      FROM dbo.tbFiscalYearMaster
+      WHERE CurrentFiscal = 1
+        AND CONVERT(date, ?) BETWEEN CONVERT(date, StartDate) AND CONVERT(date, EndDate)
+    `, [voucherDates.jvDate]);
+    if (!fiscalRows.length) return res.status(400).json({ message: "Make sure the current date lies within the Fiscal year range." });
+
+    const accountRows = await sql.promises.query(conn, `
+      SELECT SLM.SLID, SLM.GLID, SLM.SLIDTransfer, TransferSL.GLID AS TransferGLID
+      FROM dbo.tbSubLedgerMaster SLM
+      INNER JOIN dbo.tbLedgerMaster LM ON LM.GLID = SLM.GLID
+      LEFT JOIN dbo.tbLedgerGroup LG ON LG.LgrGrpID = LM.LgrGrpID
+      LEFT JOIN dbo.tbSubLedgerMaster TransferSL ON TransferSL.SLID = SLM.SLIDTransfer
+      WHERE SLM.SLID = ? AND SLM.Closed = 0
+        AND SLM.MaturityDate IS NOT NULL
+        AND SLM.MaturityDate <= CAST(GETDATE() AS DATE)
+        AND LG.LgrGrpID = 7
+    `, [sourceSLID]);
+    if (!accountRows.length) return res.status(400).json({ message: "The selected account is not an eligible matured account." });
+    if (!accountRows[0].SLIDTransfer || !accountRows[0].TransferGLID) {
+      return res.status(400).json({ message: "Selected Acc doesn't have transfer account so you cannot continue." });
+    }
+
+    const insertRows = await sql.promises.query(conn, `
+      SET NOCOUNT ON;
+      SET XACT_ABORT ON;
+      BEGIN TRANSACTION;
+
+      DECLARE @SourceGLID int, @TargetSLID int, @TargetGLID int;
+      DECLARE @Amount decimal(19, 4), @UDVNo int, @BodyLength int;
+      DECLARE @Prefix varchar(50), @Suffix varchar(50), @StartFrom bigint, @EndTo bigint;
+      DECLARE @NumericLength int, @LastVoucherNo varchar(100), @NumericPart varchar(100);
+      DECLARE @NextNumber bigint, @VoucherNo varchar(100);
+      DECLARE @Created TABLE (JournalID int);
+
+      SELECT @SourceGLID = SLM.GLID, @TargetSLID = SLM.SLIDTransfer, @TargetGLID = TransferSL.GLID
+      FROM dbo.tbSubLedgerMaster SLM WITH (UPDLOCK, HOLDLOCK)
+      LEFT JOIN dbo.tbSubLedgerMaster TransferSL ON TransferSL.SLID = SLM.SLIDTransfer
+      INNER JOIN dbo.tbLedgerMaster LM ON LM.GLID = SLM.GLID
+      LEFT JOIN dbo.tbLedgerGroup LG ON LG.LgrGrpID = LM.LgrGrpID
+      WHERE SLM.SLID = ? AND SLM.Closed = 0 AND SLM.MaturityDate IS NOT NULL
+        AND SLM.MaturityDate <= CAST(GETDATE() AS DATE) AND LG.LgrGrpID = 7;
+
+      IF @SourceGLID IS NULL OR @TargetSLID IS NULL OR @TargetGLID IS NULL
+      BEGIN
+        ROLLBACK TRANSACTION;
+        SELECT 'account_invalid' AS ErrorCode;
+        RETURN;
+      END;
+
+      SELECT @Amount = SUM(ISNULL(CrAmount, 0) - ISNULL(DrAmount, 0))
+      FROM dbo.tbJournalDetails WITH (UPDLOCK, HOLDLOCK)
+      WHERE SLID = ?;
+
+      IF ISNULL(@Amount, 0) <= 0
+      BEGIN
+        ROLLBACK TRANSACTION;
+        SELECT 'no_balance' AS ErrorCode;
+        RETURN;
+      END;
+
+      SELECT TOP 1 @UDVNo = UDVNo
+      FROM dbo.tbUserDefinedVoucher WITH (UPDLOCK, HOLDLOCK)
+      WHERE MenuName = 'Journal Voucher';
+      SELECT TOP 1 @BodyLength = BodyLength, @Prefix = Prefix, @Suffix = Suffix,
+        @StartFrom = StartFrom, @EndTo = EndTo
+      FROM dbo.tbAutoNumberSetting WITH (UPDLOCK, HOLDLOCK)
+      WHERE VoucherID = @UDVNo;
+
+      SET @NumericLength = @BodyLength - LEN(ISNULL(@Prefix, '')) - LEN(ISNULL(@Suffix, ''));
+      IF @UDVNo IS NULL OR @NumericLength <= 0
+      BEGIN
+        ROLLBACK TRANSACTION;
+        SELECT 'voucher_setup_missing' AS ErrorCode;
+        RETURN;
+      END;
+
+      SELECT TOP 1 @LastVoucherNo = VoucherNo
+      FROM dbo.tbJournalMaster WITH (UPDLOCK, HOLDLOCK)
+      WHERE UDVNo = @UDVNo AND VoucherNo LIKE @Prefix + '%' + @Suffix
+      ORDER BY JournalID DESC;
+      SET @NumericPart = CASE WHEN @LastVoucherNo IS NULL THEN NULL ELSE
+        SUBSTRING(@LastVoucherNo, LEN(@Prefix) + 1, LEN(@LastVoucherNo) - LEN(@Prefix) - LEN(@Suffix)) END;
+      IF ISNULL(@NumericPart, '') <> '' AND @NumericPart NOT LIKE '%[^0-9]%'
+        SET @NextNumber = CONVERT(bigint, @NumericPart) + 1;
+      ELSE
+        SET @NextNumber = CASE WHEN ISNULL(@StartFrom, 0) = 0 THEN 1 ELSE @StartFrom END;
+
+      IF @EndTo IS NOT NULL AND @NextNumber > @EndTo
+      BEGIN
+        ROLLBACK TRANSACTION;
+        SELECT 'voucher_limit' AS ErrorCode;
+        RETURN;
+      END;
+
+      SET @VoucherNo = @Prefix + RIGHT(REPLICATE('0', @NumericLength) + CONVERT(varchar(30), @NextNumber), @NumericLength) + @Suffix;
+      IF EXISTS (SELECT 1 FROM dbo.tbJournalMaster WITH (UPDLOCK, HOLDLOCK) WHERE VoucherNo = @VoucherNo)
+      BEGIN
+        ROLLBACK TRANSACTION;
+        SELECT 'voucher_duplicate' AS ErrorCode;
+        RETURN;
+      END;
+
+      INSERT INTO dbo.tbJournalMaster
+        (VoucherNo, JV_Date, JV_Miti, CreatedDate, CreatedUserID, Remarks, PostUserID, PostDate, UDVNo, Prov)
+      OUTPUT INSERTED.JournalID INTO @Created
+      VALUES (@VoucherNo, ?, ?, GETDATE(), ?, '', ?, GETDATE(), @UDVNo, 0);
+
+      INSERT INTO dbo.tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount)
+        SELECT JournalID, 1, ?, @SourceGLID, @Amount, NULL FROM @Created;
+      INSERT INTO dbo.tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount)
+        SELECT JournalID, 1, @TargetSLID, @TargetGLID, NULL, @Amount FROM @Created;
+      UPDATE dbo.tbSubLedgerMaster SET Closed = 1 WHERE SLID = ? AND Closed = 0;
+
+      COMMIT TRANSACTION;
+      SELECT JournalID, @VoucherNo AS VoucherNo FROM @Created;
+    `, [sourceSLID, sourceSLID, sourceSLID, voucherDates.jvDate, voucherDates.jvMiti, userID, userID, sourceSLID, sourceSLID]);
+
+    const result = insertRows[0];
+    if (result?.ErrorCode) {
+      const messages = {
+        account_invalid: "The selected account is not an eligible matured account or no longer has a transfer account.",
+        no_balance: "The selected matured account has no remaining balance to transfer.",
+        voucher_setup_missing: "Journal Voucher numbering is not configured.",
+        voucher_limit: "The Journal Voucher number has reached its configured end limit.",
+        voucher_duplicate: "The next Journal Voucher number already exists. Please try again."
+      };
+      return res.status(400).json({ message: messages[result.ErrorCode] || "Unable to transfer the matured account." });
+    }
+    if (!result?.JournalID || !result?.VoucherNo) {
+      return res.status(500).json({ message: "The transfer journal was not returned by the database." });
+    }
+    journalID = result?.JournalID;
+    return res.status(201).json({ success: true, journalID, voucherNo: result?.VoucherNo });
+  } catch (error) {
+    console.error("Matured FD transfer failed:", error);
+    return res.status(500).json({ message: "Unable to transfer the matured account." });
+  }
 });
 
 // Assuming you use req.session.conn with sql.query
@@ -34505,13 +34722,6 @@ app.post("/api/cbbSummaryOnly", async (req, res) => {
 
 });
 
-const PORT = 80;
-
-
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
-
 app.get("/api/system-settings/mbank-sct",async(req,res)=>{try{const r=await queryAsync(req.session.conn,`SELECT TOP 1 s.MBankVoucher,s.GLIDMBank,s.SCTVoucher,s.GLIDSCT,mbv.MenuName AS MBankVoucherName,mbv.Alias AS MBankVoucherAlias,mbg.GLName AS MBankLedgerName,mbg.GlAlias AS MBankLedgerAlias,scv.MenuName AS SCTVoucherName,scv.Alias AS SCTVoucherAlias,scg.GLName AS SCTLedgerName,scg.GlAlias AS SCTLedgerAlias FROM dbo.tbSystemSettings s LEFT JOIN dbo.tbUserDefinedVoucher mbv ON s.MBankVoucher=mbv.UDVNo LEFT JOIN dbo.tbLedgerMaster mbg ON s.GLIDMBank=mbg.GLID LEFT JOIN dbo.tbUserDefinedVoucher scv ON s.SCTVoucher=scv.UDVNo LEFT JOIN dbo.tbLedgerMaster scg ON s.GLIDSCT=scg.GLID`);res.json({success:true,settings:r[0]||{}})}catch(e){res.status(500).json({success:false,message:e.message})}});
 
 app.post("/api/system-settings/mbank-sct", async (req, res) => {
@@ -34566,3 +34776,138 @@ app.post("/api/system-settings/mbank-sct", async (req, res) => {
 });
 app.get("/fetch-mbank-exclude-subledgers",async(req,res)=>{try{res.json({success:true,subledgers:await queryAsync(req.session.conn,`SELECT SLID,SLName,SLAlias FROM dbo.tbSubLedgerMaster ORDER BY SLName,SLAlias`)})}catch(e){res.status(500).json({success:false,message:e.message})}});
 app.post("/update-mbank-exclude",async(req,res)=>{const d=toNullableInt(req.body.DetailID),s=toNullableInt(req.body.SLID);if(!d||!s)return res.status(400).json({success:false,message:"Invalid exclude row"});try{await queryAsync(req.session.conn,`UPDATE dbo.tbSystemSettingMBankExclude SET SLID=? WHERE DetailID=?`,[s,d]);res.json({success:true,message:"Excluded sub-head saved"})}catch(e){res.status(500).json({success:false,message:e.message})}});
+
+
+const query = (conn, q, params = []) =>
+  new Promise((resolve, reject) =>
+    sql.query(conn, q, params, (err, rows) => (err ? reject(err) : resolve(rows)))
+  );
+
+// Returns 2-digit Nepali (BS) year from an AD date 'YYYY-MM-DD'
+async function adToBsYY(conn, adDate) {
+  const rows = await query(
+    conn,
+    `SELECT TOP 1 M_Miti FROM SAJILODB.dbo.tbLocalDate WHERE CONVERT(date, M_date) = ?`,
+    [adDate]
+  );
+  if (!rows.length) throw { status: 404, message: `No Nepali date found for ${adDate}` };
+  // Works for YYYY/MM/DD, YYYY-MM-DD, DD/MM/YYYY: grab the 4-digit year
+  const m = String(rows[0].M_Miti).match(/\d{4}/);
+  if (!m) throw { status: 500, message: `Unexpected M_Miti format: ${rows[0].M_Miti}` };
+  return m[0].slice(-2);
+}
+
+async function buildFiscalSuffix(conn, startDate, endDate) {
+  const ds = await query(conn, `SELECT TOP 1 DateType FROM tbSystemSettings`);
+  const dateType = ds[0]?.DateType;
+
+  let startYY, endYY;
+  if (dateType === 'AD') {
+    // startDate / endDate = YYYY-MM-DD
+    [startYY, endYY] = await Promise.all([
+      adToBsYY(conn, startDate.trim().slice(0, 10)),
+      adToBsYY(conn, endDate.trim().slice(0, 10))
+    ]);
+  } else if (dateType === 'LD') {
+    // startDate / endDate = DD/MM/YYYY (already Nepali)
+    const getLocalYear = (date, label) => {
+      const match = String(date || '').trim().match(/^\d{1,2}[/-]\d{1,2}[/-](\d{4})$/);
+      if (!match) throw { status: 400, message: `Invalid ${label} for LD date type: ${date}` };
+      return match[1].slice(-2);
+    };
+    startYY = getLocalYear(startDate, 'startDate');
+    endYY = getLocalYear(endDate, 'endDate');
+  } else {
+    throw { status: 400, message: `Unknown DateType: ${dateType}` };
+  }
+  return `-${startYY}${endYY}`; // e.g. -8182
+}
+
+app.get('/api/nextVoucher/:udvNo', async (req, res) => {
+  const conn = req.session.conn;
+  const udvNo = parseInt(req.params.udvNo, 10);
+  const { startDate, endDate } = req.query;
+  console.log('Next voucher request received:', { udvNo, startDate, endDate });
+
+  if (!Number.isInteger(udvNo) || !startDate || !endDate) {
+    return res.status(400).send({ message: 'Valid udvNo, startDate and endDate are required' });
+  }
+
+  try {
+    // 1. AutoNumber settings (no UDV lookup needed anymore)
+    const settingsRows = await query(
+      conn,
+      `SELECT BodyLength, Prefix, StartFrom, EndTo FROM tbAutoNumberSetting WHERE VoucherId = ?`,
+      [udvNo]
+    );
+    if (!settingsRows.length) {
+      return res.status(404).send({ message: 'No AutoNumber settings found for VoucherId ' + udvNo });
+    }
+    const { BodyLength, StartFrom, EndTo } = settingsRows[0];
+    const Prefix = settingsRows[0].Prefix || '';
+
+    // 2. Our own suffix from fiscal year
+    const Suffix = await buildFiscalSuffix(conn, startDate, endDate);
+    console.log('Next voucher inputs:', { udvNo, startDate, endDate, Prefix, Suffix, BodyLength, StartFrom, EndTo });
+
+    const numericLength = BodyLength - (Prefix.length + Suffix.length);
+    if (numericLength <= 0) {
+      return res.status(400).send({ message: 'BodyLength too small for prefix and suffix' });
+    }
+
+    // 3. Latest voucher with same prefix + suffix
+    const lastVoucherQuery = `
+      SELECT TOP 1 jm.VoucherNo
+      FROM tbJournalMaster jm
+      CROSS APPLY (
+        SELECT SUBSTRING(
+          jm.VoucherNo,
+          LEN(?) + 1,
+          CASE WHEN LEN(jm.VoucherNo) >= LEN(?) + LEN(?)
+            THEN LEN(jm.VoucherNo) - LEN(?) - LEN(?)
+            ELSE 0
+          END
+        ) AS NumericPart
+      ) AS voucherParts
+      WHERE jm.UDVNo = ?
+        AND LEFT(jm.VoucherNo, LEN(?)) = ?
+        AND RIGHT(jm.VoucherNo, LEN(?)) = ?
+        AND LEN(voucherParts.NumericPart) > 0
+        AND voucherParts.NumericPart NOT LIKE '%[^0-9]%'
+      ORDER BY CONVERT(BIGINT, voucherParts.NumericPart) DESC
+    `;
+    const lastRows = await query(conn, lastVoucherQuery, [
+      Prefix, Prefix, Suffix, Prefix, Suffix,
+      udvNo,
+      Prefix, Prefix,
+      Suffix, Suffix
+    ]);
+
+    let nextNumber;
+    if (!lastRows.length) {
+      nextNumber = Math.max(parseInt(StartFrom) || 1, 1);
+    } else {
+      const last = lastRows[0].VoucherNo;
+      nextNumber = parseInt(last.substring(Prefix.length, last.length - Suffix.length)) + 1;
+    }
+
+    if (EndTo && nextNumber > parseInt(EndTo)) {
+      return res.status(400).send({ message: 'Next voucher number exceeds EndTo limit' });
+    }
+
+    const voucherNumber = `${Prefix}${nextNumber.toString().padStart(numericLength, '0')}${Suffix}`;
+    console.log('Next voucher generated:', { udvNo, lastVoucherNo: lastRows[0]?.VoucherNo || null, nextNumber, voucherNumber });
+    return res.json({ voucherNumber });
+  } catch (err) {
+    console.error('Voucher number error:', err);
+    return res.status(err.status || 500).send({ message: err.message || 'Error generating voucher number' });
+  }
+});
+
+const PORT = 80;
+
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
+

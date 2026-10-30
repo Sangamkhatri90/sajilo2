@@ -112,15 +112,12 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
             transactionDiv
        );
 
-
-
-      
        document.getElementById('MaintransMembervalueforedit').value =MemberName ;
        document.getElementById("MaintransMembervalueforedit1").value= MemberAlias;
        document.getElementById('Maintransaccountnumberofaccpostedit').value =SlAlias;
        document.getElementById('Maintransacctypeforaccpostingedit').value =GLName;
        document.getElementById('Maintransmembervalueforedit').value =SLName;
-        
+        generateVoucherNo(6, voucherNoInput);
         if (SlAlias) {
         fetch(`/getSubLedgerDetails?SlAlias=${encodeURIComponent(SlAlias)}`)
             .then(response => response.json())
@@ -131,11 +128,7 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
                     return;
                 }
 
-                // Fill the inputs with retrieved data
-                // document.getElementById('SLName').value = data.SLName || '';
-                // document.getElementById('GLNamess').value = data.GLName || '';
                 document.getElementById('MaintransBalance').value = data.Balance || 0;
-                // document.getElementById('Amount').value = data.Balance || 0;
             })
             .catch(err => {
                 console.error('Error fetching data:', err);
@@ -146,46 +139,46 @@ function handleRowClick(SlAlias, GLName, MemberAlias, SLName, Address1, Phone1, 
 
 
 
-  // Hardcoded menuName
-  const menuName = "Transaction";
-  const menuNameforMultitransaction = "Multi Transaction";
+//   // Hardcoded menuName
+//   const menuName = "Transaction";
+//   const menuNameforMultitransaction = "Multi Transaction";
 
-  // Function to fetch configuration and last voucher number
-  async function fetchVoucherConfigAndGenerate() {
-    try {
-        const response = await fetch('/api/nextJournalVoucherforaccountedit');
-        const data = await response.json();
-        if (!response.ok || !data.voucherNumber) {
-            throw new Error(data.message || 'Failed to generate Transaction voucher number.');
-        }
-        voucherNoInput.value = data.voucherNumber;
+//   // Function to fetch configuration and last voucher number
+//   async function fetchVoucherConfigAndGenerate() {
+//     try {
+//         const response = await fetch('/api/nextJournalVoucherforaccountedit');
+//         const data = await response.json();
+//         if (!response.ok || !data.voucherNumber) {
+//             throw new Error(data.message || 'Failed to generate Transaction voucher number.');
+//         }
+//         voucherNoInput.value = data.voucherNumber;
         
-    } catch (error) {
-        console.error('Error generating VoucherNo:', error.message);
-        voucherNoInput.value = ''; // Clear field on error
+//     } catch (error) {
+//         console.error('Error generating VoucherNo:', error.message);
+//         voucherNoInput.value = ''; // Clear field on error
        
-    }
-  }
+//     }
+//   }
 
-    // Function to fetch configuration and last voucher number
-  async function fetchmultitransVoucherConfigAndGenerate() {
-    try {
-        const response = await fetch('/api/nextJournalVoucherforMultitransaction');
-        const data = await response.json();
-        if (!response.ok || !data.voucherNumber) {
-            throw new Error(data.message || 'Failed to generate Transaction voucher number.');
-        }
-        voucherNoInput.value = data.voucherNumber;
+//     // Function to fetch configuration and last voucher number
+//   async function fetchmultitransVoucherConfigAndGenerate() {
+//     try {
+//         const response = await fetch('/api/nextJournalVoucherforMultitransaction');
+//         const data = await response.json();
+//         if (!response.ok || !data.voucherNumber) {
+//             throw new Error(data.message || 'Failed to generate Transaction voucher number.');
+//         }
+//         voucherNoInput.value = data.voucherNumber;
         
-    } catch (error) {
-        console.error('Error generating VoucherNo:', error.message);
-        voucherNoInput.value = ''; // Clear field on error
+//     } catch (error) {
+//         console.error('Error generating VoucherNo:', error.message);
+//         voucherNoInput.value = ''; // Clear field on error
        
-    }
-  }
-  // Call the function immediately on page load
-  fetchVoucherConfigAndGenerate();
-  fetchmultitransVoucherConfigAndGenerate();
+//     }
+//   }
+//   // Call the function immediately on page load
+//   fetchVoucherConfigAndGenerate();
+//   fetchmultitransVoucherConfigAndGenerate();
    
     MaintransMembervalueforeditIN.addEventListener("dblclick", async function (e) {
         e.preventDefault();
@@ -394,8 +387,8 @@ document.getElementById("ccapeditmemKYMmemname").value= MemberName;
         document.getElementById('Multitransaccountname').value = MemberName;
         document.getElementById('Multitransaccountnumber').value =SlAlias;
         document.getElementById('MultitransaccTypeLgrname').value =GLName;
-
-
+        const multitransVoucherNoInput = document.getElementById('voucher-number');
+        generateVoucherNo(12, multitransVoucherNoInput);
         if (SlAlias) {
             fetch(`/getSubLedgerDetails?SlAlias=${encodeURIComponent(SlAlias)}`)
             .then(response => response.json())

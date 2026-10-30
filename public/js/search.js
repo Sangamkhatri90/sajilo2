@@ -380,7 +380,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const closeButton = document.getElementById("closeButton99");
             const cancelButton = document.getElementById("cancelButton99");
 
-            function closeTransactionMaster() {
+            function closeTransactionMaster(event) {
+                event.preventDefault();
                 movableDiv.style.display = "none";
                 searchPanel.style.display = "none";
                 movableDiv.classList.remove("tm-search-open");

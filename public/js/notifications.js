@@ -122,6 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const body = document.createElement("tbody");
       accounts.forEach((account, index) => {
         const row = document.createElement("tr");
+        row.dataset.slid = account.SLID;
         [
           index + 1,
           account.GLName,
@@ -175,6 +176,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const close = () => modal.remove();
     modal.querySelector(".matured-accounts-close").addEventListener("click", close);
     modal.querySelector('[data-action="ok"]').addEventListener("click", close);
+    modal.querySelector('[data-action="transfer"]').addEventListener("click", async () => {
+      const selectedRow = modal.querySelector(".login-matured-fd-table tbody tr.highlight");
+      if (!selectedRow) {
+        alert("Select an account to transfer.");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/matured-fd-transfer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sourceSLID: selectedRow.dataset.slid,
+            currentDate: document.getElementById("current-bs-date")?.textContent,
+            startDate: document.getElementById("startDateInput")?.textContent,
+            endDate: document.getElementById("endDateInput")?.textContent
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Unable to transfer the matured account.");
+        alert(`Matured account transferred successfully. Voucher: ${result.voucherNo}`);
+        close();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
     modal.querySelector('[data-action="print"]').addEventListener("click", () => {
       const table = modal.querySelector(".login-matured-fd-table");
       if (!table) return;
