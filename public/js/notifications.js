@@ -2,9 +2,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const bell = document.getElementById("notificationBell");
   const menu = document.getElementById("notificationMenu");
   const maturedMessage = document.getElementById("maturedAccountsMessage");
+  const systemMessagesSection = document.getElementById("systemMessagesSection");
+  const notificationBadge = bell?.querySelector(".notification-badge");
   let loadingTimer;
 
-  if (!bell || !menu || !maturedMessage) return;
+  if (!bell || !menu || !maturedMessage || !systemMessagesSection) return;
 
   const closeMenu = () => {
     menu.hidden = true;
@@ -215,19 +217,28 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) throw new Error("Unable to load matured FD accounts.");
       return response.json();
     })
-    .then(showLoginMaturedFds)
+    .then((accounts) => {
+      const hasMaturedAccounts = accounts.length > 0;
+      systemMessagesSection.hidden = !hasMaturedAccounts;
+      if (notificationBadge) notificationBadge.textContent = hasMaturedAccounts ? "2" : "1";
+    })
     .catch((error) => {
-      console.error("Failed to load login matured FD accounts:", error);
-      alert(error.message);
+      console.error("Failed to check matured FD accounts:", error);
     });
 
   maturedMessage.addEventListener("click", async () => {
     closeMenu();
     setMaturedAccountsLoading(true);
     try {
-      const response = await fetch("/api/matured-accounts");
-      if (!response.ok) throw new Error("Unable to load matured accounts.");
-      showMaturedAccounts(await response.json());
+      const response = await fetch("/api/matured-fd-login");
+      if (!response.ok) throw new Error("Unable to load matured FD accounts.");
+      const accounts = await response.json();
+      if (!accounts.length) {
+        systemMessagesSection.hidden = true;
+        if (notificationBadge) notificationBadge.textContent = "1";
+        return;
+      }
+      showLoginMaturedFds(accounts);
     } catch (error) {
       alert(error.message);
     } finally {
