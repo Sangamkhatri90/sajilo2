@@ -33847,10 +33847,12 @@ app.post("/api/matured-fd-transfer", async (req, res) => {
   const conn = req.session.conn;
   const sourceSLID = Number(req.body?.sourceSLID);
   const userID = Number(req.session.userID);
+  const voucherNo = String(req.body?.voucherNo || "").trim();
 
   if (!conn) return res.status(401).json({ message: "Your session has expired." });
   if (!Number.isInteger(sourceSLID) || sourceSLID <= 0) return res.status(400).json({ message: "Select a valid matured account." });
   if (!Number.isInteger(userID) || userID <= 0) return res.status(401).json({ message: "The logged-in user could not be resolved." });
+  if (!voucherNo) return res.status(400).json({ message: "Journal Voucher number is required." });
   let journalID;
   try {
     const settingsRows = await sql.promises.query(conn, 'SELECT TOP 1 DateType FROM dbo.tbSystemSettings');
@@ -33900,6 +33902,10 @@ app.post("/api/matured-fd-transfer", async (req, res) => {
     if (!isWithinFiscalRange) {
       return res.status(400).json({ message: "Make sure the current date lies within the Fiscal year range." });
     }
+    const expectedVoucherSuffix = await buildFiscalSuffix(conn, startDateMatch[0], endDateMatch[0]);
+    if (!voucherNo.endsWith(expectedVoucherSuffix)) {
+      return res.status(400).json({ message: "The generated voucher number does not match the selected fiscal year." });
+    }
 
     const localDateRows = dateType === "AD"
       ? await sql.promises.query(conn, `
@@ -33946,10 +33952,10 @@ app.post("/api/matured-fd-transfer", async (req, res) => {
 
       DECLARE @SourceGLID int, @TargetSLID int, @TargetGLID int;
       DECLARE @Amount decimal(19, 4), @UDVNo int, @BodyLength int;
-      DECLARE @Prefix varchar(50), @Suffix varchar(50), @StartFrom bigint, @EndTo bigint;
-      DECLARE @NumericLength int, @LastVoucherNo varchar(100), @NumericPart varchar(100);
-      DECLARE @NextNumber bigint, @VoucherNo varchar(100);
+      DECLARE @Prefix varchar(50), @Suffix varchar(50), @NumericLength int, @VoucherNumericPart varchar(100);
+      DECLARE @VoucherNo varchar(100);
       DECLARE @Created TABLE (JournalID int);
+      SET @VoucherNo = ?;
 
       SELECT @SourceGLID = SLM.GLID, @TargetSLID = SLM.SLIDTransfer, @TargetGLID = TransferSL.GLID
       FROM dbo.tbSubLedgerMaster SLM WITH (UPDLOCK, HOLDLOCK)
@@ -33979,9 +33985,8 @@ app.post("/api/matured-fd-transfer", async (req, res) => {
 
       SELECT TOP 1 @UDVNo = UDVNo
       FROM dbo.tbUserDefinedVoucher WITH (UPDLOCK, HOLDLOCK)
-      WHERE MenuName = 'Journal Voucher';
-      SELECT TOP 1 @BodyLength = BodyLength, @Prefix = Prefix, @Suffix = Suffix,
-        @StartFrom = StartFrom, @EndTo = EndTo
+      WHERE UDVNo = 1 AND MenuName = 'Journal Voucher';
+      SELECT TOP 1 @BodyLength = BodyLength, @Prefix = Prefix, @Suffix = Suffix
       FROM dbo.tbAutoNumberSetting WITH (UPDLOCK, HOLDLOCK)
       WHERE VoucherID = @UDVNo;
 
@@ -33993,26 +33998,21 @@ app.post("/api/matured-fd-transfer", async (req, res) => {
         RETURN;
       END;
 
-      SELECT TOP 1 @LastVoucherNo = VoucherNo
-      FROM dbo.tbJournalMaster WITH (UPDLOCK, HOLDLOCK)
-      WHERE UDVNo = @UDVNo AND VoucherNo LIKE @Prefix + '%' + @Suffix
-      ORDER BY JournalID DESC;
-      SET @NumericPart = CASE WHEN @LastVoucherNo IS NULL THEN NULL ELSE
-        SUBSTRING(@LastVoucherNo, LEN(@Prefix) + 1, LEN(@LastVoucherNo) - LEN(@Prefix) - LEN(@Suffix)) END;
-      IF ISNULL(@NumericPart, '') <> '' AND @NumericPart NOT LIKE '%[^0-9]%'
-        SET @NextNumber = CONVERT(bigint, @NumericPart) + 1;
-      ELSE
-        SET @NextNumber = CASE WHEN ISNULL(@StartFrom, 0) = 0 THEN 1 ELSE @StartFrom END;
-
-      IF @EndTo IS NOT NULL AND @NextNumber > @EndTo
+      SET @VoucherNumericPart = SUBSTRING(@VoucherNo, LEN(@Prefix) + 1, @NumericLength);
+      IF LEN(@VoucherNo) <> @BodyLength
+        OR LEFT(@VoucherNo, LEN(@Prefix)) <> @Prefix
+        OR ISNULL(@VoucherNumericPart, '') = ''
+        OR @VoucherNumericPart LIKE '%[^0-9]%'
+        OR CASE WHEN LEN(@VoucherNo) >= LEN(@Prefix) + @NumericLength
+          THEN RIGHT(@VoucherNo, LEN(@VoucherNo) - LEN(@Prefix) - @NumericLength)
+          ELSE '' END NOT LIKE '-[0-9][0-9][0-9][0-9]'
       BEGIN
         ROLLBACK TRANSACTION;
-        SELECT 'voucher_limit' AS ErrorCode;
+        SELECT 'voucher_invalid' AS ErrorCode;
         RETURN;
       END;
 
-      SET @VoucherNo = @Prefix + RIGHT(REPLICATE('0', @NumericLength) + CONVERT(varchar(30), @NextNumber), @NumericLength) + @Suffix;
-      IF EXISTS (SELECT 1 FROM dbo.tbJournalMaster WITH (UPDLOCK, HOLDLOCK) WHERE VoucherNo = @VoucherNo)
+      IF EXISTS (SELECT 1 FROM dbo.tbJournalMaster WITH (UPDLOCK, HOLDLOCK) WHERE UDVNo = @UDVNo AND VoucherNo = @VoucherNo)
       BEGIN
         ROLLBACK TRANSACTION;
         SELECT 'voucher_duplicate' AS ErrorCode;
@@ -34032,7 +34032,7 @@ app.post("/api/matured-fd-transfer", async (req, res) => {
 
       COMMIT TRANSACTION;
       SELECT JournalID, @VoucherNo AS VoucherNo FROM @Created;
-    `, [sourceSLID, sourceSLID, sourceSLID, voucherDates.jvDate, voucherDates.jvMiti, userID, userID, sourceSLID, sourceSLID]);
+    `, [voucherNo, sourceSLID, sourceSLID, sourceSLID, voucherDates.jvDate, voucherDates.jvMiti, userID, userID, sourceSLID, sourceSLID]);
 
     const result = insertRows[0];
     if (result?.ErrorCode) {
@@ -34040,7 +34040,7 @@ app.post("/api/matured-fd-transfer", async (req, res) => {
         account_invalid: "The selected account is not an eligible matured account or no longer has a transfer account.",
         no_balance: "The selected matured account has no remaining balance to transfer.",
         voucher_setup_missing: "Journal Voucher numbering is not configured.",
-        voucher_limit: "The Journal Voucher number has reached its configured end limit.",
+        voucher_invalid: "The generated number is not a valid Journal Voucher number for UDVNo 1.",
         voucher_duplicate: "The next Journal Voucher number already exists. Please try again."
       };
       return res.status(400).json({ message: messages[result.ErrorCode] || "Unable to transfer the matured account." });

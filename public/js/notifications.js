@@ -184,11 +184,19 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       try {
+        if (typeof window.generateVoucherNo !== "function") {
+          throw new Error("Voucher number generation is unavailable.");
+        }
+        const voucherInput = document.createElement("input");
+        await window.generateVoucherNo(1, voucherInput);
+        if (!voucherInput.value) throw new Error("Unable to generate the Journal Voucher number.");
+
         const response = await fetch("/api/matured-fd-transfer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             sourceSLID: selectedRow.dataset.slid,
+            voucherNo: voucherInput.value,
             currentDate: document.getElementById("current-bs-date")?.textContent,
             startDate: document.getElementById("startDateInput")?.textContent,
             endDate: document.getElementById("endDateInput")?.textContent
