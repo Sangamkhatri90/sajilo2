@@ -92,20 +92,29 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderT(data) {
     tBody.innerHTML = "";
 
-    const opening = data.openingBalance.map((r) => {
-      const rec = num(r.openingCredit), pay = num(r.openingDebit), bal = Math.abs(rec - pay);
-      return {
-        ...r,
-        cells: [
-          rec >= pay && bal > 0 ? amt(bal) : blank,
-          pay > rec ? amt(bal) : blank,
-        ],
-      };
-    });
+  const opening = data.openingBalance.map((r) => {
+  const debit = num(r.openingDebit);
+  const credit = num(r.openingCredit);
+
+  // Debit opening balance = Cash/Bank balance = Receipt side
+  // Credit opening balance = Bank overdraft = Payment side
+  const netBalance = debit - credit;
+
+  return {
+    ...r,
+    cells: [
+      netBalance > 0 ? amt(netBalance) : blank,
+      netBalance < 0 ? amt(Math.abs(netBalance)) : blank,
+    ],
+  };
+});
 
     const transaction = data.transaction.map((r) => ({
       ...r, cells: [amt(num(r.periodCredit)), amt(num(r.periodDebit))],
     }));
+    console.group("[Receipt & Payment] T-format Transaction rows");
+    transaction.forEach((row, index) => console.log(`Record ${index + 1}`, row));
+    console.groupEnd();
 
     // Closing balance: debit balance sits on the payment side, credit on the receipt side
     const balance = data.balance.map((r) => ({
@@ -140,6 +149,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const payments = data.transaction
       .filter((r) => num(r.periodDebit) !== 0)
       .map((r) => ({ ...r, cells: [amt(num(r.periodDebit))] }));
+    console.group("[Receipt & Payment] Normal-format transaction rows");
+    console.log("Receipt rows:");
+    receipts.forEach((row, index) => console.log(`Record ${index + 1}`, row));
+    console.log("Payment rows:");
+    payments.forEach((row, index) => console.log(`Record ${index + 1}`, row));
+    console.groupEnd();
 
     const balance = data.balance.map((r) => ({ ...r, cells: [amt(r.amount)] }));
 
@@ -184,6 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const data = await res.json();
+    console.table(data.openingBalance);
+    console.table(data.transaction);
+    console.table(data.balance);
     if (data.meta?.noData) {
       (isT ? renderT : renderN)({ openingBalance: [], transaction: [], balance: [] });
       return showCustomAlert("No data available for the selected period.");

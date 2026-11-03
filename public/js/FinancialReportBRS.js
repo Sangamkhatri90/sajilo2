@@ -83,7 +83,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const bookBalance = num(data.totalCr) - num(data.totalDr);   // Cr positive, Dr negative
     const addTotal = sum(data.addRows);
     const lessTotal = sum(data.lessRows);
-    const actual = bookBalance + addTotal - lessTotal;
+    const actual = Math.abs(bookBalance) + addTotal - lessTotal;
+    const actualIsDr = bookBalance < 0 ? actual >= 0 : actual < 0;
+    const actualDisplay = `${Math.abs(actual).toFixed(2)} ${actualIsDr ? "Dr" : "Cr"}`;
+
+    console.log("[Bank Reconciliation] balance calculation", {
+      totalCr: num(data.totalCr),
+      totalDr: num(data.totalDr),
+      bookBalance,
+      addTotal,
+      lessTotal,
+      actual,
+      actualDisplay,
+    });
 
     tbody.innerHTML =
       `<tr><td class="no-border"><strong>${esc(bank)}</strong></td>${'<td class="no-border"></td>'.repeat(6)}</tr>` +
@@ -98,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
       data.lessRows.map(detailRow).join("") +
       `<tr><td colspan="6"><strong>Total of Deposits Not Cleared</strong></td><td><strong>${fmt(lessTotal)}</strong></td></tr>` +
 
-      `<tr><td colspan="6"><strong>ACTUAL BALANCE</strong></td><td><strong>${drCr(actual)}</strong></td></tr>`;
+      `<tr><td colspan="6"><strong>ACTUAL BALANCE</strong></td><td><strong>${actualDisplay}</strong></td></tr>`;
 
     popup.style.display = "block";
   }

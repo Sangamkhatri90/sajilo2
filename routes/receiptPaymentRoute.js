@@ -30,10 +30,11 @@ module.exports = function registerReceiptPayment(app, sql, computeGroupTotals, r
       }
 
       // Period starts after all DB data -> nothing to show, no Excel fallback
-      const maxDate = await d.latestJournalDate(conn, isAD);
-      if (maxDate && fromDate > maxDate) {
-        return res.json({ openingBalance: [], transaction: [], balance: [], meta: { noData: true } });
-      }
+     if (fromDate > toDate) {
+  return res.status(400).json({
+    error: 'From date cannot be greater than To date.',
+  });
+}
 
       const { groupIds, groupTotals, groupInfoMap } = await computeGroupTotals(conn, {
         fromDate,
@@ -46,27 +47,48 @@ module.exports = function registerReceiptPayment(app, sql, computeGroupTotals, r
       const transaction = [];
       const balance = [];
 
-      for (const id of groupIds) {
-        const t = groupTotals[id];
-        const category = resolveCategory(Array.from(t.categories));
-        const particular = groupInfoMap[id]?.name || 'Ungrouped';
-        const alias = groupInfoMap[id]?.alias || '';
+for (const id of groupIds) {
+  const t = groupTotals[id];
+  const particular = groupInfoMap[id]?.name || 'Ungrouped';
+  const alias = groupInfoMap[id]?.alias || '';
 
-        if (category === 'C' || category === 'B') {
-          // Cash / bank groups: opening + closing balance
-          if (t.openingDebit !== 0 || t.openingCredit !== 0) {
-            openingBalance.push({ particular, alias, openingDebit: t.openingDebit, openingCredit: t.openingCredit });
-          }
-          const dr = t.openingDebit + t.periodDebit;
-          const cr = t.openingCredit + t.periodCredit;
-          const amount = Math.abs(dr - cr);
-          if (amount > 0) {
-            balance.push({ particular, alias, amount, side: dr > cr ? 'Dr' : 'Cr' });
-          }
-        } else if (t.periodDebit !== 0 || t.periodCredit !== 0) {
-          transaction.push({ particular, alias, periodDebit: t.periodDebit, periodCredit: t.periodCredit });
-        }
-      }
+  // Only Cash (12) and Bank (13) groups use opening/closing balances.
+  const isCashBankGroup = [12, 13].includes(Number(id));
+
+  if (isCashBankGroup) {
+    // Cash / bank groups: opening + closing balance
+    if (t.openingDebit !== 0 || t.openingCredit !== 0) {
+      openingBalance.push({
+        particular,
+        alias,
+        openingDebit: t.openingDebit,
+        openingCredit: t.openingCredit
+      });
+    }
+
+    const dr = t.openingDebit + t.periodDebit;
+    const cr = t.openingCredit + t.periodCredit;
+    const amount = Math.abs(dr - cr);
+
+    if (amount > 0) {
+      balance.push({
+        particular,
+        alias,
+        amount,
+        side: dr > cr ? 'Dr' : 'Cr'
+      });
+    }
+  } else if (t.periodDebit !== 0 || t.periodCredit !== 0) {
+    // All other groups: Receipt & Payment transactions
+    transaction.push({
+      particular,
+      alias,
+      periodDebit: t.periodDebit,
+      periodCredit: t.periodCredit
+    });
+  }
+}
+
 
       res.json({ openingBalance, transaction, balance, meta: {} });
     } catch (err) {
