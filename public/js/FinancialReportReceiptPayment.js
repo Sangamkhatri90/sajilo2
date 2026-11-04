@@ -112,9 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const transaction = data.transaction.map((r) => ({
       ...r, cells: [amt(num(r.periodCredit)), amt(num(r.periodDebit))],
     }));
-    console.group("[Receipt & Payment] T-format Transaction rows");
-    transaction.forEach((row, index) => console.log(`Record ${index + 1}`, row));
-    console.groupEnd();
+   
 
     // Closing balance: debit balance sits on the payment side, credit on the receipt side
     const balance = data.balance.map((r) => ({
@@ -199,9 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const data = await res.json();
-    console.table(data.openingBalance);
-    console.table(data.transaction);
-    console.table(data.balance);
+   
     if (data.meta?.noData) {
       (isT ? renderT : renderN)({ openingBalance: [], transaction: [], balance: [] });
       return showCustomAlert("No data available for the selected period.");

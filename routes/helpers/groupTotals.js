@@ -411,11 +411,7 @@ const period = isCashBankGroup
       }
     }
 
-    for (const grpId of groupIds) {
-      console.group(`[Receipt & Payment] Ledger records for group ${grpId} (${groupInfoMap[grpId]?.name || 'Ungrouped'})`);
-      console.table(groupLedgerRecords[grpId] || []);
-      console.groupEnd();
-    }
+    
 
     return {
       groupIds,

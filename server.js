@@ -97,6 +97,10 @@ require('./routes/receiptPaymentRoute')(app, sql, computeGroupTotals, resolveCat
 require('./routes/groupSummaryRoute')(app, sql);
 require('./routes/incomeStatementRoute')(app, sql);
 require('./routes/bankReconciliationRoute')(app, sql);
+const registerCashFlowStatement =
+    require("./routes/cashFlowStatementRoute");
+
+registerCashFlowStatement(app, sql);
 
 // Route to handle login
 
@@ -23233,7 +23237,7 @@ app.get("/get-ledger-sub-master-groups", (req, res) => {
 
   const placeholders = LMselectedIDs.map(() => '?').join(',');
   const query = `
-      SELECT LgrSubGrpID, GLName, GlAlias
+      SELECT GLID, LgrSubGrpID, GLName, GlAlias
       FROM tbLedgerMaster
       WHERE LgrSubGrpID IN (${placeholders})
   `;

@@ -43984,129 +43984,7 @@ async function loadEarningsData() {
                     </script>
 
 
-                    <script>
-                        // When the "Ok" button is clicked in the form
-                        document.getElementById("myForm12").addEventListener("submit", async function (event) {
-                            event.preventDefault(); // Prevent form submission
-                            const cashBookValue = document.getElementById('cashbook-bank-input').value.trim();
-                            if (!cashBookValue) {
-                                showCustomAlert("Please select or enter the Cash/Bank Book value.");
-                                return; // ⛔ Stop further processing
-                            }
-                            const cfsresult = document.getElementById("popupTableDivCFS"); // retrieving the value
-
-                            let highestZIndex = 3;
-
-                            function bringToFront(element) {
-                                highestZIndex++;
-                                element.style.zIndex = highestZIndex;
-                            }
-
-                            function makeDivMovable(div) {
-                                let isDragging = false;
-                                let offsetX, offsetY;
-
-                                div.addEventListener('mousedown', (e) => {
-                                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                                        return; // Allow interaction with input fields
-                                    }
-                                    e.preventDefault();
-                                    bringToFront(div);
-
-                                    const rect = div.getBoundingClientRect();
-                                    offsetX = e.clientX - rect.left;
-                                    offsetY = e.clientY - rect.top;
-
-                                    isDragging = true;
-                                });
-
-                                document.addEventListener('mousemove', (e) => {
-                                    if (isDragging) {
-                                        div.style.left = `${e.pageX - offsetX}px`;
-                                        div.style.top = `${e.pageY - offsetY}px`;
-                                        div.style.position = 'absolute';
-                                    }
-                                });
-
-                                document.addEventListener('mouseup', () => {
-                                    isDragging = false;
-                                });
-                            }
-
-                            makeDivMovable(cfsresult);
-
-
-
-                            //Receive the from date, to date  
-                            const fromdateCFS = document.getElementById('cashflowstatement-datefrom').value;
-                            const todateCFS = document.getElementById('cashflowstatement-dateto').value;
-
-                            //Table display and hide
-                            const popupTableDivCFS = document.getElementById("popupTableDivCFS");
-                            popupTableDivCFS.style.display = "block";
-
-                            // Read checkbox states
-                            const isSummary = document.getElementById("cashflow-summary").checked;
-                            const isSubLedger = document.getElementById("cashflow-sub-ledger").checked;
-                            const isGroupWise = document.getElementById("cashflow-group-wise").checked;
-                            const isShowZeroBalance = document.getElementById("cashflow-show-zero-balance").checked;
-
-                            const checkboxes = [isSummary, isSubLedger, isGroupWise, isShowZeroBalance];
-                            const anyChecked = checkboxes.some(cb => cb && cb.checked);
-                            const data = [];
-
-                            if (anyChecked) {
-                                if (isSummary.checked) {
-                                    if (!fromdateCFS || !todateCFS) return showCustomAlert("Provide From and To dates.");
-                                    const formattedFrom = fromdateCFS.replaceAll('-', '/');
-                                    const formattedTo = todateCFS.replaceAll('-', '/');
-
-                                    const response = await fetch("/api/cfs/summarytablepopu", {
-                                        method: "POST",
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            fromDate: formattedFrom,
-                                            toDate: formattedTo,
-
-                                        })
-                                    });
-
-
-
-
-
-
-
-
-
-                                }
-
-                            }
-                            else {
-                                if (!fromdateCFS || !todateCFS) return showCustomAlert("Provide From and To dates.");
-                                const formattedFrom = fromdateCFS.replaceAll('-', '/');
-                                const formattedTo = todateCFS.replaceAll('-', '/');
-                            }
-
-
-
-
-
-                            // Close the popup when the "Ok" button is clicked
-                            document.getElementById("cfs-tb-okbutton").addEventListener("click", function () {
-                                popupTableDivCFS.style.display = "none";
-                            });
-
-
-
-
-                            // Close the table popup when the close button is clicked
-                            document.getElementById("closeTableButtonCFS").addEventListener("click", function () {
-                                popupTableDivCFS.style.display = "none";
-                            });
-                        });
-
-                    </script>
+               
 
                     <script>
                         document.getElementById('myForm29').addEventListener('submit', async function (event) {
@@ -49588,6 +49466,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/FinancialReportGroupSummary.js"></script>
                     <script src="/js/FinancialReportIncomeStatement.js"></script>
                     <script src="/js/FinancialReportBRS.js"></script>
+                    <script src="/js/CashFlowStatementResult.js"></script>
                     <script src="/js/GenerateNextVoucherNumber.js"></script>
                     <script>
                         document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {

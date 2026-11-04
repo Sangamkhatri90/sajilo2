@@ -1,6 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (id) => document.getElementById(id);
   const excel = { ledgers: null, subledgers: null };   // both optional
+  const dateStorageKey = "groupSummaryDates";
+  const savedDates = JSON.parse(sessionStorage.getItem(dateStorageKey) || "{}");
+  ["FR-GS-datefrom", "FR-GS-dateto"].forEach((id) => {
+    const input = $(id);
+    if (savedDates[id]) input.value = savedDates[id];
+    input.addEventListener("change", () => {
+      const dates = JSON.parse(sessionStorage.getItem(dateStorageKey) || "{}");
+      dates[id] = input.value;
+      sessionStorage.setItem(dateStorageKey, JSON.stringify(dates));
+    });
+  });
 
   const num = (v) => Number(v) || 0;
   const fmt = (n) => (n < 0 ? `(${Math.abs(n).toFixed(2)})` : num(n).toFixed(2));
@@ -97,12 +108,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     let html = "", total = 0, gi = 0;
+    const totalParts = [];
 
     for (const g of groups.values()) {
       const subs = [...g.subs.values()]
         .map((s) => ({ ...s, ledgers: o.summaryOnly ? [] : s.ledgers.filter((l) => keep(l.amount)) }))
         .filter((s) => (o.summaryOnly ? keep(s.amount) : s.ledgers.length > 0));
       if (!subs.length) continue;
+
+      console.info('[groupSummary] displayed group totals', {
+        group: g.name,
+        subgroups: subs.map((s) => ({
+          subgroup: s.name,
+          amount: s.amount,
+          ledgerAmounts: s.ledgers.map((l) => ({ ledger: l.ledgerName, amount: l.amount })),
+        })),
+      });
 
       gi++;
       html += `<tr class="gs-group"><td>${gi}</td><td>${esc(g.name)}</td><td>${esc(g.alias)}</td><td></td></tr>`;
@@ -111,10 +132,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const sno = `${gi}.${si + 1}`;
         html += `<tr class="gs-sub"><td>${sno}</td><td>${esc(s.name)}</td><td>${esc(s.alias)}</td><td>${o.summaryOnly ? fmt(s.amount) : ""}</td></tr>`;
 
-        if (o.summaryOnly) { total += s.amount; return; }
+        if (o.summaryOnly) {
+          total += s.amount;
+          totalParts.push({ subgroup: s.name, amount: s.amount });
+          return;
+        }
 
         s.ledgers.forEach((l, li) => {
           total += l.amount;   // ledger level only, so subledgers never double count
+          totalParts.push({ ledger: l.ledgerName, amount: l.amount });
           const lno = `${sno}.${li + 1}`;
           html += `<tr><td>${lno}</td><td>${esc(l.ledgerName)}</td><td>${esc(l.ledgerAlias)}</td><td>${fmt(l.amount)}</td></tr>`;
 
@@ -128,6 +154,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     html += `<tr class="gs-total"><td></td><td>Total</td><td></td><td>${fmt(total)}</td></tr>`;
+    console.info('[groupSummary] displayed report total', {
+      calculation: o.summaryOnly
+        ? 'sum of displayed subgroup amounts'
+        : 'sum of displayed ledger amounts',
+      parts: totalParts,
+      amount: total,
+    });
     resultBody.innerHTML = html;
     show(panels.result);
   }
@@ -139,20 +172,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!from || !to) return showCustomAlert("Please provide both From and To dates.");
 
     const o = opts();
+    const payload = {
+      fromDate: from,   // server normalizes AD/LD format
+      toDate: to,
+      includeOpening: o.includeOpening,
+      subledger: o.subledger && !o.summaryOnly,
+      ...scope,         // { subGroupIds } or { ledgerIds }, empty = everything
+      excelLedgers: excel.ledgers,
+      excelSubledgers: o.subledger ? excel.subledgers : null,
+    };
+    console.debug('[groupSummary] request', payload);
     let res;
     try {
       res = await fetch("/api/groupSummary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fromDate: from,   // server normalizes AD/LD format
-          toDate: to,
-          includeOpening: o.includeOpening,
-          subledger: o.subledger && !o.summaryOnly,
-          ...scope,         // { subGroupIds } or { ledgerIds }, empty = everything
-          excelLedgers: excel.ledgers,
-          excelSubledgers: o.subledger ? excel.subledgers : null,
-        }),
+        body: JSON.stringify(payload),
       });
     } catch {
       return showCustomAlert("Network error while loading group summary.");
@@ -163,6 +198,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const { rows, meta } = await res.json();
+    console.debug('[groupSummary] response rows', {
+      count: rows?.length ?? 0,
+      rows: (rows ?? []).map((r) => ({
+        glid: r.glid,
+        ledgerName: r.ledgerName,
+        amount: r.amount,
+        subledgerCount: r.subLedgers?.length ?? 0,
+      })),
+      meta,
+    });
     if (meta?.noData) {
       resultBody.innerHTML = "";
       show(panels.result);
@@ -271,7 +316,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("GrpSummaryLedgerDivForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
-    const ids = checked("ledger-sub-group-summary-checkbox").map((c) => c.dataset.glid);
+    const ids = checked("ledger-sub-group-summary-checkbox")
+      .map((c) => c.dataset.glid)
+      .filter((id) => id);
     if (!ids.length) return showCustomAlert("Select at least one ledger.");
     hide(panels.ledger);
     load({ ledgerIds: ids });
