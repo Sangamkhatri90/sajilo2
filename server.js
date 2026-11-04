@@ -1233,6 +1233,7 @@ app.post("/account/Transaction", async (req, res) => {
 
   const query = (text, params = []) => sql.promises.query(conn, text, params);
   let journalID;
+  let transactionStarted = false;
   try {
     const voucherDates = await resolveVoucherDatePair(conn, transDate);
     const fiscalRows = await query(`
@@ -1273,6 +1274,8 @@ app.post("/account/Transaction", async (req, res) => {
     }
     if (!Number.isInteger(userID) || userID <= 0) return res.status(401).json({ success: false, message: 'The logged-in user could not be resolved.' });
 
+    await query('BEGIN TRANSACTION');
+    transactionStarted = true;
     const account = accountRows[0];
     const cashGLID = cashRows[0].GLID;
     const masterRows = await query(`
@@ -1287,15 +1290,16 @@ app.post("/account/Transaction", async (req, res) => {
     const accountCredit = transactionType === 'Deposit' ? total : 0;
     await query(`INSERT INTO dbo.tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, 1, ?, ?, ?, ?, 1, 0)`, [journalID, account.SLID, account.GLID, accountDebit, accountCredit]);
     await query(`INSERT INTO dbo.tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, 2, NULL, ?, ?, ?, 0, 0)`, [journalID, cashGLID, accountCredit, accountDebit]);
+    await query('COMMIT TRANSACTION');
+    transactionStarted = false;
 
     return res.status(201).json({ success: true, message: 'Transaction saved successfully.', journalID });
   } catch (error) {
-    if (journalID) {
+    if (transactionStarted) {
       try {
-        await query('DELETE FROM dbo.tbJournalDetails WHERE JournalID = ?', [journalID]);
-        await query('DELETE FROM dbo.tbJournalMaster WHERE JournalID = ?', [journalID]);
-      } catch (cleanupError) {
-        console.error('Transaction cleanup failed:', cleanupError);
+        await query('ROLLBACK TRANSACTION');
+      } catch (rollbackError) {
+        console.error('Transaction rollback failed:', rollbackError);
       }
     }
     console.error('Transaction insert failed:', {
@@ -1340,6 +1344,7 @@ app.post("/account/MultiTransaction", async (req, res) => {
 
   const query = (text, params = []) => sql.promises.query(conn, text, params);
   let journalID;
+  let transactionStarted = false;
   try {
     const voucherDates = await resolveVoucherDatePair(conn, transDate);
     const fiscalRows = await query(`
@@ -1378,6 +1383,8 @@ app.post("/account/MultiTransaction", async (req, res) => {
     }
     if (!Number.isInteger(userID) || userID <= 0) return res.status(401).json({ success: false, message: 'The logged-in user could not be resolved.' });
 
+    await query('BEGIN TRANSACTION');
+    transactionStarted = true;
     const totalPenalty = normalizedRecords.reduce((total, record) => total + record.penalty, 0);
     const totalRebate = normalizedRecords.reduce((total, record) => total + record.rebate, 0);
     const masterRows = await query(`
@@ -1394,15 +1401,16 @@ app.post("/account/MultiTransaction", async (req, res) => {
       await query('INSERT INTO dbo.tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, ?, ?, ?, ?, 1, 0)', [journalID, index + 1, account.SLID, account.GLID, record.debit, record.credit]);
     }
     await query('INSERT INTO dbo.tbJournalDetails (JournalID, SNo, SLID, GLID, DrAmount, CrAmount, Single, NotCapital) VALUES (?, ?, NULL, ?, ?, ?, 0, 0)', [journalID, normalizedRecords.length + 1, cashRows[0].GLID, totalCredit, totalDebit]);
+    await query('COMMIT TRANSACTION');
+    transactionStarted = false;
 
     return res.status(201).json({ success: true, message: 'Multi transaction saved successfully.', journalID });
   } catch (error) {
-    if (journalID) {
+    if (transactionStarted) {
       try {
-        await query('DELETE FROM dbo.tbJournalDetails WHERE JournalID = ?', [journalID]);
-        await query('DELETE FROM dbo.tbJournalMaster WHERE JournalID = ?', [journalID]);
-      } catch (cleanupError) {
-        console.error('Multi transaction cleanup failed:', cleanupError);
+        await query('ROLLBACK TRANSACTION');
+      } catch (rollbackError) {
+        console.error('Multi transaction rollback failed:', rollbackError);
       }
     }
     console.error('Multi transaction insert failed:', { message: error.message, voucherNo, cashLedger, docClass, transDate });

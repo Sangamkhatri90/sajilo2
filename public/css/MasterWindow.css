@@ -1,0 +1,459 @@
+/* ==========================================================
+   master-window.css  — global styles for all "Master" windows
+   (Journal Voucher, Receipt Voucher, Payment Voucher, ...)
+
+   Usage:
+     <div class="movableDiv master-window" id="movableDiv38"> ... </div>
+   Per-window overrides (optional) via CSS variables:
+     #movableDiv38 { --mw-width: 1200px; --mw-top: 40px; }
+   ========================================================== */
+
+/* ---------- Theme tokens ---------- */
+.master-window {
+  --mw-width: 1027px;
+  --mw-top: 60px;
+  --mw-left: 30px;
+  --mw-panel-height: clamp(420px, calc(100vh - 186px), 614px);
+  --mw-search-width: 410px;
+  /* Top edge of the search panel = top edge of the table box (just below the toolbar).
+     Increase if your toolbar buttons are taller / wrap to 2 rows. */
+  --mw-search-top: 132px;
+
+  --mw-primary: #0b62e4;
+  --mw-primary-hover: #094bba;
+  --mw-primary-active: #073a8e;
+  --mw-success: #28a745;
+  --mw-danger: #dc3545;
+  --mw-input-bg: #dedada;
+  --mw-input-border: #ccc;
+  --mw-panel-bg: #f4f4f4;
+  --mw-th-bg: #337ab7;
+  --mw-row-border: #000;
+}
+
+/* ---------- Window shell ---------- */
+.master-window {
+  position: absolute;
+  top: var(--mw-top);
+  left: var(--mw-left);
+  width: min(90vw, var(--mw-width));
+  min-width: min(90vw, var(--mw-width));
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 72px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.master-window > *,
+.master-window form {
+  max-width: 100%;
+}
+
+.master-window fieldset {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.master-window input,
+.master-window select,
+.master-window textarea {
+  max-width: 100%;
+}
+
+.master-window .mw-close {
+  top: 0;
+  right: 4px;
+  z-index: 10;
+  cursor: pointer;
+  background: transparent;
+}
+
+.mw-container {
+  position: relative;          /* anchor for the absolute search panel */
+  width: 100%;
+  padding: 10px 8px 0;
+  box-sizing: border-box;
+}
+
+/* ---------- Fieldset / legend ---------- */
+.mw-fieldset {
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 8px;
+  margin: 5px 0;
+}
+
+.mw-legend {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--mw-primary);
+}
+
+/* ---------- Toolbar (New / Edit / Delete ...) ---------- */
+.mw-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 10px 0;
+  padding: 0;
+}
+
+.mw-button-row a {
+  display: block;
+  flex: 0 0 auto;
+  text-decoration: none;
+}
+
+.mw-button-row button {
+  width: auto;
+  justify-content: center;
+  max-width: 100%;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+/* ---------- Table section ---------- */
+.mw-table-section {
+  display: flex;
+}
+
+.master-window .mw-table-section > fieldset {
+  width: 100%;
+  height: var(--mw-panel-height);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Table shrinks when the search panel is open.
+   Triggers on ANY of: window class (new / old name) or the panel itself being open. */
+.master-window.mw-search-open .mw-table-section,
+.master-window.jv-search-open .mw-table-section,
+.master-window:has(.mw-search.is-open) .mw-table-section,
+.master-window:has(.mw-search[style*="display: block"]) .mw-table-section {
+  width: calc(100% - 440px);
+  max-width: none;
+  min-width: 0;
+}
+
+.mw-table-container {
+  width: 100%;
+  margin: 0 auto;
+  overflow: auto;
+  height: calc(var(--mw-panel-height) - 44px);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.mw-table-container table {
+  width: 100%;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  text-align: left;
+}
+
+.mw-table-container th,
+.mw-table-container td {
+  padding: 12px 15px;
+  border: 1px solid var(--mw-row-border);
+  white-space: nowrap;
+}
+
+.mw-table-container thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--mw-th-bg);
+  color: #fff;
+  font-weight: normal;
+}
+
+.mw-table-container tbody tr[data-row-id] {
+  cursor: pointer;
+}
+
+.mw-table-container tbody tr.selected-row > td {
+  background-color: #9fd0ec !important;
+}
+
+/* ---------- Pagination ---------- */
+.mw-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.mw-pagination button {
+  padding: 4px 10px;
+  border: 1px solid var(--mw-primary);
+  border-radius: 3px;
+  background: var(--mw-primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+.mw-pagination button:disabled { cursor: default; opacity: .5; }
+
+.mw-pagination select {
+  height: 28px;
+  padding: 2px 5px;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+  background: #fff;
+}
+.mw-pagination select:disabled { opacity: .5; }
+
+.mw-pagination .mw-page-select  { width: 58px; }
+.mw-pagination .mw-rows-select  { width: 60px; }
+.mw-pagination label            { margin-left: 12px; font-weight: bold; }
+
+.mw-pagination .mw-page-arrow {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* ---------- Search panel (right side) ---------- */
+.mw-search {
+  display: none;
+  position: absolute;
+  top: var(--mw-search-top);
+  right: 20px;
+  z-index: 20;
+  width: var(--mw-search-width);
+  max-width: calc(100% - 430px);
+  height: var(--mw-panel-height);
+  max-height: var(--mw-panel-height);
+  box-sizing: border-box;
+  margin: 0;
+  padding: 10px;
+  background: var(--mw-panel-bg);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
+  overflow: visible;
+  opacity: 0;
+  transition: opacity .2s ease-in-out;
+}
+
+/* open either via class (preferred) or inline display:block (legacy JS) */
+.mw-search.is-open,
+.mw-search[style*="display: block"] {
+  display: block;
+  opacity: 1;
+}
+
+.mw-search > .mw-fieldset { margin: 0; }
+
+/* ---------- Form rows & inputs ---------- */
+.mw-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.mw-form-row > div {
+  flex: 1;
+  min-width: 120px;
+}
+
+.mw-text,
+.mw-select,
+.mw-date {
+  width: 100%;
+  margin: 2px 0;
+  padding: 3px;
+  background-color: var(--mw-input-bg);
+  border: 1px solid var(--mw-input-border);
+  border-radius: 3px;
+  font-size: 11px;
+  box-sizing: border-box;
+}
+
+.mw-text:focus,
+.mw-select:focus,
+.mw-date:focus {
+  border-color: var(--mw-primary);
+  outline: none;
+}
+
+.mw-checkbox {
+  margin-left: 10px;
+  margin-top: 20px;
+}
+
+.mw-amount-fields {
+  display: flex;
+  gap: 5px;
+}
+
+.mw-amount-fields select,
+.mw-amount-fields input {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* ---------- Form buttons (Go / Reset) ---------- */
+.mw-button {
+  background-color: var(--mw-primary);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color .3s ease, transform .1s ease;
+}
+.mw-button:hover  { background-color: var(--mw-primary-hover); }
+.mw-button:active { background-color: var(--mw-primary-active); transform: scale(.95); }
+
+.mw-button[type="submit"] { background-color: var(--mw-success); max-width: 80px; }
+.mw-button[type="button"] { background-color: var(--mw-danger);  max-width: 80px; }
+
+.mw-search-actions {
+  justify-content: space-between;
+  gap: 0;
+  margin: 6px 0 4px;
+}
+.mw-search-actions > div { flex: 0 0 auto; }
+.mw-search-actions .mw-button {
+  min-width: 92px;
+  max-width: none;
+  min-height: 26px;
+  padding: 4px 16px;
+  font-size: 13px;
+}
+
+/* ---------- Suggestion dropdowns (ledger / doc class / collector) ---------- */
+/* Base look + position (does not depend on any other stylesheet).
+   Visibility (display) is still controlled by your JS. */
+.mw-search .mw-suggestions {
+  position: absolute !important;
+  left: 0 !important;
+  right: auto !important;
+  width: 100% !important;
+  min-width: 0;
+  box-sizing: border-box;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-top: 0;
+  background: #fff;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .25);
+  font-size: 12px;
+  text-align: left;
+  z-index: 10000;
+}
+
+.mw-search .mw-suggestion-field {
+  position: relative;
+  overflow: visible;
+}
+
+/* default: open DOWNWARD (Ledger, near top of panel) */
+.mw-search .mw-suggestion-field .mw-suggestions {
+  top: calc(100% + 2px) !important;
+  bottom: auto !important;
+}
+
+/* bottom fields (Doc Class, Collector): open UPWARD so the panel edge doesn't clip them */
+.mw-search .mw-suggestion-field.mw-open-up .mw-suggestions {
+  top: auto !important;
+  bottom: calc(100% + 2px) !important;
+}
+
+.mw-search .mw-suggestions > button {
+  position: sticky;
+  top: 0;
+  display: block;
+  margin-left: auto;
+  z-index: 1;
+  min-width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--mw-danger);
+  color: #fff;
+  line-height: 22px;
+  cursor: pointer;
+}
+
+.mw-search .mw-suggestions > div {
+  padding: 6px 8px;
+  border-bottom: 1px solid #d6d6d6;
+  cursor: pointer;
+}
+.mw-search .mw-suggestions > div:last-child { border-bottom: 0; }
+
+/* ---------- Toolbar button colours (global .xxx-button classes) ----------
+   Remove this block if your main stylesheet already defines them. */
+.new-button, .edit-button, .delete-button, .copy-button, .print-button,
+.export-button, .cancel-button, .trash-button, .reverse-button, .search-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+.new-button     { background: #5bc0de; }
+.edit-button    { background: #f0ad4e; }
+.delete-button  { background: #d9534f; }
+.copy-button    { background: #5cb85c; }
+.print-button   { background: #337ab7; }
+.export-button  { background: #a65c5c; }
+.cancel-button  { background: #f00; }
+.trash-button   { background: #6c757d; }
+.reverse-button { background: #f0ad4e; }
+.search-button  { background: #6c757d; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .master-window {
+    left: 10px !important;
+    top: 10px !important;
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 48px);
+  }
+
+  .master-window.mw-search-open .mw-table-section,
+  .master-window.jv-search-open .mw-table-section,
+  .master-window:has(.mw-search.is-open) .mw-table-section,
+  .master-window:has(.mw-search[style*="display: block"]) .mw-table-section { width: 100%; }
+
+  .mw-search {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+    margin-top: 10px;
+  }
+
+  .master-window .mw-table-section > fieldset { height: auto; display: block; }
+  .master-window .mw-table-container { height: auto; max-height: calc(100vh - 220px); }
+  .master-window .mw-form-row { flex-wrap: wrap; }
+}

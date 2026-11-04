@@ -153,7 +153,7 @@
     <link rel="stylesheet" href="/css/routeMaster.css">
     <link rel="stylesheet" href="/css/collectorMaster.css">
     <link rel="stylesheet" href="/css/memberMaster.css">
-    <link rel="stylesheet" href="/css/journalVoucher.css">
+    <!-- <link rel="stylesheet" href="/css/journalVoucher.css"> -->
     <link rel="stylesheet" href="/css/transactionMaster.css">
     <link rel="stylesheet" href="/css/receiptVoucherMaster.css">
     <link rel="stylesheet" href="/css/receiptVoucher.css">
@@ -204,7 +204,7 @@
     <link rel="stylesheet" href="/css/MainMultiTransaction.css">
     <link rel="stylesheet" href="/css/MainOpeningBalance.css">
     <link rel="stylesheet" href="/css/ReportTableStyle.css">
-
+    <link rel="stylesheet" href="/css/MasterWindow.css">
 </head>
 
 <body>
@@ -5228,7 +5228,7 @@
                 </div>
 
                 <!--Journal Voucher Master-->
-                <div class="movableDiv" id="movableDiv38">
+                <!-- <div class="movableDiv" id="movableDiv38">
                     <button id="closeButton38">&times;</button>
                     <div class="jv-container">
                         <form action="" id="myForm38">
@@ -5278,7 +5278,7 @@
                                     </a>
                                 </div>
                                 <div class="jv-table-section" style="display: flex;">
-                                    <!-- Left Panel -->
+                                   
                                     <fieldset>
                                         <div class="jv-table-container">
                                             <table class="highlight-table" id="JVTablevalues">
@@ -5354,7 +5354,7 @@
                                     </fieldset>
                                 </div>
                         </form>
-                        <!-- Right Panel - Search Form -->
+                        
                         <div id="jv-search">
                             <fieldset class="jv-fieldset">
                                 <legend class="jv-legend">Search</legend>
@@ -5461,8 +5461,206 @@
                         </div>
                         </fieldset>
                     </div>
-                </div>
+                </div> -->
+                <!-- ===== Journal Voucher Master (template for all master windows) =====
 
+     Requires: master-window.css
+     For a new window: change the id numbers, legend text, table columns,
+     and the search fields. Keep the mw-* classes as they are. -->
+
+<div class="movableDiv master-window" id="movableDiv38">
+  <button type="button" class="mw-close" id="closeButton38">&times;</button>
+
+  <div class="mw-container">
+
+    <!-- ================= MAIN FORM (toolbar + table) ================= -->
+    <form action="" id="myForm38">
+      <fieldset class="mw-fieldset">
+        <legend class="mw-legend">Journal Voucher Master</legend>
+
+        <!-- Toolbar -->
+        <div class="mw-button-row">
+          <a href="#"><button type="button" class="new-button" id="toggleButton97"><i class="fas fa-plus"></i>New</button></a>
+          <a href="#"><button type="button" class="edit-button" id="toggleButton182"><i class="fas fa-edit"></i>Edit</button></a>
+          <a href="#"><button type="button" class="delete-button" id="delete-button"><i class="fas fa-trash-alt"></i>Delete</button></a>
+          <a href="#"><button type="button" class="copy-button" id="toggleButton183"><i class="fas fa-copy"></i>Copy</button></a>
+          <a href="#"><button type="button" class="print-button" id="print-button"><i class="fas fa-print"></i>Print</button></a>
+          <a href="#"><button type="button" class="export-button" id="export-button"><i class="fas fa-file-export"></i>Export</button></a>
+          <a href="#"><button type="button" class="cancel-button" id="cancelButton38"><i class="fas fa-sign-out-alt"></i>Exit</button></a>
+          <a href="#"><button type="button" class="trash-button" id="trash-button"><i class="fas fa-recycle"></i>Trash</button></a>
+          <a href="#"><button type="button" class="reverse-button" id="reverse-button"><i class="fas fa-undo-alt"></i>Reverse</button></a>
+          <a href="#" class="toggle-link"><button type="button" class="search-button" id="jv-search-button"><i class="fas fa-binoculars"></i> Search</button></a>
+        </div>
+
+        <!-- Table + pagination -->
+        <div class="mw-table-section">
+          <fieldset>
+            <div class="mw-table-container">
+              <table class="highlight-table" id="JVTablevalues">
+                <thead>
+                  <tr>
+                    <th>S.NO</th>
+                    <th>V.NO</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Number of A/c</th>
+                    <th>Created By</th>
+                    <th>Created Date Time</th>
+                    <th>Modified By</th>
+                    <th>Modified Date</th>
+                    <th>Posted By</th>
+                    <th>Posted Date</th>
+                    <th>Verified By</th>
+                    <th>Verified Date</th>
+                    <th>Approved By</th>
+                    <th>Approved Date</th>
+                    <th>Doc Class</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- placeholder rows; JS replaces these with data rows:
+                       <tr data-row-id="123"> ... </tr> -->
+                  <tr><td colspan="16">&nbsp;</td></tr>
+                  <tr><td colspan="16">&nbsp;</td></tr>
+                  <tr><td colspan="16">&nbsp;</td></tr>
+                  <tr><td colspan="16">&nbsp;</td></tr>
+                  <tr><td colspan="16">&nbsp;</td></tr>
+                  <tr><td colspan="16">&nbsp;</td></tr>
+                  <tr><td colspan="16">&nbsp;</td></tr>
+                  <tr><td colspan="16">&nbsp;</td></tr>
+                  <tr><td colspan="16">&nbsp;</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="jvPagination" class="mw-pagination" aria-live="polite">
+              <button type="button" id="jvPreviousPage" class="mw-page-arrow" disabled aria-label="Previous page">&lsaquo;</button>
+              <span>Page</span>
+              <select id="jvPageSelect" class="mw-page-select" disabled aria-label="Page"></select>
+              <span id="jvPageCount">/ 0</span>
+              <button type="button" id="jvNextPage" class="mw-page-arrow" disabled aria-label="Next page">&rsaquo;</button>
+              <span id="jvPageStatus">No results</span>
+              <label for="jvRowsPerPage">Rows:</label>
+              <select id="jvRowsPerPage" class="mw-rows-select" aria-label="Rows per page">
+                <option value="100">100</option>
+                <option value="200" selected>200</option>
+                <option value="500">500</option>
+              </select>
+            </div>
+          </fieldset>
+        </div>
+      </fieldset>
+    </form>
+
+    <!-- ================= SEARCH PANEL (sibling of the form) ================= -->
+    <div id="jv-search" class="mw-search">
+      <fieldset class="mw-fieldset">
+        <legend class="mw-legend">Search</legend>
+
+        <form id="jvSearchForm">
+
+          <div class="mw-form-row">
+            <div>
+              <label for="JVDateFrom">Date From</label>
+              <input type="checkbox" name="JVUseDateRange" id="JVCheckbox">
+              <input type="date" class="mw-date start-date-local" name="JVDateFrom" id="JVDateFrom"
+                     style="pointer-events: none; color: gray;">
+            </div>
+            <div>
+              <label for="JVDateTo">Date To</label>
+              <input type="date" class="mw-date end-date-local" name="JVDateTo" id="JVDateTo"
+                     style="pointer-events: none; color: gray;">
+            </div>
+          </div>
+
+          <div class="mw-form-row">
+            <div>
+              <label for="searchInput">Voucher No</label>
+              <input type="text" class="mw-text" id="searchInput" name="JVVoucherNO">
+            </div>
+            <div>
+              <label for="JVEnteredBy">Entered By</label>
+              <input type="text" class="mw-text" name="JVEnteredBy" id="JVEnteredBy">
+            </div>
+          </div>
+
+          <div class="mw-form-row">
+            <div>
+              <label for="JVRemarks">Remarks</label>
+              <input type="text" class="mw-text" name="JVRemarks" id="JVRemarks">
+            </div>
+            <div>
+              <input type="checkbox" class="mw-checkbox" name="JVShowEntryLog" id="JVShowEntryLog" checked>
+              <label for="JVShowEntryLog">Show Entry Log</label>
+            </div>
+          </div>
+
+          <div>
+            <label for="JVAmountOperator">Amount</label>
+            <div class="mw-amount-fields">
+              <select name="JVAmountOperator" id="JVAmountOperator">
+                <option value="=">=</option>
+                <option value="<>">&ne;</option>
+                <option value="<">&lt;</option>
+                <option value=">">&gt;</option>
+                <option value="<=">&le;</option>
+                <option value=">=">&ge;</option>
+              </select>
+              <input type="text" class="mw-text" name="JVAmount" id="JVAmount">
+            </div>
+          </div>
+
+          <fieldset class="mw-fieldset">
+            <legend class="mw-legend">Detail Part Contains</legend>
+            <div class="mw-form-row">
+              <div class="mw-suggestion-field">
+                <label for="DE-JVM-searchledger">Ledger</label>
+                <input type="text" class="mw-text" name="JVLedger" id="DE-JVM-searchledger"
+                       placeholder="Type or click to get list">
+                <div id="LedgerListForDEJVMsearchDIV" class="mw-suggestions suggestions-list2"></div>
+              </div>
+              <div>
+                <label for="JVSubLedger">Sub Ledger</label>
+                <input type="text" class="mw-text" name="JVSubLedger" id="JVSubLedger">
+              </div>
+              <div>
+                <label for="JVSubAcType">A/c Type</label>
+                <select name="JVSubAcType" class="mw-select" id="JVSubAcType">
+                  <option value="">All</option>
+                  <option value="Loan">Loan</option>
+                  <option value="Saving">Saving</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="mw-form-row">
+            <div class="mw-suggestion-field mw-open-up">
+              <label for="doc-class-journal-voucher-search">Doc Class</label>
+              <input type="text" class="mw-text benchods" name="JVDocClass"
+                     id="doc-class-journal-voucher-search" placeholder="Type or click to get list">
+              <div id="docClassesListforJournalVoucherSearch" class="mw-suggestions suggestions-list2"
+                   style="display: none;"></div>
+            </div>
+            <div class="mw-suggestion-field mw-open-up">
+              <label for="de-jvm-coll-searchinput">Collector</label>
+              <input type="text" class="mw-text" name="JVCollector" id="de-jvm-coll-searchinput"
+                     placeholder="Type or click to Get List">
+              <div id="CollectorsListForDEJVMsearchDIV" class="mw-suggestions suggestions-list2"></div>
+            </div>
+          </div>
+
+          <div class="mw-button-row mw-search-actions">
+            <div><button class="mw-button" type="submit">Go</button></div>
+            <div><button type="button" class="mw-button" id="reset-button">Reset</button></div>
+          </div>
+
+        </form>
+      </fieldset>
+    </div>
+
+  </div>
+</div>
                 <!--Local Month-->
                 <div class="movableDiv" id="movableDiv39">
                     <button id="closeButton39">&times;</button>
