@@ -246,7 +246,9 @@
                 return;
             }
 
-            data.forEach((org) => {
+            [...data].sort((a, b) =>
+                String(a.orgName || '').localeCompare(String(b.orgName || ''), undefined, { sensitivity: 'base' })
+            ).forEach((org) => {
                 const row = document.createElement('tr');
                 row.setAttribute('data-orgid', org.orgid);
                 row.setAttribute('data-dbname', org.orgDb);
@@ -287,6 +289,7 @@
             // Add selection to clicked row
             row.classList.add('selected');
             selectedOrgData = orgData;
+            row.scrollIntoView({ block: 'nearest' });
         }
 
         function setupEventListeners() {

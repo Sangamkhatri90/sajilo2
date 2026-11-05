@@ -67,7 +67,7 @@
         function displayLgrMasSuggestions(inputId, listId) {
             const listElement = document.getElementById(listId);
             listElement.innerHTML = '';
-            positionJournalVoucherSearchList(inputId, listId, listElement);
+            positionJournalVoucherLedgerSearchList(inputId, listId, listElement);
 
             // Close button
             const closeButton = document.createElement('button');
@@ -96,8 +96,8 @@
             }
         }
 
-        function positionJournalVoucherSearchList(inputId, listId, listElement) {
-            if (listId !== 'LedgerListForDEJVMsearchDIV') return;
+        function positionJournalVoucherLedgerSearchList(inputId, listId, listElement) {
+            if (listId === 'LedgerListForDEJVMsearchDIV') return;
             const input = document.getElementById(inputId);
             const searchPanel = document.getElementById('jv-search');
             if (!input || !searchPanel) return;

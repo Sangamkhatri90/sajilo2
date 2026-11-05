@@ -67,7 +67,7 @@
         function displayDocClassSuggestions(inputId, listId) {
             const listElement = document.getElementById(listId);
             listElement.innerHTML = '';
-            positionJournalVoucherSearchList(inputId, listId, listElement);
+            positionJournalVoucherDocClassSearchList(inputId, listId, listElement);
 
             // Close button
             const closeButton = document.createElement('button');
@@ -96,7 +96,7 @@
             }
         }
 
-        function positionJournalVoucherSearchList(inputId, listId, listElement) {
+        function positionJournalVoucherDocClassSearchList(inputId, listId, listElement) {
             if (listId === 'docClassesListforJournalVoucherSearch') return;
             const input = document.getElementById(inputId);
             const searchPanel = document.getElementById('jv-search');

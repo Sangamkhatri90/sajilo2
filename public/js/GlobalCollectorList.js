@@ -66,7 +66,7 @@
                 function displayCollectorSuggestions(inputId, listId) {
                     const listElement = document.getElementById(listId);
                     listElement.innerHTML = '';
-                    positionJournalVoucherSearchList(inputId, listId, listElement);
+                    positionJournalVoucherCollectorSearchList(inputId, listId, listElement);
 
                     // Close button
                     const closeButton = document.createElement('button');
@@ -95,7 +95,7 @@
                     }
                 }
 
-                function positionJournalVoucherSearchList(inputId, listId, listElement) {
+                function positionJournalVoucherCollectorSearchList(inputId, listId, listElement) {
                     if (listId === 'CollectorsListForDEJVMsearchDIV') return;
                     const input = document.getElementById(inputId);
                     const searchPanel = document.getElementById('jv-search');

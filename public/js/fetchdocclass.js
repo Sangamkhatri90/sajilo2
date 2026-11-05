@@ -14,7 +14,9 @@ function fetchDocClassesForLogin(isInitialFocus) {
       .then(response => response.json())
       .then(data => {
         if (data.docClasses && data.docClasses.length > 0) {
-          allDocClassesForLogin = data.docClasses;  // Store fetched DocClassNames and DocClassAliases
+          allDocClassesForLogin = [...data.docClasses].sort((a, b) =>
+            a.DocClassName.localeCompare(b.DocClassName, undefined, { sensitivity: 'base' })
+          );  // Store fetched DocClassNames and DocClassAliases
           filteredDocClassesForLogin = [...allDocClassesForLogin];  // Initially show all DocClassNames
           displayDocClassesForLogin(filteredDocClassesForLogin);  // Display the full list in the table
         } else {
@@ -102,6 +104,7 @@ function selectRowFromTable(row, docClassName) {
     // Set the new selected row
     selectedRow = row;
     selectedRow.classList.add('selected');  // Highlight selected row
+    selectedRow.scrollIntoView({ block: 'nearest' });
   
     // Store the selected Document Class in sessionStorage
     sessionStorage.setItem('selectedDocClass', docClassName);
@@ -176,4 +179,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
-
