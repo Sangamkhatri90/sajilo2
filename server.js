@@ -91,6 +91,7 @@ app.use((req, res, next) => {
   return checkSessionDB(req, res, next); // Apply check for everything else
 });
 require('./routes/trialBalanceRoute')(app, sql);
+require('./routes/divisionReportRoute')(app, sql);
 const createGroupTotals = require('./routes/helpers/groupTotals');
 const { computeGroupTotals, resolveCategory } = createGroupTotals(sql);
 require('./routes/receiptPaymentRoute')(app, sql, computeGroupTotals, resolveCategory);
@@ -101,7 +102,8 @@ const registerCashFlowStatement =
     require("./routes/cashFlowStatementRoute");
 
 registerCashFlowStatement(app, sql);
-
+require('./routes/dayBookRoute')(app, sql, computeGroupTotals, resolveCategory);
+require('./routes/cashBankBookRoute')(app, sql,);
 // Route to handle login
 
 app.get("/index", async (req, res) => {
@@ -23164,7 +23166,7 @@ app.get("/get-first-grp-id", (req, res) => {
 
 
 app.get("/get-ledger-sub-groups", (req, res) => {
-  console.log("🚀 /get-ledger-sub-groups endpoint hit");
+  
 
   if (!req.session.conn) {
     console.error("Missing database connection in session.");
@@ -23209,7 +23211,7 @@ app.get("/get-ledger-sub-groups", (req, res) => {
 
 
 app.get("/get-ledger-sub-master-groups", (req, res) => {
-  console.log("🚀 /get-ledger-sub-groups endpoint hit");
+  
 
   if (!req.session.conn) {
     console.error("Missing database connection in session.");
@@ -23247,7 +23249,7 @@ app.get("/get-ledger-sub-master-groups", (req, res) => {
       console.error("Error fetching subgroups:", err);
       return res.status(500).json({ error: "Failed to fetch ledger subgroups" });
     }
-    console.log("✅ hh Subgroups fetched:", rows);
+   
     res.json(rows);
   });
 });
@@ -23403,7 +23405,7 @@ app.get("/get-account-type-intCalReg", (req, res) => {
 });
 
 app.get("/get-account-name-intCalReg", (req, res) => {
-  console.log("🚀 /get-ledger-sub-groups endpoint hit");
+  
 
   if (!req.session.conn) {
     console.error("Missing database connection in session.");
@@ -23441,7 +23443,7 @@ app.get("/get-account-name-intCalReg", (req, res) => {
       console.error("Error fetching subgroups:", err);
       return res.status(500).json({ error: "Failed to fetch ledger subgroups" });
     }
-    console.log("✅ hh Subgroups fetched:", rows);
+    
     res.json(rows);
   });
 });
@@ -24709,137 +24711,7 @@ app.post("/api/enrichExcelFATFGroupedBySummaryonly", async (req, res) => {
   }
 });
 
-app.post('/api/DR/tablepop', async (req, res) => {
-  const conn = req.session.conn;
-  const { fromDate, toDate } = req.body;
 
-  console.log('📦 /api/DR/tablepop HIT');
-  console.log('📅 From:', fromDate, 'To:', toDate);
-
-  try {
-    // 1️⃣ Determine previous fiscal year range for opening balance
-    const fromYear = parseInt(fromDate.split("/")[0]) - 1;
-    const toYear = parseInt(fromDate.split("/")[0]);
-    const openingFromDate = `${fromYear}/04/01`;
-    const openingToDate = `${toYear}/03/31`;
-
-    console.log('🗓️ Opening FY Range:', openingFromDate, 'to', openingToDate);
-
-    // 2️⃣ Fetch all ledger master rows
-    const ledgersQuery = `
-      SELECT GLID, GLName, GLAlias, LgrGrpID
-      FROM dbo.tbLedgerMaster
-    `;
-    const ledgers = await new Promise((resolve, reject) => {
-      sql.query(conn, ledgersQuery, (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-
-    console.log(`✅ Found ${ledgers.length} ledger rows`);
-
-    if (!ledgers.length) {
-      return res.json([]);
-    }
-
-    // 3️⃣ Collect unique group IDs
-    const uniqueGroupIds = [...new Set(ledgers.map(l => l.LgrGrpID).filter(Boolean))];
-
-    // 4️⃣ Fetch group info
-    let groupMap = {};
-    if (uniqueGroupIds.length > 0) {
-      const groupsQuery = `
-        SELECT LgrGrpID, GrpName, GrpAlias
-        FROM dbo.tbLedgerGroup
-        WHERE LgrGrpID IN (${uniqueGroupIds.map(() => '?').join(',')})
-      `;
-      const groupsResult = await new Promise((resolve, reject) => {
-        sql.query(conn, groupsQuery, uniqueGroupIds, (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-
-      for (const group of groupsResult) {
-        groupMap[group.LgrGrpID] = {
-          GrpName: group.GrpName || "",
-          GrpAlias: group.GrpAlias || ""
-        };
-      }
-    }
-
-    console.log('✅ Group mapping ready');
-
-    // 5️⃣ Prepare period query (for both opening and period)
-    const sumQuery = `
-      SELECT ISNULL(SUM(DrAmount), 0) AS TotalDr,
-             ISNULL(SUM(CrAmount), 0) AS TotalCr
-      FROM dbo.tbJournal
-      WHERE GLID = ? AND JV_Miti BETWEEN ? AND ?
-    `;
-
-    // 6️⃣ Build final result
-    const finalRows = [];
-    let sno = 1;
-
-    for (const ledger of ledgers) {
-      const { GLID, GLName, GLAlias, LgrGrpID } = ledger;
-      if (!GLID) continue;
-
-      // -- Period Amount
-      const periodResult = await new Promise((resolve, reject) => {
-        sql.query(conn, sumQuery, [GLID, fromDate, toDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      const periodDr = periodResult[0]?.TotalDr || 0;
-      const periodCr = periodResult[0]?.TotalCr || 0;
-      const periodAmount = Math.abs(periodDr - periodCr);
-
-      // -- Opening Amount
-      const openingResult = await new Promise((resolve, reject) => {
-        sql.query(conn, sumQuery, [GLID, openingFromDate, openingToDate], (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
-      const openingDr = openingResult[0]?.TotalDr || 0;
-      const openingCr = openingResult[0]?.TotalCr || 0;
-      const openingAmount = Math.abs(openingDr - openingCr);
-
-      // -- Total
-      const totalAmount = openingAmount + periodAmount;
-
-      // -- Group Info
-      const groupName = groupMap[LgrGrpID]?.GrpName || "";
-      const groupAlias = groupMap[LgrGrpID]?.GrpAlias || "";
-
-      // -- Final Row
-      finalRows.push({
-        sno,
-        "group name": groupName,
-        "group alias": groupAlias,
-        particular: GLName || "",
-        alias: GLAlias || "",
-        number: GLID,
-        openingBalance: openingAmount,
-        period: periodAmount,
-        total: totalAmount
-      });
-
-      sno++;
-    }
-
-    console.log(`✅ Prepared ${finalRows.length} rows`);
-    res.json(finalRows);
-
-  } catch (error) {
-    console.error('❌ Error in /api/DR/tablepop:', error);
-    res.status(500).json({ error: 'Internal Server Error', details: error.message });
-  }
-});
 
 app.post('/api/save-nepali-calendar', (req, res) => {
   const { mapping } = req.body;
@@ -27313,7 +27185,7 @@ app.get("/get-cm-first-grp-id", (req, res) => {
 
 
 app.get("/cm-get-ledger-sub-groups", (req, res) => {
-  console.log("🚀 /get-ledger-sub-groups endpoint hit");
+  
   const connectionString = req.session.connectionString;
   console.log('connectionString', connectionString)
 
@@ -27354,7 +27226,7 @@ app.get("/cm-get-ledger-sub-groups", (req, res) => {
 });
 
 app.get("/cm-get-ledger-sub-master-groups", (req, res) => {
-  console.log("🚀 /get-ledger-sub-groups endpoint hit");
+  
 
   if (!req.session.connectionString) {
     console.error("Missing database connection in session.");
@@ -27363,7 +27235,7 @@ app.get("/cm-get-ledger-sub-master-groups", (req, res) => {
 
   const conn = req.session.connectionString;
   let LMselectedIDs = req.query.id;
-  console.log('tttr', LMselectedIDs)
+  
 
   if (!LMselectedIDs) {
     return res.status(400).json({ error: "No IDs provided" });
@@ -27392,7 +27264,7 @@ app.get("/cm-get-ledger-sub-master-groups", (req, res) => {
       console.error("Error fetching subgroups:", err);
       return res.status(500).json({ error: "Failed to fetch ledger subgroups" });
     }
-    console.log("✅ hh Subgroups fetched:", rows);
+    
     res.json(rows);
   });
 });
@@ -34205,263 +34077,11 @@ app.post("/get-openingBalance-MasterEntry", (req, res) => {
     });
 });
 
-
-// app.post("/api/cbbSummaryOnly", async (req, res) => {
-
-//   const conn = req.session.conn;
-
-//   let { bankBook, fromDate, toDate, excelData } = req.body;
-
-//   console.log(
-//     "🔍 bankBook:",
-//     bankBook,
-//     "| fromDate:",
-//     fromDate,
-//     "| toDate:",
-//     toDate
-//   );
-
-//   if (!bankBook || !fromDate || !toDate) {
-//     return res.status(400).json({
-//       error: "bankBook, fromDate and toDate are required."
-//     });
-//   }
-
-//   try {
-
-//     // Step 0: Detect date type (AD / BS)
-//     const settingsRows = await queryAsync(conn, `
-//       SELECT TOP 1 DateType
-//       FROM dbo.tbSystemSettings
-//     `);
-
-//     const dateType = (settingsRows?.[0]?.DateType || "")
-//       .toString()
-//       .trim()
-//       .toUpperCase();
-
-//     if (dateType !== "AD" && dateType !== "BS") {
-//       return res.status(500).json({
-//         error: `Invalid DateType in tbSystemSettings: "${dateType}"`
-//       });
-//     }
-
-//     const isAD = dateType === "AD";
-
-//     console.log("🗓️ DateType:", dateType);
-
-//     // Normalize incoming dates
-//     // AD -> YYYY-MM-DD
-//     // BS -> YYYY/MM/DD
-//     if (isAD) {
-//       fromDate = fromDate.replace(/\//g, "-");
-//       toDate = toDate.replace(/\//g, "-");
-//     } else {
-//       fromDate = fromDate.replace(/-/g, "/");
-//       toDate = toDate.replace(/-/g, "/");
-//     }
-
-//     const sep = isAD ? "-" : "/";
-
-//     console.log(
-//       "🔄 Normalized fromDate:",
-//       fromDate,
-//       "| toDate:",
-//       toDate
-//     );
-
-//     // Date expressions
-//     const filterExpr = isAD
-//       ? "CAST(jm.JV_Date AS DATE)"
-//       : "jm.JV_Miti";
-
-//     const groupExpr = isAD
-//       ? "CONVERT(varchar(10), CAST(jm.JV_Date AS DATE), 23)"
-//       : "jm.JV_Miti";
-
-//     // Step 1: Resolve GLID dynamically from GLName
-//     const ledgerRows = await queryAsync(conn, `
-//       SELECT GLID
-//       FROM dbo.tbLedgerMaster
-//       WHERE RTRIM(LTRIM(GLName)) = ?
-//     `, [bankBook.trim()]);
-
-//     if (!ledgerRows || ledgerRows.length === 0) {
-//       console.warn(
-//         `⚠️ No GLID found for bankBook: "${bankBook}"`
-//       );
-
-//       return res.status(404).json({
-//         error: `No ledger found for "${bankBook}".`
-//       });
-//     }
-
-//     const glid = ledgerRows[0].GLID;
-
-//     console.log("📌 Resolved GLID:", glid);
-
-//     // Step 2: Prior fiscal year range
-//     const fromYear =
-//       parseInt(fromDate.split(sep)[0]) - 1;
-
-//     const toYear =
-//       parseInt(fromDate.split(sep)[0]);
-
-//     const priorFYFrom =
-//       `${fromYear}${sep}04${sep}01`;
-
-//     const priorFYTo =
-//       `${toYear}${sep}03${sep}31`;
-
-//     console.log(
-//       "📅 Prior fiscal year range:",
-//       priorFYFrom,
-//       "to",
-//       priorFYTo
-//     );
-
-//     // Step 3: Summary query
-//     // Main logic:
-//     // SUM(DrAmount)
-//     // SUM(CrAmount)
-//     // Group by date
-//     // Filter by dynamically resolved GLID
-//     // No TransType filtering
-
-//     const summaryQuery = `
-
-//       WITH OpeningBalance AS (
-
-//         SELECT
-//           SUM(ISNULL(jd.DrAmount, 0))
-//           -
-//           SUM(ISNULL(jd.CrAmount, 0)) AS OpeningBalance
-
-//         FROM tbJournalMaster jm
-
-//         INNER JOIN tbJournalDetails jd
-//           ON jm.JournalID = jd.JournalID
-
-//         WHERE ${filterExpr} BETWEEN ? AND ?
-//           AND jd.GLID = ?
-//       ),
-
-//       DailyTotals AS (
-
-//         SELECT
-//           ${groupExpr} AS TxnDate,
-
-//           SUM(ISNULL(jd.DrAmount, 0)) AS TotalDeposit,
-
-//           SUM(ISNULL(jd.CrAmount, 0)) AS TotalWithdraw
-
-//         FROM tbJournalMaster jm
-
-//         INNER JOIN tbJournalDetails jd
-//           ON jm.JournalID = jd.JournalID
-
-//         WHERE ${filterExpr} BETWEEN ? AND ?
-//           AND jd.GLID = ?
-
-//         GROUP BY ${groupExpr}
-//       )
-
-//       SELECT
-
-//         d.TxnDate,
-
-//         -- Opening balance
-//         ob.OpeningBalance
-//           +
-//           ISNULL(
-//             SUM(d.TotalDeposit - d.TotalWithdraw)
-//             OVER (
-//               ORDER BY d.TxnDate
-//               ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-//             ),
-//             0
-//           ) AS OpeningBalance,
-
-//         -- Total DrAmount
-//         d.TotalDeposit,
-
-//         -- Total CrAmount
-//         d.TotalWithdraw,
-
-//         -- Closing balance
-//         ob.OpeningBalance
-//           +
-//           SUM(d.TotalDeposit - d.TotalWithdraw)
-//           OVER (
-//             ORDER BY d.TxnDate
-//             ROWS UNBOUNDED PRECEDING
-//           ) AS ClosingBalance
-
-//       FROM DailyTotals d
-
-//       CROSS JOIN OpeningBalance ob
-
-//       ORDER BY d.TxnDate;
-
-//     `;
-
-//     // Step 4: Execute query
-//     const rows = await queryAsync(conn, summaryQuery, [
-
-//       // Opening balance
-//       priorFYFrom,
-//       priorFYTo,
-//       glid,
-
-//       // Current date range
-//       fromDate,
-//       toDate,
-//       glid
-
-//     ]);
-
-//     console.log(
-//       "📊 Rows returned:",
-//       rows?.length || 0
-//     );
-
-//     // Step 5: Format response
-//     const formatted = (rows || []).map(row => ({
-//       Date: row.TxnDate,
-//       OpeningBalance: row.OpeningBalance,
-//       Receipt: row.TotalDeposit,
-//       Payment: row.TotalWithdraw,
-//       Balance: row.ClosingBalance
-//     }));
-
-//     return res.json(formatted);
-
-//   } catch (error) {
-
-//     console.error(
-//       "❌ Error in cbbSummaryOnly:",
-//       error
-//     );
-
-//     return res.status(500).json({
-//       error: "Internal Server Error",
-//       details: error.message
-//     });
-
-//   }
-
-// });
-
-
-// Start the server
-
-
-
 app.post("/api/cbbSummaryOnly", async (req, res) => {
 
   const conn = req.session.conn;
 
-  let { bankBook, fromDate, toDate, excelData } = req.body;
+  let { bankBook, fromDate, toDate } = req.body;
 
   console.log(
     "🔍 bankBook:",

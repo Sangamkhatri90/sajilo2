@@ -323,20 +323,7 @@ ORDER BY
 
       const amount = net(open, period);
 
-      console.info('[groupSummary] ledger amount', {
-        glid: l.GLID,
-        ledgerName: l.GLName,
-        includeOpening,
-        openingSource: !includeOpening
-          ? 'disabled'
-          : ledgerOpeningFromExcel ? 'excel-or-zero' : 'database',
-        openingDebit: open.dr,
-        openingCredit: open.cr,
-        periodDebit: period.dr,
-        periodCredit: period.cr,
-        calculation: `(${open.dr} - ${open.cr}) + (${period.dr} - ${period.cr})`,
-        amount,
-      });
+      
 
 
 
@@ -417,18 +404,7 @@ ORDER BY
         }
 
         const amount = net(open, period);
-        console.info('[groupSummary] subledger amount', {
-          glid: s.GLID,
-          slid: s.SLID,
-          ledgerName: parent.ledgerName,
-          subledgerName: s.SLName,
-          openingDebit: open.dr,
-          openingCredit: open.cr,
-          periodDebit: period.dr,
-          periodCredit: period.cr,
-          calculation: `(${open.dr} - ${open.cr}) + (${period.dr} - ${period.cr})`,
-          amount,
-        });
+        
 
         parent.subLedgers.push({
           name: s.SLName,

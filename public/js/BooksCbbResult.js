@@ -1,7 +1,7 @@
 
                 document.addEventListener("DOMContentLoaded", () => {
                     const form = document.getElementById("myForm11");
-                    let ExcelData = null;
+                    
 
                     const summaryOnlyDiv = document.getElementById("cbb-data-summaryonlydiv1");
                     const summaryOnlyHeader = summaryOnlyDiv?.querySelector(".cbb-summary-only-header");
@@ -69,44 +69,7 @@
 
                     const allCheckboxes = [SOCB, SNT, SNM, SA, SSL, STB, SDB, SCD, STC, FFU];
 
-                    /* ---------- Excelfile input ---------- */
-                    const selectFileBtn = document.getElementById("cbb-fileselectbtn");
-                    const excelFileInput = document.getElementById("cbb-fileselectinput");
-
-                    selectFileBtn.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        excelFileInput.click();
-                    });
-
-                    excelFileInput.addEventListener("change", function (e) {
-                        const file = e.target.files[0];
-                        const reader = new FileReader();
-                        reader.onload = function (e) {
-                            const workbook = XLSX.read(e.target.result, { type: 'binary' });
-                            const sheet1 = workbook.Sheets['TbLedgderMaster'];
-                            const sheet2 = workbook.Sheets['TbSubledgerMaster'];
-
-                            if (!sheet1 || !sheet2) return showCustomAlert("Sheet not found.");
-
-                            // Assign ExcelData directly
-                            ExcelData = XLSX.utils.sheet_to_json(sheet1).map(row => ({
-                                particular: row.GLName || '',
-                                alias: row.GlAlias || '',
-                                openingDebit: parseFloat(row.OpeningBalanceDr || 0),
-                                openingCredit: parseFloat(row.OpeningBalanceCr || 0)
-                            }));
-
-                            ExcelData2 = XLSX.utils.sheet_to_json(sheet2).map(row => ({
-                                particular: row.SLName || '',
-                                alias: row.SlAlias || '',
-                                openingDebit: parseFloat(row.OpeningBalanceDr || 0),
-                                openingCredit: parseFloat(row.OpeningBalanceCr || 0)
-                            }));
-
-                            showCustomAlert("Excel file loaded. Click OK to load the table.");
-                        };
-                        reader.readAsBinaryString(file);
-                    });
+                   
 
 
                     // 🧭 Define backend route map
@@ -174,9 +137,7 @@
                         if (!fromDate || !toDate) {
                             return showCustomAlert("Please select both From and To dates.");
                         }
-                        if (!excelFileInput) {
-                            return showCustomAlert("Please select excel file.");
-                        }
+                        
 
                         // 🧠 Determine which boxes are checked
                         const anyChecked = allCheckboxes.some(cb => cb.checked);
@@ -198,7 +159,7 @@
                             docClass,
                             fromDate,
                             toDate,
-                            excelData: ExcelData,
+                            
                             options: {
                                 summaryOnly: SOCB.checked,
                                 showNarrationTransaction: SNT.checked,

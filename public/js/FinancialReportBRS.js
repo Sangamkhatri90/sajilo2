@@ -87,15 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const actualIsDr = bookBalance < 0 ? actual >= 0 : actual < 0;
     const actualDisplay = `${Math.abs(actual).toFixed(2)} ${actualIsDr ? "Dr" : "Cr"}`;
 
-    console.log("[Bank Reconciliation] balance calculation", {
-      totalCr: num(data.totalCr),
-      totalDr: num(data.totalDr),
-      bookBalance,
-      addTotal,
-      lessTotal,
-      actual,
-      actualDisplay,
-    });
+   
 
     tbody.innerHTML =
       `<tr><td class="no-border"><strong>${esc(bank)}</strong></td>${'<td class="no-border"></td>'.repeat(6)}</tr>` +

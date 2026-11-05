@@ -178,7 +178,16 @@ module.exports = function createGroupTotals(sql) {
   }
 
   // Selected-period totals for all ledgers in one grouped query.
-  async function journalPeriodTotals(conn, isAD, bounds) {
+    // Optional journal-master filters (period movements only).
+  function extraFilter(filters = {}) {
+    const parts = [], params = [];
+    if (filters.userId != null)     { parts.push('AND m.CreatedUserID = ?'); params.push(filters.userId); }
+    if (filters.docClassId != null) { parts.push('AND m.DocClassID = ?');   params.push(filters.docClassId); }
+    return { sql: parts.join(' '), params };
+  }
+
+  async function journalPeriodTotals(conn, isAD, bounds, filters = {}) {
+    const f = extraFilter(filters);
     const rows = await queryAsync(conn, `
       SELECT
         d.GLID,
@@ -188,17 +197,12 @@ module.exports = function createGroupTotals(sql) {
       INNER JOIN dbo.tbJournalDetails d
         ON d.JournalID = m.JournalID
       WHERE ${periodDateCondition(isAD)}
+        ${f.sql}
       GROUP BY d.GLID
-    `, periodDateParams(isAD, bounds));
+    `, [...periodDateParams(isAD, bounds), ...f.params]);
 
     return new Map(
-      rows.map((r) => [
-        r.GLID,
-        {
-          dr: num(r.dr),
-          cr: num(r.cr),
-        },
-      ])
+      rows.map((r) => [r.GLID, { dr: num(r.dr), cr: num(r.cr) }])
     );
   }
 
@@ -254,6 +258,8 @@ async function journalCashTransactionTotals(conn, isAD, bounds) {
       toDate,
       isAD,
       excelLedgers = [],
+      allVouchers = false ,
+      filters = {}
     }
   ) {
     // 1. Get ledgers.
@@ -275,7 +281,7 @@ async function journalCashTransactionTotals(conn, isAD, bounds) {
     );
 
     // 3. Get cumulative opening and selected-period totals.
-    // 3. Get cumulative opening and selected-period totals.
+   
 
 // Historical totals: opening balances.
 const dbOpening = await journalOpeningTotals(
@@ -288,16 +294,16 @@ const dbOpening = await journalOpeningTotals(
 const dbPeriod = await journalPeriodTotals(
   conn,
   isAD,
-  bounds
+  bounds,
+  filters
 );
 
 // Period movements for non-cash/bank ledgers:
 // only journals containing Cash/Bank transactions.
-const dbCashTransactionPeriod = await journalCashTransactionTotals(
-  conn,
-  isAD,
-  bounds
-);
+const dbCashTransactionPeriod = allVouchers
+  ? new Map()
+  : await journalCashTransactionTotals(conn, isAD, bounds);
+
 
     // 4. Prepare Excel opening balances.
     const excelByName = new Map(
@@ -342,7 +348,7 @@ const dbCashTransactionPeriod = await journalCashTransactionTotals(
 
       const isCashBankGroup = [12, 13].includes(Number(l.LgrGrpID));
 
-const period = isCashBankGroup
+const period = (isCashBankGroup || allVouchers)
   ? (dbPeriod.get(l.GLID) ?? ZERO)
   : (dbCashTransactionPeriod.get(l.GLID) ?? ZERO);
 
@@ -417,6 +423,7 @@ const period = isCashBankGroup
       groupIds,
       groupTotals,
       groupInfoMap,
+      groupLedgerRecords,
     };
   }
 

@@ -116,14 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .filter((s) => (o.summaryOnly ? keep(s.amount) : s.ledgers.length > 0));
       if (!subs.length) continue;
 
-      console.info('[groupSummary] displayed group totals', {
-        group: g.name,
-        subgroups: subs.map((s) => ({
-          subgroup: s.name,
-          amount: s.amount,
-          ledgerAmounts: s.ledgers.map((l) => ({ ledger: l.ledgerName, amount: l.amount })),
-        })),
-      });
+      
 
       gi++;
       html += `<tr class="gs-group"><td>${gi}</td><td>${esc(g.name)}</td><td>${esc(g.alias)}</td><td></td></tr>`;
@@ -154,13 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     html += `<tr class="gs-total"><td></td><td>Total</td><td></td><td>${fmt(total)}</td></tr>`;
-    console.info('[groupSummary] displayed report total', {
-      calculation: o.summaryOnly
-        ? 'sum of displayed subgroup amounts'
-        : 'sum of displayed ledger amounts',
-      parts: totalParts,
-      amount: total,
-    });
+    
     resultBody.innerHTML = html;
     show(panels.result);
   }
@@ -181,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
       excelLedgers: excel.ledgers,
       excelSubledgers: o.subledger ? excel.subledgers : null,
     };
-    console.debug('[groupSummary] request', payload);
+    
     let res;
     try {
       res = await fetch("/api/groupSummary", {
@@ -198,16 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const { rows, meta } = await res.json();
-    console.debug('[groupSummary] response rows', {
-      count: rows?.length ?? 0,
-      rows: (rows ?? []).map((r) => ({
-        glid: r.glid,
-        ledgerName: r.ledgerName,
-        amount: r.amount,
-        subledgerCount: r.subLedgers?.length ?? 0,
-      })),
-      meta,
-    });
+    
     if (meta?.noData) {
       resultBody.innerHTML = "";
       show(panels.result);

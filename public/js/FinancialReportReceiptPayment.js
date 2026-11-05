@@ -1,3 +1,4 @@
+//js/FinancialReportReceiptPayment.js
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (id) => document.getElementById(id);
   const excel = { ledgers: null };   // optional
@@ -147,12 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const payments = data.transaction
       .filter((r) => num(r.periodDebit) !== 0)
       .map((r) => ({ ...r, cells: [amt(num(r.periodDebit))] }));
-    console.group("[Receipt & Payment] Normal-format transaction rows");
-    console.log("Receipt rows:");
-    receipts.forEach((row, index) => console.log(`Record ${index + 1}`, row));
-    console.log("Payment rows:");
-    payments.forEach((row, index) => console.log(`Record ${index + 1}`, row));
-    console.groupEnd();
+    
 
     const balance = data.balance.map((r) => ({ ...r, cells: [amt(r.amount)] }));
 

@@ -98,81 +98,99 @@ document.addEventListener("DOMContentLoaded", () => {
     // Prepare backend rows
     // -------------------------------------------------
 
-    function prepareRows(rows, options) {
-        /*
-         * The backend returns one row per GLID + SLID.
-         *
-         * We combine those rows into one ledger object.
-         * Subledger details are retained separately.
-         */
+   
+function prepareRows(rows, options) {
+    /*
+     * Backend returns one row per GLID + SLID.
+     *
+     * Ledger totals:
+     * 1. Accumulate TotalDr and TotalCr across all subledgers.
+     * 2. Calculate net InFlow / OutFlow once per GLID.
+     *
+     * Subledger details retain their individual flows.
+     */
 
-        const ledgerMap = new Map();
+    const ledgerMap = new Map();
 
-        rows.forEach((r) => {
-            const glid = String(r.GLID);
+    rows.forEach((r) => {
+        const glid = String(r.GLID);
 
-            if (!ledgerMap.has(glid)) {
-                ledgerMap.set(glid, {
-                    GLID: r.GLID,
-                    GLName: r.GLName,
-                    GlAlias: r.GlAlias,
+        if (!ledgerMap.has(glid)) {
+            ledgerMap.set(glid, {
+                GLID: r.GLID,
+                GLName: r.GLName,
+                GlAlias: r.GlAlias,
 
-                    GrpName: r.GrpName || "Unclassified",
-                    GrpAlias: r.GrpAlias || "",
+                GrpName: r.GrpName || "Unclassified",
+                GrpAlias: r.GrpAlias || "",
 
-                    SubGrpName: r.SubGrpName || "Unclassified",
-                    SubGrpAlias: r.SubGrpAlias || "",
+                SubGrpName: r.SubGrpName || "Unclassified",
+                SubGrpAlias: r.SubGrpAlias || "",
 
-                    InFlow: 0,
-                    OutFlow: 0,
+                TotalDr: 0,
+                TotalCr: 0,
 
-                    subledgers: []
-                });
-            }
+                InFlow: 0,
+                OutFlow: 0,
 
-            const ledger = ledgerMap.get(glid);
-
-            const inFlow = num(r.InFlow);
-            const outFlow = num(r.OutFlow);
-
-            ledger.InFlow += inFlow;
-            ledger.OutFlow += outFlow;
-
-            if (r.SLID !== null && r.SLID !== undefined) {
-                ledger.subledgers.push({
-                    SLID: r.SLID,
-                    SLName: r.SLName || "Unnamed Sub Ledger",
-                    MemberID: r.MemberID,
-                    InFlow: inFlow,
-                    OutFlow: outFlow
-                });
-            }
-        });
-
-        let ledgers = Array.from(ledgerMap.values());
-
-        // Remove zero-balance subledgers when requested.
-        ledgers.forEach((ledger) => {
-            if (!options.showZeroBalance) {
-                ledger.subledgers =
-                    ledger.subledgers.filter((s) => !isZero(s));
-            }
-        });
-
-        // Remove zero-balance ledgers when requested.
-        if (!options.showZeroBalance) {
-            ledgers = ledgers.filter((ledger) => {
-                if (!isZero(ledger)) return true;
-
-                // Retain a zero-net ledger if it has visible
-                // subledger movements in opposite directions.
-                return options.subLedger &&
-                    ledger.subledgers.length > 0;
+                subledgers: []
             });
         }
 
-        return ledgers;
+        const ledger = ledgerMap.get(glid);
+
+        // Accumulate debit and credit before calculating ledger flow.
+        ledger.TotalDr += num(r.TotalDr);
+        ledger.TotalCr += num(r.TotalCr);
+
+        // Preserve individual subledger flows.
+        const inFlow = num(r.InFlow);
+        const outFlow = num(r.OutFlow);
+
+        if (r.SLID !== null && r.SLID !== undefined) {
+            ledger.subledgers.push({
+                SLID: r.SLID,
+                SLName: r.SLName || "Unnamed Sub Ledger",
+                MemberID: r.MemberID,
+                InFlow: inFlow,
+                OutFlow: outFlow
+            });
+        }
+    });
+
+    let ledgers = Array.from(ledgerMap.values());
+
+    // Calculate net flow once for each complete ledger.
+    ledgers.forEach((ledger) => {
+        const net = ledger.TotalCr - ledger.TotalDr;
+
+        ledger.InFlow = Math.max(net, 0);
+        ledger.OutFlow = Math.max(-net, 0);
+    });
+
+    // Remove zero-balance subledgers when requested.
+    ledgers.forEach((ledger) => {
+        if (!options.showZeroBalance) {
+            ledger.subledgers =
+                ledger.subledgers.filter((s) => !isZero(s));
+        }
+    });
+
+    // Remove zero-balance ledgers when requested.
+    if (!options.showZeroBalance) {
+        ledgers = ledgers.filter((ledger) => {
+            if (!isZero(ledger)) return true;
+
+            // Retain a zero-net ledger if it has visible
+            // subledger movements in opposite directions.
+            return options.subLedger &&
+                ledger.subledgers.length > 0;
+        });
     }
+
+    return ledgers;
+}
+
 
     // -------------------------------------------------
     // Build hierarchical report layout

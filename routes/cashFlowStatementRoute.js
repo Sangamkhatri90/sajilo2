@@ -183,6 +183,8 @@ function registerCashFlowStatement(app, sql) {
                     jd.SLID
             `;
 
+           
+
             const transactionRows = await queryAsync(
                 conn,
                 transactionQuery,
@@ -225,6 +227,12 @@ function registerCashFlowStatement(app, sql) {
                     InFlow: Math.max(net, 0),
                     OutFlow: Math.max(-net, 0)
                 };
+            });
+
+            console.info("[Cash Flow Statement] Fetched and calculated report data:", {
+                fetchedRowCount: transactionRows.length,
+                fetchedRows: transactionRows,
+                responseRows: rows
             });
 
             // 5. Send the report data

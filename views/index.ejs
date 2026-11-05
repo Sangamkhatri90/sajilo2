@@ -2210,11 +2210,7 @@
                                             placeholder="Type or Click to get List">
                                     </div>
                                     <div id="docClassesListforBooksCBB" class="suggestions-list2"></div>
-                                    <div>
-                                        <input type="file" id="cbb-fileselectinput" style="display: none;"
-                                            accept=".xls,.xlsx">
-                                        <button type="button" id="cbb-fileselectbtn">Select Excel File</button>
-                                    </div>
+                                   
                                 </div>
                                 <div class="cbb-form-style-horizontal3">
                                     <div>
@@ -3572,6 +3568,8 @@
                                         placeholder="Type or Click to get List">
                                 </div>
                                 <div id="docClassesListforBooksDayB" class="suggestions-list2"></div>
+                                <label for="filter-for-user">Filter For User</label>
+<span id="DBUserSel"></span>
                                 <div class="db-button-row">
                                     <button type="submit" class="db-button">Ok</button>
                                     <button type="button" id="cancelButton22" class="db-button">Cancel</button>
@@ -3580,6 +3578,38 @@
                         </form>
                     </div>
                 </div>
+                <div class="movableDiv" id="DB_UserPanel" style="display:none;">
+  <button type="button" id="DBUserClose">&times;</button>
+  <table id="DBUserTable">
+    <thead><tr><th>User Name</th><th>Full Name</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+                <!-- Day Book result: T-format -->
+<div class="movableDiv" id="DB_Tpanel" style="display:none;">
+  <button type="button" id="DBTclose">&times;</button>
+  <table id="DBTTable">
+    <thead>
+      <tr>
+        <th>S.No</th><th>Particular</th><th>Alias</th><th>Receipt</th><th>Payment</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Day Book result: Normal -->
+<div class="movableDiv" id="DB_Npanel" style="display:none;">
+  <button type="button" id="DBNclose">&times;</button>
+  <table id="DBNTable">
+    <thead>
+      <tr>
+        <th>S.No</th><th>Particular</th><th>Alias</th><th>Amount</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
                 <!--Day Count-->
                 <div class="movableDiv" id="movableDiv23">
@@ -43990,428 +44020,6 @@ async function loadEarningsData() {
                         });
                     </script>
 
-
-               
-
-                    <script>
-                        document.getElementById('myForm29').addEventListener('submit', async function (event) {
-                            event.preventDefault();
-
-                            const showAlias = document.getElementById('frdr-show-alias').checked;
-                            const fromDate = document.getElementById("FRDR-Datefrom").value;
-                            const toDate = document.getElementById("FRDR-Dateto").value;
-                            const divisionReportcontainer = document.getElementById("divisionReportTableContainer");
-
-
-
-                            const formattedFrom = fromDate.replaceAll('-', '/');
-                            const formattedTo = toDate.replaceAll('-', '/');
-
-
-
-
-
-
-                            /* ---------- utilities ---------- */
-                            let highestZIndex = 3;
-
-                            const bringToFront = el => {
-                                highestZIndex += 1;
-                                el.style.zIndex = highestZIndex;
-                            };
-
-                            const makeDivMovable = div => {
-                                let isDragging = false;
-                                let offsetX, offsetY;
-
-                                div.addEventListener('mousedown', e => {
-                                    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-                                    e.preventDefault();
-                                    bringToFront(div);
-                                    const { left, top } = div.getBoundingClientRect();
-                                    offsetX = e.clientX - left;
-                                    offsetY = e.clientY - top;
-                                    isDragging = true;
-                                });
-
-                                document.addEventListener('mousemove', e => {
-                                    if (!isDragging) return;
-                                    div.style.position = 'absolute';
-                                    div.style.left = `${e.pageX - offsetX}px`;
-                                    div.style.top = `${e.pageY - offsetY}px`;
-                                });
-
-                                document.addEventListener('mouseup', () => { isDragging = false; });
-                            };
-
-                            /* ---------- closers ---------- */
-                            [
-                                { btn: 'divisionReportTableContainerXbtn', div: divisionReportcontainer },
-                                { btn: 'divisionReportOKBtns', div: divisionReportcontainer },
-
-                            ].forEach(({ btn, div }) => {
-                                document.getElementById(btn)?.addEventListener('click', e => {
-                                    e.preventDefault();
-                                    div.style.display = 'none';
-                                });
-                            });
-
-                            /* ---------- enable drag ---------- */
-                            [divisionReportcontainer].forEach(makeDivMovable);
-
-
-
-
-                            // fetch the flat list with both group & ledger info
-                            const resp = await fetch('/api/DR/tablepop', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ fromDate: formattedFrom, toDate: formattedTo })
-                            });
-                            const data = await resp.json();
-                            divisionReportcontainer.style.display = 'block';
-                            // group them by group name
-                            const groups = {};
-                            data.forEach(item => {
-                                const g = item["group name"] || 'Ungrouped';
-                                if (!groups[g]) {
-                                    groups[g] = {
-                                        alias: item["group alias"] || '',
-                                        rows: [],
-                                        sums: { opening: 0, period: 0, total: 0 }
-                                    };
-                                }
-                                groups[g].rows.push(item);
-                                groups[g].sums.opening += item.openingBalance;
-                                groups[g].sums.period += item.period;
-                                groups[g].sums.total += item.total;
-                            });
-
-                            // references
-                            const thead = document.getElementById('divisionReportThead');
-                            const tbody = document.getElementById('divisionReportTbody');
-
-                            // clear old
-                            thead.innerHTML = '';
-                            tbody.innerHTML = '';
-
-                            // build headers
-                            const hdrs = ['S.No', 'Particular'];
-                            if (showAlias) hdrs.push('Alias');
-                            hdrs.push('Number', 'Opening Balance', 'Period', 'Total');
-
-                            const headerRow = document.createElement('tr');
-                            hdrs.forEach(h => {
-                                const th = document.createElement('th');
-                                th.textContent = h;
-                                th.style.padding = '8px';
-                                headerRow.appendChild(th);
-                            });
-                            thead.appendChild(headerRow);
-
-                            // build body rows
-                            let groupIndex = 1;
-                            for (const [groupName, info] of Object.entries(groups)) {
-                                // group header
-                                const gr = document.createElement('tr');
-                                const cellsGroup = [groupIndex, groupName];
-                                if (showAlias) cellsGroup.push(info.alias);
-                                cellsGroup.push('', '', '', '');  // empty numeric columns
-                                cellsGroup.forEach(txt => {
-                                    const td = document.createElement('td');
-                                    td.textContent = txt;
-                                    td.style.padding = '8px';
-                                    td.style.fontWeight = 'bold';
-                                    gr.appendChild(td);
-                                });
-                                tbody.appendChild(gr);
-
-                                // ledger rows
-                                info.rows.forEach((item, idx) => {
-                                    const lr = document.createElement('tr');
-                                    const sno = `${groupIndex}.${idx + 1}`;
-                                    const cellsLedger = [sno, item.particular];
-                                    if (showAlias) cellsLedger.push(item.alias);
-                                    cellsLedger.push(
-                                        item.number,
-                                        item.openingBalance.toLocaleString(),
-                                        item.period.toLocaleString(),
-                                        item.total.toLocaleString()
-                                    );
-                                    cellsLedger.forEach(txt => {
-                                        const td = document.createElement('td');
-                                        td.textContent = txt;
-                                        td.style.padding = '8px';
-                                        lr.appendChild(td);
-                                    });
-                                    tbody.appendChild(lr);
-                                });
-
-                                // group total row
-                                const totalRow = document.createElement('tr');
-                                const cellsTotal = ['', 'Group Total'];
-                                if (showAlias) cellsTotal.push('');
-                                cellsTotal.push(
-                                    '',
-                                    info.sums.opening.toLocaleString(),
-                                    info.sums.period.toLocaleString(),
-                                    info.sums.total.toLocaleString()
-                                );
-                                cellsTotal.forEach(txt => {
-                                    const td = document.createElement('td');
-                                    td.textContent = txt;
-                                    td.style.padding = '8px';
-                                    td.style.fontWeight = 'bold';
-                                    totalRow.appendChild(td);
-                                });
-                                tbody.appendChild(totalRow);
-
-                                groupIndex++;
-                            }
-                        });
-                    </script>
-
-    
-<!-- this is original script of the below script
-<script>
-        let sessionnExcelData = null;
-        let sessionnExcelData2 = null;
-        document.addEventListener('DOMContentLoaded', function () {
-
-
-            // 1️⃣ Get all checkbox states
-            const summaryOnly = document.getElementById("finalaccount-summary").checked;
-            const subLedger = document.getElementById("finalaccount-sub-ledger").checked;
-            const showGroupTotal = document.getElementById("finalaccount-show-group-total").checked;
-            const dynamicSlide = document.getElementById("finalaccount-dynamic-slide").checked;
-            const openingOnly = document.getElementById("finalaccount-opening-only").checked;
-            const okButton = document.getElementById("finalaccount-ok-button");
-            const anyCheckboxChecked = summaryOnly || subLedger || showGroupTotal || dynamicSlide || openingOnly;
-
-            // 2️⃣ Get display format
-            const tFormat = document.getElementById('finalaccount-tformat').checked;
-            const normalFormat = document.getElementById('finalaccount-normal').checked;
-
-
-            const displayFormat = tFormat ? "tformat" : "normalFormat";
-
-
-            const selectFileBtnBS = document.getElementById("selectFileBtnforBS")
-            const excelFileInputBS = document.getElementById("excelFileInputforBS");
-
-            selectFileBtnBS.addEventListener("click", () => {
-                console.log('selectFileBtnforBS clicked');
-                excelFileInputBS.click();
-
-            });
-
-            excelFileInputBS.addEventListener("change", function (e) {
-                console.log('excelFileInputBS chcnged');
-                const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const workbook = XLSX.read(e.target.result, { type: 'binary' });
-                    const sheet1 = workbook.Sheets['TbLedgderMaster'];
-                    console.log('pp', sheet1)
-                    const sheet2 = workbook.Sheets['TbSubledgerMaster']
-                    if (!sheet1 || !sheet2) return showCustomAlert("Sheet not found.");
-                    const jsonData1 = XLSX.utils.sheet_to_json(sheet1);
-                    sessionnExcelData = jsonData1.map(row => ({
-                        particular: row.GLName || '',
-                        alias: row.GlAlias || '',
-                        openingDebit: parseFloat(row.OpeningBalanceDr || 0),
-                        openingCredit: parseFloat(row.OpeningBalanceCr || 0)
-                    }));
-                    const jsonData2 = XLSX.utils.sheet_to_json(sheet2);
-                    sessionnExcelData2 = jsonData2.map(row => ({
-                        particular: row.SLName || '',
-                        alias: row.SlAlias || '',
-                        openingDebit: parseFloat(row.OpeningBalanceDr || 0),
-                        openingCredit: parseFloat(row.OpeningBalanceCr || 0)
-                    }));
-                    showCustomAlert("Excel file loaded. Click OK to load the table.");
-                };
-                reader.readAsBinaryString(file);
-            });
-
-
-
-
-
-
-            // 4️⃣ Get dates
-            const toDate = document.getElementById("FR_FinalAccount_dateto").value;
-            const fromDate = document.getElementById("FR_FinalAccount_datefrom").value;
-
-            const formattedFrom = fromDate.replaceAll('-', '/');
-            const formattedTo = toDate.replaceAll('-', '/');
-            console.log("Formattedd dates", formattedFrom)
-            okButton.addEventListener("click", async function (event) {
-                event.preventDefault();
-                // 5️⃣ If checkboxes checked AND T-format, render dummy data (skip backend)
-                if (anyCheckboxChecked && tFormat) {
-                    const dummyData = [
-                        {
-                            mainGroup: "Assets",
-                            subGroup: "Cash",
-                            particular: "Cash in Hand",
-                            openingDr: 1500,
-                            openingCr: 0,
-                            periodDr: 300,
-                            periodCr: 100,
-                            closingDr: 1700,
-                            closingCr: 0
-                        },
-                        {
-                            mainGroup: "Liabilities",
-                            subGroup: "Loans",
-                            particular: "Bank Loan",
-                            openingDr: 0,
-                            openingCr: 2000,
-                            periodDr: 200,
-                            periodCr: 500,
-                            closingDr: 0,
-                            closingCr: 2300
-                        }
-                    ];
-
-                    renderFinalAccountTable(dummyData, displayFormat);
-                    return;
-                }
-
-
-
-
-                try {
-                    const response = await fetch("/api/enrichExcelBalancesheet", {
-                        method: "POST",
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            fromDate: formattedFrom,
-                            toDate: formattedTo,
-                            excelData: sessionnExcelData
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`❌ Server Error: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    console.log('fff', result)
-                    renderFinalAccountTable(result.enriched, displayFormat);
-                } catch (error) {
-                    alert("❌ Failed to process data: " + error.message);
-                }
-            });
-
-
-
-            // ✅ Renderer Function (T-format or Normal)
-            function renderFinalAccountTable(data, displayFormat) {
-                const tableContainer = document.getElementById("finalAccountResult");
-                tableContainer.innerHTML = ""; // Clear previous
-
-                if (!data || data.length === 0) {
-                    tableContainer.innerHTML = "<p>⚠️ No data found to display.</p>";
-                    return;
-                }
-
-                const table = document.createElement("table");
-                table.classList.add("final-account-table");
-
-                // Header row (two rows)
-                const header = table.insertRow();
-                header.innerHTML = `
-    <th>Particular</th>
-    <th>Alias</th>
-    <th>Opening Balance</th>
-    <th></th>
-    <th>Period</th>
-    <th></th>
-    <th>Balance</th>
-    <th></th>
-  `;
-
-                const subHeader = table.insertRow();
-                subHeader.innerHTML = `
-    <th></th>
-    <th></th>
-    <th>Debit</th>
-    <th>Credit</th>
-    <th>Debit</th>
-    <th>Credit</th>
-    <th>Debit</th>
-    <th>Credit</th>
-  `;
-
-                // Keep track of what we've already added
-                const renderedGroups = new Set();
-                const renderedSubGroups = new Set();
-
-                data.forEach((item) => {
-                    const openingDr = item.balances?.year3?.dr || 0;
-                    const openingCr = item.balances?.year3?.cr || 0;
-                    const periodDr = item.balances?.year2?.dr || 0;
-                    const periodCr = item.balances?.year2?.cr || 0;
-                    const closingDr = openingDr + periodDr;
-                    const closingCr = openingCr + periodCr;
-
-                    // 1️⃣ Render Group (once)
-                    const groupKey = item.groupName + "|" + item.groupNameAlias;
-                    if (!renderedGroups.has(groupKey)) {
-                        const groupRow = table.insertRow();
-                        groupRow.innerHTML = `
-        <td style="font-weight:bold; background:#cce0ff">${item.groupName}</td>
-        <td style="font-weight:bold; background:#cce0ff">${item.groupNameAlias}</td>
-        <td style="background:#cce0ff"></td>
-        <td style="background:#cce0ff"></td>
-        <td style="background:#cce0ff"></td>
-        <td style="background:#cce0ff"></td>
-        <td style="background:#cce0ff"></td>
-        <td style="background:#cce0ff"></td>
-      `;
-                        renderedGroups.add(groupKey);
-                    }
-
-                    // 2️⃣ Render SubGroup (once per group)
-                    const subGroupKey = item.subGroup + "|" + item.subGroupAlias;
-                    if (!renderedSubGroups.has(subGroupKey)) {
-                        const subGroupRow = table.insertRow();
-                        subGroupRow.innerHTML = `
-        <td style="font-weight:bold; background:#e6f0ff">&nbsp;&nbsp;&nbsp;${item.subGroup}</td>
-        <td style="font-weight:bold; background:#e6f0ff">${item.subGroupAlias}</td>
-        <td style="background:#e6f0ff"></td>
-        <td style="background:#e6f0ff"></td>
-        <td style="background:#e6f0ff"></td>
-        <td style="background:#e6f0ff"></td>
-        <td style="background:#e6f0ff"></td>
-        <td style="background:#e6f0ff"></td>
-      `;
-                        renderedSubGroups.add(subGroupKey);
-                    }
-
-                    // 3️⃣ Render Ledger
-                    const row = table.insertRow();
-                    row.innerHTML = `
-      <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${item.particular || ''}</td>
-      <td>${item.alias || ''}</td>
-      <td style="text-align:right;">${openingDr.toFixed(2)}</td>
-      <td style="text-align:right;">${openingCr.toFixed(2)}</td>
-      <td style="text-align:right;">${periodDr.toFixed(2)}</td>
-      <td style="text-align:right;">${periodCr.toFixed(2)}</td>
-      <td style="text-align:right;">${closingDr.toFixed(2)}</td>
-      <td style="text-align:right;">${closingCr.toFixed(2)}</td>
-    `;
-                });
-
-                tableContainer.appendChild(table);
-            }
-
-        });
-    </script>
--->
-
                     <script>
 
                         document.addEventListener('DOMContentLoaded', function () {
@@ -49465,7 +49073,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/dbQueryExecutor.js"></script>
                     <script src="/js/PageLoader.js"></script>
                     <script src="/js/FetchMemberName.js"></script>
-                    <script src="/js/BooksCbbResult.js"></script>
+                    <!-- <script src="/js/BooksCbbResult.js"></script> -->
                     <script src="/js/inputBehavior.js"></script>
                     <script src="/js/memberSearch.js"></script>
                     <script src="/js/FinancialReportTrialBalResult.js"></script>
@@ -49474,6 +49082,9 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/FinancialReportIncomeStatement.js"></script>
                     <script src="/js/FinancialReportBRS.js"></script>
                     <script src="/js/CashFlowStatementResult.js"></script>
+                    <script src="/js/FinancialReportDivReport.js"></script>
+                    <script src="/js/DayBookReport.js"></script>
+                    <script src="/js/CashBankBookSummary.js"></script>
                     <script src="/js/GenerateNextVoucherNumber.js"></script>
                     <script src="/js/master-window.js"></script>
                     <script>
