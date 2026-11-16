@@ -1,576 +1,256 @@
-
-                //Cheque Register
-                document.addEventListener('DOMContentLoaded', () => {
-                    const mainChequeRegister = document.getElementById('myForm14');
-                    const mainCashNNonCashDiv = document.getElementById('mainCashNNonCashDiv');
-                    const formatDate = (dateStr) => {
-                        if (!dateStr) return "";
-                        const date = new Date(dateStr);
-                        return Number.isNaN(date.getTime()) ? dateStr : date.toISOString().split("T")[0];
-                    };
-                    const renderChequeRows = (data) => {
-                        const tableBody = document.querySelector("#closeallCashNNonCashTab tbody");
-                        console.log("[Cheque Register] Rendering final table rows:", data.length, data);
-                        tableBody.innerHTML = "";
-
-                        data.forEach((row, index) => {
-                            tableBody.insertAdjacentHTML("beforeend", `
-                                <tr>
-                                    <td>${index + 1}</td>
-                                    <td>${row.ChequeNo || ""}</td>
-                                    <td>${row.SlAlias || ""}</td>
-                                    <td>${row.SLName || ""}</td>
-                                    <td>${formatDate(row.IssueDate)}</td>
-                                    <td>${formatDate(row.JournalDate || row.JVMiti)}</td>
-                                    <td>${row.VoucherNo || ""}</td>
-                                    <td>${row.DrAmount ? Number(row.DrAmount).toLocaleString() : ""}</td>
-                                </tr>
-                            `);
-                        });
-                    };
-                    const closeButtons = [
-
-                        { buttonId: 'closeallCashNNonCashDiv', div: mainCashNNonCashDiv },
-                        { buttonId: 'cancelallCashNNonCashDiv', div: mainCashNNonCashDiv },
-                        { buttonId: 'okCashNNonCashDiv', div: mainCashNNonCashDiv },
-
-
-                    ];
-
-                    closeButtons.forEach(({ buttonId, div }) => {
-                        document.getElementById(buttonId).addEventListener('click', function (e) {
-                            e.preventDefault();
-                            div.style.display = 'none';
-                        });
-                    });
-
-                    let highestZIndex = 3;
-
-                    // Function to bring the div to the front by updating the z-index
-                    function bringToFront(element) {
-                        highestZIndex++;
-                        element.style.zIndex = highestZIndex;
-                    }
-
-                    // Make div movable
-                    function makeDivMovable(div) {
-                        let isDragging = false;
-                        let offsetX, offsetY;
-
-                        div.addEventListener('mousedown', (e) => {
-                            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') {
-                                return; // Allow interaction with input fields and buttons
-                            }
-                            e.preventDefault();
-                            bringToFront(div);
-
-                            const rect = div.getBoundingClientRect();
-                            offsetX = e.clientX - rect.left;
-                            offsetY = e.clientY - rect.top;
-
-                            isDragging = true;
-                        });
-
-
-
-                        document.addEventListener('mousemove', (e) => {
-                            if (isDragging) {
-                                div.style.left = `${e.pageX - offsetX}px`;
-                                div.style.top = `${e.pageY - offsetY}px`;
-                                div.style.position = 'absolute';
-                            }
-                        });
-
-                        document.addEventListener('mouseup', () => {
-                            isDragging = false;
-                        });
-                    }
-
-
-                    makeDivMovable(mainCashNNonCashDiv);
-
-
-                    mainChequeRegister.addEventListener("submit", async (event) => {
-                        event.preventDefault();
-                        console.log('[Cheque Register] Form submitted');
-
-                        const dateFromChequeR = document.getElementById("CRIssueDateFrom").value;
-                        const dateToChequeR = document.getElementById("CRIssueDateTo").value;
-
-                        const CRSelectAllType = document.getElementById("CRSelectAllType");
-                        const CRSelectAllAccount = document.getElementById("CRSelectAllAccount");
-                        const CRCashedCB = document.getElementById("CRCashed");
-                        const CRNonCashedCB = document.getElementById("CRNonCashed");
-                        const CRmemSelectTypeDiv = document.getElementById("CRmemSelectTypeDiv");
-                        const CRlgrSelectTypeDiv = document.getElementById("CRaccountSelectTypeDiv");
-                        const CRmemListForm = document.getElementById("CRmemListForm");
-                        const CRlgrListForm = document.getElementById("CRlgrListForm");
-                        console.log("[Cheque Register] Filters:", {
-                            dateFromChequeR,
-                            dateToChequeR,
-                            selectAllType: CRSelectAllType.checked,
-                            selectAllAccount: CRSelectAllAccount.checked,
-                            cashed: CRCashedCB.checked,
-                            nonCashed: CRNonCashedCB.checked
-                        });
-                        const closeButtonsListsForCR = [
-
-                            { buttonId: 'CRmemlistCancelButton', div: CRmemSelectTypeDiv },
-                            { buttonId: 'CRmemlistcloseButton', div: CRmemSelectTypeDiv },
-                            { buttonId: 'CRlgrlistCancelButton', div: CRlgrSelectTypeDiv },
-                            { buttonId: 'CRlgrlistcloseButton', div: CRlgrSelectTypeDiv },
-
-
-                        ];
-
-                        closeButtonsListsForCR.forEach(({ buttonId, div }) => {
-                            document.getElementById(buttonId).addEventListener('click', function (e) {
-                                e.preventDefault();
-                                div.style.display = 'none';
-                            });
-                        });
-                        let highestZIndex = 3;
-
-                        // Function to bring the div to the front by updating the z-index
-                        function bringToFront(element) {
-                            highestZIndex++;
-                            element.style.zIndex = highestZIndex;
-                        }
-
-                        // Make div movable
-                        function makeDivMovable(div) {
-                            let isDragging = false;
-                            let offsetX, offsetY;
-
-                            div.addEventListener('mousedown', (e) => {
-                                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') {
-                                    return; // Allow interaction with input fields and buttons
-                                }
-                                e.preventDefault();
-                                bringToFront(div);
-
-                                const rect = div.getBoundingClientRect();
-                                offsetX = e.clientX - rect.left;
-                                offsetY = e.clientY - rect.top;
-
-                                isDragging = true;
-                            });
-
-
-
-                            document.addEventListener('mousemove', (e) => {
-                                if (isDragging) {
-                                    div.style.left = `${e.pageX - offsetX}px`;
-                                    div.style.top = `${e.pageY - offsetY}px`;
-                                    div.style.position = 'absolute';
-                                }
-                            });
-
-                            document.addEventListener('mouseup', () => {
-                                isDragging = false;
-                            });
-                        }
-
-
-                        makeDivMovable(CRmemSelectTypeDiv);
-                        makeDivMovable(CRlgrSelectTypeDiv);
-
-                        if (!CRCashedCB.checked && !CRNonCashedCB.checked) {
-                            showCustomAlert("Select either Cashed or Notcashed")
-                            return;
-                        }
-
-
-                        if (CRSelectAllType.checked && CRSelectAllAccount.checked && CRCashedCB.checked && CRNonCashedCB.checked) {
-                            try {
-                                console.log("[Cheque Register] Requesting all cashed and non-cashed cheques");
-                                const response = await fetch("/fetch-chequeCashNNonCash-data", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ dateFromChequeR, dateToChequeR })
-                                });
-                                console.log("[Cheque Register] Response received:", response.status, response.statusText);
-
-                                const result = await response.json();
-                                const data = result.data || result;
-
-
-                                renderChequeRows(data);
-
-                                mainCashNNonCashDiv.style.display = 'block';
-
-                            } catch (error) {
-                                console.error("Error fetching loan & acc name data:", error);
-                            }
-                        }
-
-                        if (CRSelectAllType.checked && CRSelectAllAccount.checked && CRCashedCB.checked && !CRNonCashedCB.checked) {
-                            try {
-                                console.log("[Cheque Register] Requesting cashed cheques");
-                                const response = await fetch("/fetch-chequeCashNNonCashUC-data", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ dateFromChequeR, dateToChequeR })
-                                });
-                                console.log("[Cheque Register] Response received:", response.status, response.statusText);
-
-                                const result = await response.json();
-                                const data = result.data || result;
-
-
-                                renderChequeRows(data);
-
-                                mainCashNNonCashDiv.style.display = 'block';
-
-                            } catch (error) {
-                                console.error("Error fetching loan & acc name data:", error);
-                            }
-                        }
-
-                        if (CRSelectAllType.checked && CRSelectAllAccount.checked && !CRCashedCB.checked && CRNonCashedCB.checked) {
-                            try {
-                                console.log("[Cheque Register] Requesting non-cashed cheques");
-                                const response = await fetch("/fetch-chequeCashUCNNonCash-data", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ dateFromChequeR, dateToChequeR })
-                                });
-                                console.log("[Cheque Register] Response received:", response.status, response.statusText);
-
-                                const result = await response.json();
-                                const data = result.data || result;
-
-
-                                renderChequeRows(data);
-
-                                mainCashNNonCashDiv.style.display = 'block';
-
-                            } catch (error) {
-                                console.error("Error fetching loan & acc name data:", error);
-                            }
-                        }
-
-                        if (CRSelectAllType.checked && CRCashedCB.checked && !CRSelectAllAccount.checked && !CRNonCashedCB.checked) {
-                            // 1️⃣ Fetch Member List
-                            console.log("[Cheque Register] Loading account-name selection list for cashed cheques");
-                            const response = await fetch('/fetchmemberListforPandR');
-                            if (!response.ok) {
-                                throw new Error('Failed to fetch data');
-                            }
-                            const data = await response.json();
-                            const tableBody = document.querySelector('#CRmemlistTable tbody');
-                            tableBody.innerHTML = '';
-                            // 2️⃣ Populate Member List Table
-                            data.AccName.forEach((row, index) => {
-                                const tr = document.createElement('tr');
-                                tr.innerHTML = `
-            <td><input type="checkbox" class="CRmemlistDiv-CR" value="${row.SLID}"></td>
-            <td>${index + 1}</td>
-            <td>${row.SLName}</td>
-            <td>${row.SlAlias}</td>
-        `;
-                                tableBody.appendChild(tr);
-                            });
-                            console.log("[Cheque Register] Account-name selection list loaded:", data.AccName.length);
-                            // Show selection screen
-                            CRmemSelectTypeDiv.style.display = 'block';
-                            //allTypeNaccNameMainDiv.style.display = 'none';
-
-                            // 3️⃣ Select All / Unselect All buttons
-                            document.getElementById("CRmemlistselectallButton").onclick = (e) => {
-                                e.preventDefault();
-                                document.querySelectorAll(".CRmemlistDiv-CR").forEach(c => c.checked = true);
-                            };
-
-                            document.getElementById("CRmemlistunselectButton").onclick = (e) => {
-                                e.preventDefault();
-                                document.querySelectorAll(".CRmemlistDiv-CR").forEach(c => c.checked = false);
-                            };
-
-                            document.getElementById("CRmemlistCancelButton").onclick = (e) => {
-                                e.preventDefault();
-                                const CRmemSelectTypeDiv = document.getElementById("CRmemSelectTypeDiv");
-                                CRmemSelectTypeDiv.style.display = 'none';
-                            };
-                            // 3️⃣ Handle form submit
-                            CRmemListForm.onsubmit = async (e) => {
-                                e.preventDefault();
-
-                                const checkedCRmemValuesCR = Array.from(
-                                    document.querySelectorAll('.CRmemlistDiv-CR:checked')
-                                ).map(c => ({ SLID: c.value }));
-
-                                if (checkedCRmemValuesCR.length === 0) {
-                                    showCustomAlert('No values selected');
-                                    return;
-                                }
-
-                                // 4️⃣ Fetch filtered  data (SLID version)
-                                console.log("[Cheque Register] Requesting selected cashed accounts:", checkedCRmemValuesCR);
-                                const response2 = await fetch('/fetch-chequeCashNNonCashUC-filterdata', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ dateFromChequeR, dateToChequeR, checkedCRmemValuesCR }),
-                                });
-
-                                if (!response2.ok) {
-                                    console.error('[Cheque Register] Selected cashed-account request failed:', response2.status, await response2.text());
-                                    return;
-                                }
-
-                                const result = await response2.json();
-                                const fetchedData = result.data || result;
-
-                                console.log("[Cheque Register] Selected cashed-account response:", fetchedData.length, fetchedData);
-
-                                // 5️⃣ Populate main table
-                                renderChequeRows(fetchedData);
-
-                                // 6️⃣ Show the main table now that data is ready
-                                mainCashNNonCashDiv.style.display = 'block';
-                                CRmemSelectTypeDiv.style.display = 'none';
-                            };
-
-                        }
-                        if (CRSelectAllType.checked && CRNonCashedCB.checked && !CRSelectAllAccount.checked && !CRCashedCB.checked) {
-                            // 1️⃣ Fetch Member List
-                            console.log("[Cheque Register] Loading account-name selection list for non-cashed cheques");
-                            const response = await fetch('/fetchmemberListforPandR');
-                            if (!response.ok) {
-                                throw new Error('Failed to fetch data');
-                            }
-                            const data = await response.json();
-                            const tableBody = document.querySelector('#CRmemlistTable tbody');
-                            tableBody.innerHTML = '';
-                            // 2️⃣ Populate Member List Table
-                            data.AccName.forEach((row, index) => {
-                                const tr = document.createElement('tr');
-                                tr.innerHTML = `
-            <td><input type="checkbox" class="CRmemlistDiv-CR" value="${row.SLID}"></td>
-            <td>${index + 1}</td>
-            <td>${row.SLName}</td>
-            <td>${row.SlAlias}</td>
-        `;
-                                tableBody.appendChild(tr);
-                            });
-                            console.log("[Cheque Register] Account-name selection list loaded:", data.AccName.length);
-                            // Show selection screen
-                            CRmemSelectTypeDiv.style.display = 'block';
-                            //allTypeNaccNameMainDiv.style.display = 'none';
-
-                            // 3️⃣ Select All / Unselect All buttons
-                            document.getElementById("CRmemlistselectallButton").onclick = (e) => {
-                                e.preventDefault();
-                                document.querySelectorAll(".CRmemlistDiv-CR").forEach(c => c.checked = true);
-                            };
-
-                            document.getElementById("CRmemlistunselectButton").onclick = (e) => {
-                                e.preventDefault();
-                                document.querySelectorAll(".CRmemlistDiv-CR").forEach(c => c.checked = false);
-                            };
-
-                            document.getElementById("CRmemlistCancelButton").onclick = (e) => {
-                                e.preventDefault();
-                                const CRmemSelectTypeDiv = document.getElementById("CRmemSelectTypeDiv");
-                                CRmemSelectTypeDiv.style.display = 'none';
-                            };
-                            // 3️⃣ Handle form submit
-                            CRmemListForm.onsubmit = async (e) => {
-                                e.preventDefault();
-
-                                const checkedCRmemValuesCR = Array.from(
-                                    document.querySelectorAll('.CRmemlistDiv-CR:checked')
-                                ).map(c => ({ SLID: c.value }));
-
-                                if (checkedCRmemValuesCR.length === 0) {
-                                    showCustomAlert('No values selected');
-                                    return;
-                                }
-
-                                // 4️⃣ Fetch filtered  data (SLID version)
-                                console.log("[Cheque Register] Requesting selected non-cashed accounts:", checkedCRmemValuesCR);
-                                const response2 = await fetch('/fetch-chequeCashUCNNonCash-filterdata', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ dateFromChequeR, dateToChequeR, checkedCRmemValuesCR }),
-                                });
-
-                                if (!response2.ok) {
-                                    console.error('[Cheque Register] Selected non-cashed-account request failed:', response2.status, await response2.text());
-                                    return;
-                                }
-
-                                const result = await response2.json();
-                                const fetchedData = result.data || result;
-
-                                console.log("[Cheque Register] Selected non-cashed-account response:", fetchedData.length, fetchedData);
-
-                                // 5️⃣ Populate main table
-                                renderChequeRows(fetchedData);
-
-                                // 6️⃣ Show the main table now that data is ready
-                                mainCashNNonCashDiv.style.display = 'block';
-                                CRmemSelectTypeDiv.style.display = 'none';
-                            };
-
-                        }
-
-                        if (!CRSelectAllType.checked && CRCashedCB.checked && CRSelectAllAccount.checked && !CRNonCashedCB.checked) {
-                            // 1️⃣ Fetch Member List
-                            console.log("[Cheque Register] Loading account-type selection list for cashed cheques");
-                            const response = await fetch('/fetchLedgerListforPandR');
-                            if (!response.ok) {
-                                throw new Error('Failed to fetch data');
-                            }
-                            const data = await response.json();
-                            const tableBody = document.querySelector('#CRlgrlistTable tbody');
-                            tableBody.innerHTML = '';
-                            // 2️⃣ Populate Member List Table
-                            data.postingLedgers.forEach((row, index) => {
-                                const tr = document.createElement('tr');
-                                tr.innerHTML = `
-            <td><input type="checkbox" class="CRlgrlistDiv-CR" value="${row.GLID}"></td>
-            <td>${index + 1}</td>
-            <td>${row.GLName}</td>
-            <td>${row.GLAlias}</td>
-        `;
-                                tableBody.appendChild(tr);
-                            });
-                            console.log("[Cheque Register] Account-type selection list loaded:", data.postingLedgers.length);
-                            // Show selection screen
-                            CRlgrSelectTypeDiv.style.display = 'block';
-                            //allTypeNaccNameMainDiv.style.display = 'none';
-
-                            // 3️⃣ Select All / Unselect All buttons
-                            document.getElementById("CRlgrlistselectallButton").onclick = (e) => {
-                                e.preventDefault();
-                                document.querySelectorAll(".CRlgrlistDiv-CR").forEach(c => c.checked = true);
-                            };
-
-                            document.getElementById("CRlgrlistunselectButton").onclick = (e) => {
-                                e.preventDefault();
-                                document.querySelectorAll(".CRlgrlistDiv-CR").forEach(c => c.checked = false);
-                            };
-
-                            // 3️⃣ Handle form submit
-                            CRlgrListForm.onsubmit = async (e) => {
-                                e.preventDefault();
-
-                                const checkedCRlgrValuesCR = Array.from(
-                                    document.querySelectorAll('.CRlgrlistDiv-CR:checked')
-                                ).map(c => ({ GLID: c.value }));
-
-                                if (checkedCRlgrValuesCR.length === 0) {
-                                    showCustomAlert('No values selected');
-                                    return;
-                                }
-
-                                // 4️⃣ Fetch filtered  data (GLID version)
-                                console.log("[Cheque Register] Requesting selected cashed account types:", checkedCRlgrValuesCR);
-                                const response2 = await fetch('/fetch-chequeCashNNonCashUC-filterdata2', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ dateFromChequeR, dateToChequeR, checkedCRlgrValuesCR }),
-                                });
-
-                                if (!response2.ok) {
-                                    console.error('[Cheque Register] Selected cashed account-type request failed:', response2.status, await response2.text());
-                                    return;
-                                }
-
-                                const result = await response2.json();
-                                const fetchedData = result.data || result;
-
-                                console.log("[Cheque Register] Selected cashed account-type response:", fetchedData.length, fetchedData);
-
-                                // 5️⃣ Populate main table
-                                renderChequeRows(fetchedData);
-
-                                // 6️⃣ Show the main table now that data is ready
-                                mainCashNNonCashDiv.style.display = 'block';
-                                CRmemSelectTypeDiv.style.display = 'none';
-                            };
-
-                        }
-
-                        if (!CRSelectAllType.checked && !CRCashedCB.checked && CRSelectAllAccount.checked && CRNonCashedCB.checked) {
-                            // 1️⃣ Fetch Member List
-                            console.log("[Cheque Register] Loading account-type selection list for non-cashed cheques");
-                            const response = await fetch('/fetchLedgerListforPandR');
-                            if (!response.ok) {
-                                throw new Error('Failed to fetch data');
-                            }
-                            const data = await response.json();
-                            const tableBody = document.querySelector('#CRlgrlistTable tbody');
-                            tableBody.innerHTML = '';
-                            // 2️⃣ Populate Member List Table
-                            data.postingLedgers.forEach((row, index) => {
-                                const tr = document.createElement('tr');
-                                tr.innerHTML = `
-            <td><input type="checkbox" class="CRlgrlistDiv-CR" value="${row.GLID}"></td>
-            <td>${index + 1}</td>
-            <td>${row.GLName}</td>
-            <td>${row.GLAlias}</td>
-        `;
-                                tableBody.appendChild(tr);
-                            });
-                            console.log("[Cheque Register] Account-type selection list loaded:", data.postingLedgers.length);
-                            // Show selection screen
-                            CRlgrSelectTypeDiv.style.display = 'block';
-                            //allTypeNaccNameMainDiv.style.display = 'none';
-
-                            // 3️⃣ Select All / Unselect All buttons
-                            document.getElementById("CRlgrlistselectallButton").onclick = (e) => {
-                                e.preventDefault();
-                                document.querySelectorAll(".CRlgrlistDiv-CR").forEach(c => c.checked = true);
-                            };
-
-                            document.getElementById("CRlgrlistunselectButton").onclick = (e) => {
-                                e.preventDefault();
-                                document.querySelectorAll(".CRlgrlistDiv-CR").forEach(c => c.checked = false);
-                            };
-
-                            // 3️⃣ Handle form submit
-                            CRlgrListForm.onsubmit = async (e) => {
-                                e.preventDefault();
-
-                                const checkedCRlgrValuesCR = Array.from(
-                                    document.querySelectorAll('.CRlgrlistDiv-CR:checked')
-                                ).map(c => ({ GLID: c.value }));
-
-                                if (checkedCRlgrValuesCR.length === 0) {
-                                    showCustomAlert('No values selected');
-                                    return;
-                                }
-
-                                // 4️⃣ Fetch filtered  data (SLID version)
-                                console.log("[Cheque Register] Requesting selected non-cashed account types:", checkedCRlgrValuesCR);
-                                const response2 = await fetch('/fetch-chequeCashNNonCashUC-data', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ dateFromChequeR, dateToChequeR, checkedCRlgrValuesCR }),
-                                });
-
-                                if (!response2.ok) {
-                                    console.error('[Cheque Register] Selected non-cashed account-type request failed:', response2.status, await response2.text());
-                                    return;
-                                }
-
-                                const result = await response2.json();
-                                const fetchedData = result.data || result;
-
-                                console.log("[Cheque Register] Selected non-cashed account-type response:", fetchedData.length, fetchedData);
-
-                                // 5️⃣ Populate main table
-                                renderChequeRows(fetchedData);
-
-                                // 6️⃣ Show the main table now that data is ready
-                                mainCashNNonCashDiv.style.display = 'block';
-                                CRmemSelectTypeDiv.style.display = 'none';
-                            };
-
-                        }
-
-
-                    });
-                });
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("myForm14");
+  const resultDiv = document.getElementById("mainCashNNonCashDiv");
+  const memberDiv = document.getElementById("CRmemSelectTypeDiv");
+  const ledgerDiv = document.getElementById("CRaccountSelectTypeDiv");
+  const resultBody = document.querySelector("#closeallCashNNonCashTab tbody");
+  const pageSizes = [100, 200, 500];
+  let resultRows = [];
+  let resultPage = 1;
+  let resultPageSize = 200;
+  let pendingRequest = null;
+
+  const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[char]);
+  const formatDate = value => {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toISOString().slice(0, 10);
+  };
+
+  function renderPagination(containerId, total, page, pageSize, setPage, setPageSize) {
+    const container = document.getElementById(containerId);
+    const pageCount = Math.ceil(total / pageSize);
+    const start = total ? ((page - 1) * pageSize) + 1 : 0;
+    const end = Math.min(page * pageSize, total);
+    container.innerHTML = `
+      <button type="button" data-page="previous" aria-label="Previous page" ${page <= 1 ? "disabled" : ""}>‹</button>
+      <span>Page</span>
+      <select data-page-select aria-label="Page" ${pageCount ? "" : "disabled"}>
+        ${Array.from({ length: pageCount }, (_, index) => `<option value="${index + 1}" ${index + 1 === page ? "selected" : ""}>${index + 1}</option>`).join("")}
+      </select>
+      <span>/ ${pageCount}</span>
+      <button type="button" data-page="next" aria-label="Next page" ${page >= pageCount ? "disabled" : ""}>›</button>
+      <span>${total ? `${start}-${end} of ${total}` : "No results"}</span>
+      <label>Rows:
+        <select data-page-size aria-label="Rows per page">
+          ${pageSizes.map(size => `<option value="${size}" ${size === pageSize ? "selected" : ""}>${size}</option>`).join("")}
+        </select>
+      </label>`;
+    container.querySelector('[data-page="previous"]').onclick = () => setPage(page - 1);
+    container.querySelector('[data-page="next"]').onclick = () => setPage(page + 1);
+    container.querySelector('[data-page-select]').onchange = event => setPage(Number(event.target.value));
+    container.querySelector('[data-page-size]').onchange = event => setPageSize(Number(event.target.value));
+  }
+
+  const lists = {
+    member: {
+      rows: [], page: 1, pageSize: 200, search: "", selected: new Set(),
+      body: document.querySelector("#CRmemlistTable tbody"),
+      pagerId: "crMemberListPagination", searchId: "CRmemListFormSearch",
+      idKey: "SLID", nameKey: "SLName", aliasKey: "SlAlias", checkboxClass: "CRmemlistDiv-CR",
+      form: document.getElementById("CRmemListForm"), div: memberDiv,
+      selectAllId: "CRmemlistselectallButton", unselectId: "CRmemlistunselectButton", filterKey: "checkedCRmemValuesCR"
+    },
+    ledger: {
+      rows: [], page: 1, pageSize: 200, search: "", selected: new Set(),
+      body: document.querySelector("#CRlgrlistTable tbody"),
+      pagerId: "crLedgerListPagination", searchId: "CRlgrListFormsearch",
+      idKey: "GLID", nameKey: "GLName", aliasKey: "GLAlias", checkboxClass: "CRlgrlistDiv-CR",
+      form: document.getElementById("CRlgrListForm"), div: ledgerDiv,
+      selectAllId: "CRlgrlistselectallbtn", unselectId: "CRlgrlistunselectallbtn", filterKey: "checkedCRlgrValuesCR"
+    }
+  };
+
+  function renderList(list) {
+    const search = list.search.toLocaleLowerCase();
+    const filtered = list.rows.filter(row => `${row[list.nameKey] || ""} ${row[list.aliasKey] || ""}`.toLocaleLowerCase().includes(search));
+    const offset = (list.page - 1) * list.pageSize;
+    list.body.innerHTML = filtered.slice(offset, offset + list.pageSize).map((row, index) => {
+      const id = String(row[list.idKey]);
+      return `<tr>
+        <td><input type="checkbox" class="${list.checkboxClass}" value="${escapeHtml(id)}" ${list.selected.has(id) ? "checked" : ""}></td>
+        <td>${offset + index + 1}</td>
+        <td>${escapeHtml(row[list.nameKey])}</td>
+        <td>${escapeHtml(row[list.aliasKey])}</td>
+      </tr>`;
+    }).join("");
+    renderPagination(list.pagerId, filtered.length, list.page, list.pageSize,
+      page => { list.page = page; renderList(list); },
+      size => { list.pageSize = size; list.page = 1; renderList(list); });
+  }
+
+  async function loadList(name) {
+    const list = lists[name];
+    const endpoint = name === "member" ? "/fetchmemberListforPandR" : "/fetchLedgerListforPandR";
+    const response = await fetch(endpoint);
+    if (!response.ok) throw new Error(await response.text());
+    const result = await response.json();
+    list.rows = result[name === "member" ? "AccName" : "postingLedgers"] || [];
+    list.page = 1;
+    list.search = "";
+    list.selected.clear();
+    document.getElementById(list.searchId).value = "";
+    renderList(list);
+    list.div.style.display = "block";
+  }
+
+  async function fetchChequeRows({ dates, status, filterName, ids, excludeSystemLedger = false }) {
+    const endpoints = {
+      all: { none: "/fetch-chequeCashNNonCash-data", member: "/fetch-chequeAll-filterdata", ledger: "/fetch-chequeAll-filterdata2" },
+      cashed: { none: "/fetch-chequeCashNNonCashUC-data", member: "/fetch-chequeCashNNonCashUC-filterdata", ledger: "/fetch-chequeCashNNonCashUC-filterdata2" },
+      uncashed: { none: "/fetch-chequeCashUCNNonCash-data", member: "/fetch-chequeCashUCNNonCash-filterdata", ledger: "/fetch-chequeCashUCNNonCash-filterdata2" }
+    };
+    const body = { dateFromChequeR: dates.from, dateToChequeR: dates.to };
+    if (excludeSystemLedger) body.excludeSystemLedger = true;
+    if (filterName) body[lists[filterName].filterKey] = ids.map(id => ({ [lists[filterName].idKey]: id }));
+    const response = await fetch(endpoints[status][filterName || "none"], {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Unable to fetch cheque register data");
+    resultRows = result.data || result;
+    resultPage = 1;
+    renderResults();
+    resultDiv.style.display = "block";
+  }
+
+  function renderResults() {
+    const offset = (resultPage - 1) * resultPageSize;
+    const pageRows = resultRows.slice(offset, offset + resultPageSize);
+    const totalAmount = resultRows.reduce((total, row) => total + (Number(row.DrAmount) || 0), 0);
+    resultBody.innerHTML = pageRows.map((row, index) => `
+      <tr>
+        <td>${offset + index + 1}</td>
+        <td>${escapeHtml(row.ChequeNo)}</td>
+        <td>${escapeHtml(row.SlAlias)}</td>
+        <td>${escapeHtml(row.SLName)}</td>
+        <td>${escapeHtml(formatDate(row.IssueDate))}</td>
+        <td>${escapeHtml(formatDate(row.JournalDate || row.JVMiti))}</td>
+        <td>${escapeHtml(row.VoucherNo)}</td>
+        <td>${row.DrAmount ? Number(row.DrAmount).toLocaleString() : ""}</td>
+      </tr>`).join("") + `
+      <tr style="font-weight: bold;">
+        <td colspan="7" style="text-align: right;">Total:</td>
+        <td>${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      </tr>`;
+    renderPagination("crResultPagination", resultRows.length, resultPage, resultPageSize,
+      page => { resultPage = page; renderResults(); },
+      size => { resultPageSize = size; resultPage = 1; renderResults(); });
+  }
+
+  function makeDivMovable(div) {
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+    div.addEventListener("mousedown", event => {
+      if (event.target.closest("input, textarea, button, select, label, a")) return;
+      event.preventDefault();
+      const rect = div.getBoundingClientRect();
+      offsetX = event.clientX - rect.left;
+      offsetY = event.clientY - rect.top;
+      dragging = true;
+    });
+    document.addEventListener("mousemove", event => {
+      if (!dragging) return;
+      div.style.position = "absolute";
+      div.style.left = `${event.pageX - offsetX}px`;
+      div.style.top = `${event.pageY - offsetY}px`;
+    });
+    document.addEventListener("mouseup", () => { dragging = false; });
+  }
+
+  Object.values(lists).forEach(list => {
+    document.getElementById(list.searchId).addEventListener("input", event => {
+      event.stopPropagation();
+      list.search = event.target.value;
+      list.page = 1;
+      renderList(list);
+    });
+    list.body.addEventListener("change", event => {
+      const checkbox = event.target.closest(`.${list.checkboxClass}`);
+      if (!checkbox) return;
+      if (checkbox.checked) list.selected.add(checkbox.value);
+      else list.selected.delete(checkbox.value);
+    });
+    document.getElementById(list.selectAllId).addEventListener("click", event => {
+      event.preventDefault();
+      list.rows.forEach(row => list.selected.add(String(row[list.idKey])));
+      renderList(list);
+    });
+    document.getElementById(list.unselectId).addEventListener("click", event => {
+      event.preventDefault();
+      list.selected.clear();
+      renderList(list);
+    });
+    list.form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const ids = Array.from(list.selected);
+      if (!ids.length) return showCustomAlert("No values selected");
+      const dates = pendingRequest;
+      list.div.style.display = "none";
+      try {
+        const allSelected = ids.length === list.rows.length;
+        await fetchChequeRows({
+          dates,
+          status: dates.status,
+          filterName: allSelected ? null : list === lists.member ? "member" : "ledger",
+          ids: allSelected ? [] : ids,
+          excludeSystemLedger: allSelected && list === lists.ledger
+        });
+      } catch (error) {
+        console.error("[Cheque Register]", error);
+        showCustomAlert(error.message || "Unable to load cheque register");
+      }
+    });
+  });
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    const from = document.getElementById("CRIssueDateFrom").value;
+    const to = document.getElementById("CRIssueDateTo").value;
+    const selectType = document.getElementById("CRSelectAllType").checked;
+    const selectAccount = document.getElementById("CRSelectAllAccount").checked;
+    const cashed = document.getElementById("CRCashed").checked;
+    const uncashed = document.getElementById("CRNonCashed").checked;
+    if (!from || !to) return showCustomAlert("Select an issue date range");
+    if (!cashed && !uncashed) return showCustomAlert("Select either Cashed or Not cashed");
+    if (!selectType && !selectAccount) return showCustomAlert("Select an account or account type");
+    const status = cashed && uncashed ? "all" : cashed ? "cashed" : "uncashed";
+    const dates = { from, to, status };
+    try {
+      if (selectType !== selectAccount) {
+        pendingRequest = dates;
+        await loadList(selectType ? "member" : "ledger");
+        return;
+      }
+      await fetchChequeRows({ dates, status, filterName: null, ids: [] });
+    } catch (error) {
+      console.error("[Cheque Register]", error);
+      showCustomAlert(error.message || "Unable to load cheque register");
+    }
+  });
+
+  [
+    ["closeallCashNNonCashDiv", resultDiv], ["cancelallCashNNonCashDiv", resultDiv], ["okCashNNonCashDiv", resultDiv],
+    ["CRmemlistCancelButton", memberDiv], ["CRmemlistcloseButton", memberDiv],
+    ["CRlgrlistCancelButton", ledgerDiv], ["CRlgrlistcloseButton", ledgerDiv], ["cancelButton14", form.closest("#movableDiv14")]
+  ].forEach(([id, element]) => document.getElementById(id).addEventListener("click", event => {
+    event.preventDefault();
+    if (element) element.style.display = "none";
+  }));
+  [resultDiv, memberDiv, ledgerDiv, document.getElementById("movableDiv14")].forEach(makeDivMovable);
+
+  document.getElementById("crPrintButton").addEventListener("click", () => window.print());
+  document.getElementById("crExportButton").addEventListener("click", () => {
+    const headers = ["SN", "Cheque No", "Account No", "A/c", "Cheque Date", "Voucher Date", "Voucher No", "Amount"];
+    const rows = resultRows.map((row, index) => [index + 1, row.ChequeNo, row.SlAlias, row.SLName, formatDate(row.IssueDate), formatDate(row.JournalDate || row.JVMiti), row.VoucherNo, row.DrAmount]);
+    const csv = [headers, ...rows].map(row => row.map(value => `"${String(value ?? "").replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" }));
+    link.download = "cheque-register.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  });
+});

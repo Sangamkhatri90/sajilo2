@@ -104,6 +104,9 @@ const registerCashFlowStatement =
 registerCashFlowStatement(app, sql);
 require('./routes/dayBookRoute')(app, sql, computeGroupTotals, resolveCategory);
 require('./routes/cashBankBookRoute')(app, sql,);
+require('./routes/cashBankBookDetailRoute')(app, sql);
+const chequeRegisterRoutes = require("./routes/chequeRegisterRoutes");
+app.use("/", chequeRegisterRoutes({ sql, connectionString }));
 // Route to handle login
 
 app.get("/index", async (req, res) => {
@@ -31060,6 +31063,7 @@ app.post("/api/savingToShareTransferProcess", async (req, res) => {
 const convertToNepaliFormat = (dateStr) => dateStr || "";
 const convertToNepaliFormat2 = (dateStr) => dateStr || "";
 
+
 app.post('/updateFiscalyr', (req, res) => {
   const conn = req.session.conn;
   const { fiscalmovstart, fiscalmovend, fisYearID, fiscalmovchecked } = req.body;
@@ -31781,63 +31785,161 @@ app.delete("/udf/delete/:id", (req, res) => {
 });
 
 
-app.post('/get-cramount-collector', async (req, res) => {
-  const conn = req.session.conn;
-  const selectedCollectoerNames = req.body.selectedCollectoerNames;  // Array of IDs
 
-  const { fromDate, toDate } = req.body;
+app.post('/get-cramount-collector', (req, res) => {
+    const conn = req.session.conn;
 
-  // Convert Nepali → English dates
-  const dateResult1 = await runQuery(connectionString,
-    `SELECT M_date FROM tbLocalDate WHERE M_Miti = ?`, [fromDate]);
+    const { selectedCollectoerNames, fromDate, toDate } = req.body;
 
-  if (!dateResult1 || dateResult1.length === 0)
-    return res.status(400).json({ error: "Invalid transaction date." });
-
-  const fromDateEng = dateResult1[0].M_date;
-
-  const dateResult2 = await runQuery(connectionString,
-    `SELECT M_date FROM tbLocalDate WHERE M_Miti = ?`, [toDate]);
-
-  if (!dateResult2 || dateResult2.length === 0)
-    return res.status(400).json({ error: "Invalid transaction date." });
-
-  const toDateEng = dateResult2[0].M_date;
-
-  const fromDateStr = fromDateEng.toISOString().split('T')[0];
-  const toDateStr = toDateEng.toISOString().split('T')[0];
-
-  // Convert array → comma-separated IDs (NO quotes)
-  // Example: [3,5,7] → "3,5,7"
-  const ids = selectedCollectoerNames.join(",");
-
-  console.log("Collector IDs:", ids);
-
-  const query = `
-      SELECT 
-    JM.CollectorID,
-    SUM(JD.CrAmount) AS TotalCrAmount
-FROM tbJournalMaster JM
-INNER JOIN tbJournalDetails JD
-    ON JM.JournalID = JD.JournalID
-WHERE JM.CollectorID IN (${ids})
-AND JM.JV_Date BETWEEN ? AND ?
-GROUP BY JM.CollectorID;
-
-    `;
-
-  sql.query(conn, query, [fromDateStr, toDateStr], (err, rows) => {
-    if (err) {
-      console.error("❌ SQL Error:", err);
-      return res.status(500).json({ error: "Failed to calculate CrAmount" });
+    if (!Array.isArray(selectedCollectoerNames) || selectedCollectoerNames.length === 0) {
+        return res.status(400).json({
+            success: false,
+            error: "Select at least one collector."
+        });
     }
-    console.log(rows)
 
-    res.json({ data: rows, success: true });
+    if (!fromDate || !toDate) {
+        return res.status(400).json({
+            success: false,
+            error: "Date range is required."
+        });
+    }
 
+    const collectorPlaceholders = selectedCollectoerNames.map(() => '?').join(', ');
 
-  });
+    sql.query(conn, `SELECT TOP 1 DateType FROM tbSystemSettings`, (settingsErr, settings) => {
+
+        if (settingsErr || !settings?.length) {
+            console.error("DateType Error:", settingsErr);
+            return res.status(500).json({
+                success: false,
+                error: "Failed to get DateType"
+            });
+        }
+
+        const DateType = settings[0].DateType;
+
+        function runCollectorQuery(fromDateStr, toDateStr) {
+
+            const query = `
+                SELECT
+                    C.CollectorID,
+                    C.CollectorName,
+                    C.CollectorAlias,
+                    ISNULL(SUM(JD.CrAmount), 0) AS TotalCrAmount
+
+                FROM tbCollectorMaster C
+
+                LEFT JOIN tbJournalMaster JM
+                    ON JM.CollectorID = C.CollectorID
+                    AND JM.JV_Date >= ?
+                    AND JM.JV_Date < DATEADD(DAY, 1, ?)
+
+                LEFT JOIN tbJournalDetails JD
+                    ON JD.JournalID = JM.JournalID
+
+                WHERE C.CollectorID IN (${collectorPlaceholders})
+
+                GROUP BY
+                    C.CollectorID,
+                    C.CollectorName,
+                    C.CollectorAlias
+
+                ORDER BY C.CollectorName;
+            `;
+
+            const params = [
+                fromDateStr,
+                toDateStr,
+                ...selectedCollectoerNames
+            ];
+
+            sql.query(conn, query, params, (err, rows) => {
+
+                if (err) {
+                    console.error("Collector SQL Error:", err);
+
+                    return res.status(500).json({
+                        success: false,
+                        error: "Failed to calculate CrAmount"
+                    });
+                }
+
+                const data = rows.map((row, index) => ({
+                    SNO: index + 1,
+                    CollectorID: row.CollectorID,
+                    CollectorName: row.CollectorName,
+                    CollectorAlias: row.CollectorAlias,
+                    CommissionPercent: 5,
+                    TotalCrAmount: Number(row.TotalCrAmount),
+                    CommissionAmount: (
+                        Number(row.TotalCrAmount) * 0.05
+                    ).toFixed(2)
+                }));
+
+                console.log("SELECTED COLLECTOR REPORT:", data);
+
+                return res.json({
+                    success: true,
+                    data
+                });
+            });
+        }
+
+        // ================= LD DATE =================
+
+        if (DateType === 'LD') {
+
+            const mitiToADQuery = `
+                SELECT
+                    (SELECT M_date FROM tbLocalDate WHERE M_Miti = ?) AS FromDate,
+                    (SELECT M_date FROM tbLocalDate WHERE M_Miti = ?) AS ToDate
+            `;
+
+            sql.query(
+                connectionString,
+                mitiToADQuery,
+                [fromDate, toDate],
+                (err, dateRes) => {
+
+                    if (err) {
+                        console.error("LD Conversion Error:", err);
+
+                        return res.status(500).json({
+                            success: false,
+                            error: "Date conversion failed"
+                        });
+                    }
+
+                    if (!dateRes?.length || !dateRes[0].FromDate || !dateRes[0].ToDate) {
+                        return res.status(400).json({
+                            success: false,
+                            error: "Invalid transaction date."
+                        });
+                    }
+
+                    runCollectorQuery(
+                        dateRes[0].FromDate,
+                        dateRes[0].ToDate
+                    );
+                }
+            );
+
+        }
+
+        // ================= AD DATE =================
+
+        else {
+
+            const from = formatADDate(fromDate);
+            const to = formatADDate(toDate);
+
+            runCollectorQuery(from, to);
+        }
+
+    });
 });
+
 
 app.post('/collector/multi-report', (req, res) => {
   const conn = req.session.conn;
@@ -32199,8 +32301,8 @@ app.post("/fetch-rebateNpenaltyRep-data", (req, res) => {
   const conn = req.session.conn;
   const {startDateRPR, endDateRPR} = req.body;
 
- const strdate= convertToNepaliFormat2(startDateRPR);
- const enddate= convertToNepaliFormat2(endDateRPR);
+ const strdate = (convertToNepaliFormat2(startDateRPR) || "").replace(/-/g, "/");
+ const enddate = (convertToNepaliFormat2(endDateRPR) || "").replace(/-/g, "/");
    console.log(strdate, enddate)
   const query = `
 SELECT 
@@ -32252,8 +32354,8 @@ app.post("/fetch-rebateNpenaltyRep-datafilterversion", (req, res) => {
 
   const { startDateRPR, endDateRPR, checkedRPValuesCR } = req.body;
 
-  const strdate = convertToNepaliFormat2(startDateRPR);
-  const enddate = convertToNepaliFormat2(endDateRPR);
+  const strdate = (convertToNepaliFormat2(startDateRPR) || "").replace(/-/g, "/");
+  const enddate = (convertToNepaliFormat2(endDateRPR) || "").replace(/-/g, "/");
 
   // Extract GLIDs from array
   const selectedGLIDs = checkedRPValuesCR.map(item => item.GLID);
@@ -32329,8 +32431,8 @@ app.post("/fetch-rebateNpenaltyRep-datafilterversion2", (req, res) => {
     }
 
     // Convert dates
-    const strdate = convertToNepaliFormat2(startDateRPR);
-    const enddate = convertToNepaliFormat2(endDateRPR);
+    const strdate = (convertToNepaliFormat2(startDateRPR) || "").replace(/-/g, "/");
+    const enddate = (convertToNepaliFormat2(endDateRPR) || "").replace(/-/g, "/");
     console.log("Fetching data for SLIDs:", selectedSLIDs, "Date range:", strdate, "-", enddate);
 
     // Create placeholders for IN clause
@@ -32418,6 +32520,7 @@ WHERE Category = 'AT'
 app.get("/fetchmemberListforPandR", (req, res) => {
   const query = `SELECT 
   SLID,
+    GLID,
     SLName, 
     SlAlias 
 FROM dbo.tbSubLedgerMaster order by SLName ASC
@@ -32440,6 +32543,32 @@ FROM dbo.tbSubLedgerMaster order by SLName ASC
     } else {
       res.json({ AccName: [] }); // Return an empty array if no records are found
     }
+  });
+});
+
+app.post("/fetchmembers-by-ledger-types", (req, res) => {
+  const selectedGLIDs = Array.isArray(req.body.glids)
+    ? req.body.glids.map(Number).filter(Number.isInteger)
+    : [];
+
+  if (!selectedGLIDs.length) {
+    return res.json({ AccName: [] });
+  }
+
+  const placeholders = selectedGLIDs.map(() => "?").join(",");
+  const query = `
+    SELECT SLID, GLID, SLName, SlAlias
+    FROM dbo.tbSubLedgerMaster
+    WHERE GLID IN (${placeholders})
+    ORDER BY SLName ASC
+  `;
+
+  sql.query(req.session.conn, query, selectedGLIDs, (err, rows) => {
+    if (err) {
+      console.error("SQL error fetching accounts by type:", err);
+      return res.status(500).send({ message: "Error fetching accounts for selected type" });
+    }
+    res.json({ AccName: rows || [] });
   });
 });
 
@@ -33129,8 +33258,8 @@ app.post("/fetch-chequeCashNNonCash-data", (req, res) => {
     let finalToDate = dateToChequeR;
 
     if (dateType === "LD") {
-      const strDa = convertToNepaliFormat(dateFromChequeR);
-      const endDa = convertToNepaliFormat(dateToChequeR);
+      const strDa = convertChequeRegisterDateToMiti(dateFromChequeR);
+      const endDa = convertChequeRegisterDateToMiti(dateToChequeR);
 
       const convertQuery = `
         SELECT 
@@ -33219,8 +33348,8 @@ app.post("/fetch-chequeCashNNonCashUC-data", (req, res) => {
 
     if (dateType === "LD") {
 
-      const strDa = convertToNepaliFormat(dateFromChequeR);
-      const endDa = convertToNepaliFormat(dateToChequeR);
+      const strDa = convertChequeRegisterDateToMiti(dateFromChequeR);
+      const endDa = convertChequeRegisterDateToMiti(dateToChequeR);
 
       const convertQuery = `
         SELECT 
@@ -33320,8 +33449,8 @@ app.post("/fetch-chequeCashNNonCashUC-filterdata", (req, res) => {
 
     // 3️⃣ Convert dates if needed
     if (dateType === "LD") {
-      const strDa = convertToNepaliFormat(dateFromChequeR);
-      const endDa = convertToNepaliFormat(dateToChequeR);
+      const strDa = convertChequeRegisterDateToMiti(dateFromChequeR);
+      const endDa = convertChequeRegisterDateToMiti(dateToChequeR);
 
       const convertQuery = `
         SELECT 
@@ -33411,8 +33540,8 @@ app.post("/fetch-chequeCashUCNNonCash-data", (req, res) => {
     // If LD → Convert AD to LD first
     if (dateType === "LD") {
 
-      const strDa = convertToNepaliFormat(dateFromChequeR);
-      const endDa = convertToNepaliFormat(dateToChequeR);
+      const strDa = convertChequeRegisterDateToMiti(dateFromChequeR);
+      const endDa = convertChequeRegisterDateToMiti(dateToChequeR);
 
       const convertQuery = `
         SELECT 
@@ -33508,8 +33637,8 @@ app.post("/fetch-chequeCashUCNNonCash-filterdata", (req, res) => {
     let finalToDate = dateToChequeR;
 
     if (dateType === "LD") {
-      const strDa = convertToNepaliFormat(dateFromChequeR);
-      const endDa = convertToNepaliFormat(dateToChequeR);
+      const strDa = convertChequeRegisterDateToMiti(dateFromChequeR);
+      const endDa = convertChequeRegisterDateToMiti(dateToChequeR);
 
       const convertQuery = `
         SELECT 
@@ -33596,8 +33725,8 @@ app.post("/fetch-chequeCashNNonCashUC-filterdata2", (req, res) => {
     let finalToDate = dateToChequeR;
 
     if (dateType === "LD") {
-      const strDa = convertToNepaliFormat(dateFromChequeR);
-      const endDa = convertToNepaliFormat(dateToChequeR);
+      const strDa = convertChequeRegisterDateToMiti(dateFromChequeR);
+      const endDa = convertChequeRegisterDateToMiti(dateToChequeR);
 
       const convertQuery = `
         SELECT 

@@ -2286,6 +2286,10 @@
                                             class="cbb-checkbox">
                                         <label for="filter-for-user">Filter For User</label>
                                     </div>
+                                    <div>
+                                        <label for="books-cbb-FFU">Filter For User</label>
+                                        <span id="CBB_UserSel"></span>
+                                    </div>
                                 </div>
                                 <div class="cbb-button-row">
                                     <button type="submit" class="cbb-button" id="books-cbb-OKbtn">Ok</button>
@@ -2295,8 +2299,12 @@
                         </form>
                     </div>
                 </div>
-                <div id="cbb-data-normal1div" style="display: none;">
-                    <h2>Cash</h2>
+                <div id="cbb-data-normal1div" class="cbb-summary-only-result" style="display: none;">
+                    <div class="cbb-summary-only-header">
+                        <h2>Cash</h2>
+                        <button type="button" id="closeCbbNormal" class="cbb-summary-only-close"
+                            aria-label="Close cash detail">&times;</button>
+                    </div>
                     <div id="cbb-data-normal2div">
                         <table id="cbb-data-normaltable">
                             <thead>
@@ -2350,6 +2358,13 @@
                         <button type="button" class="">Export</button>
                     </div>
                 </div>
+                <div class="movableDiv" id="CBB_UserPanel" style="display:none;">
+  <button type="button" id="CBB_UserClose">&times;</button>
+  <table id="CBB_UserTable">
+    <thead><tr><th>User Name</th><th>Full Name</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
                 <!--Cash Flow Statement-->
                 <div class="movableDiv report-div" id="movableDiv12" data-report-name="Cash Flow Statement">
                     <button id="closeButton12">&times;</button>
@@ -2564,6 +2579,7 @@
                                         <tbody></tbody>
                                     </table>
                                 </div>
+                                <div id="crMemberListPagination" class="cr-pagination" aria-live="polite"></div>
                             </fieldset>
                             <input type="text" class="table-search" data-target="CRmemlistTable"
                                 id="CRmemListFormSearch" placeholder="Search Here">
@@ -2597,6 +2613,7 @@
                                     <tbody></tbody>
                                 </table>
                             </div>
+                            <div id="crLedgerListPagination" class="cr-pagination" aria-live="polite"></div>
 
                             <input type="text" class="table-search" id="CRlgrListFormsearch"
                                 data-target="CRlgrlistTable" placeholder="Search Here">
@@ -2605,7 +2622,7 @@
                                 <button type="button" id="CRlgrlistselectallbtn" class="edit-button">Select All</button>
                                 <button type="button" id="CRlgrlistunselectallbtn" class="export-button">Unselect
                                     All</button>
-                                <button type="button" id="" class="new-button">Pattern</button>
+                                <button type="button" id="CRlgrlistPatternButton" class="new-button">Pattern</button>
                                 <button type="button" id="CRlgrlistCancelButton" class="delete-button">Cancel</button>
                             </div>
                         </fieldset>
@@ -2631,10 +2648,11 @@
                                     <tbody></tbody>
                                 </table>
                             </div>
+                            <div id="crResultPagination" class="cr-pagination" aria-live="polite"></div>
                             <div class="cr-button-row">
                                 <button type="button" class="crr-button" id="okCashNNonCashDiv">Ok</button>
-                                <button type="button">Print</button>
-                                <button type="Export">Export</button>
+                                <button type="button" id="crPrintButton">Print</button>
+                                <button type="button" id="crExportButton">Export</button>
                                 <button type="button" class="crr-button" id="cancelallCashNNonCashDiv">Cancel</button>
                             </div>
                         </fieldset>
@@ -6311,6 +6329,7 @@
                                     <tbody></tbody>
                                 </table>
                             </div>
+                            <div id="rpLedgerListPagination" class="cr-pagination" aria-live="polite"></div>
 
                             <input type="text" class="table-search" id="RPlgrListFormsearch"
                                 data-target="RplgrlistTable" placeholder="Search Here">
@@ -6343,6 +6362,7 @@
                                         <tbody></tbody>
                                     </table>
                                 </div>
+                                <div id="rpMemberListPagination" class="cr-pagination" aria-live="polite"></div>
                             </fieldset>
                             <input type="text" class="table-search" data-target="RpmemlistTable"
                                 id="RPmemListFormSearch" placeholder="Search Here">
@@ -17834,6 +17854,7 @@ async function loadEarningsData() {
                                 <tbody></tbody>
                             </table>
                         </div>
+                        <div id="collateralLoanListPagination" class="cr-pagination" aria-live="polite"></div>
                         <input type="text" class="table-search" id="collatoralloanListFormsearch"
                             data-target="loanLedgerTable" placeholder="Search Here">
                         <div class="aa-button-row">
@@ -17867,6 +17888,7 @@ async function loadEarningsData() {
                                     <tbody></tbody>
                                 </table>
                             </div>
+                            <div id="collateralMemberListPagination" class="cr-pagination" aria-live="polite"></div>
                         </fieldset>
                         <input type="text" class="table-search" data-target="accNameLedgerTable"
                             id="accNameLedgerFormSearch" placeholder="Search Here">
@@ -17917,6 +17939,7 @@ async function loadEarningsData() {
 
                             </tbody>
                         </table>
+                        <div id="collateralResultPagination" class="cr-pagination" aria-live="polite"></div>
                     </fieldset>
                     <button type="button" id="cancelButtonLoanAacc">OK</button>
                     <button type='button'>Print</button>
@@ -17926,7 +17949,7 @@ async function loadEarningsData() {
 
             <!--Collector Report-->
             <div class="movableDiv" id="movableDiv131">
-                <button id="closeButton131">&times;</button>
+                <button type="button" id="closeButton131">&times;</button>
                 <div class="colr-container">
                     <form action="" id="collectorReportForm">
                         <fieldset class="colr-fieldset">
@@ -17992,7 +18015,7 @@ async function loadEarningsData() {
             </div>
 
             <div id="collectorValueDiv" style="display: none;">
-                <button id="collectorValueDivXbtn">&times;</button>
+                <button type="button" id="collectorValueDivXbtn">&times;</button>
                 <form id="collectorValueForm">
                     <fieldset class="colr-resultfieldset">
                         <legend class="colr-legend">Collector Report</legend>
@@ -18010,7 +18033,7 @@ async function loadEarningsData() {
                     </fieldset>
                 </form>
                 <div id="collectorValueDivbtns">
-                    <button type="buttton" id="collectorValueDivbtnsOK">OK</button>
+                    <button type="button" id="collectorValueDivbtnsOK">OK</button>
                     <button type="buttton">Print</button>
                     <button type="buttton">Export</button>
                 </div>
@@ -43536,252 +43559,7 @@ async function loadEarningsData() {
                         });
                     </script>
 
-                    <script>
-                        //Collector Report
-                        document.addEventListener('DOMContentLoaded', () => {
-                            const maindiv = document.getElementById("movableDiv131");
-                            const maincollectorReportForm = document.getElementById('collectorReportForm');
-                            const collectorReportselectall = document.getElementById('collectorReportselectall');
-                            const collectorNameReportDiv = document.getElementById('collectorNameReportDiv');
-                            const collectorNameReportForm = document.getElementById('collectorNameReportForm');
-                            const collectorNameReportTable = document.getElementById('collectorNameReportTable');
-                            const collectorValueDiv = document.getElementById('collectorValueDiv');
-                            const collectorValueForm = document.getElementById('collectorValueForm');
-                            const collectorValueTable = document.getElementById('collectorValueTable');
-
-                            /* ---------- utilities ---------- */
-                            const toggleAll = (sel, checked) =>
-                                document.querySelectorAll(sel).forEach(cb => (cb.checked = checked));
-
-                            /* ---------- ONE-TIME select helpers ---------- */
-                            document.getElementById('collectorNameReportSelectAll')
-                                .addEventListener('click', e => { e.preventDefault(); toggleAll('.collector-report-checkbox', true); });
-                            document.getElementById('collectorNameReportUnselectAll')
-                                .addEventListener('click', e => { e.preventDefault(); toggleAll('.collector-report-checkbox', false); });
-                            let highestZIndex = 3;
-                            const bringToFront = el => { highestZIndex += 1; el.style.zIndex = highestZIndex; };
-
-                            /* === DO NOT EDIT ANYTHING INSIDE THIS FUNCTION === */
-                            const makeDivMovable = div => {
-                                let isDragging = false;
-                                let offsetX, offsetY;
-
-                                div.addEventListener('mousedown', e => {
-                                    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-                                    e.preventDefault();
-                                    bringToFront(div);
-
-                                    const { left, top } = div.getBoundingClientRect();
-                                    offsetX = e.clientX - left;
-                                    offsetY = e.clientY - top;
-                                    isDragging = true;
-                                });
-
-                                document.addEventListener('mousemove', e => {
-                                    if (!isDragging) return;
-                                    div.style.position = 'absolute';
-                                    div.style.left = `${e.pageX - offsetX}px`;
-                                    div.style.top = `${e.pageY - offsetY}px`;
-                                });
-
-                                document.addEventListener('mouseup', () => { isDragging = false; });
-                            };
-                            [collectorNameReportDiv, collectorValueDiv].forEach(makeDivMovable);
-
-
-                            maincollectorReportForm.addEventListener('submit', async e => {
-                                e.preventDefault();
-                                maindiv.style.display = 'none';
-                                const fromDate = document.getElementById("CollectorReportDateForm").value;
-                                const toDate = document.getElementById('CollectorReportToForm').value;
-
-
-
-
-
-                                const [year1, month1, day1] = fromDate.split("-");
-                                const formattedfromDate = `${day1}/${month1}/${year1}`;
-                                console.log("formatedformdate", formattedfromDate)
-
-                                const [year2, month2, day2] = toDate.split("-");
-                                const formattedtoDate = `${day2}/${month2}/${year2}`;
-                                console.log("formattedtoDate", formattedtoDate)
-
-
-
-                                if (collectorReportselectall.checked) {
-                                    // If select all is checked → return ALL data
-                                    console.log("Select ALL triggered");
-
-                                    const response = await fetch('/collector/multi-report', {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ all: true, fromDate: formattedfromDate, toDate: formattedtoDate })   // backend knows to return ALL
-                                    });
-
-                                    const data = await response.json();
-
-                                    collectorValueDiv.style.display = 'block';
-                                    collectorNameReportDiv.style.display = "none";
-
-                                    displayCollectorResult(data);
-
-                                    return;
-                                };
-                                try {
-                                    const res = await fetch('/get-collector-report-name-id');
-                                    if (!res.ok) throw new Error('Failed to fetch ledger data');
-                                    const collectorNameReportData = await res.json();
-
-                                    collectorNameReportTable.innerHTML = collectorNameReportData.map((row, i) => `
-          <tr>
-            <td><input type="checkbox" class="collector-report-checkbox"  data-name="${row.CollectorName}" 
-      data-alias="${row.CollectorAlias}"value="${row.CollectorID}"></td>
-            <td>${i + 1}</td>
-            <td>${row.CollectorName}</td>
-            <td>${row.CollectorAlias}</td>
-          </tr>
-        `).join('');
-                                    collectorNameReportDiv.style.display = 'block';
-                                } catch (err) {
-                                    console.error('Error fetching subgroups:', err);
-                                }
-                            });
-                            // Event listener for form submission
-                            collectorNameReportForm.addEventListener('submit', async (e) => {
-                                e.preventDefault();
-
-                                // Get selected GLNames from checkboxes
-                                const selectedCollectoerNames = Array.from(document.querySelectorAll('.collector-report-checkbox:checked'))
-                                    .map(checkbox => checkbox.value.split('|')[0]);  // Use the GLName directly as a string
-
-                                console.log('selectedCollectoerNames', selectedCollectoerNames)
-                                if (selectedCollectoerNames.length > 0) {
-                                    const fromDate = document.getElementById("CollectorReportDateForm").value;
-                                    const toDate = document.getElementById('CollectorReportToForm').value;
-
-
-
-
-
-                                    const [year1, month1, day1] = fromDate.split("-");
-                                    const formattedfromDate = `${day1}/${month1}/${year1}`;
-                                    console.log("formatedformdate", formattedfromDate)
-
-                                    const [year2, month2, day2] = toDate.split("-");
-                                    const formattedtoDate = `${day2}/${month2}/${year2}`;
-                                    console.log("formattedtoDate", formattedtoDate)
-
-                                    try {
-                                        // Send selected data to the backend
-                                        const response6 = await fetch('/get-cramount-collector', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ selectedCollectoerNames, fromDate: formattedfromDate, toDate: formattedtoDate }),
-                                        });
-
-
-                                        const datacollector = await response6.json();
-                                        collectorNameReportDiv.style.display = "none";
-                                        collectorValueDiv.style.display = 'block';
-
-                                        // Check success properly
-                                        if (datacollector.success) {
-                                            console.log('herroooooo')
-
-
-
-                                            // Get checkbox data again (name + alias)
-                                            const selectedRows = Array.from(document.querySelectorAll('.collector-report-checkbox:checked'))
-                                                .map(cb => ({
-                                                    CollectorID: cb.value,
-                                                    CollectorName: cb.dataset.name,
-                                                    CollectorAlias: cb.dataset.alias
-                                                }));
-
-                                            // Build final display rows
-                                            const finalData = selectedRows.map((row, index) => {
-                                                const match = datacollector.data.find(d => d.CollectorID == row.CollectorID);
-
-                                                const totalCr = match ? match.TotalCrAmount : 0;
-
-                                                return {
-                                                    SNO: index + 1,
-                                                    CollectorName: row.CollectorName,
-                                                    CollectorAlias: row.CollectorAlias,
-                                                    CommissionPercent: 5,
-                                                    TotalCrAmount: totalCr.toLocaleString(),
-                                                    CommissionAmount: (totalCr * 0.05).toFixed(2)
-                                                };
-                                            });
-
-                                            console.log("final mapped data", finalData);
-                                            renderTableCollector(finalData);
-                                            const collectorValueDivbtnsOK = document.getElementById("collectorValueDivbtnsOK");
-                                            const collectorValueDivXbtn = document.getElementById("collectorValueDivXbtn");
-                                            const ClosingBtn = [collectorValueDivbtnsOK, collectorValueDivXbtn]
-
-                                            ClosingBtn.forEach(btn => {
-                                                btn.addEventListener("click", () => {
-                                                    collectorValueDiv.style.display = "none";
-                                                });
-                                            });
-
-
-
-                                        } else {
-                                            console.error('Failed to fetch data');
-                                        }
-
-                                    } catch (error) {
-                                        console.error('Error:', error);
-                                    }
-                                } else {
-                                    showCustomAlert('No values selected');
-                                }
-
-                            });
-                            function displayCollectorResult(data) {
-                                renderTableCollector(data.data || []);
-                            }
-                            function renderTableCollector(datacollector) {
-                                const tablecollector = document.querySelector('#collectorValueTable tbody');
-                                tablecollector.innerHTML = '';
-
-                                let totalAmount = 0;
-                                let totalCommission = 0;
-
-                                datacollector.forEach((item, index) => {
-                                    totalAmount += Number(item.TotalCrAmount);
-                                    totalCommission += Number(item.CommissionAmount);
-
-                                    const rowHTML = `
-        <tr>
-            <td>${item.SNO}</td>
-            <td>${item.CollectorName}</td>
-            <td>${item.CollectorAlias}</td>
-            <td>${item.CommissionPercent}%</td>
-            <td>${item.TotalCrAmount}</td>
-            <td>${item.CommissionAmount}</td>
-        </tr>`;
-
-                                    tablecollector.insertAdjacentHTML('beforeend', rowHTML);
-                                });
-
-                                // Add TOTAL ROW
-                                const totalRow = `
-    <tr style="font-weight:bold; background:#f3f3f3;">
-        <td colspan="4" style="text-align:right;">TOTAL :</td>
-        <td>${totalAmount}</td>
-        <td>${totalCommission.toFixed(2)}</td>
-    </tr>
-    `;
-
-                                tablecollector.insertAdjacentHTML('beforeend', totalRow);
-                            }
-
-                        });
-                    </script>
+                    
 
 
                     <script>
@@ -47136,6 +46914,75 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                             const accNameLedgerTable = document.getElementById('accNameLedgerTable');
                             const loanNaccNameMainDiv = document.getElementById('loanNaccNameMainDiv');
                             const collatoralloanLedgerFormOK = document.getElementById("collatoralloanLedgerFormOK")
+                            const collateralPageSizes = [100, 200, 500];
+                            const collateralPages = { loanList: 1, memberList: 1, result: 1 };
+                            const collateralPageSize = { loanList: 200, memberList: 200, result: 200 };
+                            let collateralLoanRows = [];
+                            let collateralMemberRows = [];
+                            let collateralResultRows = [];
+                            const collateralSelected = { loanList: new Set(), memberList: new Set() };
+                            const collateralSearch = { loanList: '', memberList: '' };
+
+                            function renderCollateralPagination(containerId, total, key, renderPage) {
+                                const container = document.getElementById(containerId);
+                                const page = collateralPages[key];
+                                const size = collateralPageSize[key];
+                                const pageCount = Math.ceil(total / size);
+                                const start = total ? (page - 1) * size + 1 : 0;
+                                const end = Math.min(page * size, total);
+                                container.innerHTML = `
+                                    <button type="button" data-page="previous" ${page <= 1 ? "disabled" : ""}>‹</button>
+                                    <span>Page</span>
+                                    <select data-page-select ${pageCount ? "" : "disabled"}>${Array.from({ length: pageCount }, (_, i) => `<option value="${i + 1}" ${i + 1 === page ? "selected" : ""}>${i + 1}</option>`).join("")}</select>
+                                    <span>/ ${pageCount}</span>
+                                    <button type="button" data-page="next" ${page >= pageCount ? "disabled" : ""}>›</button>
+                                    <span>${total ? `${start}-${end} of ${total}` : "No results"}</span>
+                                    <label>Rows: <select data-page-size>${collateralPageSizes.map(value => `<option value="${value}" ${value === size ? "selected" : ""}>${value}</option>`).join("")}</select></label>`;
+                                container.querySelector('[data-page="previous"]').onclick = () => { collateralPages[key]--; renderPage(); };
+                                container.querySelector('[data-page="next"]').onclick = () => { collateralPages[key]++; renderPage(); };
+                                container.querySelector('[data-page-select]').onchange = event => { collateralPages[key] = Number(event.target.value); renderPage(); };
+                                container.querySelector('[data-page-size]').onchange = event => { collateralPageSize[key] = Number(event.target.value); collateralPages[key] = 1; renderPage(); };
+                            }
+
+                            function renderCollateralList(type) {
+                                const isLoan = type === 'loanList';
+                                const allRows = isLoan ? collateralLoanRows : collateralMemberRows;
+                                const search = collateralSearch[type].toLocaleLowerCase();
+                                const rows = allRows.filter(row => `${isLoan ? row.GLName || '' : row.SLName || ''} ${isLoan ? row.GLAlias || '' : row.SlAlias || ''}`.toLocaleLowerCase().includes(search));
+                                const tableBody = isLoan ? loanLedgerTable.querySelector('tbody') : accNameLedgerTable.querySelector('tbody');
+                                const paginationId = isLoan ? 'collateralLoanListPagination' : 'collateralMemberListPagination';
+                                const offset = (collateralPages[type] - 1) * collateralPageSize[type];
+                                tableBody.innerHTML = rows.slice(offset, offset + collateralPageSize[type]).map((row, index) => {
+                                    const id = String(isLoan ? row.GLID : row.SLID);
+                                    return isLoan
+                                        ? `<tr><td><input type="checkbox" class="LoanledgerDiv-CR" value="${id}" ${collateralSelected[type].has(id) ? 'checked' : ''}></td><td>${offset + index + 1}</td><td>${row.GLName}</td><td>${row.GLAlias}</td></tr>`
+                                        : `<tr><td><input type="checkbox" class="AccNameLedgermemDiv-CR" value="${id}" ${collateralSelected[type].has(id) ? 'checked' : ''}></td><td>${offset + index + 1}</td><td>${row.SLName}</td><td>${row.SlAlias}</td></tr>`;
+                                }).join('');
+                                renderCollateralPagination(paginationId, rows.length, type, () => renderCollateralList(type));
+                            }
+
+                            loanLedgerTable.querySelector('tbody').addEventListener('change', event => {
+                                const checkbox = event.target.closest('.LoanledgerDiv-CR');
+                                if (!checkbox) return;
+                                if (checkbox.checked) collateralSelected.loanList.add(checkbox.value);
+                                else collateralSelected.loanList.delete(checkbox.value);
+                            });
+                            accNameLedgerTable.querySelector('tbody').addEventListener('change', event => {
+                                const checkbox = event.target.closest('.AccNameLedgermemDiv-CR');
+                                if (!checkbox) return;
+                                if (checkbox.checked) collateralSelected.memberList.add(checkbox.value);
+                                else collateralSelected.memberList.delete(checkbox.value);
+                            });
+                            document.getElementById('collatoralloanListFormsearch').addEventListener('input', event => {
+                                collateralSearch.loanList = event.target.value;
+                                collateralPages.loanList = 1;
+                                renderCollateralList('loanList');
+                            });
+                            document.getElementById('accNameLedgerFormSearch').addEventListener('input', event => {
+                                collateralSearch.memberList = event.target.value;
+                                collateralPages.memberList = 1;
+                                renderCollateralList('memberList');
+                            });
 
 
                             const closeButtons = [
@@ -47239,35 +47086,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                         // Backend sends: { success: true, data: [...] }
                                         const data = result.data || result;
 
-                                        const tableColMain = document.querySelector("#loanNaccNameMainTab tbody");
-
-                                        // Clear old rows
-                                        tableColMain.innerHTML = "";
-
-                                        data.forEach((row, index) => {
-                                            const tableRow = `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.GLName_SLID || ""}</td>
-                        <td>${row.SlAlias_SLID || ""}</td>
-                        <td>${row.SLName_SLID || ""}</td>
-                        <td>${row.MemberAlias_SLID || ""}</td>
-                        <td>${row.Phone1_SLID || ""}</td>
-                        <td>${row.Mobile_SLID || ""}</td>
-                        <td>${row.ApprovedLoan_SLID ? Number(row.ApprovedLoan_SLID).toLocaleString() : ""}</td>
-                        <td>${row.AdjustedLoanAmount_SLID ? Number(row.AdjustedLoanAmount_SLID).toLocaleString() : ""}</td>
-                        <td>${row.SLName_SLIDCol || ""}</td>
-                        <td>${row.GLName_SLIDCol || ""}</td>
-                        <td>${row.SlAlias_SLIDCol || ""}</td>
-                        <td>${row.Phone1_SLIDCol || ""}</td>
-                        <td>${row.Mobile_SLIDCol || ""}</td>
-                        <td>${row.ACD_Amount ? Number(row.ACD_Amount).toLocaleString() : ""}</td>
-
-                    </tr>
-                `;
-
-                                            tableColMain.insertAdjacentHTML("beforeend", tableRow);
-                                        });
+                                        renderloanTableCRR(data);
 
                                     } catch (error) {
                                         console.error("Error fetching loan & acc name data:", error);
@@ -47282,32 +47101,24 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                         throw new Error('Failed to fetch data');
                                     }
 
-                                    const data = await response.json();
-                                    const tableBody = document.querySelector('#loanLedgerTable tbody');
-                                    tableBody.innerHTML = ''; // Clear existing rows
-
-                                    data.forEach((row, index) => {
-                                        const tr = document.createElement('tr');
-                                        tr.innerHTML = `
-            <td><input type="checkbox" class="LoanledgerDiv-CR" value="${row.GLID}"></td>
-            <td>${index + 1}</td>
-            <td>${row.GLName}</td>
-            <td>${row.GLAlias}</td>
-        `;
-                                        tableBody.appendChild(tr);
-                                    });
+                                    collateralLoanRows = await response.json();
+                                    collateralPages.loanList = 1;
+                                    collateralSelected.loanList.clear();
+                                    renderCollateralList('loanList');
 
                                     loanLedgerDiv.style.display = 'block';
                                     loanNaccNameMainDiv.style.display = 'none';
 
                                     document.getElementById("collatorallgrlistselectallbtn").onclick = (e) => {
                                         e.preventDefault();
-                                        document.querySelectorAll(".LoanledgerDiv-CR").forEach(c => (c.checked = true));
+                                        collateralLoanRows.forEach(row => collateralSelected.loanList.add(String(row.GLID)));
+                                        renderCollateralList('loanList');
                                     };
 
                                     document.getElementById("collatorallgrlistunselectallbtn").onclick = (e) => {
                                         e.preventDefault();
-                                        document.querySelectorAll(".LoanledgerDiv-CR").forEach(c => (c.checked = false));
+                                        collateralSelected.loanList.clear();
+                                        renderCollateralList('loanList');
                                     };
 
                                     document.getElementById("collatoralloanLedgerFormCancel").onclick = (e) => {
@@ -47318,11 +47129,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     loanLedgerForm.onsubmit = async (e) => {
                                         e.preventDefault();
 
-                                        const checkedLoanValuesCR = Array.from(
-                                            document.querySelectorAll('.LoanledgerDiv-CR:checked')
-                                        ).map(checkbox => {
-                                            return { GLID: checkbox.value };
-                                        });
+                                        const checkedLoanValuesCR = Array.from(collateralSelected.loanList, GLID => ({ GLID }));
 
                                         // FIXED CONDITION (previously reversed)
                                         if (checkedLoanValuesCR.length === 0) {
@@ -47359,31 +47166,24 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     }
 
                                     const data = await response.json();
-                                    const tableBody = document.querySelector('#accNameLedgerTable tbody');
-                                    tableBody.innerHTML = ''; // Clear existing rows
-
-                                    data.AccName.forEach((row, index) => {
-                                        const tr = document.createElement('tr');
-                                        tr.innerHTML = `
-            <td><input type="checkbox" class="AccNameLedgermemDiv-CR" value="${row.SLID}"></td>
-            <td>${index + 1}</td>
-            <td>${row.SLName}</td>
-            <td>${row.SlAlias}</td>
-        `;
-                                        tableBody.appendChild(tr);
-                                    });
+                                    collateralMemberRows = data.AccName || [];
+                                    collateralPages.memberList = 1;
+                                    collateralSelected.memberList.clear();
+                                    renderCollateralList('memberList');
 
                                     accNameLedgerDiv.style.display = 'block';
                                     loanNaccNameMainDiv.style.display = 'none';
 
                                     document.getElementById("accNameLedgerFormlistselectallButton").onclick = (e) => {
                                         e.preventDefault();
-                                        document.querySelectorAll(".AccNameLedgermemDiv-CR").forEach(c => (c.checked = true));
+                                        collateralMemberRows.forEach(row => collateralSelected.memberList.add(String(row.SLID)));
+                                        renderCollateralList('memberList');
                                     };
 
                                     document.getElementById("accNameLedgerFormlistunselectButton").onclick = (e) => {
                                         e.preventDefault();
-                                        document.querySelectorAll(".AccNameLedgermemDiv-CR").forEach(c => (c.checked = false));
+                                        collateralSelected.memberList.clear();
+                                        renderCollateralList('memberList');
                                     };
 
                                     document.getElementById("accNameLedgerFormCancel").onclick = (e) => {
@@ -47394,9 +47194,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     accNameLedgerForm.onsubmit = async (e) => {
                                         e.preventDefault();
 
-                                        const checkedLoanValuesCR = Array.from(
-                                            document.querySelectorAll('.AccNameLedgermemDiv-CR:checked')
-                                        ).map(cb => Number(cb.value));  // <-- SEND AS ARRAY OF NUMBERS
+                                        const checkedLoanValuesCR = Array.from(collateralSelected.memberList, Number);
 
                                         // FIXED CONDITION (previously reversed)
                                         if (checkedLoanValuesCR.length === 0) {
@@ -47427,18 +47225,86 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     };
                                 }
 
+                                else {
+                                    const response = await fetch('/get-loanledger-cost-of-fund');
+                                    if (!response.ok) throw new Error('Failed to load account types');
+                                    collateralLoanRows = await response.json();
+                                    collateralPages.loanList = 1;
+                                    collateralSelected.loanList.clear();
+                                    renderCollateralList('loanList');
+                                    loanLedgerDiv.style.display = 'block';
+                                    accNameLedgerDiv.style.display = 'none';
+                                    loanNaccNameMainDiv.style.display = 'none';
+
+                                    document.getElementById('collatorallgrlistselectallbtn').onclick = event => {
+                                        event.preventDefault();
+                                        collateralLoanRows.forEach(row => collateralSelected.loanList.add(String(row.GLID)));
+                                        renderCollateralList('loanList');
+                                    };
+                                    document.getElementById('collatorallgrlistunselectallbtn').onclick = event => {
+                                        event.preventDefault(); collateralSelected.loanList.clear(); renderCollateralList('loanList');
+                                    };
+                                    loanLedgerForm.onsubmit = async event => {
+                                        event.preventDefault();
+                                        const selectedGLIDs = collateralSelected.loanList;
+                                        if (!selectedGLIDs.size) return showCustomAlert('Select at least one account type');
+                                        const memberResponse = await fetch('/fetchmembers-by-ledger-types', {
+                                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ glids: Array.from(selectedGLIDs) })
+                                        });
+                                        if (!memberResponse.ok) throw new Error('Failed to load accounts');
+                                        const memberData = await memberResponse.json();
+                                        collateralMemberRows = memberData.AccName || [];
+                                        collateralPages.memberList = 1;
+                                        collateralSelected.memberList.clear();
+                                        renderCollateralList('memberList');
+                                        loanLedgerDiv.style.display = 'none';
+                                        accNameLedgerDiv.style.display = 'block';
+                                    };
+                                    document.getElementById('accNameLedgerFormlistselectallButton').onclick = event => {
+                                        event.preventDefault();
+                                        collateralMemberRows.forEach(row => collateralSelected.memberList.add(String(row.SLID)));
+                                        renderCollateralList('memberList');
+                                    };
+                                    document.getElementById('accNameLedgerFormlistunselectButton').onclick = event => {
+                                        event.preventDefault(); collateralSelected.memberList.clear(); renderCollateralList('memberList');
+                                    };
+                                    accNameLedgerForm.onsubmit = async event => {
+                                        event.preventDefault();
+                                        const slids = Array.from(collateralSelected.memberList, Number);
+                                        if (!slids.length) return showCustomAlert('Select at least one account');
+                                        const reportResponse = await fetch('/fetch-loanNaccname-filterdata', {
+                                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slids })
+                                        });
+                                        if (!reportResponse.ok) return showCustomAlert('Failed to fetch data.');
+                                        renderloanTableCRR(await reportResponse.json());
+                                        accNameLedgerDiv.style.display = 'none';
+                                        loanNaccNameMainDiv.style.display = 'block';
+                                    };
+                                }
+
 
                                 // Helper function
                                 function renderloanTableCRR(data) {
                                     const tableColMain = document.querySelector("#loanNaccNameMainTab tbody");
+                                    collateralResultRows = data.data || data;
+                                    collateralPages.result = 1;
 
                                     // Clear old rows
                                     tableColMain.innerHTML = "";
 
-                                    data.forEach((row, index) => {
+                                    const totals = { approvedLoan: 0, balance: 0, collateralAmount: 0 };
+
+                                    collateralResultRows.forEach((row) => {
+                                        totals.approvedLoan += Number(row.ApprovedLoan_SLID) || 0;
+                                        totals.balance += Number(row.AdjustedLoanAmount_SLID) || 0;
+                                        totals.collateralAmount += Number(row.ACD_Amount) || 0;
+                                    });
+                                    const offset = (collateralPages.result - 1) * collateralPageSize.result;
+                                    collateralResultRows.slice(offset, offset + collateralPageSize.result).forEach((row, index) => {
                                         const tableRow = `
             <tr>
-                <td>${index + 1}</td>
+                <td>${offset + index + 1}</td>
                 <td>${row.GLName_SLID || ""}</td>
                 <td>${row.SlAlias_SLID || ""}</td>
                 <td>${row.SLName_SLID || ""}</td>
@@ -47458,6 +47324,42 @@ AccTypeBtn.addEventListener('dblclick', async () => {
 
                                         tableColMain.insertAdjacentHTML("beforeend", tableRow);
                                     });
+
+                                    const totalRow = `
+            <tr>
+                <td colspan="7"><strong>Total</strong></td>
+                <td><strong>${totals.approvedLoan.toLocaleString()}</strong></td>
+                <td><strong>${totals.balance.toLocaleString()}</strong></td>
+                <td colspan="5"></td>
+                <td><strong>${totals.collateralAmount.toLocaleString()}</strong></td>
+            </tr>
+        `;
+                                    tableColMain.insertAdjacentHTML("beforeend", totalRow);
+                                    renderCollateralPagination('collateralResultPagination', collateralResultRows.length, 'result', renderCollateralResultPage);
+                                }
+
+                                function renderCollateralResultPage() {
+                                    const tableColMain = document.querySelector("#loanNaccNameMainTab tbody");
+                                    const offset = (collateralPages.result - 1) * collateralPageSize.result;
+                                    const totals = collateralResultRows.reduce((sum, row) => ({
+                                        approvedLoan: sum.approvedLoan + (Number(row.ApprovedLoan_SLID) || 0),
+                                        balance: sum.balance + (Number(row.AdjustedLoanAmount_SLID) || 0),
+                                        collateralAmount: sum.collateralAmount + (Number(row.ACD_Amount) || 0)
+                                    }), { approvedLoan: 0, balance: 0, collateralAmount: 0 });
+                                    const pageRows = collateralResultRows.slice(offset, offset + collateralPageSize.result);
+                                    tableColMain.innerHTML = pageRows.map((row, index) => `
+                                        <tr>
+                                            <td>${offset + index + 1}</td><td>${row.GLName_SLID || ""}</td><td>${row.SlAlias_SLID || ""}</td>
+                                            <td>${row.SLName_SLID || ""}</td><td>${row.MemberAlias_SLID || ""}</td><td>${row.Phone1_SLID || ""}</td>
+                                            <td>${row.Mobile_SLID || ""}</td><td>${row.ApprovedLoan_SLID ? Number(row.ApprovedLoan_SLID).toLocaleString() : ""}</td>
+                                            <td>${row.AdjustedLoanAmount_SLID ? Number(row.AdjustedLoanAmount_SLID).toLocaleString() : ""}</td>
+                                            <td>${row.SLName_SLIDCol || ""}</td><td>${row.GLName_SLIDCol || ""}</td><td>${row.SlAlias_SLIDCol || ""}</td>
+                                            <td>${row.Phone1_SLIDCol || ""}</td><td>${row.Mobile_SLIDCol || ""}</td><td>${row.ACD_Amount ? Number(row.ACD_Amount).toLocaleString() : ""}</td>
+                                        </tr>`).join("") + `
+                                        <tr><td colspan="7"><strong>Total</strong></td>
+                                        <td><strong>${totals.approvedLoan.toLocaleString()}</strong></td><td><strong>${totals.balance.toLocaleString()}</strong></td>
+                                        <td colspan="5"></td><td><strong>${totals.collateralAmount.toLocaleString()}</strong></td></tr>`;
+                                    renderCollateralPagination('collateralResultPagination', collateralResultRows.length, 'result', renderCollateralResultPage);
                                 }
 
 
@@ -47530,6 +47432,36 @@ AccTypeBtn.addEventListener('dblclick', async () => {
 
 
                             makeDivMovable(allTypeNaccNameMainDiv)
+
+                            const rpPageSizes = [100, 200, 500];
+                            const rpLists = {
+                                member: { rows: [], page: 1, size: 200, search: '', selected: new Set(), body: document.querySelector('#RpmemlistTable tbody'), pager: 'rpMemberListPagination', searchInput: 'RPmemListFormSearch', name: 'SLName', alias: 'SlAlias', id: 'SLID', checkbox: 'RPmemlistDiv-CR' },
+                                ledger: { rows: [], page: 1, size: 200, search: '', selected: new Set(), body: document.querySelector('#RplgrlistTable tbody'), pager: 'rpLedgerListPagination', searchInput: 'RPlgrListFormsearch', name: 'GLName', alias: 'GLAlias', id: 'GLID', checkbox: 'RPlgrlistDiv-CR' }
+                            };
+                            function renderRPList(name) {
+                                const list = rpLists[name];
+                                const filtered = list.rows.filter(row => `${row[list.name] || ''} ${row[list.alias] || ''}`.toLocaleLowerCase().includes(list.search.toLocaleLowerCase()));
+                                const offset = (list.page - 1) * list.size;
+                                list.body.innerHTML = filtered.slice(offset, offset + list.size).map((row, index) => {
+                                    const id = String(row[list.id]);
+                                    return `<tr><td><input type="checkbox" class="${list.checkbox}" value="${id}" ${list.selected.has(id) ? 'checked' : ''}></td><td>${offset + index + 1}</td><td>${row[list.name] || ''}</td><td>${row[list.alias] || ''}</td></tr>`;
+                                }).join('');
+                                const pageCount = Math.ceil(filtered.length / list.size);
+                                const pager = document.getElementById(list.pager);
+                                pager.innerHTML = `<button type="button" data-page="prev" ${list.page <= 1 ? 'disabled' : ''}>‹</button><span>Page</span><select data-page-select ${pageCount ? '' : 'disabled'}>${Array.from({ length: pageCount }, (_, i) => `<option value="${i + 1}" ${i + 1 === list.page ? 'selected' : ''}>${i + 1}</option>`).join('')}</select><span>/ ${pageCount}</span><button type="button" data-page="next" ${list.page >= pageCount ? 'disabled' : ''}>›</button><span>${filtered.length ? `${offset + 1}-${Math.min(list.page * list.size, filtered.length)} of ${filtered.length}` : 'No results'}</span><label>Rows: <select data-page-size>${rpPageSizes.map(size => `<option value="${size}" ${size === list.size ? 'selected' : ''}>${size}</option>`).join('')}</select></label>`;
+                                pager.querySelector('[data-page="prev"]').onclick = () => { list.page--; renderRPList(name); };
+                                pager.querySelector('[data-page="next"]').onclick = () => { list.page++; renderRPList(name); };
+                                pager.querySelector('[data-page-select]').onchange = event => { list.page = Number(event.target.value); renderRPList(name); };
+                                pager.querySelector('[data-page-size]').onchange = event => { list.size = Number(event.target.value); list.page = 1; renderRPList(name); };
+                            }
+                            Object.entries(rpLists).forEach(([name, list]) => {
+                                list.body.addEventListener('change', event => {
+                                    const checkbox = event.target.closest(`.${list.checkbox}`);
+                                    if (!checkbox) return;
+                                    if (checkbox.checked) list.selected.add(checkbox.value); else list.selected.delete(checkbox.value);
+                                });
+                                document.getElementById(list.searchInput).addEventListener('input', event => { list.search = event.target.value; list.page = 1; renderRPList(name); });
+                            });
 
                             mainRebateNPenaltyReport.addEventListener("submit", async (event) => {
                                 event.preventDefault();
@@ -47606,7 +47538,23 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                 makeDivMovable(RPmemSelectTypeDiv);
                                 makeDivMovable(RPaccountSelectTypeDiv);
 
+                                const logRPRRows = (stage, result) => {
+                                    const rows = result?.data || result;
+                                    console.info(`[RPR] ${stage}`, {
+                                        isArray: Array.isArray(rows),
+                                        rowCount: Array.isArray(rows) ? rows.length : null,
+                                        responseKeys: result && typeof result === 'object' && !Array.isArray(result) ? Object.keys(result) : []
+                                    });
+                                };
+                                console.info('[RPR] Submit', {
+                                    accountTypeChecked: allAccountsTypeRPRCB.checked,
+                                    accountChecked: allAccountsRPRCB.checked,
+                                    startDate: startDateRPR,
+                                    endDate: endDateRPR
+                                });
+
                                 if (allAccountsTypeRPRCB.checked && allAccountsRPRCB.checked) {
+                                    console.info('[RPR] Branch: both checkboxes checked; fetching all report rows');
                                     try {
                                         const response = await fetch("/fetch-rebateNpenaltyRep-data", {
                                             method: "POST",
@@ -47614,8 +47562,11 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                             body: JSON.stringify({ startDateRPR, endDateRPR })
                                         });
 
+                                        console.info('[RPR] All rows response status:', response.status);
+                                        if (!response.ok) throw new Error(await response.text());
                                         const result = await response.json();
                                         const data = result.data || result;
+                                        logRPRRows('All rows received', data);
 
 
                                         const tableREBPENMain = document.querySelector("#RebNpenMainTable tbody");
@@ -47637,35 +47588,31 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                         });
 
                                         allTypeNaccNameMainDiv.style.display = 'block';
+                                        console.info('[RPR] All rows rendered:', tableREBPENMain.rows.length);
 
                                     } catch (error) {
-                                        console.error("Error fetching loan & acc name data:", error);
+                                        console.error('[RPR] Failed loading all rows:', error);
                                     }
                                 }
 
                                 else if (allAccountsTypeRPRCB.checked) {
+                                    console.info('[RPR] Branch: account type checkbox checked; loading member list');
 
                                     // 1️⃣ Fetch Member List
                                     const response = await fetch('/fetchmemberListforPandR');
                                     if (!response.ok) {
+                                        console.error('[RPR] Member list request failed:', response.status, await response.text());
                                         throw new Error('Failed to fetch data');
                                     }
 
                                     const data = await response.json();
-                                    const tableBody = document.querySelector('#RpmemlistTable tbody');
-                                    tableBody.innerHTML = '';
-
-                                    // 2️⃣ Populate Member List Table
-                                    data.AccName.forEach((row, index) => {
-                                        const tr = document.createElement('tr');
-                                        tr.innerHTML = `
-            <td><input type="checkbox" class="RPmemlistDiv-CR" value="${row.SLID}"></td>
-            <td>${index + 1}</td>
-            <td>${row.SLName}</td>
-            <td>${row.SlAlias}</td>
-        `;
-                                        tableBody.appendChild(tr);
-                                    });
+                                    rpLists.member.rows = data.AccName || [];
+                                    console.info('[RPR] Member list loaded:', { responseStatus: response.status, rowCount: rpLists.member.rows.length });
+                                    rpLists.member.page = 1;
+                                    rpLists.member.search = '';
+                                    rpLists.member.selected.clear();
+                                    document.getElementById(rpLists.member.searchInput).value = '';
+                                    renderRPList('member');
 
                                     // Show selection screen
                                     RPmemSelectTypeDiv.style.display = 'block';
@@ -47673,12 +47620,14 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     // 3️⃣ Select All / Unselect All buttons
                                     document.getElementById("RpmemlistselectallButton").onclick = (e) => {
                                         e.preventDefault();
-                                        document.querySelectorAll(".RPmemlistDiv-CR").forEach(c => c.checked = true);
+                                        rpLists.member.rows.forEach(row => rpLists.member.selected.add(String(row.SLID)));
+                                        renderRPList('member');
                                     };
 
                                     document.getElementById("RpmemlistunselectButton").onclick = (e) => {
                                         e.preventDefault();
-                                        document.querySelectorAll(".RPmemlistDiv-CR").forEach(c => c.checked = false);
+                                        rpLists.member.selected.clear();
+                                        renderRPList('member');
                                     };
 
                                     document.getElementById("RpmemlistCancelButton").onclick = (e) => {
@@ -47691,9 +47640,8 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     RPmemListForm.onsubmit = async (e) => {
                                         e.preventDefault();
 
-                                        const checkedRPmemValuesCR = Array.from(
-                                            document.querySelectorAll('.RPmemlistDiv-CR:checked')
-                                        ).map(c => ({ SLID: c.value }));
+                                        const checkedRPmemValuesCR = Array.from(rpLists.member.selected, SLID => ({ SLID }));
+                                        console.info('[RPR] Member report submit:', { selectedAccountCount: checkedRPmemValuesCR.length });
 
                                         if (checkedRPmemValuesCR.length === 0) {
                                             showCustomAlert('No values selected');
@@ -47707,15 +47655,16 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                             body: JSON.stringify({ startDateRPR, endDateRPR, checkedRPmemValuesCR }),
                                         });
 
+                                        console.info('[RPR] Member report response status:', response2.status);
+                                        console.info('[RPR] Member report response status:', response2.status);
                                         if (!response2.ok) {
-                                            console.error('Failed to fetch data');
+                                            console.error('[RPR] Member report request failed:', await response2.text());
                                             return;
                                         }
 
                                         const result = await response2.json();
                                         const fetchedData = result.data || result;
-
-                                        console.log("Filtered SLID data:", fetchedData);
+                                        logRPRRows('Member report rows received', fetchedData);
 
                                         // 5️⃣ Populate main table
                                         const tableREBPENMain = document.querySelector("#RebNpenMainTable tbody");
@@ -47737,33 +47686,31 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                         // 6️⃣ Show the main table now that data is ready
                                         allTypeNaccNameMainDiv.style.display = 'block';
                                         RPmemSelectTypeDiv.style.display = 'none';
+                                        console.info('[RPR] Member report rows rendered:', tableREBPENMain.rows.length);
                                     };
 
                                 }
 
-                                else if (allAccountsRPRCB.checked) {
+                                else if (allAccountsRPRCB.checked || (!allAccountsTypeRPRCB.checked && !allAccountsRPRCB.checked)) {
+                                    const rpTypeThenMember = !allAccountsTypeRPRCB.checked && !allAccountsRPRCB.checked;
+                                    console.info(`[RPR] Branch: ${rpTypeThenMember ? 'neither checkbox checked; showing account type picker' : 'account checkbox checked; showing account type picker'}`);
 
                                     // 1️⃣ Fetch the ledger list
                                     const response = await fetch('/fetchLedgerListforPandR');
+                                    console.info('[RPR] Account type list response status:', response.status);
                                     if (!response.ok) {
+                                        console.error('[RPR] Account type list request failed:', await response.text());
                                         throw new Error('Failed to fetch data');
                                     }
 
                                     const data = await response.json();
-                                    const tableBody = document.querySelector('#RplgrlistTable tbody');
-                                    tableBody.innerHTML = '';
-
-                                    // 2️⃣ Populate the ledger list in the selection table
-                                    data.postingLedgers.forEach((row, index) => {
-                                        const tr = document.createElement('tr');
-                                        tr.innerHTML = `
-            <td><input type="checkbox" class="RPlgrlistDiv-CR" value="${row.GLID}"></td>
-            <td>${index + 1}</td>
-            <td>${row.GLName}</td>
-            <td>${row.GLAlias}</td>
-        `;
-                                        tableBody.appendChild(tr);
-                                    });
+                                    rpLists.ledger.rows = data.postingLedgers || [];
+                                    console.info('[RPR] Account type list loaded:', { responseStatus: response.status, rowCount: rpLists.ledger.rows.length });
+                                    rpLists.ledger.page = 1;
+                                    rpLists.ledger.search = '';
+                                    rpLists.ledger.selected.clear();
+                                    document.getElementById(rpLists.ledger.searchInput).value = '';
+                                    renderRPList('ledger');
 
                                     // Show ledger selection screen
                                     RPaccountSelectTypeDiv.style.display = 'block';
@@ -47772,12 +47719,14 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     // 3️⃣ Select All / Unselect All buttons
                                     document.getElementById("Rplgrlistselectallbtn").onclick = (e) => {
                                         e.preventDefault();
-                                        document.querySelectorAll(".RPlgrlistDiv-CR").forEach(c => c.checked = true);
+                                        rpLists.ledger.rows.forEach(row => rpLists.ledger.selected.add(String(row.GLID)));
+                                        renderRPList('ledger');
                                     };
 
                                     document.getElementById("Rplgrlistunselectallbtn").onclick = (e) => {
                                         e.preventDefault();
-                                        document.querySelectorAll(".RPlgrlistDiv-CR").forEach(c => c.checked = false);
+                                        rpLists.ledger.selected.clear();
+                                        renderRPList('ledger');
                                     };
 
                                     document.getElementById("RplgrlistCancelButton").onclick = (e) => {
@@ -47789,12 +47738,70 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     RPlgrListForm.onsubmit = async (e) => {
                                         e.preventDefault();
 
-                                        const checkedRPValuesCR = Array.from(
-                                            document.querySelectorAll('.RPlgrlistDiv-CR:checked')
-                                        ).map(c => ({ GLID: c.value }));
+                                        const checkedRPValuesCR = Array.from(rpLists.ledger.selected, GLID => ({ GLID }));
+                                        console.info('[RPR] Account type selection submitted:', { selectedTypeCount: checkedRPValuesCR.length });
 
                                         if (checkedRPValuesCR.length === 0) {
                                             showCustomAlert('No values selected!');
+                                            return;
+                                        }
+
+                                        if (rpTypeThenMember) {
+                                            const selectedGLIDs = new Set(checkedRPValuesCR.map(item => String(item.GLID)));
+                                            const memberResponse = await fetch('/fetchmembers-by-ledger-types', {
+                                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ glids: Array.from(selectedGLIDs) })
+                                            });
+                                            console.info('[RPR] Related account list response status:', memberResponse.status);
+                                            if (!memberResponse.ok) {
+                                                console.error('[RPR] Related account list request failed:', await memberResponse.text());
+                                                throw new Error('Failed to load accounts');
+                                            }
+                                            const memberData = await memberResponse.json();
+                                            rpLists.member.rows = memberData.AccName || [];
+                                            console.info('[RPR] Related account list loaded:', { responseStatus: memberResponse.status, rowCount: rpLists.member.rows.length });
+                                            rpLists.member.page = 1;
+                                            rpLists.member.search = '';
+                                            rpLists.member.selected.clear();
+                                            document.getElementById(rpLists.member.searchInput).value = '';
+                                            renderRPList('member');
+                                            RPaccountSelectTypeDiv.style.display = 'none';
+                                            RPmemSelectTypeDiv.style.display = 'block';
+                                            document.getElementById('RpmemlistselectallButton').onclick = event => {
+                                                event.preventDefault();
+                                                rpLists.member.rows.forEach(row => rpLists.member.selected.add(String(row.SLID)));
+                                                renderRPList('member');
+                                            };
+                                            document.getElementById('RpmemlistunselectButton').onclick = event => {
+                                                event.preventDefault(); rpLists.member.selected.clear(); renderRPList('member');
+                                            };
+                                            RPmemListForm.onsubmit = async memberEvent => {
+                                                memberEvent.preventDefault();
+                                                const checkedRPmemValuesCR = Array.from(rpLists.member.selected, SLID => ({ SLID }));
+                                                console.info('[RPR] Related account selection submitted:', { selectedAccountCount: checkedRPmemValuesCR.length });
+                                                if (!checkedRPmemValuesCR.length) return showCustomAlert('No values selected');
+                                                const reportResponse = await fetch('/fetch-rebateNpenaltyRep-datafilterversion2', {
+                                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ startDateRPR, endDateRPR, checkedRPmemValuesCR })
+                                                });
+                                                console.info('[RPR] Related account report response status:', reportResponse.status);
+                                                if (!reportResponse.ok) {
+                                                    console.error('[RPR] Related account report request failed:', await reportResponse.text());
+                                                    return showCustomAlert('Failed to fetch data');
+                                                }
+                                                const reportResult = await reportResponse.json();
+                                                const fetchedData = reportResult.data || reportResult;
+                                                logRPRRows('Related account report rows received', fetchedData);
+                                                const tableREBPENMain = document.querySelector('#RebNpenMainTable tbody');
+                                                tableREBPENMain.innerHTML = '';
+                                                fetchedData.forEach((row, index) => tableREBPENMain.insertAdjacentHTML('beforeend', `
+                                                    <tr><td>${index + 1}</td><td>${row.ACD_GLName || ''}</td><td>${row.SLName || ''}</td>
+                                                    <td>${row.SLAlias || ''}</td><td>${row.TotalRebate ? Number(row.TotalRebate).toLocaleString() : '0'}</td>
+                                                    <td>${row.TotalPenalty ? Number(row.TotalPenalty).toLocaleString() : '0'}</td></tr>`));
+                                                RPmemSelectTypeDiv.style.display = 'none';
+                                                allTypeNaccNameMainDiv.style.display = 'block';
+                                                console.info('[RPR] Related account report rows rendered:', tableREBPENMain.rows.length);
+                                            };
                                             return;
                                         }
 
@@ -47805,15 +47812,15 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                             body: JSON.stringify({ startDateRPR, endDateRPR, checkedRPValuesCR }),
                                         });
 
+                                        console.info('[RPR] Account type report response status:', response2.status);
                                         if (!response2.ok) {
-                                            console.error('Failed to fetch data');
+                                            console.error('[RPR] Account type report request failed:', await response2.text());
                                             return;
                                         }
 
                                         const result = await response2.json();
                                         const fetchedData = result.data || result;
-
-                                        console.log("Fetched rebate/penalty data:", fetchedData);
+                                        logRPRRows('Account type report rows received', fetchedData);
 
                                         // 5️⃣ Populate the final table immediately
                                         const tableREBPENMain = document.querySelector("#RebNpenMainTable tbody");
@@ -47835,6 +47842,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                         // 6️⃣ Show the final table
                                         allTypeNaccNameMainDiv.style.display = 'block';
                                         RPaccountSelectTypeDiv.style.display = 'none';
+                                        console.info('[RPR] Account type report rows rendered:', tableREBPENMain.rows.length);
 
 
                                     };
@@ -49087,6 +49095,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/CashBankBookSummary.js"></script>
                     <script src="/js/GenerateNextVoucherNumber.js"></script>
                     <script src="/js/master-window.js"></script>
+                    <script src="/js/BooksCollectorReport.js"></script>
                     <script>
                         document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {
                             event.preventDefault();

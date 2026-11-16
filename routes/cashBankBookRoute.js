@@ -11,7 +11,7 @@ module.exports = function registerCashBankBook(app, sql) {
       return res.status(401).json({ error: 'Not connected to a database session.' });
     }
 
-    let { fromDate, toDate, ledgerName, docClassName } = req.body ?? {};
+    let { fromDate, toDate, ledgerName, docClassName,userName  } = req.body ?? {};
     ledgerName = String(ledgerName ?? '').trim();
     if (!fromDate || !toDate || !ledgerName) {
       return res.status(400).json({ error: 'fromDate, toDate and ledger are required.' });
@@ -30,18 +30,26 @@ module.exports = function registerCashBankBook(app, sql) {
       }
       const glid = lg[0].GLID;
 
-      // ---- resolve doc class name -> DocClassID (optional) ----
-      let dcSql = '', dcParams = [];
+           // ---- optional filters (period movements only; opening stays unfiltered) ----
+      const filterParts = [], filterParams = [];
+
       if (docClassName) {
         const c = await d.queryAsync(conn,
-          `SELECT TOP 1 DocClassID FROM dbo.tbDocClassMaster WHERE DocClassName = ?`,
-          [docClassName]);
-        if (!c.length) {
-          return res.status(400).json({ error: `Doc class "${docClassName}" not found.` });
-        }
-        dcSql = 'AND m.DocClassID = ?';
-        dcParams = [c[0].DocClassID];
+          `SELECT TOP 1 DocClassID FROM dbo.tbDocClassMaster WHERE DocClassName = ?`, [docClassName]);
+        if (!c.length) return res.status(400).json({ error: `Doc class "${docClassName}" not found.` });
+        filterParts.push('AND m.DocClassID = ?');
+        filterParams.push(c[0].DocClassID);
       }
+
+      if (userName) {
+        const u = await d.queryAsync(conn,
+          `SELECT TOP 1 UserID FROM SAJILODB.dbo.tbUserMaster WHERE UserName = ?`, [userName]);
+        if (!u.length) return res.status(400).json({ error: `User "${userName}" not found.` });
+        filterParts.push('AND m.CreatedUserID = ?');
+        filterParams.push(u[0].UserID);
+      }
+
+      const filterSql = filterParts.join(' ');
 
       // ---- dates ----
       const isAD = await d.getDateMode(conn);
@@ -99,10 +107,10 @@ module.exports = function registerCashBankBook(app, sql) {
         WHERE d.GLID = ?
           AND m.VoucherNo <> 'OB1'
           AND ${d.periodDateCondition(isAD)}
-          ${dcSql}
+           ${filterSql}
         GROUP BY ${dateExpr}
         ORDER BY ${dateExpr}`,
-        [glid, ...d.periodDateParams(isAD, bounds), ...dcParams]);
+        [glid, ...d.periodDateParams(isAD, bounds), ...filterParams]);
 
       // ---- running balance ----
       const fmtDate = (s) => {
