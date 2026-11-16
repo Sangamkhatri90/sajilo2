@@ -33167,6 +33167,7 @@ app.post("/fetch-chequeCashNNonCash-data", (req, res) => {
           SLM.SlAlias AS SlAlias,
           SLM.SLName AS SLName,
           JM.VoucherNo AS VoucherNo,
+          CIM.IssueDate AS IssueDate,
           ${journalDateColumn} AS JournalDate,
           JD.DrAmount AS DrAmount
       FROM tbChequeIssueMaster CIM
@@ -33256,6 +33257,7 @@ app.post("/fetch-chequeCashNNonCashUC-data", (req, res) => {
           SLM.SlAlias AS SlAlias,
           SLM.SLName AS SLName,
           JM.VoucherNo AS VoucherNo,
+          CIM.IssueDate AS IssueDate,
           ${journalDateColumn} AS JournalDate,
           JD.DrAmount AS DrAmount
       FROM tbChequeIssueMaster CIM
@@ -33295,7 +33297,10 @@ app.post("/fetch-chequeCashNNonCashUC-filterdata", (req, res) => {
   }
 
   // Convert values to numeric array
-  checkedCRmemValuesCR = checkedCRmemValuesCR.map(Number);
+  checkedCRmemValuesCR = checkedCRmemValuesCR.map(item => Number(item.SLID));
+  if (checkedCRmemValuesCR.some(Number.isNaN)) {
+    return res.status(400).json({ error: "Invalid Sub Ledger values provided!" });
+  }
 
   // Create SQL placeholders (?, ?, ?, ...)
   const placeholders = checkedCRmemValuesCR.map(() => "?").join(",");
@@ -33349,6 +33354,7 @@ app.post("/fetch-chequeCashNNonCashUC-filterdata", (req, res) => {
         SLM.SlAlias AS SlAlias,
         SLM.SLName AS SLName,
         JM.VoucherNo AS VoucherNo,
+        CIM.IssueDate AS IssueDate,
         JM.JV_Miti AS JVMiti,
         JD.DrAmount AS DrAmount
       FROM tbChequeIssueMaster CIM
@@ -33486,6 +33492,10 @@ app.post("/fetch-chequeCashUCNNonCash-filterdata", (req, res) => {
   if (!Array.isArray(checkedCRmemValuesCR) || checkedCRmemValuesCR.length === 0) {
     return res.status(400).json({ error: "No SLIDs selected" });
   }
+  checkedCRmemValuesCR = checkedCRmemValuesCR.map(item => Number(item.SLID));
+  if (checkedCRmemValuesCR.some(Number.isNaN)) {
+    return res.status(400).json({ error: "Invalid SLIDs selected" });
+  }
 
   const dateTypeQuery = `SELECT TOP 1 DateType FROM tbSystemSettings`;
 
@@ -33567,7 +33577,10 @@ app.post("/fetch-chequeCashNNonCashUC-filterdata2", (req, res) => {
   }
 
   // Extract only numeric GLID values
-  const glidValues = checkedCRlgrValuesCR.map(item => item.GLID);
+  const glidValues = checkedCRlgrValuesCR.map(item => Number(item.GLID));
+  if (glidValues.some(Number.isNaN)) {
+    return res.status(400).json({ error: "Invalid GLIDs selected" });
+  }
 
   const dateTypeQuery = `SELECT TOP 1 DateType FROM tbSystemSettings`;
 
@@ -33620,6 +33633,7 @@ app.post("/fetch-chequeCashNNonCashUC-filterdata2", (req, res) => {
           SLM.SlAlias AS SlAlias,
           SLM.SLName AS SLName,
           JM.VoucherNo AS VoucherNo,
+          CIM.IssueDate AS IssueDate,
           JM.JV_Miti AS JVMiti,
           JD.DrAmount AS DrAmount
       FROM tbChequeIssueMaster CIM

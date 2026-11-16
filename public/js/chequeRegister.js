@@ -3,6 +3,31 @@
                 document.addEventListener('DOMContentLoaded', () => {
                     const mainChequeRegister = document.getElementById('myForm14');
                     const mainCashNNonCashDiv = document.getElementById('mainCashNNonCashDiv');
+                    const formatDate = (dateStr) => {
+                        if (!dateStr) return "";
+                        const date = new Date(dateStr);
+                        return Number.isNaN(date.getTime()) ? dateStr : date.toISOString().split("T")[0];
+                    };
+                    const renderChequeRows = (data) => {
+                        const tableBody = document.querySelector("#closeallCashNNonCashTab tbody");
+                        console.log("[Cheque Register] Rendering final table rows:", data.length, data);
+                        tableBody.innerHTML = "";
+
+                        data.forEach((row, index) => {
+                            tableBody.insertAdjacentHTML("beforeend", `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${row.ChequeNo || ""}</td>
+                                    <td>${row.SlAlias || ""}</td>
+                                    <td>${row.SLName || ""}</td>
+                                    <td>${formatDate(row.IssueDate)}</td>
+                                    <td>${formatDate(row.JournalDate || row.JVMiti)}</td>
+                                    <td>${row.VoucherNo || ""}</td>
+                                    <td>${row.DrAmount ? Number(row.DrAmount).toLocaleString() : ""}</td>
+                                </tr>
+                            `);
+                        });
+                    };
                     const closeButtons = [
 
                         { buttonId: 'closeallCashNNonCashDiv', div: mainCashNNonCashDiv },
@@ -67,7 +92,7 @@
 
                     mainChequeRegister.addEventListener("submit", async (event) => {
                         event.preventDefault();
-                        console.log('Prevented')
+                        console.log('[Cheque Register] Form submitted');
 
                         const dateFromChequeR = document.getElementById("CRIssueDateFrom").value;
                         const dateToChequeR = document.getElementById("CRIssueDateTo").value;
@@ -80,6 +105,14 @@
                         const CRlgrSelectTypeDiv = document.getElementById("CRaccountSelectTypeDiv");
                         const CRmemListForm = document.getElementById("CRmemListForm");
                         const CRlgrListForm = document.getElementById("CRlgrListForm");
+                        console.log("[Cheque Register] Filters:", {
+                            dateFromChequeR,
+                            dateToChequeR,
+                            selectAllType: CRSelectAllType.checked,
+                            selectAllAccount: CRSelectAllAccount.checked,
+                            cashed: CRCashedCB.checked,
+                            nonCashed: CRNonCashedCB.checked
+                        });
                         const closeButtonsListsForCR = [
 
                             { buttonId: 'CRmemlistCancelButton', div: CRmemSelectTypeDiv },
@@ -142,10 +175,6 @@
                         makeDivMovable(CRmemSelectTypeDiv);
                         makeDivMovable(CRlgrSelectTypeDiv);
 
-                        const formatDate = (dateStr) => {
-                            if (!dateStr) return "";
-                            return new Date(dateStr).toISOString().split("T")[0];
-                        };
                         if (!CRCashedCB.checked && !CRNonCashedCB.checked) {
                             showCustomAlert("Select either Cashed or Notcashed")
                             return;
@@ -154,35 +183,19 @@
 
                         if (CRSelectAllType.checked && CRSelectAllAccount.checked && CRCashedCB.checked && CRNonCashedCB.checked) {
                             try {
+                                console.log("[Cheque Register] Requesting all cashed and non-cashed cheques");
                                 const response = await fetch("/fetch-chequeCashNNonCash-data", {
                                     method: "POST",
                                     headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({ dateFromChequeR, dateToChequeR })
                                 });
+                                console.log("[Cheque Register] Response received:", response.status, response.statusText);
 
                                 const result = await response.json();
                                 const data = result.data || result;
 
 
-                                const tablSoldMain = document.querySelector("#closeallCashNNonCashTab tbody");
-                                tablSoldMain.innerHTML = "";
-
-                                data.forEach((row, index) => {
-                                    const tableRow = `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.ChequeNo || ""}</td>
-                        <td>${row.SlAlias || ""}</td>
-                        <td>${row.SLName || ""}</td>
-                        <td>${row.VoucherNo || ""}</td>            
-                        <td>${formatDate(row.JournalDate)}</td>
-                        <td>${formatDate(row.JournalDate)}</td>
-                        <td>${row.DrAmount ? Number(row.DrAmount).toLocaleString() : ""}</td>
-                    </tr>
-                `;
-
-                                    tablSoldMain.insertAdjacentHTML("beforeend", tableRow);
-                                });
+                                renderChequeRows(data);
 
                                 mainCashNNonCashDiv.style.display = 'block';
 
@@ -193,35 +206,19 @@
 
                         if (CRSelectAllType.checked && CRSelectAllAccount.checked && CRCashedCB.checked && !CRNonCashedCB.checked) {
                             try {
+                                console.log("[Cheque Register] Requesting cashed cheques");
                                 const response = await fetch("/fetch-chequeCashNNonCashUC-data", {
                                     method: "POST",
                                     headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({ dateFromChequeR, dateToChequeR })
                                 });
+                                console.log("[Cheque Register] Response received:", response.status, response.statusText);
 
                                 const result = await response.json();
                                 const data = result.data || result;
 
 
-                                const tablSoldMain = document.querySelector("#closeallCashNNonCashTab tbody");
-                                tablSoldMain.innerHTML = "";
-
-                                data.forEach((row, index) => {
-                                    const tableRow = `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.ChequeNo || ""}</td>
-                        <td>${row.SlAlias || ""}</td>
-                        <td>${row.SLName || ""}</td>
-                        <td>${row.VoucherNo || ""}</td>
-                        <td>${formatDate(row.JournalDate)}</td>
-                        <td>${formatDate(row.JournalDate)}</td>
-                        <td>${row.DrAmount ? Number(row.DrAmount).toLocaleString() : ""}</td>
-                    </tr>
-                `;
-
-                                    tablSoldMain.insertAdjacentHTML("beforeend", tableRow);
-                                });
+                                renderChequeRows(data);
 
                                 mainCashNNonCashDiv.style.display = 'block';
 
@@ -232,35 +229,19 @@
 
                         if (CRSelectAllType.checked && CRSelectAllAccount.checked && !CRCashedCB.checked && CRNonCashedCB.checked) {
                             try {
+                                console.log("[Cheque Register] Requesting non-cashed cheques");
                                 const response = await fetch("/fetch-chequeCashUCNNonCash-data", {
                                     method: "POST",
                                     headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({ dateFromChequeR, dateToChequeR })
                                 });
+                                console.log("[Cheque Register] Response received:", response.status, response.statusText);
 
                                 const result = await response.json();
                                 const data = result.data || result;
 
 
-                                const tablSoldMain = document.querySelector("#closeallCashNNonCashTab tbody");
-                                tablSoldMain.innerHTML = "";
-
-                                data.forEach((row, index) => {
-                                    const tableRow = `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.ChequeNo || ""}</td>
-                        <td>${row.SlAlias || ""}</td>
-                        <td>${row.SLName || ""}</td>
-                        <td>${row.VoucherNo || ""}</td>
-                        <td>${formatDate(row.JournalDate)}</td>
-                        <td>${formatDate(row.JournalDate)}</td>
-                        <td>${row.DrAmount ? Number(row.DrAmount).toLocaleString() : ""}</td>
-                    </tr>
-                `;
-
-                                    tablSoldMain.insertAdjacentHTML("beforeend", tableRow);
-                                });
+                                renderChequeRows(data);
 
                                 mainCashNNonCashDiv.style.display = 'block';
 
@@ -271,6 +252,7 @@
 
                         if (CRSelectAllType.checked && CRCashedCB.checked && !CRSelectAllAccount.checked && !CRNonCashedCB.checked) {
                             // 1️⃣ Fetch Member List
+                            console.log("[Cheque Register] Loading account-name selection list for cashed cheques");
                             const response = await fetch('/fetchmemberListforPandR');
                             if (!response.ok) {
                                 throw new Error('Failed to fetch data');
@@ -289,6 +271,7 @@
         `;
                                 tableBody.appendChild(tr);
                             });
+                            console.log("[Cheque Register] Account-name selection list loaded:", data.AccName.length);
                             // Show selection screen
                             CRmemSelectTypeDiv.style.display = 'block';
                             //allTypeNaccNameMainDiv.style.display = 'none';
@@ -323,6 +306,7 @@
                                 }
 
                                 // 4️⃣ Fetch filtered  data (SLID version)
+                                console.log("[Cheque Register] Requesting selected cashed accounts:", checkedCRmemValuesCR);
                                 const response2 = await fetch('/fetch-chequeCashNNonCashUC-filterdata', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -330,33 +314,17 @@
                                 });
 
                                 if (!response2.ok) {
-                                    console.error('Failed to fetch data');
+                                    console.error('[Cheque Register] Selected cashed-account request failed:', response2.status, await response2.text());
                                     return;
                                 }
 
                                 const result = await response2.json();
                                 const fetchedData = result.data || result;
 
-                                console.log("Filtered SLID data:", fetchedData);
+                                console.log("[Cheque Register] Selected cashed-account response:", fetchedData.length, fetchedData);
 
                                 // 5️⃣ Populate main table
-                                const tableREBPENMain = document.querySelector("#closeallCashNNonCashTab tbody");
-                                tableREBPENMain.innerHTML = "";
-
-                                fetchedData.forEach((row, index) => {
-                                    tableREBPENMain.insertAdjacentHTML("beforeend", `
-               <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.ChequeNo || ""}</td>
-                        <td>${row.SlAlias || ""}</td>
-                        <td>${row.SLName || ""}</td>
-                        <td>${row.VoucherNo || ""}</td>
-                        <td>${row.JVMiti || ""}</td>
-                        <td>${row.JVMiti || ""}</td>
-                        <td>${row.DrAmount ? Number(row.DrAmount).toLocaleString() : ""}</td>
-                    </tr>
-            `);
-                                });
+                                renderChequeRows(fetchedData);
 
                                 // 6️⃣ Show the main table now that data is ready
                                 mainCashNNonCashDiv.style.display = 'block';
@@ -366,6 +334,7 @@
                         }
                         if (CRSelectAllType.checked && CRNonCashedCB.checked && !CRSelectAllAccount.checked && !CRCashedCB.checked) {
                             // 1️⃣ Fetch Member List
+                            console.log("[Cheque Register] Loading account-name selection list for non-cashed cheques");
                             const response = await fetch('/fetchmemberListforPandR');
                             if (!response.ok) {
                                 throw new Error('Failed to fetch data');
@@ -384,6 +353,7 @@
         `;
                                 tableBody.appendChild(tr);
                             });
+                            console.log("[Cheque Register] Account-name selection list loaded:", data.AccName.length);
                             // Show selection screen
                             CRmemSelectTypeDiv.style.display = 'block';
                             //allTypeNaccNameMainDiv.style.display = 'none';
@@ -418,6 +388,7 @@
                                 }
 
                                 // 4️⃣ Fetch filtered  data (SLID version)
+                                console.log("[Cheque Register] Requesting selected non-cashed accounts:", checkedCRmemValuesCR);
                                 const response2 = await fetch('/fetch-chequeCashUCNNonCash-filterdata', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -425,33 +396,17 @@
                                 });
 
                                 if (!response2.ok) {
-                                    console.error('Failed to fetch data');
+                                    console.error('[Cheque Register] Selected non-cashed-account request failed:', response2.status, await response2.text());
                                     return;
                                 }
 
                                 const result = await response2.json();
                                 const fetchedData = result.data || result;
 
-                                console.log("Filtered SLID data:", fetchedData);
+                                console.log("[Cheque Register] Selected non-cashed-account response:", fetchedData.length, fetchedData);
 
                                 // 5️⃣ Populate main table
-                                const tableREBPENMain = document.querySelector("#closeallCashNNonCashTab tbody");
-                                tableREBPENMain.innerHTML = "";
-
-                                fetchedData.forEach((row, index) => {
-                                    tableREBPENMain.insertAdjacentHTML("beforeend", `
-               <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.ChequeNo || ""}</td>
-                        <td>${row.SlAlias || ""}</td>
-                        <td>${row.SLName || ""}</td>
-                        <td>${row.VoucherNo || ""}</td>
-                        <td>${row.JVMiti || ""}</td>
-                        <td>${row.JVMiti || ""}</td>
-                        <td>${row.DrAmount ? Number(row.DrAmount).toLocaleString() : ""}</td>
-                    </tr>
-            `);
-                                });
+                                renderChequeRows(fetchedData);
 
                                 // 6️⃣ Show the main table now that data is ready
                                 mainCashNNonCashDiv.style.display = 'block';
@@ -462,6 +417,7 @@
 
                         if (!CRSelectAllType.checked && CRCashedCB.checked && CRSelectAllAccount.checked && !CRNonCashedCB.checked) {
                             // 1️⃣ Fetch Member List
+                            console.log("[Cheque Register] Loading account-type selection list for cashed cheques");
                             const response = await fetch('/fetchLedgerListforPandR');
                             if (!response.ok) {
                                 throw new Error('Failed to fetch data');
@@ -480,6 +436,7 @@
         `;
                                 tableBody.appendChild(tr);
                             });
+                            console.log("[Cheque Register] Account-type selection list loaded:", data.postingLedgers.length);
                             // Show selection screen
                             CRlgrSelectTypeDiv.style.display = 'block';
                             //allTypeNaccNameMainDiv.style.display = 'none';
@@ -509,6 +466,7 @@
                                 }
 
                                 // 4️⃣ Fetch filtered  data (GLID version)
+                                console.log("[Cheque Register] Requesting selected cashed account types:", checkedCRlgrValuesCR);
                                 const response2 = await fetch('/fetch-chequeCashNNonCashUC-filterdata2', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -516,33 +474,17 @@
                                 });
 
                                 if (!response2.ok) {
-                                    console.error('Failed to fetch data');
+                                    console.error('[Cheque Register] Selected cashed account-type request failed:', response2.status, await response2.text());
                                     return;
                                 }
 
                                 const result = await response2.json();
                                 const fetchedData = result.data || result;
 
-                                console.log("Filtered SLID data:", fetchedData);
+                                console.log("[Cheque Register] Selected cashed account-type response:", fetchedData.length, fetchedData);
 
                                 // 5️⃣ Populate main table
-                                const tableREBPENMain = document.querySelector("#closeallCashNNonCashTab tbody");
-                                tableREBPENMain.innerHTML = "";
-
-                                fetchedData.forEach((row, index) => {
-                                    tableREBPENMain.insertAdjacentHTML("beforeend", `
-               <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.ChequeNo || ""}</td>
-                        <td>${row.SlAlias || ""}</td>
-                        <td>${row.SLName || ""}</td>
-                        <td>${row.VoucherNo || ""}</td>
-                        <td>${row.JournalDate || ""}</td>
-                        <td>${row.JournalDate || ""}</td>
-                        <td>${row.DrAmount ? Number(row.DrAmount).toLocaleString() : ""}</td>
-                    </tr>
-            `);
-                                });
+                                renderChequeRows(fetchedData);
 
                                 // 6️⃣ Show the main table now that data is ready
                                 mainCashNNonCashDiv.style.display = 'block';
@@ -553,6 +495,7 @@
 
                         if (!CRSelectAllType.checked && !CRCashedCB.checked && CRSelectAllAccount.checked && CRNonCashedCB.checked) {
                             // 1️⃣ Fetch Member List
+                            console.log("[Cheque Register] Loading account-type selection list for non-cashed cheques");
                             const response = await fetch('/fetchLedgerListforPandR');
                             if (!response.ok) {
                                 throw new Error('Failed to fetch data');
@@ -571,6 +514,7 @@
         `;
                                 tableBody.appendChild(tr);
                             });
+                            console.log("[Cheque Register] Account-type selection list loaded:", data.postingLedgers.length);
                             // Show selection screen
                             CRlgrSelectTypeDiv.style.display = 'block';
                             //allTypeNaccNameMainDiv.style.display = 'none';
@@ -600,6 +544,7 @@
                                 }
 
                                 // 4️⃣ Fetch filtered  data (SLID version)
+                                console.log("[Cheque Register] Requesting selected non-cashed account types:", checkedCRlgrValuesCR);
                                 const response2 = await fetch('/fetch-chequeCashNNonCashUC-data', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -607,33 +552,17 @@
                                 });
 
                                 if (!response2.ok) {
-                                    console.error('Failed to fetch data');
+                                    console.error('[Cheque Register] Selected non-cashed account-type request failed:', response2.status, await response2.text());
                                     return;
                                 }
 
                                 const result = await response2.json();
                                 const fetchedData = result.data || result;
 
-                                console.log("Filtered SLID data:", fetchedData);
+                                console.log("[Cheque Register] Selected non-cashed account-type response:", fetchedData.length, fetchedData);
 
                                 // 5️⃣ Populate main table
-                                const tableREBPENMain = document.querySelector("#closeallCashNNonCashTab tbody");
-                                tableREBPENMain.innerHTML = "";
-
-                                fetchedData.forEach((row, index) => {
-                                    tableREBPENMain.insertAdjacentHTML("beforeend", `
-               <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.ChequeNo || ""}</td>
-                        <td>${row.SlAlias || ""}</td>
-                        <td>${row.SLName || ""}</td>
-                        <td>${row.VoucherNo || ""}</td>
-                        <td>${row.JournalDate || ""}</td>
-                        <td>${row.JournalDate || ""}</td>
-                        <td>${row.DrAmount ? Number(row.DrAmount).toLocaleString() : ""}</td>
-                    </tr>
-            `);
-                                });
+                                renderChequeRows(fetchedData);
 
                                 // 6️⃣ Show the main table now that data is ready
                                 mainCashNNonCashDiv.style.display = 'block';
