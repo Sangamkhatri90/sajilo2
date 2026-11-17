@@ -7815,6 +7815,7 @@ async function loadEarningsData() {
                                     <tbody></tbody>
                                 </table>
                             </div>
+                            <div id="srLedgerListPagination" class="cr-pagination" aria-live="polite"></div>
 
                             <input type="text" class="table-search" id="SRlgrListFormsearch"
                                 data-target="SRlgrlistTable" placeholder="Search Here">
@@ -7844,6 +7845,7 @@ async function loadEarningsData() {
                             </thead>
                             <tbody></tbody>
                         </table>
+                        <div id="srResultPagination" class="cr-pagination" aria-live="polite"></div>
                         <button type="button">Ok</button>
                         <button id="cancelallsoldShareMainDiv">Cancel</button>
                     </form>
@@ -47887,7 +47889,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                 let offsetX, offsetY;
 
                                 div.addEventListener('mousedown', (e) => {
-                                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') {
+                                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') {
                                         return; // Allow interaction with input fields and buttons
                                     }
                                     e.preventDefault();
@@ -47918,6 +47920,68 @@ AccTypeBtn.addEventListener('dblclick', async () => {
 
                             makeDivMovable(soldShareMainDiv);
 
+                            const srPageSizes = [100, 200, 500];
+                            const srList = { rows: [], page: 1, size: 200, search: '', selected: new Set() };
+                            const srResult = { rows: [], page: 1, size: 200 };
+
+                            function renderSRPager(containerId, state, totalRows, renderPage) {
+                                const pageCount = Math.ceil(totalRows / state.size);
+                                if (state.page > pageCount) state.page = Math.max(pageCount, 1);
+                                const offset = (state.page - 1) * state.size;
+                                const pager = document.getElementById(containerId);
+                                pager.innerHTML = `<button type="button" data-page="prev" ${state.page <= 1 ? 'disabled' : ''}>‹</button><span>Page</span><select data-page-select ${pageCount ? '' : 'disabled'}>${Array.from({ length: pageCount }, (_, i) => `<option value="${i + 1}" ${i + 1 === state.page ? 'selected' : ''}>${i + 1}</option>`).join('')}</select><span>/ ${pageCount}</span><button type="button" data-page="next" ${state.page >= pageCount ? 'disabled' : ''}>›</button><span>${totalRows ? `${offset + 1}-${Math.min(state.page * state.size, totalRows)} of ${totalRows}` : 'No results'}</span><label>Rows: <select data-page-size>${srPageSizes.map(size => `<option value="${size}" ${size === state.size ? 'selected' : ''}>${size}</option>`).join('')}</select></label>`;
+                                pager.querySelector('[data-page="prev"]').onclick = () => { state.page--; renderPage(); };
+                                pager.querySelector('[data-page="next"]').onclick = () => { state.page++; renderPage(); };
+                                pager.querySelector('[data-page-select]').onchange = event => { state.page = Number(event.target.value); renderPage(); };
+                                pager.querySelector('[data-page-size]').onchange = event => { state.size = Number(event.target.value); state.page = 1; renderPage(); };
+                            }
+
+                            function renderSRList() {
+                                const filtered = srList.rows.filter(row => `${row.SLName || ''} ${row.SlAlias || ''}`.toLocaleLowerCase().includes(srList.search.toLocaleLowerCase()));
+                                const offset = (srList.page - 1) * srList.size;
+                                document.querySelector('#SRlgrlistTable tbody').innerHTML = filtered.slice(offset, offset + srList.size).map((row, index) => {
+                                    const id = String(row.SLID);
+                                    return `<tr><td><input type="checkbox" class="SRlgrlistDiv-CR" value="${id}" ${srList.selected.has(id) ? 'checked' : ''}></td><td>${offset + index + 1}</td><td>${row.SLName || ''}</td><td>${row.SlAlias || ''}</td></tr>`;
+                                }).join('');
+                                renderSRPager('srLedgerListPagination', srList, filtered.length, renderSRList);
+                            }
+
+                            function renderSRResult() {
+                                const offset = (srResult.page - 1) * srResult.size;
+                                document.querySelector('#soldMainTable tbody').innerHTML = srResult.rows.slice(offset, offset + srResult.size).map((row, index) => `
+                                    <tr>
+                                        <td>${offset + index + 1}</td>
+                                        <td>${row.TransactionDate || ''}</td>
+                                        <td>${row.TransactionNo || ''}</td>
+                                        <td>${row.SLName || ''}</td>
+                                        <td>${row.SlAlias || ''}</td>
+                                        <td>${row.ShareID || ''}</td>
+                                    </tr>`).join('');
+                                renderSRPager('srResultPagination', srResult, srResult.rows.length, renderSRResult);
+                            }
+
+                            function showSRResult(data) {
+                                srResult.rows = Array.isArray(data) ? data : [];
+                                srResult.page = 1;
+                                console.info('[Share Register] Final result received', {
+                                    rowCount: srResult.rows.length,
+                                    firstRow: srResult.rows[0] || null
+                                });
+                                renderSRResult();
+                                soldShareMainDiv.style.display = 'block';
+                            }
+
+                            document.querySelector('#SRlgrlistTable tbody').addEventListener('change', event => {
+                                const checkbox = event.target.closest('.SRlgrlistDiv-CR');
+                                if (!checkbox) return;
+                                if (checkbox.checked) srList.selected.add(checkbox.value); else srList.selected.delete(checkbox.value);
+                            });
+                            document.getElementById('SRlgrListFormsearch').addEventListener('input', event => {
+                                srList.search = event.target.value;
+                                srList.page = 1;
+                                renderSRList();
+                            });
+
 
                             mainShareRegister.addEventListener("submit", async (event) => {
                                 event.preventDefault();
@@ -47929,7 +47993,12 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                 const selectAllAccShareR = document.getElementById("selectAllAccShareR");
                                 const SRaccountSelectTypeDiv = document.getElementById("SRaccountSelectTypeDiv");
                                 const typeShareReg = document.getElementById("typeShareReg").value;
-                                console.log('sold', typeShareReg)
+                                console.info('[Share Register] Submit', {
+                                    type: typeShareReg,
+                                    selectAll: selectAllAccShareR.checked,
+                                    dateFromShareR,
+                                    dateToShareR
+                                });
 
                                 const closeButtonsLists = [
 
@@ -47963,7 +48032,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     let offsetX, offsetY;
 
                                     div.addEventListener('mousedown', (e) => {
-                                        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') {
+                                        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') {
                                             return; // Allow interaction with input fields and buttons
                                         }
                                         e.preventDefault();
@@ -48009,26 +48078,8 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                         const result = await response.json();
                                         const data = result.data || result;
 
-
-                                        const tablSoldMain = document.querySelector("#soldMainTable tbody");
-                                        tablSoldMain.innerHTML = "";
-
-                                        data.forEach((row, index) => {
-                                            const tableRow = `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.ACD_GLName || ""}</td>
-                        <td>${row.SLName || ""}</td>
-                        <td>${row.SLAlias || ""}</td>
-                        <td>${row.TotalRebate ? Number(row.TotalRebate).toLocaleString() : "0"}</td>
-                        <td>${row.TotalPenalty ? Number(row.TotalPenalty).toLocaleString() : "0"}</td>
-                    </tr>
-                `;
-
-                                            tablSoldMain.insertAdjacentHTML("beforeend", tableRow);
-                                        });
-
-                                        soldShareMainDiv.style.display = 'block';
+                                        console.info('[Share Register] All sold response', { status: response.status, rowCount: Array.isArray(data) ? data.length : null });
+                                        showSRResult(data);
 
                                     } catch (error) {
                                         console.error("Error fetching loan & acc name data:", error);
@@ -48046,26 +48097,8 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                         const result = await response.json();
                                         const data = result.data || result;
 
-
-                                        const tablSoldMain = document.querySelector("#soldMainTable tbody");
-                                        tablSoldMain.innerHTML = "";
-
-                                        data.forEach((row, index) => {
-                                            const tableRow = `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.ACD_GLName || ""}</td>
-                        <td>${row.SLName || ""}</td>
-                        <td>${row.SLAlias || ""}</td>
-                        <td>${row.TotalRebate ? Number(row.TotalRebate).toLocaleString() : "0"}</td>
-                        <td>${row.TotalPenalty ? Number(row.TotalPenalty).toLocaleString() : "0"}</td>
-                    </tr>
-                `;
-
-                                            tablSoldMain.insertAdjacentHTML("beforeend", tableRow);
-                                        });
-
-                                        soldShareMainDiv.style.display = 'block';
+                                        console.info('[Share Register] All return response', { status: response.status, rowCount: Array.isArray(data) ? data.length : null });
+                                        showSRResult(data);
 
                                     } catch (error) {
                                         console.error("Error fetching loan & acc name data:", error);
@@ -48078,20 +48111,12 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     if (!response.ok) throw new Error('Failed to fetch data');
 
                                     const data = await response.json();
-                                    const tableBody = document.querySelector('#SRlgrlistTable tbody');
-                                    tableBody.innerHTML = '';
-
-                                    // 2️⃣ Populate list
-                                    data.AccName.forEach((row, index) => {
-                                        const tr = document.createElement('tr');
-                                        tr.innerHTML = `
-            <td><input type="checkbox" class="SRlgrlistDiv-CR" value="${row.SLID}"></td>
-            <td>${index + 1}</td>
-            <td>${row.SLName}</td>
-            <td>${row.SlAlias}</td>
-        `;
-                                        tableBody.appendChild(tr);
-                                    });
+                                    srList.rows = data.AccName || [];
+                                    srList.page = 1;
+                                    srList.search = '';
+                                    srList.selected.clear();
+                                    document.getElementById('SRlgrListFormsearch').value = '';
+                                    renderSRList();
 
                                     // Show ledger selection div
                                     SRaccountSelectTypeDiv.style.display = 'block';
@@ -48099,12 +48124,14 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                     // 3️⃣ Select All / Unselect All
                                     document.getElementById("SRlgrlistselectallbtn").onclick = (e) => {
                                         e.preventDefault();
-                                        document.querySelectorAll(".SRlgrlistDiv-CR").forEach(c => c.checked = true);
+                                        srList.rows.forEach(row => srList.selected.add(String(row.SLID)));
+                                        renderSRList();
                                     };
 
                                     document.getElementById("SRlgrlistunselectallbtn").onclick = (e) => {
                                         e.preventDefault();
-                                        document.querySelectorAll(".SRlgrlistDiv-CR").forEach(c => c.checked = false);
+                                        srList.selected.clear();
+                                        renderSRList();
                                     };
 
                                     document.getElementById("SRlgrlistCancelButton").onclick = (e) => {
@@ -48120,9 +48147,14 @@ AccTypeBtn.addEventListener('dblclick', async () => {
 
                                         const typeShareReg = document.getElementById("typeShareReg").value;
 
-                                        const checkedSRValuesCR = Array.from(
-                                            document.querySelectorAll('.SRlgrlistDiv-CR:checked')
-                                        ).map(c => ({ SLID: c.value }));
+                                        const checkedSRValuesCR = Array.from(srList.selected, SLID => ({ SLID }));
+
+                                        console.info('[Share Register] Selected accounts submit', {
+                                            type: typeShareReg,
+                                            dateFromShareR,
+                                            dateToShareR,
+                                            selectedSLIDs: checkedSRValuesCR.map(item => item.SLID)
+                                        });
 
                                         if (checkedSRValuesCR.length === 0) {
                                             showCustomAlert('No values selected');
@@ -48140,31 +48172,15 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                                     body: JSON.stringify({
                                                         dateFromShareR,
                                                         dateToShareR,
-                                                        SLIDs: checkedSRValuesCR.map(Number)
+                                                        SLIDs: checkedSRValuesCR
                                                     })
                                                 });
 
                                                 const result = await response.json();
                                                 const data = result.data || result;
 
-                                                const tablSoldMain = document.querySelector("#soldMainTable tbody");
-                                                tablSoldMain.innerHTML = "";
-
-                                                data.forEach((row, index) => {
-                                                    const tableRow = `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${row.ACD_GLName || ""}</td>
-                            <td>${row.SLName || ""}</td>
-                            <td>${row.SLAlias || ""}</td>
-                            <td>${row.TotalRebate ? Number(row.TotalRebate).toLocaleString() : "0"}</td>
-                            <td>${row.TotalPenalty ? Number(row.TotalPenalty).toLocaleString() : "0"}</td>
-                        </tr>
-                    `;
-                                                    tablSoldMain.insertAdjacentHTML("beforeend", tableRow);
-                                                });
-
-                                                soldShareMainDiv.style.display = 'block';
+                                                console.info('[Share Register] Selected sold response', { status: response.status, rowCount: Array.isArray(data) ? data.length : null, data });
+                                                showSRResult(data);
 
                                             } catch (error) {
                                                 console.error("Error fetching sold share data:", error);
@@ -48181,31 +48197,15 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                                                     body: JSON.stringify({
                                                         dateFromShareR,
                                                         dateToShareR,
-                                                        slids: checkedSRValuesCR.map(Number)
+                                                        slids: checkedSRValuesCR.map(item => Number(item.SLID))
                                                     })
                                                 });
 
                                                 const result = await response.json();
                                                 const data = result.data || result;
 
-                                                const tablSoldMain = document.querySelector("#soldMainTable tbody");
-                                                tablSoldMain.innerHTML = "";
-
-                                                data.forEach((row, index) => {
-                                                    const tableRow = `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${row.ACD_GLName || ""}</td>
-                            <td>${row.SLName || ""}</td>
-                            <td>${row.SLAlias || ""}</td>
-                            <td>${row.TotalRebate ? Number(row.TotalRebate).toLocaleString() : "0"}</td>
-                            <td>${row.TotalPenalty ? Number(row.TotalPenalty).toLocaleString() : "0"}</td>
-                        </tr>
-                    `;
-                                                    tablSoldMain.insertAdjacentHTML("beforeend", tableRow);
-                                                });
-
-                                                soldShareMainDiv.style.display = 'block';
+                                                console.info('[Share Register] Selected return response', { status: response.status, rowCount: Array.isArray(data) ? data.length : null, data });
+                                                showSRResult(data);
 
                                             } catch (error) {
                                                 console.error("Error fetching return share data:", error);

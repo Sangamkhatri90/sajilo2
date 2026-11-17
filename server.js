@@ -32601,8 +32601,8 @@ app.post("/fetch-shareSoldRegister-data", (req, res) => {
       const endDa = convertToNepaliFormat(dateToShareR);
       const convertQuery = `
         SELECT 
-            (SELECT TOP 1 M_date FROM tbLocalDate WHERE M_Miti = ?) AS FromMiti,
-            (SELECT TOP 1 M_date FROM tbLocalDate WHERE M_Miti = ?) AS ToMiti
+            (SELECT TOP 1 M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) AS FromMiti,
+            (SELECT TOP 1 M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) AS ToMiti
       `;
 
       sql.query(
@@ -32666,6 +32666,12 @@ app.post("/fetch-shareSoldRegister-filterdata", (req, res) => {
     const conn = req.session.conn;
     const { dateFromShareR, dateToShareR, SLIDs } = req.body;
 
+    console.info('[Share Register] Selected sold request', {
+        dateFromShareR,
+        dateToShareR,
+        SLIDs
+    });
+
     if (!SLIDs || SLIDs.length === 0) {
         return res.status(400).json({ error: "No SLID values received" });
     }
@@ -32686,6 +32692,8 @@ app.post("/fetch-shareSoldRegister-filterdata", (req, res) => {
 
         const dateType = result[0].DateType;
 
+        console.info('[Share Register] Selected sold date type', { dateType });
+
         let finalFromDate = dateFromShareR;
         let finalToDate = dateToShareR;
 
@@ -32697,8 +32705,8 @@ app.post("/fetch-shareSoldRegister-filterdata", (req, res) => {
 
             const convertQuery = `
                 SELECT 
-                    (SELECT TOP 1 M_date FROM tbLocalDate WHERE M_Miti = ?) AS FromMiti,
-                    (SELECT TOP 1 M_date FROM tbLocalDate WHERE M_Miti = ?) AS ToMiti
+                    (SELECT TOP 1 M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) AS FromMiti,
+                    (SELECT TOP 1 M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) AS ToMiti
             `;
 
             sql.query(connectionString, convertQuery, [strDa, endDa], (err, conv) => {
@@ -32722,6 +32730,12 @@ app.post("/fetch-shareSoldRegister-filterdata", (req, res) => {
 
     // 4️⃣ Main Query
     function runMainQuery(fromDate, toDate, SLIDlist) {
+
+        console.info('[Share Register] Selected sold query parameters', {
+            fromDate,
+            toDate,
+            SLIDlist
+        });
 
         const query = `
             SELECT 
@@ -32753,6 +32767,7 @@ app.post("/fetch-shareSoldRegister-filterdata", (req, res) => {
             }
 
             res.json(rows);
+            console.info('[Share Register] Selected sold query result', { rowCount: rows.length });
         });
     }
 
@@ -32787,8 +32802,8 @@ app.post("/fetch-shareReturnRegister-data", (req, res) => {
       const endDa = convertToNepaliFormat(dateToShareR);
       const convertQuery = `
         SELECT 
-            (SELECT TOP 1 M_date FROM tbLocalDate WHERE M_Miti = ?) AS FromMiti,
-            (SELECT TOP 1 M_date FROM tbLocalDate WHERE M_Miti = ?) AS ToMiti
+            (SELECT TOP 1 M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) AS FromMiti,
+            (SELECT TOP 1 M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) AS ToMiti
       `;
 
       sql.query(
@@ -32881,8 +32896,8 @@ slids = Array.isArray(slids) ? slids.map(Number) : [];
 
       const convertQuery = `
         SELECT 
-            (SELECT TOP 1 M_date FROM tbLocalDate WHERE M_Miti = ?) AS FromMiti,
-            (SELECT TOP 1 M_date FROM tbLocalDate WHERE M_Miti = ?) AS ToMiti
+            (SELECT TOP 1 M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) AS FromMiti,
+            (SELECT TOP 1 M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) AS ToMiti
       `;
 
       sql.query(connectionString, convertQuery, [strDa, endDa], (err, conv) => {
