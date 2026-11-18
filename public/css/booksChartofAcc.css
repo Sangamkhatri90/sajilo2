@@ -1,0 +1,256 @@
+/* =====================================
+   Chart of Account
+===================================== */
+
+.coa-window {
+    width: 100%;
+    background: #fff;
+    padding: 15px;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    color: #333;
+}
+
+#movableDiv196 {
+    width: 475px;
+}
+
+.coa-report-window {
+    width: min(1000px, 95vw);
+    max-height: 85vh;
+    overflow: auto;
+}
+
+.coa-report-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 12px;
+}
+
+.coa-report-header h3 {
+    margin: 0 0 10px;
+}
+
+.coa-report-header button {
+    border: 0;
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.coa-header {
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 15px;
+}
+
+.coa-header h3 {
+    margin: 0 0 12px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.coa-toolbar {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.coa-date-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.coa-date-field label {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.coa-date-field input {
+    width: 150px;
+    height: 34px;
+    padding: 5px 9px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.coa-load-btn {
+    height: 34px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 4px;
+    background: #237a57;
+    color: white;
+    cursor: pointer;
+}
+
+.coa-load-btn:hover {
+    background: #195f42;
+}
+
+.coa-load-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.coa-status {
+    font-size: 13px;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.coa-report-container {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    max-height: 650px;
+    overflow: auto;
+}
+
+.coa-empty {
+    padding: 25px;
+    text-align: center;
+    color: #888;
+}
+
+/* Group and subgroup */
+
+.coa-node {
+    margin: 3px 0;
+}
+
+.coa-node details {
+    margin-left: 12px;
+}
+
+.coa-node > details {
+    margin-left: 0;
+}
+
+.coa-node summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 9px 10px;
+    border-bottom: 1px solid #eee;
+    user-select: none;
+}
+
+.coa-node summary::-webkit-details-marker {
+    display: none;
+}
+
+.coa-node summary::before {
+    content: "▶";
+    font-size: 10px;
+    color: #777;
+    margin-right: 5px;
+}
+
+.coa-node details[open] > summary::before {
+    content: "▼";
+}
+
+.coa-group > details > summary {
+    background: #edf3f8;
+    font-weight: 700;
+}
+
+.coa-group > details > summary:hover {
+    background: #e2edf5;
+}
+
+.coa-child-group > details > summary {
+    background: #f5f7fa;
+    font-weight: 600;
+}
+
+.coa-subgroup > details > summary {
+    background: #fafafa;
+    font-weight: 500;
+}
+
+.coa-node-title {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.coa-node-balance {
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.coa-node-count {
+    font-size: 11px;
+    color: #777;
+    margin-left: 10px;
+    font-weight: normal;
+}
+
+.coa-node-content {
+    padding: 4px 0 8px 12px;
+}
+
+/* Ledger table */
+
+.coa-ledger-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 5px 0 10px;
+}
+
+.coa-ledger-table th,
+.coa-ledger-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.coa-ledger-table th {
+    background: #f5f5f5;
+    font-weight: 600;
+    text-align: left;
+}
+
+.coa-ledger-table td.coa-number,
+.coa-ledger-table th.coa-number {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.coa-ledger-table tbody tr:hover {
+    background: #fafafa;
+}
+
+.coa-negative {
+    color: #b33a3a;
+}
+
+.coa-positive {
+    color: #237a57;
+}
+
+@media (max-width: 700px) {
+    .coa-report-container {
+        overflow-x: auto;
+    }
+
+    .coa-ledger-table {
+        min-width: 650px;
+    }
+
+    .coa-node summary {
+        flex-wrap: wrap;
+    }
+}

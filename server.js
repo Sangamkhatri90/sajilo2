@@ -32517,6 +32517,211 @@ WHERE Category = 'AT'
     }
   });
 });
+
+app.get("/fetchInstallmentLoanAccountTypes", (req, res) => {
+  const query = `
+    SELECT GLID, GLName, GLAlias
+    FROM dbo.tbLedgerMaster
+    WHERE Category = 'AT'
+      AND GLID <> 1
+      AND UPPER(LTRIM(RTRIM(SavingorLoan))) = 'LOAN'
+    ORDER BY GLName ASC
+  `;
+
+  sql.query(req.session.conn, query, (err, rows) => {
+    if (err) {
+      console.error("Error fetching loan account types for installment register:", err);
+      return res.status(500).json({ message: "Error fetching loan account types" });
+    }
+    res.json({ postingLedgers: rows || [] });
+  });
+});
+
+app.get("/fetchLastTransactionAccountTypes", (req, res) => {
+  const query = `
+    SELECT GLID, GLName, GLAlias
+    FROM dbo.tbLedgerMaster
+    WHERE Category = 'AT'
+      AND GLID <> 1
+      AND UPPER(LTRIM(RTRIM(SavingorLoan))) IN ('SAVING', 'LOAN')
+    ORDER BY GLName ASC
+  `;
+
+  sql.query(req.session.conn, query, (err, rows) => {
+    if (err) {
+      console.error("Error fetching account types for last transaction register:", err);
+      return res.status(500).json({ message: "Error fetching account types" });
+    }
+    res.json({ postingLedgers: rows || [] });
+  });
+});
+
+app.post("/fetch-last-transaction-register-data", (req, res) => {
+  const conn = req.session.conn;
+  const { dateFrom, dateTo } = req.body || {};
+  const checkedSLIDs = Array.isArray(req.body.checkedSLIDs) ? req.body.checkedSLIDs.map(Number).filter(Number.isInteger) : [];
+  const checkedGLIDs = Array.isArray(req.body.checkedGLIDs) ? req.body.checkedGLIDs.map(Number).filter(Number.isInteger) : [];
+  const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
+
+  console.info("[Last Transaction Register] Report request:", {
+    dateFrom,
+    dateTo,
+    checkedSLIDCount: checkedSLIDs.length,
+    checkedGLIDCount: checkedGLIDs.length,
+    checkedSLIDs,
+    checkedGLIDs
+  });
+
+  if (!validDate(dateFrom) || !validDate(dateTo) || dateFrom > dateTo ||
+      (req.body.checkedSLIDs !== undefined && !checkedSLIDs.length) ||
+      (req.body.checkedGLIDs !== undefined && !checkedGLIDs.length) ||
+      (checkedSLIDs.length && checkedGLIDs.length)) {
+    return res.status(400).json({ message: "Invalid date range or account selection." });
+  }
+
+  sql.query(conn, "SELECT TOP 1 DateType FROM dbo.tbSystemSettings", (settingsError, settings) => {
+    if (settingsError) {
+      console.error("Error reading date type for last transaction register:", settingsError);
+      return res.status(500).json({ message: "Unable to read the system date type." });
+    }
+    const dateType = String(settings?.[0]?.DateType || 'AD').toUpperCase();
+    console.info("[Last Transaction Register] System date type:", dateType);
+    const runReport = (fromDate, toDate) => {
+      const lastTransactionDateDisplay = dateType === 'LD'
+        ? 'LastTransactionLocalDate.M_Miti'
+        : 'CONVERT(varchar(10), LastTransaction.JV_Date, 23)';
+      const principalReceivedDateDisplay = dateType === 'LD'
+        ? 'PrincipalReceiptLocalDate.M_Miti'
+        : 'CONVERT(varchar(10), PrincipalReceipt.ReceivedTill, 23)';
+      const interestReceivedDateDisplay = dateType === 'LD'
+        ? 'InterestReceiptLocalDate.M_Miti'
+        : 'CONVERT(varchar(10), InterestReceipt.ReceivedTillInterest, 23)';
+      const accountFilter = checkedSLIDs.length
+        ? `AND SM.SLID IN (${checkedSLIDs.map(() => '?').join(',')})`
+        : checkedGLIDs.length
+          ? `AND SM.GLID IN (${checkedGLIDs.map(() => '?').join(',')})`
+          : '';
+      const params = [toDate, toDate, toDate, toDate, toDate, ...(checkedSLIDs.length ? checkedSLIDs : checkedGLIDs)];
+      console.info("[Last Transaction Register] Running report query:", {
+        convertedToDate: toDate,
+        accountFilter: checkedSLIDs.length ? 'SLID' : checkedGLIDs.length ? 'GLID' : 'all accounts',
+        filterCount: checkedSLIDs.length || checkedGLIDs.length,
+        parameterCount: params.length
+      });
+      const query = `
+        SELECT
+          MM.MemberAlias AS MemberID,
+          MM.MemberName AS AccountName,
+          SM.Mobile AS ContactNo,
+          LM.GLName AS AccountType,
+          SM.SlAlias AS AccountNumber,
+          ${lastTransactionDateDisplay} AS LastTransactionDate,
+          ISNULL(AccountBalance.PrincipalBalance, 0) AS PrincipalBalance,
+          ISNULL(InterestBalance.InterestBalance, 0) AS InterestBalance,
+          ${principalReceivedDateDisplay} AS PrincipalReceivedTillDate,
+          ${interestReceivedDateDisplay} AS InterestReceivedTillDate
+        FROM dbo.tbSubLedgerMaster SM
+        INNER JOIN dbo.tbMemberMaster MM ON MM.MemberID = SM.MemberID
+        INNER JOIN dbo.tbLedgerMaster LM ON LM.GLID = SM.GLID
+        OUTER APPLY (
+          SELECT TOP 1 JM.JV_Date, JM.JV_Miti
+          FROM dbo.tbJournalDetails JD
+          INNER JOIN dbo.tbJournalMaster JM ON JM.JournalID = JD.JournalID
+          WHERE JD.SLID = SM.SLID
+            AND JD.GLID = SM.GLID
+            AND JM.VoucherNo LIKE 'TV%'
+            AND JM.JV_Date < DATEADD(day, 1, ?)
+            AND ISNULL(JM.IsTrashed, 0) = 0
+          ORDER BY JM.JV_Date DESC
+        ) LastTransaction
+        LEFT JOIN SAJILODB.dbo.tbLocalDate LastTransactionLocalDate
+          ON CONVERT(date, LastTransactionLocalDate.M_date) = CONVERT(date, LastTransaction.JV_Date)
+        OUTER APPLY (
+          SELECT -SUM(ISNULL(JD.DrAmount, 0) - ISNULL(JD.CrAmount, 0)) AS PrincipalBalance
+          FROM dbo.tbJournalDetails JD
+          INNER JOIN dbo.tbJournalMaster JM ON JM.JournalID = JD.JournalID
+          WHERE JD.SLID = SM.SLID
+            AND JD.GLID = SM.GLID
+            AND JM.JV_Date < DATEADD(day, 1, ?)
+            AND ISNULL(JM.IsTrashed, 0) = 0
+        ) AccountBalance
+        OUTER APPLY (
+          SELECT -SUM(ISNULL(JD.DrAmount, 0) - ISNULL(JD.CrAmount, 0)) AS InterestBalance
+          FROM dbo.tbJournalDetails JD
+          INNER JOIN dbo.tbJournalMaster JM ON JM.JournalID = JD.JournalID
+          WHERE JD.SLID = SM.SLID
+            AND JD.GLID = 110
+            AND JM.JV_Date < DATEADD(day, 1, ?)
+            AND ISNULL(JM.IsTrashed, 0) = 0
+        ) InterestBalance
+        OUTER APPLY (
+          SELECT MAX(JM.ReceivedTill) AS ReceivedTill
+          FROM dbo.tbJournalDetails JD
+          INNER JOIN dbo.tbJournalMaster JM ON JM.JournalID = JD.JournalID
+          WHERE JD.SLID = SM.SLID
+            AND JD.GLID = SM.GLID
+            AND JM.VoucherNo LIKE 'TV%'
+            AND JM.JV_Date < DATEADD(day, 1, ?)
+            AND ISNULL(JM.IsTrashed, 0) = 0
+        ) PrincipalReceipt
+        OUTER APPLY (
+          SELECT MAX(JM.ReceivedTillInterest) AS ReceivedTillInterest
+          FROM dbo.tbJournalDetails JD
+          INNER JOIN dbo.tbJournalMaster JM ON JM.JournalID = JD.JournalID
+          WHERE JD.SLID = SM.SLID
+            AND JD.GLID = 110
+            AND JM.VoucherNo LIKE 'TV%'
+            AND JM.JV_Date < DATEADD(day, 1, ?)
+            AND ISNULL(JM.IsTrashed, 0) = 0
+        ) InterestReceipt
+        OUTER APPLY (
+          SELECT TOP 1 LD.M_Miti
+          FROM SAJILODB.dbo.tbLocalDate LD
+          WHERE CONVERT(date, LD.M_date) = CONVERT(date, PrincipalReceipt.ReceivedTill)
+        ) PrincipalReceiptLocalDate
+        OUTER APPLY (
+          SELECT TOP 1 LD.M_Miti
+          FROM SAJILODB.dbo.tbLocalDate LD
+          WHERE CONVERT(date, LD.M_date) = CONVERT(date, InterestReceipt.ReceivedTillInterest)
+        ) InterestReceiptLocalDate
+        WHERE 1 = 1
+          ${accountFilter}
+        ORDER BY MM.MemberName ASC
+      `;
+      sql.query(conn, query, params, (queryError, rows) => {
+        if (queryError) {
+          console.error("Last transaction register query failed:", queryError);
+          return res.status(500).json({ message: "Unable to fetch last transaction register data." });
+        }
+        console.info("[Last Transaction Register] Query returned:", {
+          rowCount: rows?.length || 0,
+          sampleRowKeys: rows?.[0] ? Object.keys(rows[0]) : []
+        });
+        res.json({ data: rows || [] });
+      });
+    };
+
+    if (dateType !== 'LD') return runReport(dateFrom, dateTo);
+    const toMiti = value => `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}`;
+    sql.query(conn, `
+      SELECT
+        (SELECT TOP 1 M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) AS FromDate,
+        (SELECT TOP 1 M_date FROM SAJILODB.dbo.tbLocalDate WHERE M_Miti = ?) AS ToDate
+    `, [toMiti(dateFrom), toMiti(dateTo)], (convertError, converted) => {
+      if (convertError) {
+        console.error("Error converting Last Transaction Register dates:", convertError);
+        return res.status(500).json({ message: "Unable to convert the selected dates." });
+      }
+      if (!converted?.[0]?.FromDate || !converted?.[0]?.ToDate) {
+        console.error("[Last Transaction Register] Local calendar mapping missing:", converted?.[0] || null);
+        return res.status(400).json({ message: "One or both dates are missing from the local calendar." });
+      }
+      console.info("[Last Transaction Register] Dates converted:", converted[0]);
+      runReport(converted[0].FromDate, converted[0].ToDate);
+    });
+  });
+});
+
 app.get("/fetchmemberListforPandR", (req, res) => {
   const query = `SELECT 
   SLID,
@@ -33161,6 +33366,27 @@ app.post("/fetch-installmentScheduleAll-data", (req, res) => {
 
   const conn = req.session.conn;
   const { installmentDateFrom, installmentDateTo } = req.body;
+  const checkedSLIDs = Array.isArray(req.body.checkedSLIDs)
+    ? req.body.checkedSLIDs.map(Number).filter(Number.isInteger)
+    : [];
+  const checkedGLIDs = Array.isArray(req.body.checkedGLIDs)
+    ? req.body.checkedGLIDs.map(Number).filter(Number.isInteger)
+    : [];
+  const toInstallmentMiti = value => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+    return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+  };
+  console.info("[Installment Register] Report request:", {
+    installmentDateFrom,
+    installmentDateTo,
+    selectedAccountCount: checkedSLIDs.length,
+    selectedAccountTypeCount: checkedGLIDs.length
+  });
+  if ((req.body.checkedSLIDs !== undefined && !checkedSLIDs.length) ||
+      (req.body.checkedGLIDs !== undefined && !checkedGLIDs.length) ||
+      (checkedSLIDs.length && checkedGLIDs.length)) {
+    return res.status(400).send("Invalid account selection");
+  }
 
   // 1️⃣ First get the DateType (AD / LD)
   const dateTypeQuery = `
@@ -33180,10 +33406,14 @@ app.post("/fetch-installmentScheduleAll-data", (req, res) => {
     let finalFromDate = installmentDateFrom;
     let finalToDate = installmentDateTo;
 
-    // 2️⃣ If DateType is AD → convert AD to LD using tbLocalDate
+    // Convert the date input's YYYY-MM-DD value to the calendar table's DD/MM/YYYY key.
     if (dateType === "LD") {
-      const strDa = convertToNepaliFormat(installmentDateFrom);
-      const endDa = convertToNepaliFormat(installmentDateTo);
+      const strDa = toInstallmentMiti(installmentDateFrom);
+      const endDa = toInstallmentMiti(installmentDateTo);
+      console.info("[Installment Register] Local calendar lookup dates:", { fromMiti: strDa, toMiti: endDa });
+      if (!strDa || !endDa) {
+        return res.status(400).send("Installment dates must be valid local dates.");
+      }
       const convertQuery = `
         SELECT 
             (SELECT TOP 1 M_date FROM tbLocalDate WHERE M_Miti = ?) AS FromMiti,
@@ -33200,26 +33430,41 @@ app.post("/fetch-installmentScheduleAll-data", (req, res) => {
             return res.status(500).send("Error converting AD to LD");
           }
 
+          if (!conv?.[0]?.FromMiti || !conv?.[0]?.ToMiti) {
+            console.error("[Installment Register] Local calendar mapping missing:", conv?.[0] || null);
+            return res.status(400).send("One or both installment dates are missing from the local calendar.");
+          }
+
           finalFromDate = conv[0].FromMiti;
           finalToDate = conv[0].ToMiti;
-          console.log(finalFromDate, finalToDate)
+          console.info("[Installment Register] Local dates converted to database dates:", { finalFromDate, finalToDate });
 
-          runMainQuery(finalFromDate, finalToDate);
+          runMainQuery(finalFromDate, finalToDate, dateType);
         }
       );
     } 
     
     // 3️⃣ If DateType is AD → use raw AD dates directly
     else {
-      runMainQuery(finalFromDate, finalToDate);
+      runMainQuery(finalFromDate, finalToDate, dateType);
     }
   });
 
   // 4️⃣ Main Share Sold Register Query
-  function runMainQuery(strdate, enddate) {
+  function runMainQuery(strdate, enddate, dateType) {
+    const isLocalDate = String(dateType || '').toUpperCase() === 'LD';
+    const installmentDateDisplay = isLocalDate ? 'InstallmentLocalDate.M_Miti' : 'CONVERT(varchar(10), EMI.EMIDate, 23)';
+    const transactionDateDisplay = isLocalDate ? 'TransactionLocalDate.M_Miti' : 'CONVERT(varchar(10), LatestTransaction.JV_Date, 23)';
+    const accountFilter = checkedSLIDs.length
+      ? `AND SL.SLID IN (${checkedSLIDs.map(() => '?').join(',')})`
+      : checkedGLIDs.length
+        ? `AND SL.GLID IN (${checkedGLIDs.map(() => '?').join(',')})`
+        : '';
+    const queryParams = [strdate, enddate, ...(checkedSLIDs.length ? checkedSLIDs : checkedGLIDs)];
     const query = `
 SELECT
-EMI.EMIDate AS EMIDate,
+${installmentDateDisplay} AS EMIDate,
+${transactionDateDisplay} AS LastTransactionDate,
 LM.GLName AS GLName,
 SL.SLName AS SLName,
 SL.SlAlias AS SlAlias,
@@ -33237,16 +33482,31 @@ on SL.SLID = EMI.SLID
                 ON LM.GLID = SL.GLID
 				LEFT JOIN tbCollectorMaster CM
 				on CM.CollectorID = SL.CollectorID
+LEFT JOIN SAJILODB.dbo.tbLocalDate InstallmentLocalDate
+  ON CONVERT(date, InstallmentLocalDate.M_date) = CONVERT(date, EMI.EMIDate)
+OUTER APPLY (
+  SELECT TOP 1 JM.JV_Date
+  FROM tbJournalDetails JD
+  INNER JOIN tbJournalMaster JM ON JM.JournalID = JD.JournalID
+  WHERE JD.SLID = SL.SLID
+    AND JM.JV_Date IS NOT NULL
+    AND ISNULL(JM.IsTrashed, 0) = 0
+  ORDER BY JM.JV_Date DESC
+) LatestTransaction
+LEFT JOIN SAJILODB.dbo.tbLocalDate TransactionLocalDate
+  ON CONVERT(date, TransactionLocalDate.M_date) = CONVERT(date, LatestTransaction.JV_Date)
 where  EMI.EMIDate between ? and ?
 and SL.Closed = 0
+${accountFilter}
 order by SL.SLName ASC 
     `;
 
-    sql.query(conn, query, [strdate, enddate], (err, rows) => {
+    sql.query(conn, query, queryParams, (err, rows) => {
       if (err) {
-        console.error("Error executing query:", err);
+        console.error("[Installment Register] Report query failed:", err);
         return res.status(500).send("Error fetching data");
       }
+      console.info("[Installment Register] Report query returned rows:", rows?.length || 0);
       res.json(rows);
      
     });
@@ -34799,7 +35059,409 @@ app.post('/api/narrationSummary', async (req, res) => {
         res.status(500).json({ success: false, error: 'Unable to fetch Narration Summary' });
     }
 });
+// ==========================================
+// Chart of Account Report
+// ==========================================
 
+const coaDateKey = (date) => String(date || '').replace(/\D/g, '');
+
+app.post('/api/chartOfAccount', async (req, res) => {
+    const conn = req.session.conn;
+    const { fromDate, toDate } = req.body;
+
+    if (!conn) {
+        return res.status(401).json({ success: false, error: 'Database session not found' });
+    }
+
+    if (!fromDate || !toDate) {
+        return res.status(400).json({ success: false, error: 'From Date and To Date are required' });
+    }
+
+    const fromKey = coaDateKey(fromDate);
+    const toKey = coaDateKey(toDate);
+
+    if (!/^\d{8}$/.test(fromKey) || !/^\d{8}$/.test(toKey)) {
+        return res.status(400).json({ success: false, error: 'Invalid date format' });
+    }
+
+    if (fromKey > toKey) {
+        return res.status(400).json({ success: false, error: 'From Date cannot be greater than To Date' });
+    }
+
+    try {
+        // ----------------------------------
+        // Organization date type
+        // ----------------------------------
+        const settings = await run(conn, 'SELECT TOP 1 DateType FROM tbSystemSettings');
+
+        if (!settings?.length) {
+            return res.status(500).json({ success: false, error: 'DateType settings not found' });
+        }
+
+        const isLD = settings[0].DateType === 'LD';
+
+        // ----------------------------------
+        // Date expression pieces
+        // ----------------------------------
+        let ldStep = '';
+        let dateJoin = '';
+        let transactionDateExpression = '';
+
+        if (isLD) {
+            // Deduped, indexed copy of the cross-database table (built once per request)
+            ldStep = `
+                SELECT CAST(M_date AS DATE) AS AdDate,
+                       MIN(RIGHT(M_Miti, 4) + SUBSTRING(M_Miti, 4, 2) + LEFT(M_Miti, 2)) AS MitiKey
+                INTO #LD
+                FROM SAJILODB.dbo.tbLocalDate
+                GROUP BY CAST(M_date AS DATE);
+
+                CREATE UNIQUE CLUSTERED INDEX IX_LD ON #LD(AdDate);
+            `;
+
+            dateJoin = `LEFT JOIN #LD LD ON LD.AdDate = CAST(JM.JV_Date AS DATE)`;
+
+            transactionDateExpression = `
+                CASE
+                    WHEN JM.VoucherNo = 'OB1' THEN NULL
+                    WHEN NULLIF(LTRIM(RTRIM(JM.JV_Miti)), '') IS NOT NULL
+                        THEN REPLACE(REPLACE(LTRIM(RTRIM(JM.JV_Miti)), '/', ''), '-', '')
+                    ELSE LD.MitiKey
+                END
+            `;
+        } else {
+            transactionDateExpression = `
+                CASE
+                    WHEN JM.VoucherNo = 'OB1' THEN NULL
+                    WHEN JM.JV_Date IS NOT NULL THEN CONVERT(CHAR(8), JM.JV_Date, 112)
+                    ELSE NULL
+                END
+            `;
+        }
+
+        // ----------------------------------
+        // Main SQL
+        // ----------------------------------
+        const query = `
+            SET NOCOUNT ON;
+
+            DECLARE @FromKey VARCHAR(8) = ?;
+            DECLARE @ToKey   VARCHAR(8) = ?;
+
+            IF OBJECT_ID('tempdb..#LD') IS NOT NULL DROP TABLE #LD;
+IF OBJECT_ID('tempdb..#LB') IS NOT NULL DROP TABLE #LB;
+IF OBJECT_ID('tempdb..#GT') IS NOT NULL DROP TABLE #GT;
+
+            ${ldStep}
+
+            -- ==================================
+            -- 1. Ledger balances (computed ONCE)
+            -- ==================================
+            SELECT
+                GLID,
+
+                SUM(CASE WHEN IsOB = 1 THEN Net ELSE 0 END) AS OpeningVoucher,
+
+                SUM(CASE WHEN IsOB = 0 AND DateKey < @FromKey THEN Net ELSE 0 END)
+                    AS PreviousTransactions,
+
+                SUM(CASE WHEN IsOB = 1 THEN Net ELSE 0 END)
+                + SUM(CASE WHEN IsOB = 0 AND DateKey < @FromKey THEN Net ELSE 0 END)
+                    AS OpeningBalance,
+
+                SUM(CASE WHEN IsOB = 0 AND DateKey BETWEEN @FromKey AND @ToKey THEN Net ELSE 0 END)
+                    AS PeriodMovement,
+
+                SUM(CASE WHEN IsOB = 1 OR DateKey <= @ToKey THEN Net ELSE 0 END)
+                    AS ClosingBalance
+            INTO #LB
+            FROM (
+                SELECT
+                    JD.GLID,
+                    ISNULL(JD.DrAmount, 0) - ISNULL(JD.CrAmount, 0) AS Net,
+                    CASE WHEN JM.VoucherNo = 'OB1' THEN 1 ELSE 0 END AS IsOB,
+                    ${transactionDateExpression} AS DateKey
+                FROM tbJournalDetails JD
+                INNER JOIN tbJournalMaster JM ON JM.JournalID = JD.JournalID
+                ${dateJoin}
+                WHERE ISNULL(JM.IsTrashed, 0) = 0
+            ) X
+            GROUP BY GLID;
+
+            CREATE UNIQUE CLUSTERED INDEX IX_LB ON #LB(GLID);
+
+            -- ==================================
+            -- 2. Group hierarchy (computed ONCE)
+            -- ==================================
+            ;WITH GroupTree AS
+            (
+                SELECT
+                    LG.LgrGrpID,
+                    LG.MGrpID,
+                    LG.GrpName,
+                    0 AS GroupLevel,
+                    CAST('/' + RIGHT('0000000000' + CAST(LG.LgrGrpID AS VARCHAR(10)), 10) + '/'
+                         AS VARCHAR(MAX)) AS GroupPath
+                FROM tbLedgerGroup LG
+                WHERE LG.MGrpID = LG.LgrGrpID
+
+                UNION ALL
+
+                SELECT
+                    Child.LgrGrpID,
+                    Child.MGrpID,
+                    Child.GrpName,
+                    Parent.GroupLevel + 1,
+                    CAST(Parent.GroupPath
+                         + RIGHT('0000000000' + CAST(Child.LgrGrpID AS VARCHAR(10)), 10) + '/'
+                         AS VARCHAR(MAX))
+                FROM tbLedgerGroup Child
+                INNER JOIN GroupTree Parent ON Child.MGrpID = Parent.LgrGrpID
+                WHERE Child.LgrGrpID <> Parent.LgrGrpID
+                  AND CHARINDEX(
+                        '/' + RIGHT('0000000000' + CAST(Child.LgrGrpID AS VARCHAR(10)), 10) + '/',
+                        Parent.GroupPath
+                      ) = 0
+            )
+            SELECT * INTO #GT FROM GroupTree OPTION (MAXRECURSION 100);
+
+            CREATE CLUSTERED INDEX IX_GT ON #GT(LgrGrpID);
+
+            -- ==================================
+            -- 3. Rollups + final rows
+            -- ==================================
+            ;WITH GroupBalances AS
+            (
+                SELECT
+                    Parent.LgrGrpID,
+                    COUNT(DISTINCT LM.GLID) AS LedgerCount,
+                    SUM(ISNULL(LB.OpeningVoucher, 0))       AS OpeningVoucher,
+                    SUM(ISNULL(LB.PreviousTransactions, 0)) AS PreviousTransactions,
+                    SUM(ISNULL(LB.OpeningBalance, 0))       AS OpeningBalance,
+                    SUM(ISNULL(LB.PeriodMovement, 0))       AS PeriodMovement,
+                    SUM(ISNULL(LB.ClosingBalance, 0))       AS ClosingBalance
+                FROM #GT Parent
+                LEFT JOIN #GT Descendant
+                    ON Descendant.GroupPath LIKE Parent.GroupPath + '%'
+                LEFT JOIN tbLedgerMaster LM
+                    ON LM.LgrGrpID = Descendant.LgrGrpID
+                LEFT JOIN #LB LB
+                    ON LB.GLID = LM.GLID
+                GROUP BY Parent.LgrGrpID
+            ),
+
+            SubgroupNodes AS
+            (
+                SELECT LgrGrpID AS ActualGroupID, LgrSubGrpID FROM tbLedgerMaster
+                UNION
+                SELECT LgrGrpID, LgrSubGrpID FROM tbLedgerSubGroup
+            ),
+
+            SubgroupBalances AS
+            (
+                SELECT
+                    SN.ActualGroupID,
+                    SN.LgrSubGrpID,
+                    COUNT(DISTINCT LM.GLID) AS LedgerCount,
+                    SUM(ISNULL(LB.OpeningVoucher, 0))       AS OpeningVoucher,
+                    SUM(ISNULL(LB.PreviousTransactions, 0)) AS PreviousTransactions,
+                    SUM(ISNULL(LB.OpeningBalance, 0))       AS OpeningBalance,
+                    SUM(ISNULL(LB.PeriodMovement, 0))       AS PeriodMovement,
+                    SUM(ISNULL(LB.ClosingBalance, 0))       AS ClosingBalance
+                FROM SubgroupNodes SN
+                LEFT JOIN tbLedgerMaster LM
+                    ON LM.LgrGrpID = SN.ActualGroupID
+                   AND LM.LgrSubGrpID = SN.LgrSubGrpID
+                LEFT JOIN #LB LB
+                    ON LB.GLID = LM.GLID
+                GROUP BY SN.ActualGroupID, SN.LgrSubGrpID
+            ),
+
+            ChartRows AS
+            (
+                -- GROUP ROWS
+                SELECT
+                    CAST('GROUP' AS VARCHAR(10)) AS NodeType,
+                    LG.LgrGrpID AS GroupID,
+                    LG.MGrpID   AS ParentGroupID,
+                    LG.GrpName  AS GroupName,
+                    GT.GroupLevel,
+                    CAST(NULL AS INT)           AS SubgroupID,
+                    CAST(NULL AS NVARCHAR(255)) AS SubgroupName,
+                    CAST(NULL AS INT)           AS SubgroupConfiguredGroupID,
+                    CAST(NULL AS INT)           AS LedgerID,
+                    CAST(NULL AS NVARCHAR(255)) AS LedgerName,
+                    GB.LedgerCount,
+                    GB.OpeningVoucher,
+                    GB.PreviousTransactions,
+                    GB.OpeningBalance,
+                    GB.PeriodMovement,
+                    GB.ClosingBalance
+                FROM tbLedgerGroup LG
+                INNER JOIN #GT GT ON GT.LgrGrpID = LG.LgrGrpID
+                LEFT JOIN GroupBalances GB ON GB.LgrGrpID = LG.LgrGrpID
+
+                UNION ALL
+
+                -- SUBGROUP ROWS
+                SELECT
+                    CAST('SUBGROUP' AS VARCHAR(10)),
+                    SN.ActualGroupID,
+                    NULL, NULL, NULL,
+                    LSG.LgrSubGrpID,
+                    LSG.SubGrpName,
+                    LSG.LgrGrpID,
+                    NULL, NULL,
+                    SB.LedgerCount,
+                    SB.OpeningVoucher,
+                    SB.PreviousTransactions,
+                    SB.OpeningBalance,
+                    SB.PeriodMovement,
+                    SB.ClosingBalance
+                FROM SubgroupNodes SN
+                INNER JOIN tbLedgerSubGroup LSG ON LSG.LgrSubGrpID = SN.LgrSubGrpID
+                LEFT JOIN SubgroupBalances SB
+                    ON SB.ActualGroupID = SN.ActualGroupID
+                   AND SB.LgrSubGrpID = SN.LgrSubGrpID
+
+                UNION ALL
+
+                -- LEDGER ROWS
+                SELECT
+                    CAST('LEDGER' AS VARCHAR(10)),
+                    LM.LgrGrpID,
+                    NULL, NULL, NULL,
+                    LM.LgrSubGrpID,
+                    LSG.SubGrpName,
+                    LSG.LgrGrpID,
+                    LM.GLID,
+                    LM.GLName,
+                    1,
+                    LB.OpeningVoucher,
+                    LB.PreviousTransactions,
+                    LB.OpeningBalance,
+                    LB.PeriodMovement,
+                    LB.ClosingBalance
+                FROM tbLedgerMaster LM
+                INNER JOIN tbLedgerSubGroup LSG ON LSG.LgrSubGrpID = LM.LgrSubGrpID
+                LEFT JOIN #LB LB ON LB.GLID = LM.GLID
+            )
+
+            SELECT *
+            FROM ChartRows
+            ORDER BY GroupID, NodeType, SubgroupID, LedgerID;
+        `;
+
+        const rows = await run(conn, query, [fromKey, toKey]);
+
+        // ==================================
+        // Convert flat SQL rows to hierarchy
+        // ==================================
+        const groups = new Map();
+        const subgroups = new Map();
+
+        const number = value => Number(value || 0);
+
+        const getBalances = row => ({
+            openingVoucher: number(row.OpeningVoucher),
+            previousTransactions: number(row.PreviousTransactions),
+            openingBalance: number(row.OpeningBalance),
+            periodMovement: number(row.PeriodMovement),
+            closingBalance: number(row.ClosingBalance)
+        });
+
+        // Single pass over rows instead of three filters
+        const ledgerRows = [];
+
+        for (const r of rows) {
+            if (r.NodeType === 'GROUP') {
+                groups.set(String(r.GroupID), {
+                    type: 'group',
+                    id: number(r.GroupID),
+                    parentGroupID: number(r.ParentGroupID),
+                    name: r.GroupName,
+                    level: number(r.GroupLevel),
+                    ledgerCount: number(r.LedgerCount),
+                    ...getBalances(r),
+                    children: []
+                });
+            } else if (r.NodeType === 'SUBGROUP') {
+                subgroups.set(`${r.GroupID}_${r.SubgroupID}`, {
+                    type: 'subgroup',
+                    id: number(r.SubgroupID),
+                    groupID: number(r.GroupID),
+                    configuredGroupID: number(r.SubgroupConfiguredGroupID),
+                    name: r.SubgroupName,
+                    ledgerCount: number(r.LedgerCount),
+                    ...getBalances(r),
+                    ledgers: []
+                });
+            } else if (r.NodeType === 'LEDGER') {
+                ledgerRows.push(r);
+            }
+        }
+
+        // Attach ledgers to subgroups
+        for (const r of ledgerRows) {
+            const subgroup = subgroups.get(`${r.GroupID}_${r.SubgroupID}`);
+            if (subgroup) {
+                subgroup.ledgers.push({
+                    type: 'ledger',
+                    id: number(r.LedgerID),
+                    name: r.LedgerName,
+                    ...getBalances(r)
+                });
+            }
+        }
+
+        // Attach subgroups to their groups
+        subgroups.forEach(subgroup => {
+            const group = groups.get(String(subgroup.groupID));
+            if (group) group.children.push(subgroup);
+        });
+
+        // Attach child groups to parent groups
+        const roots = [];
+
+        groups.forEach(group => {
+            const parentID = String(group.parentGroupID);
+            const currentID = String(group.id);
+
+            if (parentID !== currentID && groups.has(parentID)) {
+                groups.get(parentID).children.push(group);
+            } else {
+                roots.push(group);
+            }
+        });
+
+        // Sort hierarchy
+        const sortNodes = nodes => {
+            nodes.sort((a, b) => {
+                if (a.type !== b.type) return a.type === 'group' ? -1 : 1;
+                return a.id - b.id;
+            });
+
+            nodes.forEach(node => {
+                if (node.type === 'group') sortNodes(node.children);
+                else if (node.type === 'subgroup') node.ledgers.sort((a, b) => a.id - b.id);
+            });
+        };
+
+        sortNodes(roots);
+
+        res.json({
+            success: true,
+            dateType: settings[0].DateType,
+            fromDate,
+            toDate,
+            data: roots
+        });
+
+    } catch (err) {
+        console.error('Chart of Account Error:', err);
+        res.status(500).json({ success: false, error: 'Unable to fetch Chart of Account' });
+    }
+});
 
 
 const PORT = 80;

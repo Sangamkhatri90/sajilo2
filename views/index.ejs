@@ -205,6 +205,7 @@
     <link rel="stylesheet" href="/css/MainOpeningBalance.css">
     <link rel="stylesheet" href="/css/ReportTableStyle.css">
     <link rel="stylesheet" href="/css/MasterWindow.css">
+    <link rel="stylesheet" href="/css/booksChartofAcc.css">
 </head>
 
 <body>
@@ -414,10 +415,11 @@
                                 <li><a href="#" id="toggleButton126">Subsidiary Ledger</a></li>
                                 <li><a href="#" id="toggleButton77">Interest Calculation Register</a></li>
                                 <li><a href="#" id="toggleButton127">Accrued Interest Register</a></li>
+                                <li><a href="#" id="toggleButton1301">Last Transaction Register</a></li>
                                 <li><a href="#" id="toggleButton78">Installment Schedule Register</a></li>
                                 <li><a href="#" id="toggleButton6">Account Renew Register</a></li>
                                 <li><a href="#" id="toggleButton14">Cheque Register</a></li>
-                                <li><a href="#">Chart Of Account</a></li>
+                                <li><a href="#" id="toggleButton196">Chart Of Account</a></li>
                                 <li><a href="#" id="toggleButton42">Narration Ledger</a></li>
                                 <li><a href="#" id="toggleButton13">Char Khata</a></li>
                                 <li><a href="#" id="toggleButton128">Daily Transaction</a></li>
@@ -2657,6 +2659,42 @@
                             </div>
                         </fieldset>
                     </form>
+                </div>
+
+                <!-- Chart of Account -->
+                <div id="movableDiv196" class="movableDiv coa-window" style="display: none;">
+                    <button type="button" id="closeButton196">&times;</button>
+                    <div class="cr-container">
+                        <form id="myForm196" class="cr-form">
+                            <fieldset class="cr-fieldset">
+                                <legend class="cr-legend">Chart of Account</legend>
+                                <div class="cr-form-style-horizontal3">
+                                    <div>
+                                        <label for="coaFromDate" class="cr-label">From Date</label>
+                                        <input type="date" id="coaFromDate" class="cr-date start-date-local">
+                                    </div>
+                                    <div>
+                                        <label for="coaToDate" class="cr-label">To Date</label>
+                                        <input type="date" id="coaToDate" class="cr-date end-date-local">
+                                    </div>
+                                </div>
+                                <div class="cr-button-row">
+                                    <button type="submit" id="coaLoadBtn" class="cr-button">Generate Report</button>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="coaReportWindow" class="movableDiv coa-report-window" style="display: none;">
+                    <div class="coa-report-header">
+                        <h3>Chart of Account Report</h3>
+                        <button type="button" id="closeCoaReport" aria-label="Close report">&times;</button>
+                    </div>
+                    <div id="coaStatus" class="coa-status"></div>
+                    <div class="coa-report-container">
+                        <div id="coaResults"></div>
+                    </div>
                 </div>
 
                 <!--Copy Master-->
@@ -9763,6 +9801,52 @@ async function loadEarningsData() {
                     </div>
                 </div>
 
+                <div id="installmentAccountTypeDiv" style="display: none;">
+                    <form id="installmentAccountTypeForm">
+                        <button type="button" id="installmentTypeListClose">&times;</button>
+                        <fieldset class="rpr1-fieldset">
+                            <legend class="isr-legend">Select Account Type(s)</legend>
+                            <div class="rpr-table-container1">
+                                <table id="installmentTypeListTable">
+                                    <thead><tr><th></th><th>Sno</th><th>Account Types</th><th>Account Alias</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <div id="installmentTypePagination" class="cr-pagination" aria-live="polite"></div>
+                            <input type="text" id="installmentTypeSearch" class="table-search" placeholder="Search Here">
+                            <div class="aa-button-row">
+                                <button type="submit" class="copy-button">Ok</button>
+                                <button type="button" id="installmentTypeSelectAll" class="edit-button">Select All</button>
+                                <button type="button" id="installmentTypeUnselectAll" class="export-button">Unselect All</button>
+                                <button type="button" id="installmentTypeCancel" class="delete-button">Cancel</button>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+
+                <div id="installmentAccountDiv" style="display: none;">
+                    <form id="installmentAccountForm">
+                        <button type="button" id="installmentAccountListClose">&times;</button>
+                        <fieldset class="rv-fieldset">
+                            <legend class="rv-legend">Select Account(s)</legend>
+                            <div class="aa-table-container1">
+                                <table id="installmentAccountListTable">
+                                    <thead><tr><th></th><th>Sno</th><th>Account Name</th><th>Account Alias</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <div id="installmentAccountPagination" class="cr-pagination" aria-live="polite"></div>
+                            <input type="text" id="installmentAccountSearch" class="table-search" placeholder="Search Here">
+                            <div class="aa-button-row">
+                                <button type="submit" class="copy-button">Ok</button>
+                                <button type="button" id="installmentAccountSelectAll" class="edit-button">Select All</button>
+                                <button type="button" id="installmentAccountUnselectAll" class="export-button">Unselect All</button>
+                                <button type="button" id="installmentAccountCancel" class="delete-button">Cancel</button>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+
                 <div id="installmentValuesMainDiv" style="display: none;">
                     <button id="installmentValuesMainClo">&times;</button>
                     <form id="installmentValuesMainForm">
@@ -9779,7 +9863,7 @@ async function loadEarningsData() {
                                 <th>Installment</th>
                                 <th>Interest</th>
                                 <th>Total</th>
-                                <th>LastSavedDate</th>
+                                <th>Last Transaction Date</th>
                                 <th>Collector</th>
                             </thead>
                             <tbody></tbody>
@@ -9787,6 +9871,90 @@ async function loadEarningsData() {
                         <button type="button">Ok</button>
                         <button id="installmentValuesMainCan">Cancel</button>
                     </form>
+                </div>
+
+                <!-- Last Transaction Register -->
+                <div class="movableDiv" id="movableDiv1301" style="display: none;">
+                    <button type="button" id="closeButton1301">&times;</button>
+                    <div class="isr-container">
+                        <form id="myFormLastTransaction">
+                            <fieldset class="isr-fieldset">
+                                <legend class="isr-legend">Last Transaction Register</legend>
+                                <div class="isr-form-style-horizontal3">
+                                    <div>
+                                        <label for="lastTransactionDateFrom">Date From</label>
+                                        <input type="date" class="start-date-local" id="lastTransactionDateFrom" name="lastTransactionDateFrom" required>
+                                    </div>
+                                    <div>
+                                        <label for="lastTransactionDateTo">Date To</label>
+                                        <input type="date" class="end-date-local" id="lastTransactionDateTo" name="lastTransactionDateTo" required>
+                                    </div>
+                                </div>
+                                <fieldset>
+                                    <div class="isr-checkbox-grid">
+                                        <div>
+                                            <input type="checkbox" id="LastTransAccountTypeCB" class="isr-checkbox">
+                                            <label for="LastTransAccountTypeCB">Select All Account Type</label>
+                                        </div>
+                                        <div>
+                                            <input type="checkbox" id="LastTransAccountCB" class="isr-checkbox">
+                                            <label for="LastTransAccountCB">Select All Account</label>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <div class="isr-button-row">
+                                    <button type="submit" class="isr-button">Ok</button>
+                                    <button type="button" class="isr-button" id="cancelButton1301">Cancel</button>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="lastTransAccountTypeDiv" style="display: none;">
+                    <form id="lastTransAccountTypeForm">
+                        <button type="button" id="lastTransTypeClose">&times;</button>
+                        <fieldset class="rpr1-fieldset">
+                            <legend class="isr-legend">Select Account Type(s)</legend>
+                            <div class="rpr-table-container1"><table id="lastTransTypeTable"><thead><tr><th></th><th>Sno</th><th>Account Types</th><th>Account Alias</th></tr></thead><tbody></tbody></table></div>
+                            <div id="lastTransTypePagination" class="cr-pagination" aria-live="polite"></div>
+                            <input type="text" id="lastTransTypeSearch" class="table-search" placeholder="Search Here">
+                            <div class="aa-button-row">
+                                <button type="submit" class="copy-button">Ok</button>
+                                <button type="button" id="lastTransTypeSelectAll" class="edit-button">Select All</button>
+                                <button type="button" id="lastTransTypeUnselectAll" class="export-button">Unselect All</button>
+                                <button type="button" id="lastTransTypeCancel" class="delete-button">Cancel</button>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+
+                <div id="lastTransAccountDiv" style="display: none;">
+                    <form id="lastTransAccountForm">
+                        <button type="button" id="lastTransAccountClose">&times;</button>
+                        <fieldset class="rv-fieldset">
+                            <legend class="rv-legend">Select Account(s)</legend>
+                            <div class="aa-table-container1"><table id="lastTransAccountTable"><thead><tr><th></th><th>Sno</th><th>Account Name</th><th>Account Alias</th></tr></thead><tbody></tbody></table></div>
+                            <div id="lastTransAccountPagination" class="cr-pagination" aria-live="polite"></div>
+                            <input type="text" id="lastTransAccountSearch" class="table-search" placeholder="Search Here">
+                            <div class="aa-button-row">
+                                <button type="submit" class="copy-button">Ok</button>
+                                <button type="button" id="lastTransAccountSelectAll" class="edit-button">Select All</button>
+                                <button type="button" id="lastTransAccountUnselectAll" class="export-button">Unselect All</button>
+                                <button type="button" id="lastTransAccountCancel" class="delete-button">Cancel</button>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+
+                <div id="lastTransResultDiv" style="display: none;">
+                    <button type="button" id="lastTransResultClose">&times;</button>
+                    <div class="rpr-table-container1">
+                        <table id="lastTransResultTable">
+                            <thead><tr><th>S.No</th><th>Member ID</th><th>Account Type</th><th>Account Number</th><th>Name</th><th>Contact No</th><th>Last Transaction Date</th><th>Principal (Balance)</th><th>Interest (Balance)</th><th>Principal (Received Till Date)</th><th>Interest (Received Till Date)</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!--Clone Database Structure-->
@@ -48277,150 +48445,6 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                         });
                     </script>
 
-                    <script>
-                        document.addEventListener('DOMContentLoaded', () => {
-                            const mainInstallmentScheForm = document.getElementById('myForm78');
-                            const InsaccounttypeCB = document.getElementById('InsaccounttypeCB');
-                            const InsaccountnameCB = document.getElementById('InsaccountnameCB');
-                            const installmentValuesMainDiv = document.getElementById('installmentValuesMainDiv');
-                            const installmentValuesMainForm = document.getElementById('installmentValuesMainForm');
-                            const closeButtons = [
-
-                                { buttonId: 'installmentValuesMainClo', div: installmentValuesMainDiv },
-                                { buttonId: 'installmentValuesMainCan', div: installmentValuesMainDiv },
-
-
-                            ];
-
-                            closeButtons.forEach(({ buttonId, div }) => {
-                                document.getElementById(buttonId).addEventListener('click', function (e) {
-                                    e.preventDefault();
-                                    div.style.display = 'none';
-                                });
-                            });
-                            let highestZIndex = 3;
-                            const bringToFront = el => { highestZIndex += 1; el.style.zIndex = highestZIndex; };
-
-                            /* === DO NOT EDIT ANYTHING INSIDE THIS FUNCTION === */
-                            const makeDivMovable = div => {
-                                let isDragging = false;
-                                let offsetX, offsetY;
-
-                                div.addEventListener('mousedown', e => {
-                                    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-                                    e.preventDefault();
-                                    bringToFront(div);
-
-                                    const { left, top } = div.getBoundingClientRect();
-                                    offsetX = e.clientX - left;
-                                    offsetY = e.clientY - top;
-                                    isDragging = true;
-                                });
-
-                                document.addEventListener('mousemove', e => {
-                                    if (!isDragging) return;
-                                    div.style.position = 'absolute';
-                                    div.style.left = `${e.pageX - offsetX}px`;
-                                    div.style.top = `${e.pageY - offsetY}px`;
-                                });
-
-                                document.addEventListener('mouseup', () => { isDragging = false; });
-                            };
-                            [installmentValuesMainDiv].forEach(makeDivMovable);
-
-                            mainInstallmentScheForm.addEventListener('submit', async e => {
-                                e.preventDefault();
-
-                                const installmentDateFrom = document.getElementById('installmentDateFrom').value;
-                                const installmentDateTo = document.getElementById('installmentDateTo').value;
-
-                                if (InsaccounttypeCB.checked && InsaccountnameCB.checked) {
-                                    try {
-                                        const response = await fetch("/fetch-installmentScheduleAll-data", {
-                                            method: "POST",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ installmentDateFrom, installmentDateTo })
-                                        });
-
-                                        const result = await response.json();
-                                        const data = result.data || result;
-
-                                        const tableColMain = document.querySelector("#insValuesMainTab tbody");
-
-                                        // Clear old rows
-                                        tableColMain.innerHTML = "";
-
-                                        // --------------- ADD TOTAL VARIABLES -----------------
-                                        let totalPrincipal = 0;
-                                        let totalInterest = 0;
-                                        let grandTotal = 0;
-
-                                        data.forEach((row, index) => {
-                                            // Convert to numbers safely
-                                            const principal = Number(row.Principal) || 0;
-                                            const interest = Number(row.Interest) || 0;
-                                            const total = Number(row.Total) || 0;
-
-                                            // Add to totals
-                                            totalPrincipal += principal;
-                                            totalInterest += interest;
-                                            grandTotal += total;
-
-                                            // Insert row
-                                            const tableRow = `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${row.EMIDate || ""}</td>
-                        <td>${row.GLName || ""}</td>
-                        <td>${row.SLName || ""}</td>
-                        <td>${row.SlAlias || ""}</td>
-                        <td>${row.Phone1 || ""}</td>
-                        <td>${row.Mobile || ""}</td>
-                        <td></td>
-                        <td>${principal}</td>
-                        <td>${interest}</td>
-                        <td>${total}</td>
-                        <td></td>
-                        <td>${row.CollectorName || ""}</td>
-                    </tr>
-                `;
-
-                                            tableColMain.insertAdjacentHTML("beforeend", tableRow);
-                                        });
-
-                                        // --------------- ADD TOTAL ROW AT BOTTOM -----------------
-                                        const formatNumber = (num) => {
-                                            return Number(num).toLocaleString("en-US", {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2
-                                            });
-                                        };
-
-                                        const totalRow = `
-    <tr style="font-weight:bold; background:#f0f0f0;">
-        <td colspan="8" style="text-align:right;">TOTAL :</td>
-        <td>${formatNumber(totalPrincipal)}</td>
-        <td>${formatNumber(totalInterest)}</td>
-        <td>${formatNumber(grandTotal)}</td>
-        <td colspan="2"></td>
-    </tr>
-`;
-
-                                        tableColMain.insertAdjacentHTML("beforeend", totalRow);
-
-                                    } catch (error) {
-                                        console.error("Error fetching installment schedule:", error);
-                                    }
-
-                                    installmentValuesMainDiv.style.display = 'block';
-                                }
-                            });
-
-                        });
-                    </script>
-
-
-
 
                     <script>
                         document.addEventListener('DOMContentLoaded', function () {
@@ -49099,7 +49123,10 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/GenerateNextVoucherNumber.js"></script>
                     <script src="/js/master-window.js"></script>
                     <script src="/js/BooksCollectorReport.js"></script>
-                    <script src="/js/FinancialReportNarrationLedger.js"></script>
+                    <script src="/js/BooksReportNarrationLedger.js"></script>
+                    <script src="/js/BooksChartOfAccount.js"></script>
+                    <script src="/js/BooksInstallmentScheduleRegister.js"></script>
+                    <script src="/js/BooksLastTransactionRegister.js"></script>
                     <script>
                         document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {
                             event.preventDefault();
