@@ -6017,56 +6017,58 @@
                     </div>
                 </div>
 
-                <!--Narration Ledger-->
-                <div class="movableDiv" id="movableDiv42">
-                    <button id="closeButton42">&times;</button>
-                    <div class="nl-container">
-                        <form action="" id="myForm42">
-                            <fieldset class="nl-fieldset">
-                                <legend class="nl-legend">Narration Ledger</legend>
-                                <div class="nl-form-style-horizontal3">
-                                    <div>
-                                        <label for="date-from">Date From</label>
-                                        <input type="date" class="start-date-local" id="issue-date-from"
-                                            name="NLDateFrom">
-                                    </div>
-                                    <div>
-                                        <label for="date-to">Date To</label>
-                                        <input type="date" class="end-date-local" id="NLDateTo" name="date-to">
-                                    </div>
-                                </div>
-                                <div class="nl-checkbox-grid">
-                                    <div>
-                                        <input type="checkbox" name="NLSummaryOnly" id="select-all-account">
-                                        <label for="select-all-account">Summary Only</label>
-                                    </div>
+                <!-- Narration Ledger -->
+<div class="movableDiv" id="movableDiv42">
+    <button type="button" id="closeButton42" aria-label="Close">&times;</button>
 
-                                    <div>
-                                        <input type="checkbox" name="NLSelectAll" id="select-all" class="nl-checkbox ">
-                                        <label for="select-all">Select All</label>
-                                    </div>
+    <div class="nl-container">
+        <form id="myForm42" novalidate>
+            <fieldset class="nl-fieldset">
+                <legend class="nl-legend">Narration Ledger</legend>
 
-                                    <div>
-                                        <input type="checkbox" name="NLPostedOnly" id="posted-only"
-                                            class="nl-checkbox ">
-                                        <label for="posted-only">Posted Only</label>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label for="filter-only">Filter Only</label>
-                                    <input type="text" id="filter-only" name="NLFilterOnly" class="nl-text">
-                                </div>
-
-                                <div class="cbb-button-row">
-                                    <button type="submit" class="cbb-button">Ok</button>
-                                    <button type="button" class="cbb-button" id="cancelButton42">Cancel</button>
-                                </div>
-                            </fieldset>
-                        </form>
-                        <div id="narrationSummaryResult" class="nl-result-container"></div>
+                <div class="nl-form-style-horizontal3">
+                    <div>
+                        <label for="nl-date-from">Date From</label>
+                        <input type="date" id="nl-date-from" name="NLDateFrom"
+                               class="start-date-local" required>
+                    </div>
+                    <div>
+                        <label for="nl-date-to">Date To</label>
+                        <input type="date" id="nl-date-to" name="NLDateTo"
+                               class="end-date-local" required>
                     </div>
                 </div>
+
+                <div class="nl-checkbox-grid">
+                    <div>
+                        <input type="checkbox" id="nl-summary-only" name="NLSummaryOnly" class="nl-checkbox">
+                        <label for="nl-summary-only">Summary Only</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="nl-select-all" name="NLSelectAll" class="nl-checkbox">
+                        <label for="nl-select-all">Select All</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="nl-posted-only" name="NLPostedOnly" class="nl-checkbox">
+                        <label for="nl-posted-only">Posted Only</label>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="nl-filter-only">Filter Only</label>
+                    <input type="text" id="nl-filter-only" name="NLFilterOnly" class="nl-text">
+                </div>
+
+                <div class="cbb-button-row">
+                    <button type="submit" class="cbb-button">Ok</button>
+                    <button type="button" class="cbb-button" id="cancelButton42">Cancel</button>
+                </div>
+            </fieldset>
+        </form>
+
+        <div id="narrationSummaryResult" class="nl-result-container" aria-live="polite"></div>
+    </div>
+</div>
 
                 <!--New Interest Setting-->
                 <div class="movableDiv" id="movableDiv44">

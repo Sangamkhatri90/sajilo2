@@ -34700,177 +34700,104 @@ app.get('/api/nextVoucher/:udvNo', async (req, res) => {
 
 
 
-app.post('/api/narrationSummary', (req, res) => {
+const run = (conn, q, params = []) =>
+    new Promise((resolve, reject) =>
+        sql.query(conn, q, params, (err, rows) => (err ? reject(err) : resolve(rows)))
+    );
+
+// '2081-04-01' or '2081/04/01' -> '20810401'
+const toKey = d => String(d).replace(/\D/g, '');
+
+app.post('/api/narrationSummary', async (req, res) => {
     const conn = req.session.conn;
-    const { fromDate, toDate, postedOnly } = req.body;
+    const { fromDate, toDate, postedOnly, filterOnly } = req.body;
 
     if (!conn) {
-        return res.status(440).json({
-            success: false,
-            error: "Database session not found"
-        });
+        return res.status(401).json({ success: false, error: 'Database session not found' });
     }
-
     if (!fromDate || !toDate) {
-        return res.status(400).json({
-            success: false,
-            error: "From Date and To Date are required"
-        });
+        return res.status(400).json({ success: false, error: 'From Date and To Date are required' });
     }
 
-    const dateTypeQuery = `
-        SELECT TOP 1 DateType
-        FROM tbSystemSettings
-    `;
-
-    sql.query(conn, dateTypeQuery, (err, result) => {
-        if (err) {
-            console.error("Narration Summary DateType Error:", err);
-            return res.status(500).json({
-                success: false,
-                error: "Failed to get DateType"
-            });
+    try {
+        const settings = await run(conn, 'SELECT TOP 1 DateType FROM tbSystemSettings');
+        if (!settings?.length) {
+            return res.status(500).json({ success: false, error: 'DateType settings not found' });
         }
 
-        if (!result || result.length === 0) {
-            return res.status(500).json({
-                success: false,
-                error: "DateType settings not found"
-            });
-        }
+        const isLD = settings[0].DateType === 'LD';
+        const params = [];
+        let join = '';
+        let where = `ISNULL(JM.IsTrashed, 0) = 0 AND NULLIF(LTRIM(RTRIM(JM.Remarks)), '') IS NOT NULL`;
 
-        const DateType = result[0].DateType;
+        if (isLD) {
+            // JV_Miti is YYYY/MM/DD, LD.M_Miti is DD/MM/YYYY -> normalise both to YYYYMMDD
+            join = `
+                LEFT JOIN SAJILODB.dbo.tbLocalDate LD
+                    ON CAST(JM.JV_Date AS DATE) = CAST(LD.M_date AS DATE)
+                CROSS APPLY (
+                    SELECT COALESCE(NULLIF(LTRIM(RTRIM(JM.JV_Miti)), ''), LD.M_Miti) AS Miti
+                ) X`;
 
-        let dateCondition;
-        let dateParams = [];
+            where += `
+                AND CASE
+                      WHEN X.Miti LIKE '__/__/____'
+                           THEN RIGHT(X.Miti, 4) + SUBSTRING(X.Miti, 4, 2) + LEFT(X.Miti, 2)
+                      ELSE REPLACE(REPLACE(X.Miti, '-', ''), '/', '')
+                    END BETWEEN ? AND ?`;
 
-        // ================= LD DATE =================
-        if (DateType === 'LD') {
-
-            dateCondition = `
-                COALESCE(
-                    NULLIF(LTRIM(RTRIM(JM.JV_Miti)), ''),
-                    LD.M_Miti
-                ) BETWEEN ? AND ?
-            `;
-
-            dateParams = [fromDate, toDate];
-
-        // ================= AD DATE =================
+            params.push(toKey(fromDate), toKey(toDate));
         } else {
-
-            const from = formatADDate(fromDate);
-            const to = formatADDate(toDate);
-
-            dateCondition = `
-                JM.JV_Date >= ?
-                AND JM.JV_Date < DATEADD(DAY, 1, ?)
-            `;
-
-            dateParams = [from, to];
+            where += ' AND JM.JV_Date >= ? AND JM.JV_Date < DATEADD(DAY, 1, ?)';
+            params.push(formatADDate(fromDate), formatADDate(toDate));
         }
 
-        // ================= POSTED FILTER =================
-        let postedCondition = '';
-
-        if (
-            postedOnly === true ||
-            postedOnly === 'true' ||
-            postedOnly === 'on'
-        ) {
-            postedCondition = `
-                AND JM.PostDate IS NOT NULL
-                AND JM.PostUserID IS NOT NULL
-            `;
+        if (postedOnly === true) {
+            where += ' AND JM.PostDate IS NOT NULL AND JM.PostUserID IS NOT NULL';
         }
 
-        // ================= FINAL QUERY =================
-        const query = `
+        const filter = (filterOnly || '').trim();
+        if (filter) {
+            where += ' AND JM.Remarks LIKE ?';
+            params.push(`%${filter}%`);
+        }
+
+        const rows = await run(conn, `
             SELECT
-                JM.Remarks AS Particular,
-
-                COUNT(DISTINCT JM.JournalID) AS Number,
-
-                SUM(ISNULL(JD.DrAmount, 0)) AS Debit,
-
-                SUM(ISNULL(JD.CrAmount, 0)) AS Credit
-
+                LTRIM(RTRIM(JM.Remarks))        AS Particular,
+                COUNT(DISTINCT JM.JournalID)    AS Number,
+                SUM(ISNULL(JD.DrAmount, 0))     AS Debit,
+                SUM(ISNULL(JD.CrAmount, 0))     AS Credit
             FROM tbJournalMaster JM
+            INNER JOIN tbJournalDetails JD ON JM.JournalID = JD.JournalID
+            ${join}
+            WHERE ${where}
+            GROUP BY LTRIM(RTRIM(JM.Remarks))
+            ORDER BY LTRIM(RTRIM(JM.Remarks))
+        `, params);
 
-            INNER JOIN tbJournalDetails JD
-                ON JM.JournalID = JD.JournalID
+        const data = rows.map((r, i) => ({
+            SNO: i + 1,
+            Particular: r.Particular,
+            Number: Number(r.Number),
+            Debit: Number(r.Debit || 0),
+            Credit: Number(r.Credit || 0)
+        }));
 
-            LEFT JOIN SAJILODB.dbo.tbLocalDate LD
-                ON CAST(JM.JV_Date AS DATE) =
-                   CAST(LD.M_date AS DATE)
+        const total = data.reduce(
+            (t, r) => ({
+                Number: t.Number + r.Number,
+                Debit: t.Debit + r.Debit,
+                Credit: t.Credit + r.Credit
+            }),
+            { Number: 0, Debit: 0, Credit: 0 }
+        );
 
-            WHERE
-                ${dateCondition}
-
-                ${postedCondition}
-
-                AND ISNULL(JM.IsTrashed, 0) = 0
-
-                AND NULLIF(
-                    LTRIM(RTRIM(JM.Remarks)), ''
-                ) IS NOT NULL
-
-            GROUP BY
-                JM.Remarks
-
-            ORDER BY
-                JM.Remarks;
-        `;
-
-        sql.query(conn, query, dateParams, (err, rows) => {
-
-            if (err) {
-                console.error("Narration Summary Query Error:", err);
-
-                return res.status(500).json({
-                    success: false,
-                    error: "Unable to fetch Narration Summary"
-                });
-            }
-
-            const finalOutput = rows.map((row, index) => ({
-                SNO: index + 1,
-                Particular: row.Particular,
-                Number: Number(row.Number),
-                Debit: Number(row.Debit || 0),
-                Credit: Number(row.Credit || 0),
-                Balance: ''
-            }));
-
-            // ================= TOTALS =================
-            const total = finalOutput.reduce((acc, row) => {
-                acc.Number += row.Number;
-                acc.Debit += row.Debit;
-                acc.Credit += row.Credit;
-
-                return acc;
-            }, {
-                Number: 0,
-                Debit: 0,
-                Credit: 0
-            });
-
-            console.log("NARRATION SUMMARY →", {
-                DateType,
-                fromDate,
-                toDate,
-                postedOnly,
-                totalRows: finalOutput.length,
-                total
-            });
-
-            return res.json({
-                success: true,
-                data: finalOutput,
-                total
-            });
-        });
-    });
+        res.json({ success: true, data, total });
+    } catch (err) {
+        console.error('Narration Summary Error:', err);
+        res.status(500).json({ success: false, error: 'Unable to fetch Narration Summary' });
+    }
 });
 
 

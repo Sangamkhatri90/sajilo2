@@ -10,24 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const fromDate = document.getElementById('issue-date-from').value;
-        const toDate = document.getElementById('NLDateTo').value;
+        const { NLDateFrom, NLDateTo, NLSummaryOnly, NLSelectAll, NLPostedOnly, NLFilterOnly } = form.elements;
 
-        const summaryOnly = form.querySelector(
-            '[name="NLSummaryOnly"]'
-        ).checked;
-
-        const selectAll = form.querySelector(
-            '[name="NLSelectAll"]'
-        ).checked;
-
-        const postedOnly = form.querySelector(
-            '[name="NLPostedOnly"]'
-        ).checked;
-
-        const filterOnly = form.querySelector(
-            '[name="NLFilterOnly"]'
-        ).value.trim();
+const fromDate    = NLDateFrom.value;
+const toDate      = NLDateTo.value;
+const summaryOnly = NLSummaryOnly.checked;
+const selectAll   = NLSelectAll.checked;
+const postedOnly  = NLPostedOnly.checked;
+const filterOnly  = NLFilterOnly.value.trim();
 
         if (!fromDate || !toDate) {
             alert('Please select both From Date and To Date.');
