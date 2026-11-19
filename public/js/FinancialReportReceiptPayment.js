@@ -1,7 +1,6 @@
 //js/FinancialReportReceiptPayment.js
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (id) => document.getElementById(id);
-  const excel = { ledgers: null };   // optional
 
   const num = (v) => Number(v) || 0;
   const fmt = (n) => num(n).toFixed(2);
@@ -40,28 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
    [nPanel, ["NormalformatSubGroupcrossbtn", "NormalformatSubGrpOKbtn"]]]
     .forEach(([panel, ids]) => ids.forEach((id) =>
       $(id)?.addEventListener("click", () => { if (panel) panel.style.display = "none"; })));
-
-  // ---------- optional Excel (ledger sheet only) ----------
-  $("selectFileBtninFRRandP").addEventListener("click", () => $("excelFileInputinFRRandP").click());
-
-  $("excelFileInputinFRRandP").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const wb = XLSX.read(ev.target.result, { type: "array" });
-      const ws = wb.Sheets["TbLedgderMaster"];
-      if (!ws) return showCustomAlert("Sheet 'TbLedgderMaster' not found.");
-      excel.ledgers = XLSX.utils.sheet_to_json(ws).map((r) => ({
-        particular: r.GLName || "",
-        alias: r.GlAlias || "",
-        openingDebit: num(r.OpeningBalanceDr),
-        openingCredit: num(r.OpeningBalanceCr),
-      }));
-      showCustomAlert("Excel loaded. It is used only for opening balances the database can't provide.");
-    };
-    reader.readAsArrayBuffer(file);
-  });
 
   // ---------- generic section renderer ----------
   // rows: [{ particular, alias, cells: [{ text, add }] }], one cell per amount column
@@ -182,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
       res = await fetch("/api/receiptPayment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fromDate: from, toDate: to, excelLedgers: excel.ledgers }),
+        body: JSON.stringify({ fromDate: from, toDate: to }),
       });
     } catch {
       return showCustomAlert("Network error while loading data.");

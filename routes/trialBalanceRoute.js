@@ -9,7 +9,7 @@ module.exports = function registerTrialBalance(app, sql) {
       return res.status(401).json({ error: 'Not connected to a database session.' });
     }
 
-    let { fromDate, toDate, excelLedgers, excelSubledgers } = req.body ?? {};
+    let { fromDate, toDate } = req.body ?? {};
 
     if (!fromDate || !toDate) {
       return res.status(400).json({ error: 'fromDate and toDate are required.' });
@@ -33,8 +33,6 @@ module.exports = function registerTrialBalance(app, sql) {
         fromDate,
         toDate,
         isAD,
-        excelLedgers: excelLedgers ?? [],
-        excelSubledgers: excelSubledgers ?? [],
       });
 
       res.json(result);

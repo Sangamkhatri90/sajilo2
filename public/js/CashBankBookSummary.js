@@ -32,6 +32,16 @@ document.addEventListener("DOMContentLoaded", () => {
   if (missing.length) return console.error("Cash/Bank Book: missing element(s):", missing.join(", "));
 
   const closePanel = () => { panel.style.display = "none"; nPanel.style.display = "none"; };
+  const setResultHeading = (heading, ledger, fromDate, toDate) => {
+    heading.textContent = "Cash/Bank Book Summary of ";
+    const ledgerName = document.createElement("span");
+    ledgerName.className = "cbb-result-ledger";
+    ledgerName.textContent = `'${ledger}'`;
+    const range = document.createElement("span");
+    range.className = "cbb-result-date-range";
+    range.textContent = `From ${fromDate} - To ${toDate}`;
+    heading.append(ledgerName, range);
+  };
   [panel, nPanel].forEach((resultPanel) => {
     const header = resultPanel.querySelector(".cbb-summary-only-header");
     let dragState = null;
@@ -115,15 +125,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cbUser.checked) openUserList();
     else { selectedUser = ""; userSel.textContent = ""; userPanel.style.display = "none"; }
   });
-    async function loadDetail() {
+    async function loadDetail(fromDate, toDate) {
     let res;
     try {
       res = await fetch("/api/cashBankBookDetail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fromDate: from.value,
-          toDate: to.value,
+          fromDate,
+          toDate,
           ledgerName: ledgerInput.value.trim(),
           docClassName: docInput.value.trim(),
           userName: cbUser.checked ? selectedUser : "",
@@ -141,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const data = await res.json();
-    nTitle.textContent = data.ledger;
+    setResultHeading(nTitle, data.ledger, fromDate, toDate);
 
     const right = 'style="text-align:right"';
     const row = (sn, date, vno, part, rec, pay, balTxt, cls = "") =>
@@ -191,13 +201,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- submit ----------
   form.addEventListener("submit", async () => {
+    const fromDate = from.value;
+    const toDate = to.value;
     closePanel();
     if (!ledgerInput.value.trim()) return showCustomAlert("Please select a Cash/Bank ledger.");
     if (!from.value || !to.value) return showCustomAlert("Please provide both From and To dates.");
     if (cbUser.checked && !selectedUser) return showCustomAlert("Please select a user.");
 
     if (cbNarrT.checked || cbNarrM.checked) {
-      return loadDetail();
+      return loadDetail(fromDate, toDate);
     }
     
 
@@ -207,8 +219,8 @@ document.addEventListener("DOMContentLoaded", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fromDate: from.value,
-          toDate: to.value,
+          fromDate,
+          toDate,
           ledgerName: ledgerInput.value.trim(),
           docClassName: docInput.value.trim(),
           userName: cbUser.checked ? selectedUser : "",
@@ -221,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const { ledger, rows } = await res.json();
-    title.textContent = ledger;
+    setResultHeading(title, ledger, fromDate, toDate);
 
     let tr = 0, tp = 0;
     const right = 'style="text-align:right"';

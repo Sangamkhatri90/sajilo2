@@ -9,7 +9,6 @@ module.exports = function registerBankReconciliation(app, sql) {
   const d = createJournalDates(sql);
   const { queryAsync, norm, num } = d;
 
-  const key = (v) => norm(v).toLowerCase();
   const r2 = (n) => Math.round(n * 100) / 100;
 
   const fmtDate = (v) => {
@@ -159,20 +158,6 @@ module.exports = function registerBankReconciliation(app, sql) {
       : [bounds.fromMiti, bounds.fromAD];
   }
 
-  // Check whether this particular ledger has historical DB opening data.
-  async function hasOpeningHistory(conn, isAD, glid, bounds) {
-    const rows = await queryAsync(conn, `
-      SELECT TOP 1 1 AS x
-      FROM dbo.tbJournalMaster m
-      INNER JOIN dbo.tbJournalDetails d
-        ON d.JournalID = m.JournalID
-      WHERE d.GLID = ?
-        AND ${openingDateCondition(isAD)}
-    `, [glid, ...openingDateParams(isAD, bounds)]);
-
-    return rows.length > 0;
-  }
-
   // Calculate cumulative opening balance from database history.
   async function openingTotals(conn, isAD, glid, bounds) {
     const rows = await queryAsync(conn, `
@@ -198,7 +183,6 @@ module.exports = function registerBankReconciliation(app, sql) {
     toDate,
     isAD,
     showSubLedger,
-    excelLedgers = [],
   }) {
     // 1. Bank ledger
     const ledger = (await queryAsync(conn, `
@@ -215,31 +199,10 @@ module.exports = function registerBankReconciliation(app, sql) {
     // 2. Get both AD and Miti representations of the period.
     const bounds = await getDateBounds(conn, isAD, fromDate, toDate);
 
-    // 3. Opening balance: cumulative DB history or Excel fallback.
-    const hasHistory = await hasOpeningHistory(
+    // 3. Opening balance from cumulative database history.
+    const opening = await openingTotals(
       conn, isAD, ledger.GLID, bounds
     );
-
-    const openingFromExcel = !hasHistory;
-
-    let opening = { dr: 0, cr: 0 };
-
-    if (openingFromExcel) {
-      const ex = excelLedgers.find(
-        (e) => key(e.particular) === key(ledger.GLName)
-      );
-
-      if (ex) {
-        opening = {
-          dr: num(ex.openingDebit),
-          cr: num(ex.openingCredit),
-        };
-      }
-    } else {
-      opening = await openingTotals(
-        conn, isAD, ledger.GLID, bounds
-      );
-    }
 
     // 4. Selected period totals.
     const period = await ledgerTotals(
@@ -319,9 +282,7 @@ module.exports = function registerBankReconciliation(app, sql) {
       totalCr: r2(opening.cr + period.cr),
       addRows,
       lessRows,
-      meta: {
-        openingFromExcel,
-      },
+      meta: {},
     };
   }
 
@@ -338,7 +299,6 @@ module.exports = function registerBankReconciliation(app, sql) {
       fromDate,
       toDate,
       showSubLedger,
-      excelLedgers,
     } = req.body ?? {};
 
     if (!norm(bankBookName) || !fromDate || !toDate) {
@@ -368,7 +328,6 @@ module.exports = function registerBankReconciliation(app, sql) {
         toDate,
         isAD,
         showSubLedger: !!showSubLedger,
-        excelLedgers: excelLedgers ?? [],
       });
 
       if (result.notFound) {

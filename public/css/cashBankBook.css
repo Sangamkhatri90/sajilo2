@@ -130,13 +130,16 @@
 /* Summary-only result panel */
 .cbb-summary-only-result {
   position: fixed;
-  top: 12vh;
+  top: 5vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10001;
   width: min(1000px, calc(100vw - 32px));
-  max-height: calc(100vh - 24vh);
+  max-height: 90vh;
+  box-sizing: border-box;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border: 1px solid #7aa7c7;
   border-radius: 8px;
@@ -161,9 +164,27 @@
 }
 
 .cbb-summary-only-header h2 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 6px;
   margin: 0;
   color: #004d80;
   font-size: 18px;
+  line-height: 1.25;
+}
+
+.cbb-result-ledger {
+  color: #39718f;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.cbb-result-date-range {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .cbb-summary-only-close {
@@ -191,9 +212,11 @@
 
 #cbb-data-summaryonlydiv2,
 #cbb-data-normal2div {
-  max-height: calc(100vh - 220px);
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: calc(90vh - 130px);
   overflow: auto;
-  padding: 12px 14px;
+  padding: 0 14px 12px;
 }
 
 #cbb-data-summaryonlytable,
@@ -201,6 +224,7 @@
   width: 100%;
   min-width: 650px;
   border-collapse: collapse;
+  border-spacing: 0;
   color: #222;
   font-size: 12px;
 }
@@ -223,7 +247,8 @@
   text-align: center;
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
+  box-shadow: 0 1px 0 #b8d0e2;
 }
 
 #cbb-data-summaryonlytable th:first-child,
@@ -244,18 +269,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+#cbb-data-summaryonlytable .rp-grand td,
+#cbb-data-normaltable tbody tr:last-child td {
+  font-weight: 700;
+}
+
 .cbb-summary-only-result .cbb-data-button-row {
   display: flex;
-  justify-content: flex-end;
+  flex: 0 0 auto;
+  justify-content: center;
   gap: 8px;
-  padding: 10px 14px;
+  padding: 6px 14px;
   margin: 0;
   border-top: 1px solid #b8d0e2;
   background: #f4f9fc;
 }
 
-.cbb-summary-only-result #books-cbbdata-OKbtnSO {
-  background: #0b62e4;
+.cbb-summary-only-result #books-cbbdata-OKbtnSO,
+.cbb-summary-only-result #books-cbbdata-OKbtn {
+  background: #198754;
   max-width: none;
 }
 
@@ -268,7 +300,7 @@
 
   #cbb-data-summaryonlydiv2,
   #cbb-data-normal2div {
-    max-height: calc(100vh - 150px);
+    max-height: calc(100vh - 130px);
     padding: 8px;
   }
 }

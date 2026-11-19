@@ -12,7 +12,7 @@ module.exports = function registerReceiptPayment(app, sql, computeGroupTotals, r
       return res.status(401).json({ error: 'Not connected to a database session.' });
     }
 
-    let { fromDate, toDate, excelLedgers } = req.body ?? {};
+    let { fromDate, toDate } = req.body ?? {};
     if (!fromDate || !toDate) {
       return res.status(400).json({ error: 'fromDate and toDate are required.' });
     }
@@ -29,7 +29,7 @@ module.exports = function registerReceiptPayment(app, sql, computeGroupTotals, r
         return res.status(400).json({ error: `Dates must be ${isAD ? 'YYYY-MM-DD' : 'YYYY/MM/DD'}.` });
       }
 
-      // Period starts after all DB data -> nothing to show, no Excel fallback
+      // Period starts after all DB data -> nothing to show.
      if (fromDate > toDate) {
   return res.status(400).json({
     error: 'From date cannot be greater than To date.',
@@ -40,7 +40,6 @@ module.exports = function registerReceiptPayment(app, sql, computeGroupTotals, r
         fromDate,
         toDate,
         isAD,
-        excelLedgers: excelLedgers ?? [],
       });
 
       const openingBalance = [];

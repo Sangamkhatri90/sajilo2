@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (id) => document.getElementById(id);
-  const excel = { ledgers: null, subledgers: null };   // both optional
   const dateStorageKey = "groupSummaryDates";
   const savedDates = JSON.parse(sessionStorage.getItem(dateStorageKey) || "{}");
   ["FR-GS-datefrom", "FR-GS-dateto"].forEach((id) => {
@@ -66,33 +65,6 @@ document.addEventListener("DOMContentLoaded", () => {
   [["GScloseButton", panels.group], ["GSScloseButton", panels.sub],
    ["fr-gsMaindtXbtn", panels.result], ["fr-gsMaindtOkbtn", panels.result]]
     .forEach(([id, el]) => $(id)?.addEventListener("click", (e) => { e.preventDefault(); hide(el); }));
-
-  // ---------- optional Excel (both sheets optional) ----------
-  $("selectFileBtninGS").addEventListener("click", () => $("excelFileInputinGS").click());
-
-  $("excelFileInputinGS").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const wb = XLSX.read(ev.target.result, { type: "array" });
-      const read = (sheet, nameCol, aliasCol) => {
-        const ws = wb.Sheets[sheet];
-        if (!ws) return null;
-        return XLSX.utils.sheet_to_json(ws).map((r) => ({
-          particular: r[nameCol] || "",
-          alias: r[aliasCol] || "",
-          openingDebit: num(r.OpeningBalanceDr),
-          openingCredit: num(r.OpeningBalanceCr),
-        }));
-      };
-      excel.ledgers = read("TbLedgderMaster", "GLName", "GlAlias");
-      excel.subledgers = read("TbSubledgerMaster", "SLName", "SlAlias");
-      if (!excel.ledgers && !excel.subledgers) return showCustomAlert("Neither expected sheet was found.");
-      showCustomAlert("Excel loaded. It is used only for opening balances the database can't provide.");
-    };
-    reader.readAsArrayBuffer(file);
-  });
 
   // ---------- render ----------
   function render(rows, o) {
@@ -165,8 +137,6 @@ document.addEventListener("DOMContentLoaded", () => {
       includeOpening: o.includeOpening,
       subledger: o.subledger && !o.summaryOnly,
       ...scope,         // { subGroupIds } or { ledgerIds }, empty = everything
-      excelLedgers: excel.ledgers,
-      excelSubledgers: o.subledger ? excel.subledgers : null,
     };
     
     let res;

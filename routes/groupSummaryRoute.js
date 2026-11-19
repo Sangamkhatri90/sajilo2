@@ -9,7 +9,6 @@ module.exports = function registerGroupSummary(app, sql) {
   const d = createJournalDates(sql);
   const { queryAsync, norm, num } = d;
 
-  const key = (v) => norm(v).toLowerCase();
   const ZERO = { dr: 0, cr: 0 };
 
   const net = (open, period) =>
@@ -19,21 +18,6 @@ module.exports = function registerGroupSummary(app, sql) {
     (Array.isArray(arr) && arr.length
       ? new Set(arr.map(String))
       : null);
-
-  const excelOpening = (e) =>
-    (e
-      ? {
-          dr: num(e.openingDebit),
-          cr: num(e.openingCredit)
-        }
-      : ZERO);
-
-  const mapBy = (list, field) =>
-    new Map(
-      list
-        .filter((e) => key(e[field]))
-        .map((e) => [key(e[field]), e])
-    );
 
   // --------------------------------------------------
   // DATE CONVERSION HELPERS
@@ -203,8 +187,6 @@ module.exports = function registerGroupSummary(app, sql) {
     subledger,
     subGroupIds,
     ledgerIds,
-    excelLedgers = [],
-    excelSubledgers = [],
   }) {
 
     // 1. Period starts after all DB data -> nothing to show.
@@ -217,8 +199,7 @@ module.exports = function registerGroupSummary(app, sql) {
       };
     }
 
-    // 2. Opening: cumulative DB history per GLID,
-    // otherwise Excel fallback per ledger.
+    // 2. Opening: cumulative DB history per GLID.
     let dbOpening = new Map();
     let dbOpeningSub = new Map();
 
@@ -294,30 +275,10 @@ ORDER BY
           : true
     );
 
-    const excelLedgerByName = mapBy(
-      excelLedgers,
-      'particular'
-    );
-
-    let anyOpeningFromExcel = false;
-
     const rows = ledgers.map((l) => {
-
-      // 5. Decide opening source separately for each ledger.
-      const ledgerOpeningFromExcel =
-        includeOpening && !dbOpening.has(l.GLID);
-
-      if (ledgerOpeningFromExcel) {
-        anyOpeningFromExcel = true;
-      }
-
       const open = !includeOpening
         ? ZERO
-        : ledgerOpeningFromExcel
-          ? excelOpening(
-              excelLedgerByName.get(key(l.GLName))
-            )
-          : dbOpening.get(l.GLID) ?? ZERO;
+        : dbOpening.get(l.GLID) ?? ZERO;
 
       const period = dbPeriod.get(l.GLID) ?? ZERO;
 
@@ -349,16 +310,6 @@ ORDER BY
         rows.map((r) => [r.glid, r])
       );
 
-      const excelSubByAlias = mapBy(
-        excelSubledgers,
-        'alias'
-      );
-
-      const excelSubByName = mapBy(
-        excelSubledgers,
-        'particular'
-      );
-
       const slMaster = await queryAsync(conn, `
         SELECT
           SLID,
@@ -381,16 +332,7 @@ ORDER BY
 
         if (includeOpening) {
 
-          // Use the same opening source as the parent ledger.
-          const parentOpeningFromExcel =
-            !dbOpening.has(s.GLID);
-
-          open = parentOpeningFromExcel
-            ? excelOpening(
-                excelSubByAlias.get(key(s.SLAlias)) ??
-                excelSubByName.get(key(s.SLName))
-              )
-            : dbOpeningSub.get(k) ?? ZERO;
+          open = dbOpeningSub.get(k) ?? ZERO;
         }
 
         // Skip subledgers with no movement and no opening.
@@ -416,9 +358,7 @@ ORDER BY
 
     return {
       rows,
-      meta: {
-        openingFromExcel: anyOpeningFromExcel
-      }
+      meta: {}
     };
   }
 
@@ -441,8 +381,6 @@ ORDER BY
       subledger,
       subGroupIds,
       ledgerIds,
-      excelLedgers,
-      excelSubledgers,
     } = req.body ?? {};
 
     if (!fromDate || !toDate) {
@@ -477,8 +415,6 @@ ORDER BY
         subledger: !!subledger,
         subGroupIds,
         ledgerIds,
-        excelLedgers: excelLedgers ?? [],
-        excelSubledgers: excelSubledgers ?? [],
       });
 
       console.info('[groupSummary] response summary', {

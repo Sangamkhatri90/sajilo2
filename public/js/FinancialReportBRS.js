@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (id) => document.getElementById(id);
-  const excel = { ledgers: null };   // optional
 
   const num = (v) => Number(v) || 0;
   const fmt = (n) => num(n).toFixed(2);
@@ -47,28 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
     link.download = "table_data.csv";
     link.click();
     URL.revokeObjectURL(link.href);
-  });
-
-  // ---------- optional Excel (ledger sheet only) ----------
-  $("selectFileBtninFRBRS").addEventListener("click", () => $("excelFileInputinFRBRS").click());
-
-  $("excelFileInputinFRBRS").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const wb = XLSX.read(ev.target.result, { type: "array" });
-      const ws = wb.Sheets["TbLedgderMaster"];
-      if (!ws) return showCustomAlert("Sheet 'TbLedgderMaster' not found.");
-      excel.ledgers = XLSX.utils.sheet_to_json(ws).map((r) => ({
-        particular: r.GLName || "",
-        alias: r.GlAlias || "",
-        openingDebit: num(r.OpeningBalanceDr),
-        openingCredit: num(r.OpeningBalanceCr),
-      }));
-      showCustomAlert("Excel loaded. It is used only for opening balances the database can't provide.");
-    };
-    reader.readAsArrayBuffer(file);
   });
 
   // ---------- render ----------
@@ -128,7 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
           fromDate: from,   // server normalizes AD/LD format
           toDate: to,
           showSubLedger: $("show-sub-ledger").checked,
-          excelLedgers: excel.ledgers,
         }),
       });
     } catch {

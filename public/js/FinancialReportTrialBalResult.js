@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (id) => document.getElementById(id);
-  const excel = { ledgers: null, subledgers: null };   // both optional
 
   const FIELDS = ["openingDebit", "openingCredit", "periodDebit", "periodCredit", "balanceDebit", "balanceCredit"];
   const fmt = (n) => (Number(n) || 0).toFixed(2);
@@ -40,33 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
    ["trial_balance_subgroup",  ["trial_balance_cancelbtn",  "trial_balance_closebtn",  "trial_balance_okbutton"]]]
     .forEach(([panel, btns]) => btns.forEach((b) =>
       $(b)?.addEventListener("click", () => { if ($(panel)) $(panel).style.display = "none"; })));
-
-  // ---------- optional Excel ----------
-  $("selectFileBtn").addEventListener("click", () => $("excelFileInput").click());
-
-  $("excelFileInput").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const wb = XLSX.read(ev.target.result, { type: "array" });
-      const read = (sheet, nameCol, aliasCol) => {
-        const ws = wb.Sheets[sheet];
-        if (!ws) return null;
-        return XLSX.utils.sheet_to_json(ws).map((r) => ({
-          particular: r[nameCol] || "",
-          alias: r[aliasCol] || "",
-          openingDebit: parseFloat(r.OpeningBalanceDr || 0) || 0,
-          openingCredit: parseFloat(r.OpeningBalanceCr || 0) || 0,
-        }));
-      };
-      excel.ledgers = read("TbLedgderMaster", "GLName", "GlAlias");
-      excel.subledgers = read("TbSubledgerMaster", "SLName", "SlAlias");
-      if (!excel.ledgers && !excel.subledgers) return showCustomAlert("Neither expected sheet was found.");
-      showCustomAlert("Excel loaded. It is used only for opening balances the database can't provide.");
-    };
-    reader.readAsArrayBuffer(file);
-  });
 
   // ---------- layout: rows -> display items ----------
   function buildLayout(rows, o) {
@@ -164,8 +136,6 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({
           fromDate: from,   // server normalizes AD/BS format
           toDate: to,
-          excelLedgers: excel.ledgers,
-          excelSubledgers: opts.subledger ? excel.subledgers : null,
         }),
       });
     } catch {
@@ -181,8 +151,6 @@ document.addEventListener("DOMContentLoaded", () => {
       render([], []);
       return showCustomAlert("No data available for the selected period.");
     }
-    if (meta?.skippedSubledgers) showCustomAlert("Some Excel subledgers didn't match the database and were skipped.");
-
     const keep = (r) => opts.showzerobal || !isZero(r);
     const visible = rows.filter(keep).map((r) => ({ ...r, subledgers: r.subledgers.filter(keep) }));
     render(buildLayout(visible, opts), visible);

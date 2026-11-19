@@ -10,7 +10,7 @@ module.exports = function registerDivisionReport(app, sql) {
       return res.status(401).json({ error: 'Not connected to a database session.' });
     }
 
-    const { fromDate: f, toDate: t, excelLedgers } = req.body ?? {};
+    const { fromDate: f, toDate: t } = req.body ?? {};
     if (!f || !t) {
       return res.status(400).json({ error: 'fromDate and toDate are required.' });
     }
@@ -31,7 +31,6 @@ module.exports = function registerDivisionReport(app, sql) {
         fromDate,
         toDate,
         isAD,
-        excelLedgers: excelLedgers ?? [],
       });
 
       if (meta?.noData) return res.json([]);
