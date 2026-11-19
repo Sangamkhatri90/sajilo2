@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ledgerName.textContent = `'${ledger}'`;
     const range = document.createElement("span");
     range.className = "cbb-result-date-range";
-    range.textContent = `From ${fromDate} - To ${toDate}`;
+    range.textContent = `From ${fromDate} To ${toDate}`;
     heading.append(ledgerName, range);
   };
   [panel, nPanel].forEach((resultPanel) => {

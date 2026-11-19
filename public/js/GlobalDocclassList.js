@@ -97,7 +97,7 @@
         }
 
         function positionJournalVoucherDocClassSearchList(inputId, listId, listElement) {
-            if (listId === 'docClassesListforJournalVoucherSearch') return;
+            if (listId === 'docClassesListforJournalVoucherSearch' || listId === 'docClassesListforBooksCBB') return;
             const input = document.getElementById(inputId);
             const searchPanel = document.getElementById('jv-search');
             if (!input || !searchPanel) return;

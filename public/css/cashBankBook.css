@@ -32,6 +32,62 @@
   flex: 1;
   min-width: 120px; /* Reduced min-width for narrower fields */
 }
+
+#movableDiv11 .cbb-form-style-horizontal3 .cbb-suggestion-field {
+  flex: 1 1 0;
+  min-width: 120px;
+  position: relative;
+  overflow: visible;
+}
+
+#movableDiv11 #bankNamesListBCBB,
+#movableDiv11 #docClassesListforBooksCBB {
+  box-sizing: border-box;
+  top: calc(100% + 2px) !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: 0 !important;
+  width: auto !important;
+  transform: none !important;
+  min-width: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10000;
+  padding-top: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#movableDiv11 #bankNamesListBCBB > button,
+#movableDiv11 #docClassesListforBooksCBB > button {
+  position: sticky;
+  top: 0;
+  display: block;
+  margin-left: auto;
+  z-index: 1;
+  min-width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: #dc3545;
+  color: #fff;
+  cursor: pointer;
+  line-height: 22px;
+}
+
+#movableDiv11 #bankNamesListBCBB > div,
+#movableDiv11 #docClassesListforBooksCBB > div {
+  padding: 6px 8px;
+  border-bottom: 1px solid #d6d6d6;
+  cursor: pointer;
+}
+
+#movableDiv11 #bankNamesListBCBB > div:last-child,
+#movableDiv11 #docClassesListforBooksCBB > div:last-child {
+  border-bottom: 0;
+}
   
 .cbb-form-style-horizontal3 input[type="date"]{
   width: 100%;    
@@ -170,20 +226,20 @@
   gap: 0 6px;
   margin: 0;
   color: #004d80;
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.25;
 }
 
 .cbb-result-ledger {
-  color: #39718f;
+  color: #198754;
   font-size: 15px;
   font-weight: 600;
 }
 
 .cbb-result-date-range {
-  margin-left: auto;
-  font-size: 13px;
-  font-weight: 500;
+  margin-left: 340px;
+  font-size: 12px;
+  font-weight: bold;
   white-space: nowrap;
 }
 
