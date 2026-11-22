@@ -2,6 +2,39 @@
     width: 475px;
 }
 
+#journalBookReport {
+  position: fixed;
+  z-index: 10001;
+  top: 8%;
+  left: 10%;
+  width: 80vw;
+  max-height: 84vh;
+  overflow: auto;
+  padding: 12px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+}
+
+#journalBookReportTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#journalBookReportTable th,
+#journalBookReportTable td {
+  border: 1px solid #777;
+  padding: 6px;
+}
+
+#journalBookReportTable .jb-total-row,
+#journalBookReportTable .jb-grand-total-row {
+  font-weight: bold;
+}
+
+#journalBookReportTable .jb-grand-total-row {
+  border-top: 2px solid #222;
+}
+
 .jb-container {
     padding: 8px;
     max-width: 470px;

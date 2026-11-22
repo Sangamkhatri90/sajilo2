@@ -25168,6 +25168,92 @@ app.post("/search-journal-voucher", async (req, res) => {
 // Selected Journal Voucher actions (used by the Journal Voucher Master grid).
 // The lookup also supports rows rendered by an older cached search script that
 // does not yet include data-journal-id.
+app.post('/api/books/journal-book/entries', async (req, res) => {
+  const udvNos = [...new Set((Array.isArray(req.body?.udvNos) ? req.body.udvNos : [])
+    .map(value => Number.parseInt(value, 10))
+    .filter(Number.isInteger))];
+  const page = Math.max(1, Number.parseInt(req.body?.page, 10) || 1);
+  const pageSize = Math.min(500, Math.max(1, Number.parseInt(req.body?.pageSize, 10) || 200));
+  const startDate = req.body?.startDate;
+  const endDate = req.body?.endDate;
+  if (!req.session.conn) return res.status(400).json({ success: false, message: 'Database connection is unavailable.' });
+  if (!udvNos.length) return res.status(400).json({ success: false, message: 'Select at least one voucher type.' });
+  const dateKey = value => String(value || '').replace(/\D/g, '');
+  const fromKey = dateKey(startDate);
+  const toKey = dateKey(endDate);
+  if (!/^\d{8}$/.test(fromKey) || !/^\d{8}$/.test(toKey)) {
+    return res.status(400).json({ success: false, message: 'Enter both dates in the system date format.' });
+  }
+  if (fromKey > toKey) {
+    return res.status(400).json({ success: false, message: 'Date From must be on or before Date To.' });
+  }
+
+  try {
+    const settings = await sql.promises.query(req.session.conn, 'SELECT TOP 1 DateType FROM dbo.tbSystemSettings');
+    if (!settings.length) return res.status(500).json({ success: false, message: 'DateType settings not found.' });
+    const isLD = String(settings[0].DateType || 'AD').trim().toUpperCase() === 'LD';
+    const dateJoin = isLD ? `OUTER APPLY (
+      SELECT MIN(RIGHT(M_Miti, 4) + SUBSTRING(M_Miti, 4, 2) + LEFT(M_Miti, 2)) AS MitiKey
+      FROM SAJILODB.dbo.tbLocalDate
+      WHERE CONVERT(date, M_date) = CONVERT(date, m.JV_Date)
+    ) ld` : '';
+    const dateExpression = isLD
+      ? `CASE
+          WHEN NULLIF(LTRIM(RTRIM(m.JV_Miti)), '') IS NOT NULL
+            THEN REPLACE(REPLACE(LTRIM(RTRIM(m.JV_Miti)), '/', ''), '-', '')
+          ELSE ld.MitiKey
+        END`
+      : `CONVERT(CHAR(8), m.JV_Date, 112)`;
+    const where = [`m.UDVNo IN (${udvNos.map(() => '?').join(', ')})`];
+    const params = [...udvNos, fromKey, toKey];
+    where.push(`${dateExpression} BETWEEN ? AND ?`);
+    const whereSql = where.join(' AND ');
+    const fromSql = `dbo.tbJournalMaster m ${dateJoin}`;
+    const [countRows, rows] = await Promise.all([
+      sql.promises.query(req.session.conn, `SELECT COUNT(*) AS totalRows FROM ${fromSql} WHERE ${whereSql}`, params),
+      sql.promises.query(req.session.conn, `
+        SELECT m.JournalID, m.VoucherNo, CONVERT(varchar(10), m.JV_Date, 23) AS JV_Date,
+               m.JV_Miti, m.Remarks, u.MenuName
+        FROM ${fromSql}
+        LEFT JOIN dbo.tbUserDefinedVoucher u ON u.UDVNo = m.UDVNo
+        WHERE ${whereSql}
+        ORDER BY m.JV_Date, m.JournalID
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`, [...params, (page - 1) * pageSize, pageSize])
+    ]);
+    res.json({ success: true, rows, totalRows: countRows[0]?.totalRows || 0, page, pageSize });
+  } catch (error) {
+    console.error('Journal Book entries load failed:', error);
+    res.status(500).json({ success: false, message: 'Unable to load Journal Book vouchers.' });
+  }
+});
+
+app.post('/api/books/journal-book/report', async (req, res) => {
+  const journalIDs = [...new Set((Array.isArray(req.body?.journalIDs) ? req.body.journalIDs : [])
+    .map(value => Number.parseInt(value, 10))
+    .filter(value => Number.isInteger(value) && value > 0))];
+  if (!req.session.conn) return res.status(400).json({ success: false, message: 'Database connection is unavailable.' });
+  if (!journalIDs.length) return res.status(400).json({ success: false, message: 'Select at least one voucher entry.' });
+  if (journalIDs.length > 5000) return res.status(400).json({ success: false, message: 'Too many voucher entries selected.' });
+
+  try {
+    const placeholders = journalIDs.map(() => '?').join(', ');
+    const rows = await sql.promises.query(req.session.conn, `
+      SELECT m.JournalID, m.VoucherNo,
+             CASE WHEN UPPER(ISNULL((SELECT TOP 1 DateType FROM dbo.tbSystemSettings), 'AD')) = 'LD'
+               THEN m.JV_Miti ELSE CONVERT(varchar(10), m.JV_Date, 23) END AS ReportDate,
+             d.SNo, l.GLName AS Particular, ISNULL(d.DrAmount, 0) AS Debit, ISNULL(d.CrAmount, 0) AS Credit
+      FROM dbo.tbJournalMaster m
+      INNER JOIN dbo.tbJournalDetails d ON d.JournalID = m.JournalID
+      LEFT JOIN dbo.tbLedgerMaster l ON l.GLID = d.GLID
+      WHERE m.JournalID IN (${placeholders})
+      ORDER BY m.JV_Date, m.JournalID, d.SNo`, journalIDs);
+    res.json({ success: true, rows });
+  } catch (error) {
+    console.error('Journal Book report load failed:', error);
+    res.status(500).json({ success: false, message: 'Unable to load Journal Book report.' });
+  }
+});
+
 app.get('/api/journal-vouchers/lookup', async (req, res) => {
   const voucherNo = String(req.query.voucherNo || '').trim();
   if (!req.session.conn || !voucherNo) return res.status(400).json({ success: false, message: 'Voucher number is required.' });

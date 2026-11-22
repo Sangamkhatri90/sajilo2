@@ -9119,26 +9119,7 @@ async function loadEarningsData() {
                                             name="select-all-doc">Select
                                         All
                                     </legend>
-                                    <div class="jb-checkbox-grid">
-                                        <div>
-                                            <input type="checkbox" id="auto-journal" name="group2" class="jb-checkbox">
-                                            <label for="auto-journal">Auto Journal</label>
-                                        </div>
-                                        <div>
-                                            <input type="checkbox" id="goshwara-voucher" name="group2"
-                                                class="jb-checkbox">
-                                            <label for="goshwara-voucher">Goshwara Voucher</label>
-                                        </div>
-                                        <div>
-                                            <input type="checkbox" id="karobar" name="group2" class="jb-checkbox">
-                                            <label for="karobar">Karobar</label>
-                                        </div>
-                                        <div>
-                                            <input type="checkbox" id="prapti-voucher" name="group2"
-                                                class="jb-checkbox">
-                                            <label for="prapti-voucher">Prapti Voucher</label>
-                                        </div>
-                                    </div>
+                                    <div class="jb-checkbox-grid" id="journalBookVoucherList"></div>
                                 </fieldset>
                                 <div class="jb-form-style-horizontal3">
                                     <div>
@@ -9159,8 +9140,50 @@ async function loadEarningsData() {
 
                             </fieldset>
                         </form>
+                        <div class="movableDiv" id="journalBookEntryList" style="display: none;">
+                            <button type="button" id="journalBookEntryCloseButton">&times;</button>
+                            <fieldset class="jb-fieldset">
+                                <legend>Vouchers</legend>
+                                <div class="jb-checkbox-grid" style="display: block; overflow-x: auto;">
+                                    <table id="journalBookEntryTable">
+                                        <thead>
+                                            <tr><th></th><th>S.N</th><th>Voucher No.</th><th>Date</th><th>Miti</th></tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <div id="journalBookEntryPagination" class="cr-pagination" aria-live="polite"></div>
+                                <div class="jb-button-row">
+                                    <button type="button" class="jb-button" id="journalBookEntrySelectAll">Select All</button>
+                                    <button type="button" class="jb-button" id="journalBookEntryUnselectAll">Unselect All</button>
+                                    <button type="button" class="jb-button" id="journalBookEntryOk">Ok</button>
+                                    <button type="button" class="jb-button" id="journalBookEntryPattern">Pattern</button>
+                                    <button type="button" class="jb-button" id="journalBookEntryCancel">Cancel</button>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div class="movableDiv" id="journalBookReport" style="display: none;">
+                            <button type="button" id="journalBookReportClose">&times;</button>
+                            <fieldset class="jb-fieldset">
+                                <legend class="jb-legend">Journal Book</legend>
+                                <div style="overflow-x: auto;">
+                                    <table id="journalBookReportTable" class="highlight-table">
+                                        <thead>
+                                            <tr><th>S.No</th><th>Date</th><th>Voucher No.</th><th>Particular</th><th>Debit</th><th>Credit</th></tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <div class="jb-button-row">
+                                    <button type="button" class="jb-button" id="journalBookReportOk">Ok</button>
+                                    <button type="button" class="jb-button" id="journalBookReportPrint">Print</button>
+                                    <button type="button" class="jb-button" id="journalBookReportExport">Export</button>
+                                </div>
+                            </fieldset>
+                        </div>
                     </div>
                 </div>
+                
 
                 <!--Change Password-->
                 <div class="movableDiv" id="movableDiv74">
