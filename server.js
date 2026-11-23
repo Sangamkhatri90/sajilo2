@@ -107,6 +107,7 @@ require('./routes/cashBankBookRoute')(app, sql,);
 require('./routes/cashBankBookDetailRoute')(app, sql);
 const chequeRegisterRoutes = require("./routes/chequeRegisterRoutes");
 app.use("/", chequeRegisterRoutes({ sql, connectionString }));
+require('./routes/pearlsRoute')(app, sql);
 // Route to handle login
 
 app.get("/index", async (req, res) => {

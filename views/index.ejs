@@ -6579,7 +6579,7 @@
                     </div>
                 </div>
 
-                <!--Pearls-->
+                <!-- Financail Report Pearls-->
                 <div class="movableDiv report-div" id="movableDiv48" data-report-name="PEARLS">
                     <button id="closeButton48">&times;</button>
                     <div class="p-container">
@@ -6607,220 +6607,35 @@
                         </form>
                     </div>
                 </div>
-
                 <div id="pearlsreportDiv" style="display: none;">
-                    <button value='button'>X</button>
-                    <fieldset>
-
-
-
-
-
-
-
-                        <table border="1"
-                            style="border-collapse: collapse; width: 100%; text-align: center; margin-top:20px;">
-                            <thead>
-                                <tr style="background: #f0f0f0;">
-                                    <th>Code</th>
-                                    <th>Indicator</th>
-                                    <th>Numerator</th>
-                                    <th>Denominator</th>
-                                    <th>Formula</th>
-                                    <th>Result (%)</th>
-                                    <th>Target (%)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Existing P rows (unchanged) -->
-                                <tr>
-                                    <td>P1</td>
-                                    <td>Allowance for Loan Losses / Delinquent Loans &gt; 12 months</td>
-                                    <td id="p1_numerator">--</td>
-                                    <td id="p1_denominator">--</td>
-                                    <td>(Numerator ÷ Denominator) × 100</td>
-                                    <td id="p1_result">--</td>
-                                    <td>100%</td>
-                                </tr>
-                                <tr>
-                                    <td>P2</td>
-                                    <td>Allowance for Loan Losses / Delinquent Loans 1–12 months</td>
-                                    <td id="p2_numerator">--</td>
-                                    <td id="p2_denominator">--</td>
-                                    <td>(Numerator ÷ Denominator) × 100</td>
-                                    <td id="p2_result">--</td>
-                                    <td>35%</td>
-                                </tr>
-                                <tr>
-                                    <td>P3</td>
-                                    <td>Total Allowance for Loan Losses / Total Delinquent Loans</td>
-                                    <td id="p3_numerator">--</td>
-                                    <td id="p3_denominator">--</td>
-                                    <td>(Numerator ÷ Denominator) × 100</td>
-                                    <td id="p3_result">--</td>
-                                    <td>100%</td>
-                                </tr>
-
-                                <!-- New E section rows -->
-                                <tr style="background:#e0f7fa;">
-                                    <td>E1</td>
-                                    <td>Total Expenses / Total Income</td>
-                                    <td id="e1_numerator">--</td>
-                                    <td id="e1_denominator">--</td>
-                                    <td>(Numerator ÷ Denominator) × 100</td>
-                                    <td id="e1_result">--</td>
-                                    <td>&lt; 100%</td>
-                                </tr>
-                                <tr style="background:#e0f7fa;">
-                                    <td>E2</td>
-                                    <td>Net Institutional Operating Income / Average Assets</td>
-                                    <td id="e2_numerator">--</td>
-                                    <td id="e2_denominator">--</td>
-                                    <td>(Numerator ÷ Denominator) × 100</td>
-                                    <td id="e2_result">--</td>
-                                    <td>&gt; 5%</td>
-                                </tr>
-                                <tr style="background:#e0f7fa;">
-                                    <td>E3</td>
-                                    <td>Net Income / Average Assets</td>
-                                    <td id="e3_numerator">--</td>
-                                    <td id="e3_denominator">--</td>
-                                    <td>(Numerator ÷ Denominator) × 100</td>
-                                    <td id="e3_result">--</td>
-                                    <td>&gt; 10%</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </fieldset>
-
-                    <div id='pearlsreportDivbtns'>
-                        <button type="button">Ok</button>
-                        <button type="button">Print</button>
-                        <button type="button">Export</button>
-                    </div>
-                </div>
-
-                <!--
-
-<script>
-    document.getElementById('myForm48').addEventListener('submit', async function (event) {
-            event.preventDefault();
-async function loadProtectionData() {
-  try {
-    const response = await fetch('/api/pearls/protection2');
-    if (!response.ok) throw new Error('Failed to fetch protection data');
-
-    const data = await response.json();
-    const raw = data.raw;
-
-    // Numerators = total allowance
-    const numerator = raw.totalAllowance;
-
-    // P section
-    document.getElementById('p1_numerator').textContent = numerator.toFixed(2);
-    document.getElementById('p1_denominator').textContent = (raw.Over12Months || 0).toFixed(2);
-    document.getElementById('p1_result').textContent = data.P1.toFixed(2) + '%';
-
-    document.getElementById('p2_numerator').textContent = numerator.toFixed(2);
-    document.getElementById('p2_denominator').textContent = (raw.Between1And12Months || 0).toFixed(2);
-    document.getElementById('p2_result').textContent = data.P2.toFixed(2) + '%';
-
-    document.getElementById('p3_numerator').textContent = numerator.toFixed(2);
-    document.getElementById('p3_denominator').textContent = (raw.TotalDelinquent || 0).toFixed(2);
-    document.getElementById('p3_result').textContent = data.P3.toFixed(2) + '%';
-
-
-
-    
-    console.log('Protection data loaded:', data);
-  } catch (err) {
-    console.error(err);
-    alert('Error loading protection data');
-  }
-}
-
-async function loadEarningsData() {
-  try {
-    const response = await fetch('/api/getExpenditureSection');
-    if (!response.ok) throw new Error('Failed to fetch earnings data');
-
-    const data = await response.json();
-    const raw = data.raw;
-
-    // E1: Total Expenses / Total Income
-    document.getElementById('e1_numerator').textContent = raw.TotalExpenses.toFixed(2);
-    document.getElementById('e1_denominator').textContent = raw.TotalIncome.toFixed(2);
-    document.getElementById('e1_result').textContent = data.E1.toFixed(2) + '%';
-
-    // E2: Net Institutional Operating Income / Average Assets
-    document.getElementById('e2_numerator').textContent = raw.NetOperatingIncome.toFixed(2);
-    document.getElementById('e2_denominator').textContent = raw.AverageAssets.toFixed(2);
-    document.getElementById('e2_result').textContent = data.E2.toFixed(2) + '%';
-
-    // E3: Net Income / Average Assets
-    document.getElementById('e3_numerator').textContent = raw.NetIncome.toFixed(2);
-    document.getElementById('e3_denominator').textContent = raw.AverageAssets.toFixed(2);
-    document.getElementById('e3_result').textContent = data.E3.toFixed(2) + '%';
-
-    console.log('Earnings data loaded:', data);
-  } catch (err) {
-    console.error(err);
-    alert('Error loading earnings data');
-  }
-}
-
-
-    loadProtectionData();
-    loadEarningsData()
-});
-</script>
--->
-                <script>
-                    document.getElementById('myForm48').addEventListener('submit', async function (event) {
-                        event.preventDefault();
-
-                        try {
-                            const response = await fetch('/api/pearls/protectionANDExpenditureSection'); // single backend call
-                            if (!response.ok) throw new Error('Failed to fetch PEARLS data');
-
-                            const data = await response.json();
-                            const raw = data.raw;
-
-                            // -----------------------------
-                            // P SECTION (uses P1, P2, P3)
-                            // -----------------------------
-                            const numerator = raw.totalAllowance;
-
-                            document.getElementById('p1_numerator').textContent = numerator.toFixed(2);
-                            document.getElementById('p1_denominator').textContent = (raw.Over12Months || 0).toFixed(2);
-                            document.getElementById('p1_result').textContent = data.P1.toFixed(2) + '%';
-
-                            document.getElementById('p2_numerator').textContent = numerator.toFixed(2);
-                            document.getElementById('p2_denominator').textContent = (raw.Between1And12Months || 0).toFixed(2);
-                            document.getElementById('p2_result').textContent = data.P2.toFixed(2) + '%';
-
-                            document.getElementById('p3_numerator').textContent = numerator.toFixed(2);
-                            document.getElementById('p3_denominator').textContent = (raw.TotalDelinquent || 0).toFixed(2);
-                            document.getElementById('p3_result').textContent = data.P3.toFixed(2) + '%';
-
-                            // -----------------------------
-                            // E SECTION (so far only E1)
-                            // -----------------------------
-                            document.getElementById('e1_numerator').textContent = raw.TotalLoan.toFixed(2);
-                            document.getElementById('e1_denominator').textContent = (data.E.TotalAssets || 0).toFixed(2);
-                            document.getElementById('e1_result').textContent = data.E.E1.toFixed(2) + '%';
-
-                            console.log('PEARLS data loaded:', data);
-                            // **Make the table visible**
-                            document.getElementById('pearlsreportDiv').style.display = 'block';
-
-
-                        } catch (err) {
-                            console.error(err);
-                            alert('Error loading PEARLS data');
-                        }
-                    });
-                </script>
+  <button type="button" id="pearlsCloseBtn">X</button>
+  <fieldset>
+    <legend id="pearlsReportTitle">PEARLS Report</legend>
+    <table border="1" id="pearls-data-table"
+           style="border-collapse: collapse; width: 100%; margin-top:20px;">
+      <thead>
+        <tr style="background: #f0f0f0;">
+          <th>Indicator</th>
+          <th>Standard</th>
+          <th>Numerator</th>
+          <th>Denominator</th>
+          <th>Result (%)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="pearlsQualityBox" style="display:none; margin-top:12px;">
+      <strong>Data-quality notes</strong>
+      <ul id="pearlsQualityList"></ul>
+    </div>
+  </fieldset>
+  <div id="pearlsreportDivbtns">
+    <button type="button" id="pearlsOkBtn">Ok</button>
+    <button type="button" id="pearlsPrintBtn">Print</button>
+    <button type="button" id="pearlsExportBtn">Export</button>
+  </div>
+</div>
+              
 
 
 
@@ -47300,6 +47115,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/BooksChartOfAccount.js"></script>
                     <script src="/js/BooksInstallmentScheduleRegister.js"></script>
                     <script src="/js/BooksLastTransactionRegister.js"></script>
+                    <script src="/js/FinancialReportPearls.js"></script>
                     <script>
                         document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {
                             event.preventDefault();
