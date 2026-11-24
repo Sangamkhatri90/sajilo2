@@ -25177,6 +25177,11 @@ app.post('/api/books/journal-book/entries', async (req, res) => {
   const pageSize = Math.min(500, Math.max(1, Number.parseInt(req.body?.pageSize, 10) || 200));
   const startDate = req.body?.startDate;
   const endDate = req.body?.endDate;
+  const entryType = ['provisional', 'permanent'].includes(req.body?.entryType) ? req.body.entryType : 'both';
+  const posting = ['posted', 'unposted'].includes(req.body?.posting) ? req.body.posting : 'both';
+  const docClassName = String(req.body?.docClassName ?? '').trim();
+  const voucherNo = String(req.body?.voucherNo ?? '').trim();
+
   if (!req.session.conn) return res.status(400).json({ success: false, message: 'Database connection is unavailable.' });
   if (!udvNos.length) return res.status(400).json({ success: false, message: 'Select at least one voucher type.' });
   const dateKey = value => String(value || '').replace(/\D/g, '');
@@ -25205,9 +25210,37 @@ app.post('/api/books/journal-book/entries', async (req, res) => {
           ELSE ld.MitiKey
         END`
       : `CONVERT(CHAR(8), m.JV_Date, 112)`;
+
+    // where[] and params[] are pushed in the same order
     const where = [`m.UDVNo IN (${udvNos.map(() => '?').join(', ')})`];
     const params = [...udvNos, fromKey, toKey];
     where.push(`${dateExpression} BETWEEN ? AND ?`);
+
+    // Entry type: Prov = 1 is provisional
+    if (entryType === 'provisional') where.push('ISNULL(m.Prov, 0) = 1');
+    if (entryType === 'permanent') where.push('ISNULL(m.Prov, 0) = 0');
+
+    // Posting: posted means PostDate is filled
+    if (posting === 'posted') where.push('m.PostDate IS NOT NULL');
+    if (posting === 'unposted') where.push('m.PostDate IS NULL');
+
+    // Doc class: name -> DocClassID
+    if (docClassName) {
+      const dc = await sql.promises.query(req.session.conn,
+        'SELECT TOP 1 DocClassID FROM dbo.tbDocClassMaster WHERE DocClassName = ?', [docClassName]);
+      if (!dc.length) {
+        return res.status(400).json({ success: false, message: `Doc class "${docClassName}" not found.` });
+      }
+      where.push('m.DocClassID = ?');
+      params.push(dc[0].DocClassID);
+    }
+
+    // Voucher no: contains match, with LIKE wildcards escaped
+    if (voucherNo) {
+      where.push(`m.VoucherNo LIKE ? ESCAPE '!'`);
+      params.push(`%${voucherNo.replace(/[!%_\[]/g, '!$&')}%`);
+    }
+
     const whereSql = where.join(' AND ');
     const fromSql = `dbo.tbJournalMaster m ${dateJoin}`;
     const [countRows, rows] = await Promise.all([
@@ -25239,15 +25272,21 @@ app.post('/api/books/journal-book/report', async (req, res) => {
   try {
     const placeholders = journalIDs.map(() => '?').join(', ');
     const rows = await sql.promises.query(req.session.conn, `
-      SELECT m.JournalID, m.VoucherNo,
-             CASE WHEN UPPER(ISNULL((SELECT TOP 1 DateType FROM dbo.tbSystemSettings), 'AD')) = 'LD'
-               THEN m.JV_Miti ELSE CONVERT(varchar(10), m.JV_Date, 23) END AS ReportDate,
-             d.SNo, l.GLName AS Particular, ISNULL(d.DrAmount, 0) AS Debit, ISNULL(d.CrAmount, 0) AS Credit
+      SELECT m.JournalID, m.VoucherNo, rd.ReportDate, m.Remarks,
+             d.SNo, d.SLID, d.Narration, d.ChequeNo,
+             l.GLName AS Particular,
+             RTRIM(LTRIM(s.SLName)) AS SLName, RTRIM(LTRIM(s.SlAlias)) AS SlAlias,
+             ISNULL(d.DrAmount, 0) AS Debit, ISNULL(d.CrAmount, 0) AS Credit
       FROM dbo.tbJournalMaster m
+      CROSS APPLY (
+        SELECT CASE WHEN UPPER(ISNULL((SELECT TOP 1 DateType FROM dbo.tbSystemSettings), 'AD')) = 'LD'
+                 THEN m.JV_Miti ELSE CONVERT(varchar(10), m.JV_Date, 23) END AS ReportDate
+      ) rd
       INNER JOIN dbo.tbJournalDetails d ON d.JournalID = m.JournalID
       LEFT JOIN dbo.tbLedgerMaster l ON l.GLID = d.GLID
+      LEFT JOIN dbo.tbSubLedgerMaster s ON s.SLID = d.SLID AND d.SLID <> 0
       WHERE m.JournalID IN (${placeholders})
-      ORDER BY m.JV_Date, m.JournalID, d.SNo`, journalIDs);
+      ORDER BY rd.ReportDate, m.JournalID, d.SNo`, journalIDs);
     res.json({ success: true, rows });
   } catch (error) {
     console.error('Journal Book report load failed:', error);

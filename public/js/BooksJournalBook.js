@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     let pageSize = 200;
     let totalRows = 0;
+    let activeFilters = {};          // filters captured when Ok is pressed, reused while paging
 
     fetch('/fetchMenuNames')
         .then(response => response.json())
@@ -49,10 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <span>/ ${pageCount}</span><button type="button" data-page="next" ${currentPage >= pageCount ? 'disabled' : ''}>›</button>
             <span>${totalRows ? `${start}-${end} of ${totalRows}` : 'No results'}</span>
             <label>Rows: <select data-page-size>${[100, 200, 500].map(size => `<option value="${size}" ${size === pageSize ? 'selected' : ''}>${size}</option>`).join('')}</select></label>`;
-        pagination.querySelector('[data-page="previous"]').onclick = () => { currentPage--; loadEntries(); };
-        pagination.querySelector('[data-page="next"]').onclick = () => { currentPage++; loadEntries(); };
-        pagination.querySelector('[data-page-select]').onchange = event => { currentPage = Number(event.target.value); loadEntries(); };
-        pagination.querySelector('[data-page-size]').onchange = event => { pageSize = Number(event.target.value); currentPage = 1; loadEntries(); };
+        pagination.querySelector('[data-page="previous"]').onclick = () => { currentPage--; loadEntries().catch(error => alert(error.message)); };
+        pagination.querySelector('[data-page="next"]').onclick = () => { currentPage++; loadEntries().catch(error => alert(error.message)); };
+        pagination.querySelector('[data-page-select]').onchange = event => { currentPage = Number(event.target.value); loadEntries().catch(error => alert(error.message)); };
+        pagination.querySelector('[data-page-size]').onchange = event => { pageSize = Number(event.target.value); currentPage = 1; loadEntries().catch(error => alert(error.message)); };
     }
 
     async function loadEntries() {
@@ -63,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 udvNos: selectedUdvNos,
                 startDate: document.getElementById('booksJBDateFrom').value,
                 endDate: document.getElementById('booksJBDateTo').value,
+                ...activeFilters,
                 page: currentPage,
                 pageSize
             })
@@ -102,6 +104,13 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please select one voucher');
             return;
         }
+        // Capture the filters once, so paging keeps using what was chosen at Ok time
+        activeFilters = {
+            entryType: form.querySelector('input[name="entryType"]:checked')?.value || 'both',
+            posting: form.querySelector('input[name="posting"]:checked')?.value || 'both',
+            docClassName: (document.getElementById('doc-class-books-jb')?.value || '').trim(),
+            voucherNo: (document.getElementById('voucher-no')?.value || '').trim()
+        };
         currentPage = 1;
         selectedEntries.clear();
         loadEntries().catch(error => alert(error.message));
@@ -139,11 +148,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok || !data.success) throw new Error(data.message || 'Unable to load Journal Book report.');
 
             reportBody.replaceChildren();
-            let currentJournalID = null;
-            let voucherDebit = 0;
-            let voucherCredit = 0;
-            let grandDebit = 0;
-            let grandCredit = 0;
+
+            const checked = id => form.querySelector(`#${id}`)?.checked;
+            const showNarrT = checked('booksJBshownarrwiseTrans');
+            const showNarrM = checked('booksJBshownarrwiseMaster');
+            const showSub = checked('booksJBshowsubledger');
+            const showAlias = checked('booksJBshowalias');
+            const showCheque = checked('booksJBshowchequedetails');
+            const showDay = checked('booksJBshowdaywisebalance');
+
             const formatAmount = value => Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const addRow = (values, className = '') => {
                 const row = document.createElement('tr');
@@ -155,24 +168,59 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 reportBody.appendChild(row);
             };
+            const addText = text => addRow(['', '', '', text, '', '']);
+
+            let currentJournalID = null;
+            let currentDate = null;
+            let currentRemarks = '';
+            let voucherDebit = 0, voucherCredit = 0;
+            let dayDebit = 0, dayCredit = 0;
+            let grandDebit = 0, grandCredit = 0;
+
             const addVoucherTotal = () => {
+                if (showNarrM && currentRemarks) addText(`(Remarks:${currentRemarks} )`);
                 addRow(['', '', '', 'Total', formatAmount(voucherDebit), formatAmount(voucherCredit)], 'jb-total-row');
                 grandDebit += voucherDebit;
                 grandCredit += voucherCredit;
+                dayDebit += voucherDebit;
+                dayCredit += voucherCredit;
                 voucherDebit = 0;
                 voucherCredit = 0;
             };
+            const addDayTotal = () => {
+                if (showDay) addRow(['', '', '', 'Daily Total', formatAmount(dayDebit), formatAmount(dayCredit)], 'jb-total-row');
+                dayDebit = 0;
+                dayCredit = 0;
+            };
 
             data.rows.forEach((row, index) => {
-                if (currentJournalID !== null && currentJournalID !== row.JournalID) addVoucherTotal();
+                if (currentJournalID !== null && currentJournalID !== row.JournalID) {
+                    addVoucherTotal();
+                    if (row.ReportDate !== currentDate) addDayTotal();   // date changed
+                }
                 currentJournalID = row.JournalID;
+                currentDate = row.ReportDate;
+                currentRemarks = String(row.Remarks || '').trim();
                 const debit = Number(row.Debit || 0);
                 const credit = Number(row.Credit || 0);
                 voucherDebit += debit;
                 voucherCredit += credit;
                 addRow([String(index + 1), row.ReportDate || '', row.VoucherNo || '', row.Particular || '', formatAmount(debit), formatAmount(credit)]);
+
+                const subLedger = String(row.SLName || '').trim();
+                if (showSub && row.SLID && subLedger) {
+                    const alias = String(row.SlAlias || '').trim();
+                    addText(`SubLedger : ${showAlias && alias ? `${subLedger} (${alias})` : subLedger}`);
+                }
+                const chequeNo = String(row.ChequeNo || '').trim();
+                if (showCheque && chequeNo) addText(`Cheque No : ${chequeNo}`);
+                const narration = String(row.Narration || '').trim();
+                if (showNarrT && narration) addText(`(Narration: ${narration} )`);
             });
-            if (currentJournalID !== null) addVoucherTotal();
+            if (currentJournalID !== null) {
+                addVoucherTotal();
+                addDayTotal();                                           // last day
+            }
             addRow(['', '', '', 'Grand Total', formatAmount(grandDebit), formatAmount(grandCredit)], 'jb-grand-total-row');
             closeEntryList();
             report.style.display = 'block';
@@ -204,4 +252,3 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(link.href);
     });
 });
-  
