@@ -23437,7 +23437,7 @@ app.get("/get-account-name-intCalReg", (req, res) => {
 
   const placeholders = selectedIDs.map(() => '?').join(',');
   const query = `
-      SELECT GLID, SLName, SlAlias
+      SELECT SLID, GLID, SLName, SlAlias
       FROM tbSubLedgerMaster
       WHERE GLID IN (${placeholders})
   `;
@@ -23452,49 +23452,150 @@ app.get("/get-account-name-intCalReg", (req, res) => {
   });
 });
 
+// FIX: USAN list needs GLID
 app.get("/get-account-type-USAN-intCalReg", (req, res) => {
-  console.log('fetch')
   const conn = req.session.conn;
-
-  const query = `
-    SELECT 
-    GLName, GlAlias
-    FROM
-    tbLedgerMaster order by GLName asc
-
-`;
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("Error executing query:", err);
-      return res.status(500).send({ error: "Failed to retrieve data" });
-    }
+  sql.query(conn, `SELECT GLID, GLName, GlAlias FROM tbLedgerMaster ORDER BY GLName ASC`, (err, rows) => {
+    if (err) { console.error(err); return res.status(500).send({ error: "Failed to retrieve data" }); }
     res.json(rows);
-    console.log('hh', rows)
   });
 });
 
+// FIX: USAT list needs SLID
 app.get("/get-account-name-USAT-intCalReg", (req, res) => {
-  console.log('fetch')
   const conn = req.session.conn;
-
-  const query = `
-    SELECT 
-    SLName, SlAlias
-    FROM
-    tbSubLedgerMaster order by SLName asc
-
-`;
-
-  sql.query(conn, query, (err, rows) => {
-    if (err) {
-      console.error("Error executing query:", err);
-      return res.status(500).send({ error: "Failed to retrieve data" });
-    }
+  sql.query(conn, `SELECT SLID, SLName, SlAlias FROM tbSubLedgerMaster ORDER BY SLName ASC`, (err, rows) => {
+    if (err) { console.error(err); return res.status(500).send({ error: "Failed to retrieve data" }); }
     res.json(rows);
-    console.log('pussss', rows)
   });
 });
+
+
+// REPORT
+const TDS_GLID = 46; // "Tax on Interest"
+const createJournalDates = require('./routes/helpers/journalDates');
+const interestReportDates = createJournalDates(sql);
+
+app.post("/interest-calculation-register", async (req, res) => {
+  const conn = req.session.conn;
+  if (!conn) return res.status(500).json({ error: "No DB connection" });
+
+  const { tillDate, lastDate, summary, typewise, showBalance, filterByMinInterest,
+          minInterest = 0, typeIds = [], accountIds = [], docClass = '' } = req.body;
+
+  if (!tillDate || !lastDate) return res.status(400).json({ error: "Dates required" });
+  if (String(lastDate) > String(tillDate)) {
+    return res.status(400).json({ error: "Last interest calculated date must be on or before the calculation till date" });
+  }
+
+  const ids = a => a.map(Number).filter(n => !isNaN(n));
+  const t = ids(typeIds), a = ids(accountIds);
+  let dateType, inputStartDate, inputEndDate, adStartDate, adEndDate;
+  try {
+    dateType = await interestReportDates.getDateMode(conn);
+    inputStartDate = interestReportDates.normDate(String(lastDate), dateType);
+    inputEndDate = interestReportDates.normDate(String(tillDate), dateType);
+    const datePattern = interestReportDates.dateRegex(dateType);
+    if (!datePattern.test(inputStartDate) || !datePattern.test(inputEndDate)) {
+      return res.status(400).json({ error: `Dates must be ${dateType ? 'YYYY-MM-DD' : 'YYYY/MM/DD'} for the configured DateType` });
+    }
+    if (inputStartDate > inputEndDate) {
+      return res.status(400).json({ error: "Last interest calculated date must be on or before the calculation till date" });
+    }
+
+    if (dateType) {
+      adStartDate = inputStartDate;
+      adEndDate = inputEndDate;
+    } else {
+      const bounds = await interestReportDates.getPeriodDateBounds(conn, false, inputStartDate, inputEndDate);
+      adStartDate = bounds.fromAD;
+      adEndDate = bounds.toAD;
+    }
+  } catch (err) {
+    console.error('[ICR] Date mode/conversion failed:', err);
+    return res.status(400).json({ error: err.message || 'Unable to convert report dates to AD' });
+  }
+
+  console.info('[ICR] Report request received:', {
+    dateType: dateType ? 'AD' : 'LD', tillDate, lastDate,
+    inputStartDate, inputEndDate, adStartDate, adEndDate,
+    typeIds: t, accountIds: a, summary, typewise, showBalance, filterByMinInterest, minInterest, docClass
+  });
+
+  const resolveDocClass = cb => {
+    if (!docClass.trim()) return cb(null, null);
+    sql.query(conn, `SELECT TOP 1 DocClassID FROM tbDocClassMaster WHERE DocClassName = ?`,
+      [docClass.trim()], (err, rows) => {
+        if (err) return cb(err);
+        if (!rows.length) return cb({ invalid: true });
+        cb(null, rows[0].DocClassID);
+      });
+  };
+
+  resolveDocClass((err, docClassId) => {
+    if (err && err.invalid) return res.status(400).json({ error: "Invalid Doc Class" });
+    if (err) { console.error(err); return res.status(500).json({ error: "Doc class lookup failed" }); }
+
+    const params = [adStartDate, adEndDate];
+    let where = `WHERE p.CalculationDate > CAST(? AS datetime) AND p.CalculationDate <= CAST(? AS datetime)
+                 AND ISNULL(m.IsTrashed,0) = 0 AND m.PostDate IS NOT NULL`;
+
+    if (t.length) { where += ` AND s.GLID IN (${t.map(() => '?').join(',')})`; params.push(...t); }
+    if (a.length) { where += ` AND s.SLID IN (${a.map(() => '?').join(',')})`; params.push(...a); }
+    if (docClassId !== null) { where += ` AND s.DocClassID = ?`; params.push(docClassId); }
+
+    const balanceCol = showBalance ? `,
+      (SELECT SUM(ISNULL(d2.CrAmount,0) - ISNULL(d2.DrAmount,0))
+         FROM tbJournalDetails d2
+         JOIN tbJournalMaster m2 ON m2.JournalID = d2.JournalID
+        WHERE d2.SLID = s.SLID AND ISNULL(m2.IsTrashed,0) = 0 AND m2.PostDate IS NOT NULL
+          AND (m2.JV_Date IS NULL OR m2.JV_Date <= p.TillDate)) AS Balance` : '';
+
+    const base = `
+      SELECT m.VoucherNo,
+             CONVERT(varchar(10), p.CalculationDate, 120) AS CalculationDate,
+             CONVERT(varchar(10), p.TillDate, 120)        AS TillDate,
+             g.GLID, g.GLName AS AccountType, g.SavingorLoan AS Nature,
+             s.SLID, s.SLName AS Account, s.SlAlias AS AccountNo,
+             p.InterestAmount AS Interest,
+             ISNULL((SELECT SUM(d3.CrAmount) FROM tbJournalDetails d3
+                      WHERE d3.JournalID = p.JournalID AND d3.GLID = ${TDS_GLID}), 0) AS TDS
+             ${balanceCol}
+      FROM tbInterestProvisionDetails p
+      JOIN tbSubLedgerMaster s ON s.SLID = p.SLID
+      JOIN tbLedgerMaster    g ON g.GLID = s.GLID
+      JOIN tbJournalMaster   m ON m.JournalID = p.JournalID
+      ${where}`;
+
+    let query;
+    if (summary && typewise) {
+      query = `SELECT AccountType, SUM(Interest) AS Interest, SUM(TDS) AS TDS,
+                      SUM(Interest) - SUM(TDS) AS TotalInterest
+               FROM (${base}) x GROUP BY GLID, AccountType ORDER BY AccountType`;
+    } else if (summary) {
+      query = `SELECT AccountType, Account, AccountNo, SUM(Interest) AS Interest, SUM(TDS) AS TDS,
+                      SUM(Interest) - SUM(TDS) AS TotalInterest
+               FROM (${base}) x GROUP BY GLID, AccountType, SLID, Account, AccountNo
+               ORDER BY Account`;
+      if (filterByMinInterest) {
+        query = query.replace('ORDER BY Account', 'HAVING SUM(Interest) >= ? ORDER BY Account');
+        params.push(Number(minInterest) || 0);
+      }
+    } else {
+      query = `SELECT VoucherNo, CalculationDate, TillDate, AccountType, Nature, Account, AccountNo,
+                      Interest, TDS, Interest - TDS AS TotalInterest ${showBalance ? ', Balance' : ''}
+               FROM (${base}) x ORDER BY Account, CalculationDate`;
+    }
+
+    sql.query(conn, query, params, (e, rows) => {
+      if (e) { console.error("ICR report error:", e); return res.status(500).json({ error: "Failed to generate report" }); }
+      console.info('[ICR] Report query completed:', { rowCount: rows.length, adDateParams: params.slice(0, 2) });
+      res.json(rows);
+    });
+  });
+});
+
+
 
 // Endpoint to validate environment before actual setup
 app.get('/check-setup', async (req, res) => {
@@ -30638,7 +30739,7 @@ app.get('/api/indicator-fiscal-dates', (req, res) => {
   if (!conn || !startDate || !endDate) {
     return res.status(400).json({ success: false, message: 'Selected fiscal-year dates are not available.' });
   }
-console.log('Indicator fiscal dates request:', { startDate, endDate });
+
   sql.query(conn, 'SELECT TOP 1 DateType FROM dbo.tbSystemSettings', (settingsError, settingsRows) => {
     if (settingsError) return res.status(500).json({ success: false, message: 'Unable to read date settings.' });
     const dateType = String(settingsRows?.[0]?.DateType || 'AD').trim().toUpperCase();
@@ -30662,7 +30763,7 @@ console.log('Indicator fiscal dates request:', { startDate, endDate });
 
       const resolvedStartDate = resolveDate(startDate);
       const resolvedEndDate = resolveDate(endDate);
-      console.log('Indicator fiscal dates resolved:', { dateType, startDate: resolvedStartDate, endDate: resolvedEndDate });
+     
       return res.json({
         success: true,
         dateType: dateType === 'LD' ? 'LD' : 'AD',

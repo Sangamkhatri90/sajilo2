@@ -9415,7 +9415,7 @@
                     </div>
                 </div>
 
-                <!--Interest Calculation-->
+                <!-- Books Interest Calculation-->
                 <div class="movableDiv" id="movableDiv77">
                     <button id="closeButton77">&times;</button>
                     <div class="ic-container">
@@ -9424,20 +9424,25 @@
                                 <legend class="ic-legend">Interest Calculation</legend>
                                 <div class="ic-form-style-horizontal3">
                                     <div>
-                                        <label for="nepali-date">Calculate Interest Till Date</label>
-                                        <input type="date" class="ic-date" id="nepali-date">
+                                        <label for="Calclulation interst till date">Calculate Interest Till Date</label>
+                                        <input type="date" class="ic-date end-date-local" id="bookscalcinttilldate">
                                     </div>
+                                    
                                     <div>
-                                        <label for="nepali-date1">Voucher Date</label>
-                                        <input type="date" class="ic-date" id="nepali-date1">
-                                    </div>
-                                    <div>
-                                        <label for="nepali-date2">Last Interest Calculated Till</label>
-                                        <input type="date" class="ic-date" id="nepali-date2">
+                                        <label for="Last interest calulation">Last Interest Calculated Till</label>
+                                        <input type="date" class="ic-date start-date-local" id="bookscalclastdate">
                                     </div>
                                 </div>
 
                                 <div class="ic-checkbox-grid">
+                                     <div>
+                                        <input type="checkbox" id="intCalRegisterShowAcBalance" class="ic-checkbox">
+                                        <label for="show account balance">Show Account Balance</label>
+                                    </div>
+                                     <div>
+                                        <input type="checkbox" id="intCalRegisterShowZeroBalance" class="ic-checkbox">
+                                        <label for="Show Zero Balance">Show Zero Balance</label>
+                                    </div>
                                     <div>
                                         <input type="checkbox" id="intCalRegisterSelectAllAT" class="ic-checkbox">
                                         <label for="select-all-type">Select All A/c Type</label>
@@ -9446,24 +9451,35 @@
                                         <input type="checkbox" id="intCalRegisterSelectAllAN" class="ic-checkbox">
                                         <label for="select-all">Select All A/c</label>
                                     </div>
-                                    <div>
-                                        <input type="checkbox" id="projection-report" class="ic-checkbox">
-                                        <label for="projection-report">Show Projection Report</label>
+                                     <div>
+                                        <input type="checkbox" id="intCalRegisterSummary" class="ic-checkbox">
+                                        <label for="Summary">Summary</label>
+                                    </div>
+                                     <div>
+                                        <input type="checkbox" id="intCalRegisterAccTypewiseSummary" class="ic-checkbox">
+                                        <label for="AcctypewiseSummary">Acc Typewise Summary</label>
                                     </div>
                                     <div>
-                                        <input type="checkbox" id="calculation-only" class="ic-checkbox">
-                                        <label for="calculation-only">Calculation Only</label>
+                                        <input type="checkbox" id="intCalRegisterForTDSuploadonIRD" class="ic-checkbox">
+                                        <label for="ForTDSuploadonIRD">For TDS Upload on IRD</label>
                                     </div>
                                     <div>
-                                        <input type="checkbox" id="computer-only" class="ic-checkbox">
-                                        <label for="computer-only">On this Computer only</label>
+                                        <input type="checkbox" id="intCalRegisterIntsrcwiseSummary" class="ic-checkbox">
+                                        <label for="interestsourcewisesummary">Interest Source wise summary</label>
+                                    </div>
+                                    <div>
+                                        <input type="checkbox" id="intCalRegisterGroupbymember" class="ic-checkbox">
+                                        <label for="group by member">Group by member</label>
+                                    </div>
+                                    <div>
+                                        <input type="checkbox" id="intCalRegisterInterestinyear" class="ic-checkbox">
+                                        <label for="group by member">Interest > =
+                                            <input type="number" id="intCalRegisterInterestinyearInput" class="ic-number" value="0"> in a year
+                                        </label>
                                     </div>
                                 </div>
                                 <div class="ic-form-style-horizontal3">
-                                    <div>
-                                        <label for="">Interest Amount</label>
-                                        <input type="text" class="ic-text">
-                                    </div>
+                                    
                                     <div>
                                         <label for="">Doc.Class</label>
                                         <input type="text" class="benchods" id="BooksintcalcDocclass"
@@ -9472,13 +9488,15 @@
                                     <div id="BooksintcalcDocclassDiv"></div>
                                 </div>
                                 <div class="ic-button-row">
-                                    <button type="submit" class="ic-button">Ok</button>
+                                    <button type="submit" class="ic-button" id="okButton77">Ok</button>
                                     <button type="button" class="ic-button" id="cancelButton77">Cancel</button>
                                 </div>
                             </fieldset>
                         </form>
                     </div>
+                    <div id="icrResult"></div>
                 </div>
+                
 
                 <div id="intCalRegisterATDiv" style="display: none;">
                     <form action="" id="intCalRegisterATForm">
@@ -9496,6 +9514,7 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <div id="intCalRegisterATPagination" class="cr-pagination" aria-live="polite"></div>
                             <div class="is-button-row">
                                 <div>
                                     <button class="is-button" id="intCalRegisterATSelectAll" type="submit">Select
@@ -9529,6 +9548,7 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <div id="intCalRegisterANPagination" class="cr-pagination" aria-live="polite"></div>
                             <div class="is-button-row">
                                 <div>
                                     <button class="is-button" id="intCalRegisterANSelectAll" type="submit">Select
@@ -9559,8 +9579,8 @@
                             <tbody id="intCalRegisterANTableUSAN">
                             </tbody>
                         </table>
-                        <button id="intCalRegisterANUSANSelectAll">Select All</button>
-                        <button id="intCalRegisterANUSANUnselectAll">Unselect All</button>
+                        <button type="button" id="intCalRegisterANUSANSelectAll">Select All</button>
+                        <button type="button" id="intCalRegisterANUSANUnselectAll">Unselect All</button>
                     </form>
                 </div>
 
@@ -9577,8 +9597,9 @@
                             <tbody id="intCalRegisterATTableUSAT">
                             </tbody>
                         </table>
-                        <button id="intCalRegisterATUSATSelectAll">Select All</button>
-                        <button id="intCalRegisterATUSATUnselectAll">Unselect All</button>
+                        <div id="intCalRegisterAllAccountsPagination" class="cr-pagination" aria-live="polite"></div>
+                        <button type="button" id="intCalRegisterATUSATSelectAll">Select All</button>
+                        <button type="button" id="intCalRegisterATUSATUnselectAll">Unselect All</button>
 
                         <button type="submit">OK</button>
                     </form>
@@ -41723,205 +41744,6 @@
                     
 
 
-                    <script>
-                        document.addEventListener('DOMContentLoaded', () => {
-                            const mainIntCalculationRegister = document.getElementById('intCalculationRegister');
-
-                            // Element references
-                            const intCalRegisterSelectAllAT = document.getElementById('intCalRegisterSelectAllAT');
-                            const intCalRegisterSelectAllAN = document.getElementById('intCalRegisterSelectAllAN');
-                            const intCalRegisterATDiv = document.getElementById('intCalRegisterATDiv');
-                            const intCalRegisterATForm = document.getElementById('intCalRegisterATForm');
-                            const intCalRegisterATTable = document.getElementById('intCalRegisterATTable');
-                            const intCalRegisterATDivUSAT = document.getElementById('intCalRegisterATDivUSAT');
-                            const intCalRegisterATFormUSAT = document.getElementById('intCalRegisterATFormUSAT');
-                            const intCalRegisterATTableUSAT = document.getElementById('intCalRegisterATTableUSAT');
-                            const intCalRegisterANDiv = document.getElementById('intCalRegisterANDiv');
-                            const intCalRegisterANForm = document.getElementById('intCalRegisterANForm');
-                            const intCalRegisterANTable = document.getElementById('intCalRegisterANTable');
-                            const intCalRegisterANDivUSAN = document.getElementById('intCalRegisterANDivUSAN');
-                            const intCalRegisterANFormUSAN = document.getElementById('intCalRegisterANFormUSAN');
-                            const intCalRegisterANTableUSAN = document.getElementById('intCalRegisterANTableUSAN');
-
-
-
-                            let highestZIndex = 3;
-
-                            const bringToFront = el => {
-                                highestZIndex = highestZIndex > 9999 ? 3 : highestZIndex + 1;
-                                el.style.zIndex = highestZIndex;
-                            };
-
-                            const makeDivMovable = div => {
-                                let isDragging = false;
-                                let offsetX, offsetY;
-
-                                div.addEventListener('mousedown', e => {
-                                    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-                                    e.preventDefault();
-                                    bringToFront(div);
-                                    const { left, top } = div.getBoundingClientRect();
-                                    offsetX = e.clientX - left;
-                                    offsetY = e.clientY - top;
-                                    div.style.position = 'absolute';
-                                    isDragging = true;
-                                });
-
-                                document.addEventListener('mousemove', e => {
-                                    if (!isDragging) return;
-                                    div.style.left = `${e.pageX - offsetX}px`;
-                                    div.style.top = `${e.pageY - offsetY}px`;
-                                });
-
-                                document.addEventListener('mouseup', () => { isDragging = false; });
-                            };
-
-                            const fetchAndRenderTable = async (url, tableElement, rowRenderer) => {
-                                const res = await fetch(url);
-                                if (!res.ok) throw new Error(`Failed to fetch from ${url}`);
-                                const data = await res.json();
-                                tableElement.innerHTML = data.map(rowRenderer).join('');
-                            };
-
-                            const toggleAllICR = (selector, state) => {
-                                document.querySelectorAll(selector).forEach(cb => {
-                                    cb.checked = state;
-                                    cb.dispatchEvent(new Event('change', { bubbles: true }));
-                                });
-                            };
-
-                            const bindToggleAll = (buttonId, selector, state) => {
-                                const btn = document.getElementById(buttonId);
-                                if (btn) {
-                                    btn.addEventListener('click', e => {
-                                        e.preventDefault();
-                                        toggleAllICR(selector, state);
-                                    });
-                                }
-                            };
-
-                            // Safe close for Group Summary
-                            const GScloseBtn = document.getElementById('GScloseButton');
-                            const GrpSummaryDiv = window.GrpSummaryDiv;
-                            if (GScloseBtn && GrpSummaryDiv) {
-                                GScloseBtn.addEventListener('click', e => {
-                                    e.preventDefault();
-                                    GrpSummaryDiv.style.display = 'none';
-                                });
-                            }
-
-                            // Make movable
-                            [intCalRegisterATDiv, intCalRegisterANDiv, intCalRegisterANDivUSAN, intCalRegisterATDivUSAT]
-                                .filter(Boolean)
-                                .forEach(makeDivMovable);
-
-                            // Main form submission
-                            mainIntCalculationRegister?.addEventListener('submit', async e => {
-                                e.preventDefault();
-
-
-                                const bothSelected = intCalRegisterSelectAllAT.checked && intCalRegisterSelectAllAN.checked;
-                                const onlyAT = intCalRegisterSelectAllAT.checked && !intCalRegisterSelectAllAN.checked;
-                                const onlyAN = !intCalRegisterSelectAllAT.checked && intCalRegisterSelectAllAN.checked;
-
-                                if (bothSelected) return;
-
-                                try {
-                                    if (!intCalRegisterSelectAllAT.checked && !intCalRegisterSelectAllAN.checked) {
-                                        await fetchAndRenderTable('/get-account-type-intCalReg', intCalRegisterATTable, (row, i) => `
-                        <tr>
-                            <td><input type="checkbox" class="interest-calculation-register-checkbox" data-lgrgrpid="${row.GLID}"></td>
-                            <td>${i + 1}</td>
-                            <td>${row.GLName}</td>
-                            <td>${row.GlAlias}</td>
-                        </tr>
-                    `);
-                                        intCalRegisterATDiv.style.display = 'block';
-                                    }
-
-
-
-                                    if (onlyAN) {
-                                        await fetchAndRenderTable('/get-account-type-USAN-intCalReg', intCalRegisterANTableUSAN, (row, i) => `
-                        <tr>
-                            <td><input type="checkbox" class="interest-calculation-register-USAN-checkbox" data-lgrgrpid="${row.GLID}"></td>
-                            <td>${i + 1}</td>
-                            <td>${row.GLName}</td>
-                            <td>${row.GlAlias}</td>
-                        </tr>
-                    `);
-                                        intCalRegisterATDiv.style.display = 'none';
-                                        intCalRegisterANDiv.style.display = 'none';
-                                        intCalRegisterANDivUSAN.style.display = 'block';
-                                        intCalRegisterATDivUSAT.style.display = 'none';
-                                    }
-
-                                    if (onlyAT) {
-                                        await fetchAndRenderTable('/get-account-name-USAT-intCalReg', intCalRegisterATTableUSAT, (row, i) => `
-                        <tr>
-                            <td><input type="checkbox" class="interest-calculation-register-USAT-checkbox" data-lgrgrpid="${row.GLID}"></td>
-                            <td>${i + 1}</td>
-                            <td>${row.SLName}</td>
-                            <td>${row.SlAlias}</td>
-                        </tr>
-                    `);
-                                        intCalRegisterATDiv.style.display = 'none';
-                                        intCalRegisterANDiv.style.display = 'none';
-                                        intCalRegisterATDivUSAT.style.display = 'block';
-                                        intCalRegisterANDivUSAN.style.display = 'none';
-                                    }
-
-                                } catch (err) {
-                                    console.error('Error:', err);
-                                }
-                            });
-
-                            // On AT checkbox change, fetch corresponding AN
-                            intCalRegisterATTable?.addEventListener('change', async e => {
-                                if (!e.target.matches('.interest-calculation-register-checkbox')) return;
-
-                                const selectedIDs = [...document.querySelectorAll('.interest-calculation-register-checkbox')]
-                                    .filter(c => c.checked)
-                                    .map(c => `id=${encodeURIComponent(c.dataset.lgrgrpid)}`)
-                                    .join('&');
-
-                                if (!selectedIDs) return;
-
-                                try {
-                                    const res = await fetch(`/get-account-name-intCalReg?${selectedIDs}`);
-                                    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
-                                    const subGroups = await res.json();
-                                    intCalRegisterANTable.innerHTML = subGroups.map((row, i) => `
-                    <tr>
-                        <td><input type="checkbox" class="sub-interest-calculation-register-checkbox" data-lgrgrpid="${row.LgrSubGrpID}"></td>
-                        <td>${i + 1}</td>
-                        <td>${row.SLName}</td>
-                        <td>${row.SlAlias}</td>
-                    </tr>
-                `).join('');
-                                } catch (err) {
-                                    console.error('Error fetching subgroups:', err);
-                                }
-                            });
-
-                            intCalRegisterATForm?.addEventListener('submit', e => {
-                                e.preventDefault();
-                                const intcalregcheckboxcheckbox = document.querySelectorAll('interest-calculation-register-checkbox');
-                                if (!intcalregcheckboxcheckbox.checked) {
-                                    showCustomAlert('Select atleast one Alc Type');
-                                    return;
-                                }
-                                intCalRegisterATDiv.style.display = 'none';
-                                intCalRegisterANDiv.style.display = 'block';
-                            });
-
-                            // Toggle helpers
-                            bindToggleAll('intCalRegisterATSelectAll', '.interest-calculation-register-checkbox', true);
-                            bindToggleAll('intCalRegisterATUnselectAll', '.interest-calculation-register-checkbox', false);
-                            bindToggleAll('intCalRegisterANSelectAll', '.sub-interest-calculation-register-checkbox', true);
-                            bindToggleAll('intCalRegisterANUnselectAll', '.sub-interest-calculation-register-checkbox', false);
-                        });
-                    </script>
 
                     <script>
                         document.addEventListener('DOMContentLoaded', () => {
@@ -47116,6 +46938,7 @@ AccTypeBtn.addEventListener('dblclick', async () => {
                     <script src="/js/BooksInstallmentScheduleRegister.js"></script>
                     <script src="/js/BooksLastTransactionRegister.js"></script>
                     <script src="/js/FinancialReportPearls.js"></script>
+                    <script src="/js/BooksInterestCalculation.js"></script>
                     <script>
                         document.getElementById('tm-new-transaction-button')?.addEventListener('click', async function (event) {
                             event.preventDefault();
